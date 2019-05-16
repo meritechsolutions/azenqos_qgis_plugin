@@ -30,8 +30,8 @@ import sqlite3
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 # FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'azenqos_plugin_dialog_base.ui'))
-from PyQt5.QtWidgets import QMainWindow
-from qgis.PyQt import QtWidgets, QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import *
 import numpy as np
 import pyqtgraph as pg
 
@@ -58,6 +58,7 @@ class AzenqosDialog(QtWidgets.QDialog):
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.itemDoubleClicked.connect(self.loadAllMessages)
 
+        # GSM Section
         gsm = QtWidgets.QTreeWidgetItem(self.treeWidget, ['GSM'])
         gsmRadioParams = QtWidgets.QTreeWidgetItem(gsm, ['Radio Parameters'])
         gsmServeNeighbor = QtWidgets.QTreeWidgetItem(gsm, ['Serving + Neighbors'])
@@ -66,6 +67,7 @@ class AzenqosDialog(QtWidgets.QDialog):
         gsmLineChart = QtWidgets.QTreeWidgetItem(gsm, ['GSM Line Chart'])
         gsmEventsCounter = QtWidgets.QTreeWidgetItem(gsm, ['Events Counter'])
 
+        # WCDMA Section
         wcdma = QtWidgets.QTreeWidgetItem(self.treeWidget, ['WCDMA'])
         wcdmaActiveMonitoredSets = QtWidgets.QTreeWidgetItem(wcdma, ['Active + Monitored Sets'])
         wcdmaRadioParams = QtWidgets.QTreeWidgetItem(wcdma, ['Radio Parameters'])
@@ -81,6 +83,7 @@ class AzenqosDialog(QtWidgets.QDialog):
         wcdmaCells = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA CM GSM Cells'])
         wcdmaPilotAnalyzer = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA Pilot Analyzer'])
 
+        # LTE Section
         lte = QtWidgets.QTreeWidgetItem(self.treeWidget, ['LTE'])
         lteRadioParams = QtWidgets.QTreeWidgetItem(lte, ['Radio Parameters'])
         lteServingNeighbors = QtWidgets.QTreeWidgetItem(lte, ['Serving + Neighbors'])
@@ -89,11 +92,13 @@ class AzenqosDialog(QtWidgets.QDialog):
         lteRlc = QtWidgets.QTreeWidgetItem(lte, ['LTE RLC'])
         lteVo = QtWidgets.QTreeWidgetItem(lte, ['LTE VoLTE'])
 
+        # CDMA/EVDO Section
         cdmaEvdo = QtWidgets.QTreeWidgetItem(self.treeWidget, ['CDMA/EVDO'])
         cdmaEvdoRadioParams = QtWidgets.QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
         cdmaEvdoServingNeighbors = QtWidgets.QTreeWidgetItem(cdmaEvdo, ['Serving + Neighbors'])
         cdmaEvdoParams = QtWidgets.QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
 
+        # Data Section
         data = QtWidgets.QTreeWidgetItem(self.treeWidget, ['Data'])
         dataGsmLineChart = QtWidgets.QTreeWidgetItem(data, ['GSM Data Line Chart'])
         dataWcdmaLineChart = QtWidgets.QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
@@ -107,6 +112,7 @@ class AzenqosDialog(QtWidgets.QDialog):
         dataWifiScannedAp = QtWidgets.QTreeWidgetItem(data, ['Wifi Scanned APs'])
         dataWifiGraph = QtWidgets.QTreeWidgetItem(data, ['Wifi Graph'])
 
+        # Signaling Section
         signaling = QtWidgets.QTreeWidgetItem(self.treeWidget, ['Signaling'])
         signalingEvents = QtWidgets.QTreeWidgetItem(signaling, ['Events'])
         signalingLayerOne = QtWidgets.QTreeWidgetItem(signaling, ['Layer 1 Messages'])
@@ -116,16 +122,19 @@ class AzenqosDialog(QtWidgets.QDialog):
         signalingSystemInfo = QtWidgets.QTreeWidgetItem(signaling, ['Serving System Info'])
         signalingDebug = QtWidgets.QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
+        # Positioning Section
         positioning = QtWidgets.QTreeWidgetItem(self.treeWidget, ['Positioning'])
         positioningGps = QtWidgets.QTreeWidgetItem(positioning, ['GPS'])
         positioningMap = QtWidgets.QTreeWidgetItem(positioning, ['Map'])
         positioningPositioning = QtWidgets.QTreeWidgetItem(positioning, ['Positioning'])
 
+        # Customized Window Section
         customizedWindow = QtWidgets.QTreeWidgetItem(self.treeWidget, ['Customized Window'])
         customizedWindowStatus = QtWidgets.QTreeWidgetItem(customizedWindow, ['Status Window'])
         customizedWindowMessage = QtWidgets.QTreeWidgetItem(customizedWindow, ['Message Window'])
         customizedWindowChart = QtWidgets.QTreeWidgetItem(customizedWindow, ['Line Chart'])
 
+        # NB-IoT Section
         nBIoT = QtWidgets.QTreeWidgetItem(self.treeWidget, ['NB-IoT'])
         nBIoTParams = QtWidgets.QTreeWidgetItem(nBIoT, ['NB-IoT Radio Parameters Window'])
 
@@ -190,9 +199,10 @@ class AzenqosDialog(QtWidgets.QDialog):
         getSelected = self.treeWidget.selectedItems()
         if getSelected:
             baseNode = getSelected[0]
-            getChildNode = baseNode.text(0)
-            getParentNode = baseNode.parent().text(0)
-            self.classifySelectedItems(getParentNode, getChildNode)
+            if baseNode.text(0) is not None:
+                getChildNode = baseNode.text(0)
+                getParentNode = baseNode.parent().text(0)
+                self.classifySelectedItems(getParentNode, getChildNode)
 
     def importDatabase(self):
         try:
@@ -210,8 +220,7 @@ class AzenqosDialog(QtWidgets.QDialog):
     def classifySelectedItems(self, parent, child):
         if parent == "GSM":
             if child == "Radio Parameters":
-                self.newWindow = NewWindow()
-                self.newWindow.show()
+                self.newWindow = NewWindow("Radio Parameters")
                 print("11")
             elif child == "Serving + Neighbors":
                 print("12")
@@ -291,7 +300,7 @@ class AzenqosDialog(QtWidgets.QDialog):
                 print("59")
             elif child == "Wifi Scanned APs":
                 print("510")
-            elif child == "WWifi Graph":
+            elif child == "Wifi Graph":
                 print("511")
         elif parent == "Signaling":
             if child == "Events":
@@ -326,14 +335,35 @@ class AzenqosDialog(QtWidgets.QDialog):
             if child == "NB-IoT Radio Parameters Window":
                 print("1")
 
-class NewWindow(QMainWindow):
+class NewWindow(QWidget):
+    def __init__(self, windowName):
+        super(NewWindow, self).__init__()
+        self.title = windowName
+        self.left = 10
+        self.top = 10
+        self.width = 640
+        self.height = 480
+        self.setupUi()
+
+    def setupUi(self):
+        self.setObjectName("NewWindow")
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+        self.show()
+
+class PlotGraph(pg.PlotCurveItem):
     def __init__(self, parent=None):
-        super(NewWindow, self).__init__(parent)
+        super(PlotGraph, self).__init__()
+        self.y1 = [2, 4, 8, 10, 12]
+        self.y2 = [1, 3, 5, 7, 9]
+        self.x = range(0,10)
         self.setupUi(self)
 
-    def setupUi(self, NewWindow):
-        NewWindow.setObjectName("NewWindow")
-        NewWindow.resize(891, 557)
-        NewWindow.setWindowTitle("NewWindow")
+    def setupUi(self, PlotGraph):
+        self.graphwindow = pg.GraphicsWindow()
 
-class PlotGraph()
+
+    # def showGraph(self):
+
+
+

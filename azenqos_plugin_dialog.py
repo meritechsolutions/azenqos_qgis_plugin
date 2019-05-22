@@ -23,21 +23,21 @@
 """
 
 import os
-
 # from PyQt5 import *
 # from PyQt5.QtWidgets import *
 import sqlite3
 
+import pyqtgraph as pg
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 # FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'azenqos_plugin_dialog_base.ui'))
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, QtSql
 from PyQt5.QtWidgets import *
-import numpy as np
-import pyqtgraph as pg
+from PyQt5.QtCore import QSettings
+from qgis.core import *
+from qgis.utils import *
 
 
-
-class AzenqosDialog(QtWidgets.QDialog):
+class AzenqosDialog(QDialog):
     def __init__(self, parent=None):
         """Constructor."""
         super(AzenqosDialog, self).__init__(parent)
@@ -51,98 +51,98 @@ class AzenqosDialog(QtWidgets.QDialog):
     def setupUi(self, AzenqosDialog):
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(891, 557)
-        self.treeWidget = QtWidgets.QTreeWidget(AzenqosDialog)
+        self.treeWidget = QTreeWidget(AzenqosDialog)
         self.treeWidget.setGeometry(QtCore.QRect(20, 40, 491, 471))
-        self.treeWidget.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.treeWidget.setFrameShape(QFrame.StyledPanel)
         self.treeWidget.setAllColumnsShowFocus(True)
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.itemDoubleClicked.connect(self.loadAllMessages)
 
         # GSM Section
-        gsm = QtWidgets.QTreeWidgetItem(self.treeWidget, ['GSM'])
-        gsmRadioParams = QtWidgets.QTreeWidgetItem(gsm, ['Radio Parameters'])
-        gsmServeNeighbor = QtWidgets.QTreeWidgetItem(gsm, ['Serving + Neighbors'])
-        gsmCurrentChannel = QtWidgets.QTreeWidgetItem(gsm, ['Current Channel'])
-        gsmCI = QtWidgets.QTreeWidgetItem(gsm, ['C/I'])
-        gsmLineChart = QtWidgets.QTreeWidgetItem(gsm, ['GSM Line Chart'])
-        gsmEventsCounter = QtWidgets.QTreeWidgetItem(gsm, ['Events Counter'])
+        gsm = QTreeWidgetItem(self.treeWidget, ['GSM'])
+        gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
+        gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
+        gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
+        gsmCI = QTreeWidgetItem(gsm, ['C/I'])
+        gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
+        gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
 
         # WCDMA Section
-        wcdma = QtWidgets.QTreeWidgetItem(self.treeWidget, ['WCDMA'])
-        wcdmaActiveMonitoredSets = QtWidgets.QTreeWidgetItem(wcdma, ['Active + Monitored Sets'])
-        wcdmaRadioParams = QtWidgets.QTreeWidgetItem(wcdma, ['Radio Parameters'])
-        wcdmaASL = QtWidgets.QTreeWidgetItem(wcdma, ['Active Set List'])
-        wcdmaMonitoredSet = QtWidgets.QTreeWidgetItem(wcdma, ['Monitored Set List'])
-        wcdmaSummary = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA BLER Summary'])
-        wcdmaTransportChannel = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA BLER / Transport Channel'])
-        wcdmaLineChart = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA Line Chart'])
-        wcdmaBearers = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA Bearers'])
-        wcdmaPilotPoluting = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA Pilot Poluting Cells'])
-        wcdmaActiveMonitoredBar = QtWidgets.QTreeWidgetItem(wcdma, ['Active + Monitored Bar'])
-        wcdmaReports = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA CM GSM Reports'])
-        wcdmaCells = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA CM GSM Cells'])
-        wcdmaPilotAnalyzer = QtWidgets.QTreeWidgetItem(wcdma, ['WCDMA Pilot Analyzer'])
+        wcdma = QTreeWidgetItem(self.treeWidget, ['WCDMA'])
+        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma, ['Active + Monitored Sets'])
+        wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
+        wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
+        wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
+        wcdmaSummary = QTreeWidgetItem(wcdma, ['WCDMA BLER Summary'])
+        wcdmaTransportChannel = QTreeWidgetItem(wcdma, ['WCDMA BLER / Transport Channel'])
+        wcdmaLineChart = QTreeWidgetItem(wcdma, ['WCDMA Line Chart'])
+        wcdmaBearers = QTreeWidgetItem(wcdma, ['WCDMA Bearers'])
+        wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['WCDMA Pilot Poluting Cells'])
+        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma, ['Active + Monitored Bar'])
+        wcdmaReports = QTreeWidgetItem(wcdma, ['WCDMA CM GSM Reports'])
+        wcdmaCells = QTreeWidgetItem(wcdma, ['WCDMA CM GSM Cells'])
+        wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['WCDMA Pilot Analyzer'])
 
         # LTE Section
-        lte = QtWidgets.QTreeWidgetItem(self.treeWidget, ['LTE'])
-        lteRadioParams = QtWidgets.QTreeWidgetItem(lte, ['Radio Parameters'])
-        lteServingNeighbors = QtWidgets.QTreeWidgetItem(lte, ['Serving + Neighbors'])
-        ltePPParams = QtWidgets.QTreeWidgetItem(lte, ['PUCCH/PDSCH Paramters'])
-        lteLineChart = QtWidgets.QTreeWidgetItem(lte, ['LTE Line Chart'])
-        lteRlc = QtWidgets.QTreeWidgetItem(lte, ['LTE RLC'])
-        lteVo = QtWidgets.QTreeWidgetItem(lte, ['LTE VoLTE'])
+        lte = QTreeWidgetItem(self.treeWidget, ['LTE'])
+        lteRadioParams = QTreeWidgetItem(lte, ['Radio Parameters'])
+        lteServingNeighbors = QTreeWidgetItem(lte, ['Serving + Neighbors'])
+        ltePPParams = QTreeWidgetItem(lte, ['PUCCH/PDSCH Parameters'])
+        lteLineChart = QTreeWidgetItem(lte, ['LTE Line Chart'])
+        lteRlc = QTreeWidgetItem(lte, ['LTE RLC'])
+        lteVo = QTreeWidgetItem(lte, ['LTE VoLTE'])
 
         # CDMA/EVDO Section
-        cdmaEvdo = QtWidgets.QTreeWidgetItem(self.treeWidget, ['CDMA/EVDO'])
-        cdmaEvdoRadioParams = QtWidgets.QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
-        cdmaEvdoServingNeighbors = QtWidgets.QTreeWidgetItem(cdmaEvdo, ['Serving + Neighbors'])
-        cdmaEvdoParams = QtWidgets.QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
+        cdmaEvdo = QTreeWidgetItem(self.treeWidget, ['CDMA/EVDO'])
+        cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
+        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo, ['Serving + Neighbors'])
+        cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
 
         # Data Section
-        data = QtWidgets.QTreeWidgetItem(self.treeWidget, ['Data'])
-        dataGsmLineChart = QtWidgets.QTreeWidgetItem(data, ['GSM Data Line Chart'])
-        dataWcdmaLineChart = QtWidgets.QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
-        dataEdgeInfo = QtWidgets.QTreeWidgetItem(data, ['GPRS/EDGE Information'])
-        dataWebBrowser = QtWidgets.QTreeWidgetItem(data, ['Web Browser'])
-        dataStats = QtWidgets.QTreeWidgetItem(data, ['HSDPA/HSPA + Statistics'])
-        dataHsupaStats = QtWidgets.QTreeWidgetItem(data, ['HSUPA Statistics'])
-        dataLteStats = QtWidgets.QTreeWidgetItem(data, ['LTE Data Statistics'])
-        dataLteLineChart = QtWidgets.QTreeWidgetItem(data, ['LTE Data Line Chart'])
-        dataWifiConnectedAp = QtWidgets.QTreeWidgetItem(data, ['Wifi Connected AP'])
-        dataWifiScannedAp = QtWidgets.QTreeWidgetItem(data, ['Wifi Scanned APs'])
-        dataWifiGraph = QtWidgets.QTreeWidgetItem(data, ['Wifi Graph'])
+        data = QTreeWidgetItem(self.treeWidget, ['Data'])
+        dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
+        dataWcdmaLineChart = QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
+        dataEdgeInfo = QTreeWidgetItem(data, ['GPRS/EDGE Information'])
+        dataWebBrowser = QTreeWidgetItem(data, ['Web Browser'])
+        dataStats = QTreeWidgetItem(data, ['HSDPA/HSPA + Statistics'])
+        dataHsupaStats = QTreeWidgetItem(data, ['HSUPA Statistics'])
+        dataLteStats = QTreeWidgetItem(data, ['LTE Data Statistics'])
+        dataLteLineChart = QTreeWidgetItem(data, ['LTE Data Line Chart'])
+        dataWifiConnectedAp = QTreeWidgetItem(data, ['Wifi Connected AP'])
+        dataWifiScannedAp = QTreeWidgetItem(data, ['Wifi Scanned APs'])
+        dataWifiGraph = QTreeWidgetItem(data, ['Wifi Graph'])
 
         # Signaling Section
-        signaling = QtWidgets.QTreeWidgetItem(self.treeWidget, ['Signaling'])
-        signalingEvents = QtWidgets.QTreeWidgetItem(signaling, ['Events'])
-        signalingLayerOne = QtWidgets.QTreeWidgetItem(signaling, ['Layer 1 Messages'])
-        signalingLayerThree = QtWidgets.QTreeWidgetItem(signaling, ['Layer 3 Messages'])
-        signalingBenchmark = QtWidgets.QTreeWidgetItem(signaling, ['Benchmark'])
-        signalingMM = QtWidgets.QTreeWidgetItem(signaling, ['MM Reg States'])
-        signalingSystemInfo = QtWidgets.QTreeWidgetItem(signaling, ['Serving System Info'])
-        signalingDebug = QtWidgets.QTreeWidgetItem(signaling, ['Debug Android/Event'])
+        signaling = QTreeWidgetItem(self.treeWidget, ['Signaling'])
+        signalingEvents = QTreeWidgetItem(signaling, ['Events'])
+        signalingLayerOne = QTreeWidgetItem(signaling, ['Layer 1 Messages'])
+        signalingLayerThree = QTreeWidgetItem(signaling, ['Layer 3 Messages'])
+        signalingBenchmark = QTreeWidgetItem(signaling, ['Benchmark'])
+        signalingMM = QTreeWidgetItem(signaling, ['MM Reg States'])
+        signalingSystemInfo = QTreeWidgetItem(signaling, ['Serving System Info'])
+        signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
-        positioning = QtWidgets.QTreeWidgetItem(self.treeWidget, ['Positioning'])
-        positioningGps = QtWidgets.QTreeWidgetItem(positioning, ['GPS'])
-        positioningMap = QtWidgets.QTreeWidgetItem(positioning, ['Map'])
-        positioningPositioning = QtWidgets.QTreeWidgetItem(positioning, ['Positioning'])
+        positioning = QTreeWidgetItem(self.treeWidget, ['Positioning'])
+        positioningGps = QTreeWidgetItem(positioning, ['GPS'])
+        positioningMap = QTreeWidgetItem(positioning, ['Map'])
+        positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
         # Customized Window Section
-        customizedWindow = QtWidgets.QTreeWidgetItem(self.treeWidget, ['Customized Window'])
-        customizedWindowStatus = QtWidgets.QTreeWidgetItem(customizedWindow, ['Status Window'])
-        customizedWindowMessage = QtWidgets.QTreeWidgetItem(customizedWindow, ['Message Window'])
-        customizedWindowChart = QtWidgets.QTreeWidgetItem(customizedWindow, ['Line Chart'])
+        customizedWindow = QTreeWidgetItem(self.treeWidget, ['Customized Window'])
+        customizedWindowStatus = QTreeWidgetItem(customizedWindow, ['Status Window'])
+        customizedWindowMessage = QTreeWidgetItem(customizedWindow, ['Message Window'])
+        customizedWindowChart = QTreeWidgetItem(customizedWindow, ['Line Chart'])
 
         # NB-IoT Section
-        nBIoT = QtWidgets.QTreeWidgetItem(self.treeWidget, ['NB-IoT'])
-        nBIoTParams = QtWidgets.QTreeWidgetItem(nBIoT, ['NB-IoT Radio Parameters Window'])
+        nBIoT = QTreeWidgetItem(self.treeWidget, ['NB-IoT'])
+        nBIoTParams = QTreeWidgetItem(nBIoT, ['NB-IoT Radio Parameters Window'])
 
         self.treeWidget.header().setCascadingSectionResizes(True)
         self.treeWidget.header().setHighlightSections(True)
-        self.horizontalSlider = QtWidgets.QSlider(AzenqosDialog)
+        self.horizontalSlider = QSlider(AzenqosDialog)
         self.horizontalSlider.setGeometry(QtCore.QRect(700, 50, 151, 22))
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.horizontalSlider.sizePolicy().hasHeightForWidth())
@@ -152,19 +152,19 @@ class AzenqosDialog(QtWidgets.QDialog):
         self.horizontalSlider.setSliderPosition(0)
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
-        self.pushButton = QtWidgets.QPushButton(AzenqosDialog)
+        self.pushButton = QPushButton(AzenqosDialog)
         self.pushButton.setGeometry(QtCore.QRect(550, 150, 181, 32))
         self.pushButton.setObjectName("pushButton")
-        self.pushButton_2 = QtWidgets.QPushButton(AzenqosDialog)
+        self.pushButton_2 = QPushButton(AzenqosDialog)
         self.pushButton_2.setGeometry(QtCore.QRect(550, 190, 181, 32))
         self.pushButton_2.setObjectName("pushButton_2")
-        self.timeEdit = QtWidgets.QTimeEdit(AzenqosDialog)
+        self.timeEdit = QTimeEdit(AzenqosDialog)
         self.timeEdit.setGeometry(QtCore.QRect(560, 50, 118, 22))
         self.timeEdit.setObjectName("timeEdit")
-        self.filenameLabel = QtWidgets.QLabel(AzenqosDialog)
+        self.filenameLabel = QLabel(AzenqosDialog)
         self.filenameLabel.setGeometry(QtCore.QRect(560, 100, 100, 16))
         self.filenameLabel.setObjectName("filenameLabel")
-        self.filename = QtWidgets.QLabel(AzenqosDialog)
+        self.filename = QLabel(AzenqosDialog)
         self.filename.setGeometry(QtCore.QRect(670, 100, 180, 16))
         self.filename.setObjectName("filename")
         self.retranslateUi(AzenqosDialog)
@@ -172,7 +172,7 @@ class AzenqosDialog(QtWidgets.QDialog):
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
-        AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos"))
+        AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos Main Menu"))
         self.treeWidget.headerItem().setText(0, _translate("AzenqosDialog", "Toolbox"))
         __sortingEnabled = self.treeWidget.isSortingEnabled()
         self.treeWidget.setSortingEnabled(False)
@@ -184,14 +184,14 @@ class AzenqosDialog(QtWidgets.QDialog):
         self.pushButton.clicked.connect(self.getfiles)
 
     def getfiles(self):
-        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Single File', QtCore.QDir.rootPath() , '*.db')
+        fileName, _ = QFileDialog.getOpenFileName(self, 'Single File', QtCore.QDir.rootPath() , '*.db')
         self.databasePath = fileName
         if fileName != "":
             baseFileName = os.path.basename(str(fileName))
             self.filename.setText(baseFileName)
             conn = self.importDatabase()
             if conn != "":
-                QtWidgets.QMessageBox.about(self, 'Connection result', 'Database is Connected')
+                QMessageBox.about(self, 'Connection result', 'Database is Connected')
 
 
 
@@ -199,6 +199,8 @@ class AzenqosDialog(QtWidgets.QDialog):
         getSelected = self.treeWidget.selectedItems()
         if getSelected:
             baseNode = getSelected[0]
+            QgsMessageLog.logMessage('เลือกเมนูสำเร็จ', 'Azenqos Log')
+            QgsMessageLog.logMessage(str(baseNode), 'Azenqos Log')
             if baseNode.text(0) is not None:
                 getChildNode = baseNode.text(0)
                 getParentNode = baseNode.parent().text(0)
@@ -206,79 +208,188 @@ class AzenqosDialog(QtWidgets.QDialog):
 
     def importDatabase(self):
         try:
-            conn = sqlite3.connect(self.databasePath)
-            return conn
+            # conn = sqlite3.connect(self.databasePath)
+            # db = QtSql.QSqlDatabase('QSQLITE')
+            # db.setDatabaseName(self.databasePath)
+            QgsMessageLog.logMessage('Database Connected', 'Azenqos Log')
+            layer = iface.activeLayer()
+            uri = QgsDataSourceUri(layer.dataProvider().dataSourceUri())
+            db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
+            db.setDatabaseName(uri.database())
+            db.open()
+            return db
         except ConnectionError as e:
             print(e)
 
         return None
 
-    def createNewWindows(self):
-        self.plainWindow = QMainWindow()
-        self.plainWindow.show()
-
     def classifySelectedItems(self, parent, child):
         if parent == "GSM":
             if child == "Radio Parameters":
-                self.newWindow = NewWindow("Radio Parameters")
-                print("11")
+                if hasattr(self, 'gsm_rdp_window'):
+                    self.gsm_rdp_window.show()
+                else:
+                    self.gsm_rdp_window = NewWindow(parent + "_" + child)
+                    self.gsm_rdp_window.show()
             elif child == "Serving + Neighbors":
-                print("12")
+                if hasattr(self, 'gsm_sn_window'):
+                    self.gsm_sn_window.show()
+                else:
+                    self.gsm_sn_window = NewWindow(child)
+                    self.gsm_sn_window.show()
             elif child == "Current Channel":
-                print("13")
-            elif child == "Serving + Neighbors":
-                print("14")
+                if hasattr(self, 'gsm_cc_window'):
+                    self.gsm_cc_window.show()
+                else:
+                    self.gsm_cc_window = NewWindow(child)
+                    self.gsm_cc_window.show()
             elif child == "C/I":
-                print("15")
+                if hasattr(self, 'gsm_ci_window'):
+                    self.gsm_ci_window.show()
+                else:
+                    self.gsm_ci_window = NewWindow(child)
+                    self.gsm_ci_window.show()
             elif child == "GSM Line Chart":
-                print("16")
+                if hasattr(self, 'gsm_lc_window'):
+                    self.gsm_lc_window.show()
+                else:
+                    self.gsm_lc_window = NewWindow(child)
+                    self.gsm_lc_window.show()
             elif child == "Events Counter":
-                print("17")
+                if hasattr(self, 'gsm_ec_window'):
+                    self.gsm_ec_window.show()
+                else:
+                    self.gsm_ec_window = NewWindow(child)
+                    self.gsm_ec_window.show()
         elif parent == "WCDMA":
             if child == "Active + Monitored Sets":
-                print("21")
+                if hasattr(self, 'wcdma_ams_window'):
+                    self.wcdma_ams_window.show()
+                else:
+                    self.wcdma_ams_window = NewWindow(child)
+                    self.wcdma_ams_window.show()
             elif child == "Radio Parameters":
-                print("22")
+                if hasattr(self, 'wcdma_rp_window'):
+                    self.wcdma_rp_window.show()
+                else:
+                    self.wcdma_rp_window = NewWindow(child)
+                    self.wcdma_rp_window.show()
             elif child == "Active Set List":
-                print("23")
+                if hasattr(self, 'wcdma_asl_window'):
+                    self.wcdma_asl_window.show()
+                else:
+                    self.wcdma_asl_window = NewWindow(child)
+                    self.wcdma_asl_window.show()
             elif child == "Monitored Set List":
-                print("24")
+                if hasattr(self, 'wcdma_msl_window'):
+                    self.wcdma_msl_window.show()
+                else:
+                    self.wcdma_msl_window = NewWindow(child)
+                    self.wcdma_msl_window.show()
             elif child == "WCDMA BLER Summary":
-                print("25")
+                if hasattr(self, 'wcdma_bler_window'):
+                    self.wcdma_bler_window.show()
+                else:
+                    self.wcdma_bler_window = NewWindow(child)
+                    self.wcdma_bler_window.show()
             elif child == "WCDMA BLER / Transport Channel":
-                print("26")
+                if hasattr(self, 'wcdma_bler_window'):
+                    self.wcdma_blertc_window.show()
+                else:
+                    self.wcdma_blertc_window = NewWindow(child)
+                    self.wcdma_blertc_window.show()
             elif child == "WCDMA Line Chart":
-                print("27")
+                if hasattr(self, 'wcdma_lc_window'):
+                    self.wcdma_lc_window.show()
+                else:
+                    self.wcdma_lc_window = NewWindow(child)
+                    self.wcdma_lc_window.show()
             elif child == "WCDMA Bearers":
-                print("28")
+                if hasattr(self, 'wcdma_bearer_window'):
+                    self.wcdma_bearer_window.show()
+                else:
+                    self.wcdma_bearer_window = NewWindow(child)
+                    self.wcdma_bearer_window.show()
             elif child == "Active + Monitored Bar":
-                print("29")
+                if hasattr(self, 'wcdma_amb_window'):
+                    self.wcdma_amb_window.show()
+                else:
+                    self.wcdma_amb_window = NewWindow(child)
+                    self.wcdma_amb_window.show()
             elif child == "WCDMA CM GSM Reports":
-                print("210")
+                if hasattr(self, 'wcdma_report_window'):
+                    self.wcdma_report_window.show()
+                else:
+                    self.wcdma_report_window = NewWindow(child)
+                    self.wcdma_report_window.show()
             elif child == "WCDMA CM GSM Cells":
-                print("211")
+                if hasattr(self, 'wcdma_cells_window'):
+                    self.wcdma_cells_window.show()
+                else:
+                    self.wcdma_cells_window = NewWindow(child)
+                    self.wcdma_cells_window.show()
             elif child == "WCDMA Pilot Analyzer":
-                print("212")
+                if hasattr(self, 'wcdma_analyzer_window'):
+                    self.wcdma_analyzer_window.show()
+                else:
+                    self.wcdma_analyzer_window = NewWindow(child)
+                    self.wcdma_analyzer_window.show()
         elif parent == "LTE":
             if child == "Radio Parameters":
-                print("31")
+                if hasattr(self, 'lte_param_window'):
+                    self.lte_param_window.show()
+                else:
+                    self.lte_param_window = NewWindow(child)
+                    self.lte_param_window.show()
             elif child == "Serving + Neighbors":
-                print("32")
-            elif child == "PUCCH/PDSCH Paramters":
-                print("33")
+                if hasattr(self, 'lte_sn_window'):
+                    self.lte_sn_window.show()
+                else:
+                    self.lte_sn_window = NewWindow(child)
+                    self.lte_sn_window.show()
+            elif child == "PUCCH/PDSCH Parameters":
+                if hasattr(self, 'lte_ppparam_window'):
+                    self.lte_ppparam_window.show()
+                else:
+                    self.lte_ppparam_window = NewWindow(child)
+                    self.lte_ppparam_window.show()
             elif child == "LTE Line Chart":
-                print("34")
+                if hasattr(self, 'lte_lc_window'):
+                    self.lte_lc_window.show()
+                else:
+                    self.lte_lc_window = NewWindow(child)
+                    self.lte_lc_window.show()
             elif child == "LTE RLC":
-                print("35")
+                if hasattr(self, 'lte_rlc_window'):
+                    self.lte_rlc_window.show()
+                else:
+                    self.lte_rlc_window = NewWindow(child)
+                    self.lte_rlc_window.show()
             elif child == "LTE VoLTE":
-                print("36")
+                if hasattr(self, 'lte_volte_window'):
+                    self.lte_volte_window.show()
+                else:
+                    self.lte_volte_window = NewWindow(child)
+                    self.lte_volte_window.show()
         elif parent == "CDMA/EVDO":
             if child == "Radio Parameters":
-                print("41")
+                if hasattr(self, 'cdma_rp_window'):
+                    self.cdma_rp_window.show()
+                else:
+                    self.cdma_rp_window = NewWindow(child)
+                    self.cdma_rp_window.show()
             elif child == "Serving + Neighbors":
-                print("42")
+                if hasattr(self, 'cdma_sn_window'):
+                    self.cdma_sn_window.show()
+                else:
+                    self.cdma_sn_window = NewWindow(child)
+                    self.cdma_sn_window.show()
             elif child == "EVDO Parameters":
-                print("43")
+                if hasattr(self, 'cdma_evdo_window'):
+                    self.cdma_evdo_window.show()
+                else:
+                    self.cdma_evdo_window = NewWindow(child)
+                    self.cdma_evdo_window.show()
         elif parent == "Data":
             if child == "GSM Data Line Chart":
                 print("51")
@@ -335,21 +446,22 @@ class AzenqosDialog(QtWidgets.QDialog):
             if child == "NB-IoT Radio Parameters Window":
                 print("1")
 
-class NewWindow(QWidget):
+class NewWindow(QDialog):
     def __init__(self, windowName):
         super(NewWindow, self).__init__()
         self.title = windowName
         self.left = 10
         self.top = 10
-        self.width = 640
-        self.height = 480
+        self.width = 480
+        self.height = 360
         self.setupUi()
 
     def setupUi(self):
-        self.setObjectName("NewWindow")
+        self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
-        self.show()
+        self.raise_()
+        self.activateWindow()
 
 class PlotGraph(pg.PlotCurveItem):
     def __init__(self, parent=None):

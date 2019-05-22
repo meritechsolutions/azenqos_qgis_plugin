@@ -25,8 +25,6 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
 from PyQt5 import *
-from qgis.core import *
-from qgis.gui import *
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -48,8 +46,6 @@ class Azenqos:
         """
         # Save reference to the QGIS interface
         self.iface = iface
-        # reference to map canvas
-        self.canvas = self.iface.mapCanvas()
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale

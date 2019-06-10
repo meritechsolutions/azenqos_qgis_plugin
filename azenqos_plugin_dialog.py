@@ -32,6 +32,7 @@ from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 # from qgis.core import QgsDataSourceUri, QgsMessageLog
 # from qgis.utils import *
+import json
 
 
 azenqosDatabase = None
@@ -74,7 +75,7 @@ class Ui_DatabaseDialog(QDialog):
         self.dbPathLabel.setText(_translate("DatabaseDialog", "Database path: ( .db, .sqlite )"))
 
     def getfiles(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, 'Single File', QtCore.QDir.rootPath(), '*.db;;*.sqlite')
+        fileName, _ = QFileDialog.getOpenFileName(self, 'Single File', QtCore.QDir.rootPath(), '*.db *.sqlite')
         self.databasePath = fileName
         if fileName != "":
             baseFileName = os.path.basename(str(fileName))
@@ -111,13 +112,6 @@ class AzenqosDialog(QMainWindow):
     def __init__(self):
         """Constructor."""
         super(AzenqosDialog, self).__init__()
-        # Set up the user interface from Designer through FORM_CLASS.
-        # After self.setupUi() you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
-        # self.databasePath = databasePath
-        # self.db.setDatabaseName(self.databasePath)
         self.setupUi(self)
 
     def setupUi(self, AzenqosDialog):
@@ -592,49 +586,35 @@ class AzenqosDialog(QMainWindow):
         #     if child == "NB-IoT Radio Parameters Window":
         #         print("1")
 
-
 class TableWindow(QWidget):
     def __init__(self, windowName):
         super(TableWindow, self).__init__()
         self.title = windowName
+        self.tableHeader = None
         self.left = 10
         self.top = 10
         self.width = 640
         self.height = 480
+        self.dataList = []
         self.setupUi()
 
     def setupUi(self):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
-        # self.setGeometry(self.left, self.top, self.width, self.height)
-
-        # grid_layout = QGridLayout(self)
-        # self.centralwidget.setLayout(grid_layout)
-
         self.tableView = QTableView(self)
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
-        self.tableView.setSortingEnabled(True)
-        self.setTableView()
-        # self.tableWidget = QTableWidget(self.centralwidget)
-        # self.tableWidget.setGeometry(QtCore.QRect(20, 20, self.width, self.height))
-        # self.tableWidget.setObjectName("tableWidget")
-        # self.tableWidget.setColumnCount(4)
-        # self.tableWidget.setHorizontalHeaderLabels(["Time", "Eq.", "Name", "Info."])
-
-        # grid_layout.addWidget(self.tableWidget, 0, 0)
-
+        # self.tableView.setSortingEnabled(True)
+        self.specifyTablesHeader()
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
         self.setLayout(layout)
-
         self.raise_()
         self.activateWindow()
 
-
-    def setTableView(self):
-        query = DataQuery(self.title, None)
-        dataList = query.getData()
-        self.tableModel = TableModel(dataList, self)
+    def setTableView(self, dataList):
+        # query = DataQuery(self.title, None)
+        # dataList = query.getData()
+        self.tableModel = TableModel(dataList, self.tableHeader, self)
         self.tableView.setModel(self.tableModel)
         self.tableView.setSortingEnabled(True)
         self.tableView.resizeColumnsToContents()
@@ -643,113 +623,127 @@ class TableWindow(QWidget):
         if self.title is not None:
             # GSM
             if self.title == 'GSM_Radio Parameters':
-                return False
+                self.tableHeader = ["Element", "Full", "Sub"]
+                self.dataList = GsmDataQuery(None).getRadioParameters()
             elif self.title == 'GSM_Serving + Neighbors':
-                return False
+                self.tableHeader = ["Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1", "C2", "C31", "C32"]
+                self.dataList = GsmDataQuery().getServingAndNeighbors()
             elif self.title == 'GSM_Current Channel':
-                return False
+                self.tableHeader = ["Element", "Value"]
+                self.dataList = GsmDataQuery().getCurrentChannel()
             elif self.title == 'GSM_C/I':
-                return False
+                self.tableHeader = ["Time", "ARFCN", "Value"]
+                self.dataList = GsmDataQuery().getCSlashI()
             elif self.title == 'GSM_Line Chart':
-                return False
+                self.tableHeader = ["Element", "Value", "MS", "Color"]
+                self.dataList = GsmDataQuery().getGSMLineChart()
             elif self.title == 'GSM_Events Counter':
-                return False
+                self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
+                self.dataList = GsmDataQuery().getGSMEventsCounter()
 
             # WCDMA
             elif self.title == 'WCDMA_Active + Monitored Sets':
-                return False
+                self.tableHeader = ["Time", "CellName", "CellType", "SC", "Ec/Io", "RSCP", "Freq", "Event"]
             elif self.title == 'WCDMA_Radio Parameters':
-                return False
+                self.tableHeader = ["Element", "Value"]
             elif self.title == 'WCDMA_Active Set Lists':
-                return False
+                self.tableHeader = ["Time", "Freq", "PSC", "Cell Position", "Cell TPC", "Diversity"]
             elif self.title == 'WCDMA_Monitored Set List':
-                return False
+                self.tableHeader = ["Time", "Freq", "PSC", "Cell Position", "Diversity"]
             elif self.title == 'WCDMA_BLER Summary':
-                return False
+                self.tableHeader = ["Element", "Value"]
             elif self.title == 'WCDMA_BLER / Transport Channel':
-                return False
+                self.tableHeader = ["Transport Channel", "Percent", "Err", "Rcvd"]
             elif self.title == 'WCDMA_Line Chart':
-                return False
+                self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'WCDMA_Bearers':
-                return False
+                self.tableHeader = ["N Bearers", "Bearers ID", "Bearers Rate DL", "Bearers Rate UL"]
             elif self.title == 'WCDMA_Pilot Poluting Cells':
-                return False
+                self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
             elif self.title == 'WCDMA_Active + Monitored Bar':
-                return False
+                self.tableHeader = ["Cell Type", "Ec/Io", "RSCP"]
             elif self.title == 'WCDMA_CM GSM Reports':
-                return False
+                self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
             elif self.title == 'WCDMA_CM GSM Cells':
-                return False
+                self.tableHeader = ["Time", "ARFCN", "RxLev", "BSIC", "Measure"]
             elif self.title == 'WCDMA_Pilot Analyzer':
-                return False
+                self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 
             # LTE
             elif self.title == 'LTE_Radio Parameters':
-                return False
+                self.tableHeader = ["Element", "PCC", "SCC0", "SCC1"]
             elif self.title == 'LTE_Serving + Neighbors':
-                return False
+                self.tableHeader = ["Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"]
             elif self.title == 'LTE_PUCCH/PDSCH Parameters':
-                return False
+                self.tableHeader = ["Element", "Value"]
             elif self.title == 'LTE_LTE Line Chart':
-                return False
+                self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'LTE_LTE RLC':
-                return False
+                self.tableHeader = ["Element", "Value", "", "", ""]
             elif self.title == 'LTE_LTE VoLTE':
-                return False
+                self.tableHeader = ["Element", "Value"]
 
             # CDMA/EVDO
             elif self.title == 'CDMA/EVDO_Radio Parameters':
-                return False
+                self.tableHeader = ["Element", "Value"]
             elif self.title == 'CDMA/EVDO_Serving + Neighbors':
-                return False
+                self.tableHeader = ["Time", "PN", "Ec/Io", "Type"]
             elif self.title == 'CDMA/EVDO_EVDO Parameters':
-                return False
+                self.tableHeader = ["Element", "Value"]
 
             # Data
             elif self.title == 'Data_GSM Data Line Chart':
-                return False
+                self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'Data_WCDMA Data Line Chart':
-                return False
+                self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'Data_GPRS/EDGE Information':
-                return False
+                self.tableHeader = ["Element", "Value"]
             elif self.title == 'Data_Web Browser':
-                return False
+                self.tableHeader = ["Type", "Object"]
+                self.windowHeader = ["ID", "URL", "Type", "State", "Size(%)"]
             elif self.title == 'Data_HSDPA/HSPA + Statistics':
-                return False
+                self.tableHeader = ["Element", "Value"]
             elif self.title == 'Data_HSUPA Statistics':
-                return False
+                self.tableHeader = ["Element", "Value"]
             elif self.title == 'Data_LTE Data Statistics':
-                return False
+                self.tableHeader = ["Element", "Value", "", ""]
             elif self.title == 'Data_LTE Data Line Chart':
-                return False
+                self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'Data_Wifi Connected AP':
-                return False
+                self.tableHeader = ["Element", "Value"]
             elif self.title == 'Data_Wifi Scanned APs':
-                return False
+                self.tableHeader = ["Time", "BSSID", "SSID", "Freq", "Ch.", "Level", "Encryption"]
             elif self.title == 'Data_Wifi Graph':
                 return False
 
             # Signaling
             elif self.title == 'Signaling_Events':
-                return False
+                self.tableHeader = ["Time", "Eq.", "Name", "Info."]
+                self.dataList = SignalingDataQuery().getEvents()
             elif self.title == 'Signaling_Layer 1 Messages':
-                return False
+                self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
+                self.dataList = SignalingDataQuery().getLayerOneMessages()
             elif self.title == 'Signaling_Layer 3 Messages':
-                return False
+                self.tableHeader = ["Time", "", "Eq.", "", "Name", "Info."]
+                self.dataList = SignalingDataQuery().getLayerThreeMessages()
             elif self.title == 'Signaling_Benchmark':
-                return False
-            elif self.title == 'Signaling_MM Ref States':
-                return False
+                self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
+                self.dataList = SignalingDataQuery().getBenchmark()
+            elif self.title == 'Signaling_MM Reg States':
+                self.tableHeader = ["Element", "Value"]
+                self.dataList = SignalingDataQuery().getMmRegStates()
             elif self.title == 'Signaling_Serving System Info':
-                return False
+                self.tableHeader = ["Element", "Value"]
+                self.dataList = SignalingDataQuery().getServingSystemInfo()
             elif self.title == 'Signaling_Debug Android/Event':
-                return False
+                self.tableHeader = ["Element", "Value"]
+                self.dataList = SignalingDataQuery().getDebugAndroidEvent()
+        self.setTableView(self.dataList)
 
 class TableModel(QAbstractTableModel):
-    header_labels = ["Time", "Eq.", "Name", "Info."]
-
     def __init__(self, inputData, header, parent=None, *args):
         QAbstractTableModel.__init__(self, parent, *args)
+        self.headerLabels = header
         self.dataSource = inputData
 
     def rowCount(self, parent):
@@ -767,7 +761,7 @@ class TableModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.header_labels[section]
+            return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 # class PlotGraph(pg.PlotCurveItem):
@@ -783,20 +777,18 @@ class TableModel(QAbstractTableModel):
 #
 #     def showGraph(self):
 
-class DataQuery(object):
-    def __init__(self, windowName, timeFilter=None):
-        self.windowName = windowName
+class GsmDataQuery:
+    def __init__(self, timeFilter=None):
         self.timeFilter = timeFilter
 
-    def getData(self):
+    def getRadioParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        index = 0
         query = QSqlQuery()
         query.exec_("select * from events")
-        timeField = query.record().indexOf("time");
-        nameField = query.record().indexOf("name");
-        detailField = query.record().indexOf("info");
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
         dataList = []
         while query.next():
             timeValue = query.value(timeField)
@@ -806,12 +798,413 @@ class DataQuery(object):
         azenqosDatabase.close()
         return dataList
 
+    def getServingAndNeighbors(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
 
+    def getCurrentChannel(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+    def getCSlashI(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+    def getGSMLineChart(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+    def getGSMEventsCounter(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+class CdmaEvdoQuery:
+    def __init__(self, timeFilter=None):
+        self.timeFilter = timeFilter
+
+    def getRadioParameters(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getServingAndNeighbors(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+    def getEvdoParameters(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+class DataQuery:
+    def __init__(self, windowName, timeFilter=None):
+        self.windowName = windowName
+        self.timeFilter = timeFilter
+
+    def getGSMDataLineChart(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getWcdmaDataLineChart(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getGprsEdgeInformation(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getHsdpaHspaStatistics(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getHsupaStatistics(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getLteDataStatistics(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getLteDataLineChart(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getWifiConnectedAp(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getWifiScannedAps(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getWifiGraph(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+class SignalingDataQuery:
+    def __init__(self, timeFilter=None):
+        self.timeFilter = timeFilter
+
+    def getEvents(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getLayerOneMessages(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getLayerThreeMessages(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from signalling")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        symbolField = query.record().indexOf("symbol")
+        detailField = query.record().indexOf("detail_str")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            symbolValue = query.value(symbolField)
+            detailStrValue = query.value(detailField).split(',')
+            if detailStrValue[0].startswith('LTE') == True:
+                detailStrValue = 'LTE RRC'
+            else:
+                detailStrValue = ''
+            if detailStrValue != '':
+                dataList.append([timeValue, symbolValue, 'MS1', detailStrValue, nameValue, ''])
+        azenqosDatabase.close()
+        return dataList
+
+    def getBenchmark(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getMmRegStates(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        selectedColumns = 'time,mm_state_state,mm_state_substate,mm_state_update_status,mm_characteristics_network_operation_mode,mm_characteristics_service_type,mm_characteristics_mcc,mm_characteristics_mnc,mm_characteristics_lac,mm_characteristics_rai'
+        queryString = 'select %s from mm_state order by time desc limit 1'%(selectedColumns)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        fieldCount = len(selectedColumns.split(","))
+        while query.next():
+            for index in range(fieldCount):
+                columnName = selectedColumns[index]
+                value = query.value(index)
+                dataList.append([columnName, value])
+        azenqosDatabase.close()
+        return dataList
+
+    def getServingSystemInfo(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        fieldsList = ['Time', 'mcc', 'mnc', 'lac', 'service status', 'service domain', 'service capability', 'system mode', 'roaming status', 'system id type']
+        selectedColumns = 'time,serving_system_mcc,serving_system_mnc,serving_system_lac,cm_service_status,cm_service_domain,cm_service_capability,cm_system_mode,cm_roaming_status,cm_system_id_type'
+        queryString = 'select %s from serving_system order by time desc limit 1'%(selectedColumns)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        fieldCount = len(selectedColumns.split(","))
+        while query.next():
+            for index in range(fieldCount):
+                columnName = fieldsList[index]
+                value = query.value(index)
+                dataList.append([columnName, value])
+        azenqosDatabase.close()
+        return dataList
+
+    def getDebugAndroidEvent(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        timeField = query.record().indexOf("time")
+        nameField = query.record().indexOf("name")
+        detailField = query.record().indexOf("info")
+        dataList = []
+        while query.next():
+            timeValue = query.value(timeField)
+            nameValue = query.value(nameField)
+            detailStrValue = query.value(detailField)
+            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
+        azenqosDatabase.close()
+        return dataList
 
 class ChooseDatabaseWindow(QMainWindow):
     def __init__(self):
         super(ChooseDatabaseWindow, self).__init__()
-
 
 # if __name__ == '__main__':
 #     app = QApplication(sys.argv)

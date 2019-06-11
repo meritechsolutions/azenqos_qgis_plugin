@@ -32,12 +32,16 @@ from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 # from qgis.core import QgsDataSourceUri, QgsMessageLog
 # from qgis.utils import *
-import json
-
+import datetime
 
 azenqosDatabase = None
 latestMenu = None
+time1 = None
+time2 = None
+currentTime = None
+# openedWindow = []
 
+# Database select window
 class Ui_DatabaseDialog(QDialog):
     def __init__(self, parent=None):
         super(Ui_DatabaseDialog, self).__init__(parent)
@@ -91,6 +95,8 @@ class Ui_DatabaseDialog(QDialog):
             self.db.setDatabaseName(self.databasePath)
             global azenqosDatabase
             azenqosDatabase = self.db
+            self.getTimeForSlider()
+
         if not self.db.open():
             QtWidgets.QMessageBox.critical(None, "Cannot open database",
                                            "Unable to establish a database connection.\n"
@@ -107,6 +113,21 @@ class Ui_DatabaseDialog(QDialog):
             self.azenqosMainMenu.activateWindow()
             self.azenqosMainMenu.show()
             self.hide()
+
+    def getTimeForSlider(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select MIN(time) as mintime, MAX(time) as maxtime from signalling")
+        while query.next():
+            mintime = query.value(0)
+            maxtime = query.value(1)
+            global time1
+            time1 = datetime.datetime.strptime(mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+            global time2
+            time2 = datetime.datetime.strptime(maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+        azenqosDatabase.close()
+
 
 class AzenqosDialog(QMainWindow):
     def __init__(self):
@@ -206,27 +227,36 @@ class AzenqosDialog(QMainWindow):
 
         self.treeWidget.header().setCascadingSectionResizes(True)
         self.treeWidget.header().setHighlightSections(True)
-        self.horizontalSlider = QSlider(AzenqosDialog)
-        self.horizontalSlider.setGeometry(QtCore.QRect(700, 50, 151, 22))
+
+        # Time Slider
+        self.timeSlider = QSlider(AzenqosDialog)
+        self.timeSlider.setGeometry(QtCore.QRect(700, 50, 151, 22))
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.horizontalSlider.sizePolicy().hasHeightForWidth())
-        self.horizontalSlider.setSizePolicy(sizePolicy)
-        self.horizontalSlider.setBaseSize(QtCore.QSize(500, 0))
-        self.horizontalSlider.setPageStep(10)
-        self.horizontalSlider.setSliderPosition(0)
-        self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
-        self.horizontalSlider.setObjectName("horizontalSlider")
+        sizePolicy.setHeightForWidth(self.timeSlider.sizePolicy().hasHeightForWidth())
+        self.timeSlider.setSizePolicy(sizePolicy)
+        self.timeSlider.setBaseSize(QtCore.QSize(500, 0))
+        self.timeSlider.setPageStep(10)
+        self.timeSlider.setSliderPosition(0)
+        self.timeSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.timeSlider.setObjectName("timeSlider")
+        self.timeSlider.setMinimum(time1)
+        self.timeSlider.setMaximum(time2)
+
         self.pushButton = QPushButton(AzenqosDialog)
         self.pushButton.setGeometry(QtCore.QRect(550, 150, 181, 32))
         self.pushButton.setObjectName("pushButton")
-        self.pushButton_2 = QPushButton(AzenqosDialog)
-        self.pushButton_2.setGeometry(QtCore.QRect(550, 190, 181, 32))
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.timeEdit = QTimeEdit(AzenqosDialog)
-        self.timeEdit.setGeometry(QtCore.QRect(560, 50, 118, 22))
+
+        # self.pushButton_2 = QPushButton(AzenqosDialog)
+        # self.pushButton_2.setGeometry(QtCore.QRect(550, 190, 181, 32))
+        # self.pushButton_2.setObjectName("pushButton_2")
+
+        self.timeEdit = QDateTimeEdit(AzenqosDialog)
+        self.timeEdit.setGeometry(QtCore.QRect(560, 50, 140, 22))
         self.timeEdit.setObjectName("timeEdit")
+        self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(time1))
+
         self.filenameLabel = QLabel(AzenqosDialog)
         self.filenameLabel.setGeometry(QtCore.QRect(560, 100, 100, 16))
         self.filenameLabel.setObjectName("filenameLabel")
@@ -236,6 +266,9 @@ class AzenqosDialog(QMainWindow):
         self.retranslateUi(AzenqosDialog)
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
 
+        self.timeSlider.valueChanged.connect(self.timeChange)
+        self.pushButton.clicked.connect(self.importDatabase)
+
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
         AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos Main Menu"))
@@ -244,329 +277,313 @@ class AzenqosDialog(QMainWindow):
         self.treeWidget.setSortingEnabled(False)
         self.treeWidget.setSortingEnabled(__sortingEnabled)
         self.pushButton.setText(_translate("AzenqosDialog", "Import Database"))
-        self.pushButton_2.setText(_translate("AzenqosDialog", "Database Filter"))
+        # self.pushButton_2.setText(_translate("AzenqosDialog", "Database Filter"))
         self.filenameLabel.setText(_translate("AzenqosDialog", "Database name:"))
         self.filename.setText(_translate("AzenqosDialog", ""))
-        self.pushButton.clicked.connect(self.importDatabase)
 
     def loadAllMessages(self):
         getSelected = self.treeWidget.selectedItems()
         if getSelected:
             baseNode = getSelected[0]
-            # QgsMessageLog.logMessage('เลือกเมนูสำเร็จ', 'Azenqos Log')
-            # QgsMessageLog.logMessage(str(baseNode), 'Azenqos Log')
             if baseNode.text(0) is not None:
                 getChildNode = baseNode.text(0)
                 getParentNode = baseNode.parent().text(0)
                 self.classifySelectedItems(getParentNode, getChildNode)
                 global latestMenu
                 latestMenu = getParentNode + '_' + getChildNode
-                print(latestMenu)
 
     def importDatabase(self):
-        # self.db = QtSql.QSqlDatabase.addDatabase("QSQLITE")
-        # self.db.setDatabaseName(self.databasePath)
-        print(azenqosDatabase)
-        if not azenqosDatabase.open():
-            QtWidgets.QMessageBox.critical(None, "Cannot open database",
-                                           "Unable to establish a database connection.\n"
-                                           "This example needs SQLite support. Please read "
-                                           "the Qt SQL driver documentation for information how "
-                                           "to build it.\n\n"
-                                           "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
-            return False
-        # self.database.removeDatabase(self.databasePath)
-        azenqosDatabase.close()
+        self.databaseDialog = Ui_DatabaseDialog()
+        self.databaseDialog.show()
+        self.hide()
+        # AzenqosDialog.hide()
 
-    def getDatabasePath(self):
-        return self.databasePath
-
-    def setDatabaseActive(self, connection: sqlite3):
-        cur = connection.cursor()
-        return cur
-
-    def closeDatabaseConnection(self, connection: sqlite3):
-        connection.close()
-
+    def timeChange(self):
+        value = self.timeSlider.value()
+        self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(value))
+        global currentTime
+        currentTime = value
+        print(currentTime)
     def classifySelectedItems(self, parent, child):
+        windowName = parent + "_" + child
         if parent == "GSM":
             if child == "Radio Parameters":
                 if hasattr(self, 'gsm_rdp_window'):
                     self.gsm_rdp_window.show()
                 else:
                     if hasattr(self, 'database'):
-                        self.gsm_rdp_window = TableWindow(parent + "_" + child)
+                        self.gsm_rdp_window = TableWindow(windowName)
                     else:
-                        self.gsm_rdp_window = TableWindow(parent + "_" + child)
+                        self.gsm_rdp_window = TableWindow(windowName)
                     self.gsm_rdp_window.show()
             elif child == "Serving + Neighbors":
                 if hasattr(self, 'gsm_sn_window'):
                     self.gsm_sn_window.show()
                 else:
-                    self.gsm_sn_window = TableWindow(parent + "_" + child)
+                    self.gsm_sn_window = TableWindow(windowName)
                     self.gsm_sn_window.show()
             elif child == "Current Channel":
                 if hasattr(self, 'gsm_cc_window'):
                     self.gsm_cc_window.show()
                 else:
-                    self.gsm_cc_window = TableWindow(parent + "_" + child)
+                    self.gsm_cc_window = TableWindow(windowName)
                     self.gsm_cc_window.show()
             elif child == "C/I":
                 if hasattr(self, 'gsm_ci_window'):
                     self.gsm_ci_window.show()
                 else:
-                    self.gsm_ci_window = TableWindow(parent + "_" + child)
+                    self.gsm_ci_window = TableWindow(windowName)
                     self.gsm_ci_window.show()
             elif child == "GSM Line Chart":
                 if hasattr(self, 'gsm_lc_window'):
                     self.gsm_lc_window.show()
                 else:
-                    self.gsm_lc_window = TableWindow(parent + "_" + child)
+                    self.gsm_lc_window = TableWindow(windowName)
                     self.gsm_lc_window.show()
             elif child == "Events Counter":
                 if hasattr(self, 'gsm_ec_window'):
                     self.gsm_ec_window.show()
                 else:
-                    self.gsm_ec_window = TableWindow(parent + "_" + child)
+                    self.gsm_ec_window = TableWindow(windowName)
                     self.gsm_ec_window.show()
         elif parent == "WCDMA":
             if child == "Active + Monitored Sets":
                 if hasattr(self, 'wcdma_ams_window'):
                     self.wcdma_ams_window.show()
                 else:
-                    self.wcdma_ams_window = TableWindow(parent + "_" + child)
+                    self.wcdma_ams_window = TableWindow(windowName)
                     self.wcdma_ams_window.show()
             elif child == "Radio Parameters":
                 if hasattr(self, 'wcdma_rp_window'):
                     self.wcdma_rp_window.show()
                 else:
-                    self.wcdma_rp_window = TableWindow(parent + "_" + child)
+                    self.wcdma_rp_window = TableWindow(windowName)
                     self.wcdma_rp_window.show()
             elif child == "Active Set List":
                 if hasattr(self, 'wcdma_asl_window'):
                     self.wcdma_asl_window.show()
                 else:
-                    self.wcdma_asl_window = TableWindow(parent + "_" + child)
+                    self.wcdma_asl_window = TableWindow(windowName)
                     self.wcdma_asl_window.show()
             elif child == "Monitored Set List":
                 if hasattr(self, 'wcdma_msl_window'):
                     self.wcdma_msl_window.show()
                 else:
-                    self.wcdma_msl_window = TableWindow(parent + "_" + child)
+                    self.wcdma_msl_window = TableWindow(windowName)
                     self.wcdma_msl_window.show()
             elif child == "WCDMA BLER Summary":
                 if hasattr(self, 'wcdma_bler_window'):
                     self.wcdma_bler_window.show()
                 else:
-                    self.wcdma_bler_window = TableWindow(parent + "_" + child)
+                    self.wcdma_bler_window = TableWindow(windowName)
                     self.wcdma_bler_window.show()
             elif child == "WCDMA BLER / Transport Channel":
                 if hasattr(self, 'wcdma_bler_window'):
                     self.wcdma_blertc_window.show()
                 else:
-                    self.wcdma_blertc_window = TableWindow(parent + "_" + child)
+                    self.wcdma_blertc_window = TableWindow(windowName)
                     self.wcdma_blertc_window.show()
             elif child == "WCDMA Line Chart":
                 if hasattr(self, 'wcdma_lc_window'):
                     self.wcdma_lc_window.show()
                 else:
-                    self.wcdma_lc_window = TableWindow(parent + "_" + child)
+                    self.wcdma_lc_window = TableWindow(windowName)
                     self.wcdma_lc_window.show()
             elif child == "WCDMA Bearers":
                 if hasattr(self, 'wcdma_bearer_window'):
                     self.wcdma_bearer_window.show()
                 else:
-                    self.wcdma_bearer_window = TableWindow(parent + "_" + child)
+                    self.wcdma_bearer_window = TableWindow(windowName)
                     self.wcdma_bearer_window.show()
             elif child == "Active + Monitored Bar":
                 if hasattr(self, 'wcdma_amb_window'):
                     self.wcdma_amb_window.show()
                 else:
-                    self.wcdma_amb_window = TableWindow(parent + "_" + child)
+                    self.wcdma_amb_window = TableWindow(windowName)
                     self.wcdma_amb_window.show()
             elif child == "WCDMA CM GSM Reports":
                 if hasattr(self, 'wcdma_report_window'):
                     self.wcdma_report_window.show()
                 else:
-                    self.wcdma_report_window = TableWindow(parent + "_" + child)
+                    self.wcdma_report_window = TableWindow(windowName)
                     self.wcdma_report_window.show()
             elif child == "WCDMA CM GSM Cells":
                 if hasattr(self, 'wcdma_cells_window'):
                     self.wcdma_cells_window.show()
                 else:
-                    self.wcdma_cells_window = TableWindow(parent + "_" + child)
+                    self.wcdma_cells_window = TableWindow(windowName)
                     self.wcdma_cells_window.show()
             elif child == "WCDMA Pilot Analyzer":
                 if hasattr(self, 'wcdma_analyzer_window'):
                     self.wcdma_analyzer_window.show()
                 else:
-                    self.wcdma_analyzer_window = TableWindow(parent + "_" + child)
+                    self.wcdma_analyzer_window = TableWindow(windowName)
                     self.wcdma_analyzer_window.show()
         elif parent == "LTE":
             if child == "Radio Parameters":
                 if hasattr(self, 'lte_param_window'):
                     self.lte_param_window.show()
                 else:
-                    self.lte_param_window = TableWindow(parent + "_" + child)
+                    self.lte_param_window = TableWindow(windowName)
                     self.lte_param_window.show()
             elif child == "Serving + Neighbors":
                 if hasattr(self, 'lte_sn_window'):
                     self.lte_sn_window.show()
                 else:
-                    self.lte_sn_window = TableWindow(parent + "_" + child)
+                    self.lte_sn_window = TableWindow(windowName)
                     self.lte_sn_window.show()
             elif child == "PUCCH/PDSCH Parameters":
                 if hasattr(self, 'lte_ppparam_window'):
                     self.lte_ppparam_window.show()
                 else:
-                    self.lte_ppparam_window = TableWindow(parent + "_" + child)
+                    self.lte_ppparam_window = TableWindow(windowName)
                     self.lte_ppparam_window.show()
             elif child == "LTE Line Chart":
                 if hasattr(self, 'lte_lc_window'):
                     self.lte_lc_window.show()
                 else:
-                    self.lte_lc_window = TableWindow(parent + "_" + child)
+                    self.lte_lc_window = TableWindow(windowName)
                     self.lte_lc_window.show()
             elif child == "LTE RLC":
                 if hasattr(self, 'lte_rlc_window'):
                     self.lte_rlc_window.show()
                 else:
-                    self.lte_rlc_window = TableWindow(parent + "_" + child)
+                    self.lte_rlc_window = TableWindow(windowName)
                     self.lte_rlc_window.show()
             elif child == "LTE VoLTE":
                 if hasattr(self, 'lte_volte_window'):
                     self.lte_volte_window.show()
                 else:
-                    self.lte_volte_window = TableWindow(parent + "_" + child)
+                    self.lte_volte_window = TableWindow(windowName)
                     self.lte_volte_window.show()
         elif parent == "CDMA/EVDO":
             if child == "Radio Parameters":
                 if hasattr(self, 'cdma_rp_window'):
                     self.cdma_rp_window.show()
                 else:
-                    self.cdma_rp_window = TableWindow(parent + "_" + child)
+                    self.cdma_rp_window = TableWindow(windowName)
                     self.cdma_rp_window.show()
             elif child == "Serving + Neighbors":
                 if hasattr(self, 'cdma_sn_window'):
                     self.cdma_sn_window.show()
                 else:
-                    self.cdma_sn_window = TableWindow(parent + "_" + child)
+                    self.cdma_sn_window = TableWindow(windowName)
                     self.cdma_sn_window.show()
             elif child == "EVDO Parameters":
                 if hasattr(self, 'cdma_evdo_window'):
                     self.cdma_evdo_window.show()
                 else:
-                    self.cdma_evdo_window = TableWindow(parent + "_" + child)
+                    self.cdma_evdo_window = TableWindow(windowName)
                     self.cdma_evdo_window.show()
         elif parent == "Data":
             if child == "GSM Data Line Chart":
                 if hasattr(self, 'gsm_data_lc'):
                     self.gsm_data_lc.show()
                 else:
-                    self.gsm_data_lc = TableWindow(parent + "_" + child)
+                    self.gsm_data_lc = TableWindow(windowName)
                     self.gsm_data_lc.show()
             elif child == "WCDMA Data Line Chart":
                 if hasattr(self, 'wcdma_data_lc'):
                     self.wcdma_data_lc.show()
                 else:
-                    self.wcdma_data_lc = TableWindow(parent + "_" + child)
+                    self.wcdma_data_lc = TableWindow(windowName)
                     self.wcdma_data_lc.show()
             elif child == "GPRS/EDGE Information":
                 if hasattr(self, 'gprs_info'):
                     self.gprs_info.show()
                 else:
-                    self.gprs_info = TableWindow(parent + "_" + child)
+                    self.gprs_info = TableWindow(windowName)
                     self.gprs_info.show()
             elif child == "Web Browser":
                 if hasattr(self, 'web_browser'):
                     self.web_browser.show()
                 else:
-                    self.web_browser = TableWindow(parent + "_" + child)
+                    self.web_browser = TableWindow(windowName)
                     self.web_browser.show()
             elif child == "HSDPA/HSPA + Statistics":
                 if hasattr(self, 'hsdpa_stat'):
                     self.hsdpa_stat.show()
                 else:
-                    self.hsdpa_stat = TableWindow(parent + "_" + child)
+                    self.hsdpa_stat = TableWindow(windowName)
                     self.hsdpa_stat.show()
             elif child == "HSUPA Statistics":
                 if hasattr(self, 'hsupa_stat'):
                     self.hsupa_stat.show()
                 else:
-                    self.hsupa_stat = TableWindow(parent + "_" + child)
+                    self.hsupa_stat = TableWindow(windowName)
                     self.hsupa_stat.show()
             elif child == "LTE Data Statistics":
                 if hasattr(self, 'lte_data_stat'):
                     self.lte_data_stat.show()
                 else:
-                    self.lte_data_stat = TableWindow(parent + "_" + child)
+                    self.lte_data_stat = TableWindow(windowName)
                     self.lte_data_stat.show()
             elif child == "LTE Data Line Chart":
                 if hasattr(self, 'lte_data_lc'):
                     self.lte_data_lc.show()
                 else:
-                    self.lte_data_lc = TableWindow(parent + "_" + child)
+                    self.lte_data_lc = TableWindow(windowName)
                     self.lte_data_lc.show()
             elif child == "Wifi Connected AP":
                 if hasattr(self, 'wifi_connected_ap'):
                     self.wifi_connected_ap.show()
                 else:
-                    self.wifi_connected_ap = TableWindow(parent + "_" + child)
+                    self.wifi_connected_ap = TableWindow(windowName)
                     self.wifi_connected_ap.show()
             elif child == "Wifi Scanned APs":
                 if hasattr(self, 'wifi_scanned_ap'):
                     self.wifi_scanned_ap.show()
                 else:
-                    self.wifi_scanned_ap = TableWindow(parent + "_" + child)
+                    self.wifi_scanned_ap = TableWindow(windowName)
                     self.wifi_scanned_ap.show()
             elif child == "Wifi Graph":
                 if hasattr(self, 'wifi_graph'):
                     self.wifi_graph.show()
                 else:
-                    self.wifi_graph = TableWindow(parent + "_" + child)
+                    self.wifi_graph = TableWindow(windowName)
                     self.wifi_graph.show()
         elif parent == "Signaling":
             if child == "Events":
                 if hasattr(self, 'events_window'):
                     self.events_window.show()
                 else:
-                    self.events_window = TableWindow(parent + "_" + child)
+                    self.events_window = TableWindow(windowName)
                     self.events_window.show()
             elif child == "Layer 1 Messages":
                 if hasattr(self, 'layer_one_messages'):
                     self.layer_one_messages.show()
                 else:
-                    self.layer_one_messages = TableWindow(parent + "_" + child)
+                    self.layer_one_messages = TableWindow(windowName)
                     self.layer_one_messages.show()
             elif child == "Layer 3 Messages":
                 if hasattr(self, 'layer_three_messages'):
                     self.layer_three_messages.show()
                 else:
-                    self.layer_three_messages = TableWindow(parent + "_" + child)
+                    self.layer_three_messages = TableWindow(windowName)
                     self.layer_three_messages.show()
             elif child == "Benchmark":
                 if hasattr(self, 'benchmark'):
                     self.benchmark.show()
                 else:
-                    self.benchmark = TableWindow(parent + "_" + child)
+                    self.benchmark = TableWindow(windowName)
                     self.benchmark.show()
             elif child == "MM Reg States":
                 if hasattr(self, 'mm_reg_states'):
                     self.mm_reg_states.show()
                 else:
-                    self.mm_reg_states = TableWindow(parent + "_" + child)
+                    self.mm_reg_states = TableWindow(windowName)
                     self.mm_reg_states.show()
             elif child == "Serving System Info":
                 if hasattr(self, 'serving_system_info'):
                     self.serving_system_info.show()
                 else:
-                    self.serving_system_info = TableWindow(parent + "_" + child)
+                    self.serving_system_info = TableWindow(windowName)
                     self.serving_system_info.show()
             elif child == "Debug Android/Event":
                 if hasattr(self, 'debug_event'):
                     self.debug_event.show()
                 else:
-                    self.debug_event = TableWindow(parent + "_" + child)
+                    self.debug_event = TableWindow(windowName)
                     self.debug_event.show()
         # elif parent == "Positioning":
         #     if child == "GPS":
@@ -764,22 +781,9 @@ class TableModel(QAbstractTableModel):
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
-# class PlotGraph(pg.PlotCurveItem):
-#     def __init__(self, parent=None):
-#         super(PlotGraph, self).__init__()
-#         self.y1 = [2, 4, 8, 10, 12]
-#         self.y2 = [1, 3, 5, 7, 9]
-#         self.x = range(0, 10)
-#         self.setupUi(self)
-#
-#     def setupUi(self, PlotGraph):
-#         self.graphwindow = pg.GraphicsWindow()
-#
-#     def showGraph(self):
-
 class GsmDataQuery:
-    def __init__(self, timeFilter=None):
-        self.timeFilter = timeFilter
+    def __init__(self):
+        self.timeFilter = currentTime
 
     def getRadioParameters(self):
         if azenqosDatabase is not None:
@@ -854,8 +858,8 @@ class GsmDataQuery:
         return dataList
 
 class CdmaEvdoQuery:
-    def __init__(self, timeFilter=None):
-        self.timeFilter = timeFilter
+    def __init__(self):
+        self.timeFilter = currentTime
 
     def getRadioParameters(self):
         if azenqosDatabase is not None:
@@ -897,9 +901,9 @@ class CdmaEvdoQuery:
         return dataList
 
 class DataQuery:
-    def __init__(self, windowName, timeFilter=None):
+    def __init__(self, windowName):
         self.windowName = windowName
-        self.timeFilter = timeFilter
+        self.timeFilter = currentTime
 
     def getGSMDataLineChart(self):
         if azenqosDatabase is not None:
@@ -1072,8 +1076,8 @@ class DataQuery:
         return dataList
 
 class SignalingDataQuery:
-    def __init__(self, timeFilter=None):
-        self.timeFilter = timeFilter
+    def __init__(self):
+        self.timeFilter = currentTime
 
     def getEvents(self):
         if azenqosDatabase is not None:
@@ -1158,7 +1162,8 @@ class SignalingDataQuery:
         queryString = 'select %s from mm_state order by time desc limit 1'%(selectedColumns)
         query = QSqlQuery()
         query.exec_(queryString)
-        fieldCount = len(selectedColumns.split(","))
+        selectedColumns = selectedColumns.split(",")
+        fieldCount = len(selectedColumns)
         while query.next():
             for index in range(fieldCount):
                 columnName = selectedColumns[index]

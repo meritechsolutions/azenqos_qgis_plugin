@@ -29,7 +29,7 @@ from PyQt5 import *
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
-from .azenqos_plugin_dialog import AzenqosDialog
+from .azenqos_plugin_dialog import Ui_DatabaseDialog
 import os.path
 
 
@@ -190,7 +190,7 @@ class Azenqos:
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
         if self.first_start == True:
             self.first_start = False
-            self.dlg = AzenqosDialog()
+            self.dlg = Ui_DatabaseDialog()
 
         # show the dialog
         self.dlg.show()

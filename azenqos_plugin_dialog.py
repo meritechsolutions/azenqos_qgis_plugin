@@ -32,21 +32,22 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
 azenqosDatabase = None
 latestMenu = None
-time1 = None
-time2 = None
+minTimeValue = None
+maxTimeValue = None
 currentTime = None
 tableNotUsed = ['android_metadata', 'sqlite_sequence', 'spatialite_history', 'idx_signalling_geom_parent', 'idx_signalling_geom_node', 'idx_signalling_geom_rowid', 'idx_signalling_geom', 'views_layer_statistics', 'geometry_columns', 'spatial_ref_sys', 'layer_statistics']
 clickedLatLon = {
     "lat" : 0,
     "lon" : 0
 }
-incrementSize = None
-rangeSize = None
+sliderLength = None
+openedWindows = []
+isSliderPlay = False
 
 # Database select window
 class Ui_DatabaseDialog(QDialog):
-    def __init__(self, parent=None):
-        super(Ui_DatabaseDialog, self).__init__(parent)
+    def __init__(self):
+        super(Ui_DatabaseDialog, self).__init__()
         self.setupUi(self)
 
     def setupUi(self, DatabaseDialog):
@@ -119,10 +120,10 @@ class Ui_DatabaseDialog(QDialog):
         while query.next():
             mintime = query.value(0)
             maxtime = query.value(1)
-            global time1
-            time1 = datetime.datetime.strptime(mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
-            global time2
-            time2 = datetime.datetime.strptime(maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+            global minTimeValue
+            minTimeValue = datetime.datetime.strptime(mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+            global maxTimeValue
+            maxTimeValue = datetime.datetime.strptime(maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
         azenqosDatabase.close()
         self.setIncrementValue()
 
@@ -159,21 +160,15 @@ class Ui_DatabaseDialog(QDialog):
         query.exec_("select count(distinct time) from signalling")
         while query.next():
             timeCount = query.value(0)
-        global incrementSize
-        global rangeSize
-        rangeSize = timeCount
-        incrementSize =  (time2 - time1) / timeCount
-        # QgsMessageLog.logMessage(str(time2))
-        # QgsMessageLog.logMessage(str(time1))
-        # QgsMessageLog.logMessage(str(timeCount))
-        # QgsMessageLog.logMessage(str(incrementSize))
+        global sliderLength
+        sliderLength = maxTimeValue - minTimeValue
         azenqosDatabase.close()
 
 
 class AzenqosDialog(QDialog):
     def __init__(self):
         """Constructor."""
-        super(AzenqosDialog, self).__init__()
+        super(AzenqosDialog, self).__init__(None)
         self.setupUi(self)
         self.raise_()
         self.activateWindow()
@@ -185,29 +180,27 @@ class AzenqosDialog(QDialog):
         self.setupTreeWidget(AzenqosDialog)
 
         # Time Slider
-        self.timeSlider = QSlider(AzenqosDialog)
-        self.timeSlider.setGeometry(QtCore.QRect(310, 56, 150, 22))
-        # sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # sizePolicy.setHorizontalStretch(0)
-        # sizePolicy.setVerticalStretch(0)
-        # sizePolicy.setHeightForWidth(self.timeSlider.sizePolicy().hasHeightForWidth())
-        # self.timeSlider.setSizePolicy(sizePolicy)
+        self.timeSlider = TimeSlider(AzenqosDialog)
+        self.timeSlider.setGeometry(QtCore.QRect(300, 56, 150, 22))
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.timeSlider.sizePolicy().hasHeightForWidth())
+        self.timeSlider.setSizePolicy(sizePolicy)
         self.timeSlider.setBaseSize(QtCore.QSize(500, 0))
-        # self.timeSlider.setPageStep(1)
+        self.timeSlider.setPageStep(1)
         self.timeSlider.setSliderPosition(0)
         self.timeSlider.setOrientation(QtCore.Qt.Horizontal)
         self.timeSlider.setObjectName("timeSlider")
-        self.timeSlider.setMinimum(time1)
-        self.timeSlider.setMaximum(time2)
-        self.timeSlider.setSingleStep(10)
-        self.timeSlider.setTickInterval(10)
+        self.timeSlider.setTracking(True)
+        # self.timeSlider.setTickPosition(QSlider.TicksBelow)
 
         # Datetime Textbox
         self.timeEdit = QDateTimeEdit(AzenqosDialog)
-        self.timeEdit.setGeometry(QtCore.QRect(460, 56, 170, 22))
+        self.timeEdit.setGeometry(QtCore.QRect(480, 56, 140, 22))
         self.timeEdit.setObjectName("timeEdit")
-        self.timeEdit.setDisplayFormat("dd/MM/yyyy hh:mm:ss.zzz")
-        self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(time1))
+        self.timeEdit.setDisplayFormat("hh:mm:ss")
+        self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(minTimeValue))
 
         # Time label
         self.timeSliderLabel = QLabel(AzenqosDialog)
@@ -231,6 +224,7 @@ class AzenqosDialog(QDialog):
 
         self.timeSlider.valueChanged.connect(self.timeChange)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
+        # self.filterBtn.clicked.connect(self.playTime)
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -349,7 +343,7 @@ class AzenqosDialog(QDialog):
 
     def setupPlayStopButton(self, AzenqosDialog):
         self.horizontalLayout = QWidget(AzenqosDialog)
-        self.horizontalLayout.setGeometry(QtCore.QRect(290, 70, 98, 48))
+        self.horizontalLayout.setGeometry(QtCore.QRect(290, 70, 90, 48))
         self.playButton = QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.pauseButton = QToolButton()
@@ -358,11 +352,21 @@ class AzenqosDialog(QDialog):
         layout.addStretch(1)
         layout.addWidget(self.playButton)
         layout.addWidget(self.pauseButton)
+        self.playButton.clicked.connect(self.playTime)
 
     def playTime(self):
-        global currentTime
-        currentTime += 100
-        self.timeSlider.setValue(currentTime)
+        # todo ยังไม่เสร็จ
+        global isSliderPlay
+        isSliderPlay = True
+        if isSliderPlay:
+            for x in range(int(sliderLength)):
+                value = self.timeSlider.value() + 1
+                self.addTime(value)
+        isSliderPlay = False
+
+    def addTime(self, value):
+        self.timeSlider.setValue(value)
+        self.timeSlider.repaint()
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -381,12 +385,13 @@ class AzenqosDialog(QDialog):
         self.hide()
 
     def timeChange(self):
-        value = self.timeSlider.value()
-        sampledate = datetime.datetime.fromtimestamp(value)
-        # QgsMessageLog.logMessage(str(sampledate))
-        self.timeEdit.setDateTime()
         global currentTime
-        currentTime = value
+        value = self.timeSlider.value()
+        timestampValue = minTimeValue + value
+        sampledate = datetime.datetime.fromtimestamp(timestampValue)
+        self.timeEdit.setDateTime(sampledate)
+        currentTime = timestampValue
+        self.timeSlider.update()
 
     def classifySelectedItems(self, parent, child):
         windowName = parent + "_" + child
@@ -669,6 +674,9 @@ class AzenqosDialog(QDialog):
                 else:
                     self.debug_event = TableWindow(windowName)
                     self.debug_event.show()
+        global openedWindows
+        openedWindows.append(self)
+        print(openedWindows)
         # elif parent == "Positioning":
         #     if child == "GPS":
         #         print("1")
@@ -686,6 +694,48 @@ class AzenqosDialog(QDialog):
         # elif parent == "NB-IoT":
         #     if child == "NB-IoT Radio Parameters Window":
         #         print("1")
+
+class TimeSlider(QSlider):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # Set integer max and min on parent. These stay constant.
+        # self._min_int = minTimeValue
+        super().setMinimum(0)
+        self._max_int = sliderLength
+        super().setMaximum(self._max_int)
+        # The "actual" min and max values seen by user.
+        self._min_value = 0.0
+        self._max_value =  self._max_int
+
+    @property
+    def _value_range(self):
+        return self._max_value - self._min_value
+
+    def value(self):
+        thisValue = float(super().value())
+        value = thisValue / self._max_int * self._value_range
+        return value
+
+    def setValue(self, value):
+        resultValue = int(value / self._value_range * self._max_int)
+        super().setValue(resultValue)
+        super().repaint()
+
+    def setMinimum(self, value):
+        self.setRange(value, self._max_value)
+
+    def setMaximum(self, value):
+        self.setRange(self._min_value, value)
+
+    def setRange(self, minimum, maximum):
+        old_value = self.value()
+        self._min_value = minimum
+        self._max_value = maximum
+        self.setValue(old_value)  # Put slider in correct position
+
+    def proportion(self):
+        return (self.value() - self._min_value) / self._value_range
 
 class TableWindow(QDialog):
     def __init__(self, windowName):
@@ -712,13 +762,15 @@ class TableWindow(QDialog):
         self.raise_()
         self.activateWindow()
 
-    def setTableView(self, dataList):
+    def setTableModel(self, dataList):
         # query = DataQuery(self.title, None)
         # dataList = query.getData()
         self.tableModel = TableModel(dataList, self.tableHeader, self)
         self.tableView.setModel(self.tableModel)
         self.tableView.setSortingEnabled(True)
         self.tableView.resizeColumnsToContents()
+        self.tableView.selectRow(0)
+        print(self.tableView)
 
     def specifyTablesHeader(self):
         if self.title is not None:
@@ -841,7 +893,13 @@ class TableWindow(QDialog):
                 self.dataList = SignalingDataQuery().getDebugAndroidEvent()
 
             if self.dataList is not None:
-                self.setTableView(self.dataList)
+                self.setTableModel(self.dataList)
+
+    def reject(self):
+        global openedWindows
+        openedWindows.remove(self)
+        print(openedWindows)
+        self.hide()
 
 class TableModel(QAbstractTableModel):
     def __init__(self, inputData, header, parent=None, *args):
@@ -1169,7 +1227,11 @@ class SignalingDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        if self.timeFilter != None:
+            queryString = 'select * from events where time <= %s'%(self.timeFilter)
+        else:
+            queryString = 'select * from events'
+        query.exec_(queryString)
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1310,9 +1372,8 @@ class setInterval :
     def cancel(self) :
         self.stopEvent.set()
 
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     # dialog = AzenqosDialog()
-#     dialog = Ui_DatabaseDialog()
-#     dialog.show()
-#     sys.exit(app.exec_())
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    dialog = Ui_DatabaseDialog()
+    dialog.show()
+    sys.exit(app.exec_())

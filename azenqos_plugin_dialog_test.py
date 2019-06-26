@@ -748,7 +748,6 @@ class TableWindow(QDialog):
         self.height = 480
         self.dataList = []
         self.setupUi()
-        self.tableView.setModel()
 
     def setupUi(self):
         self.setObjectName(self.title)
@@ -763,13 +762,15 @@ class TableWindow(QDialog):
         self.raise_()
         self.activateWindow()
 
-    def setTableView(self, dataList):
+    def setTableModel(self, dataList):
         # query = DataQuery(self.title, None)
         # dataList = query.getData()
         self.tableModel = TableModel(dataList, self.tableHeader, self)
         self.tableView.setModel(self.tableModel)
         self.tableView.setSortingEnabled(True)
         self.tableView.resizeColumnsToContents()
+        # self.tableView.selectRow(0)
+        # print(self.tableView)
 
     def specifyTablesHeader(self):
         if self.title is not None:
@@ -892,7 +893,7 @@ class TableWindow(QDialog):
                 self.dataList = SignalingDataQuery().getDebugAndroidEvent()
 
             if self.dataList is not None:
-                self.setTableView(self.dataList)
+                self.setTableModel(self.dataList)
 
     def reject(self):
         global openedWindows
@@ -905,7 +906,6 @@ class TableModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
         self.dataSource = inputData
-        self.testColumnValue()
 
     def rowCount(self, parent):
         return len(self.dataSource)
@@ -924,13 +924,6 @@ class TableModel(QAbstractTableModel):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
-
-    # def testColumnValue(self):
-    #     print(self.record(0).value(0))
-
-class TableView(QTableView):
-    def __init__(self, parent=None):
-        super(QTableView).__init__(parent)
 
 class GsmDataQuery:
     def __init__(self):

@@ -26,11 +26,19 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+import sqlite3
+import matplotlib.pyplot as plt
+from matplotlib.ticker import StrMethodFormatter
+import numpy as np
 # from qgis.core import *
 # from qgis.utils import *
 
 
 azenqosDatabase = None
+databasePath = None
 latestMenu = None
 minTimeValue = None
 maxTimeValue = None
@@ -42,7 +50,6 @@ clickedLatLon = {
 }
 sliderLength = None
 openedWindows = []
-isSliderPlay = False
 
 # Database select window
 class Ui_DatabaseDialog(QDialog):
@@ -193,7 +200,6 @@ class AzenqosDialog(QDialog):
         self.timeSlider.setOrientation(QtCore.Qt.Horizontal)
         self.timeSlider.setObjectName("timeSlider")
         self.timeSlider.setTracking(True)
-        # self.timeSlider.setTickPosition(QSlider.TicksBelow)
 
         # Datetime Textbox
         self.timeEdit = QDateTimeEdit(AzenqosDialog)
@@ -342,6 +348,7 @@ class AzenqosDialog(QDialog):
         equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget, ['Equipment Configuration'])
 
     def setupPlayStopButton(self, AzenqosDialog):
+        # todo ยังไม่เสร็จ
         self.horizontalLayout = QWidget(AzenqosDialog)
         self.horizontalLayout.setGeometry(QtCore.QRect(290, 70, 90, 48))
         self.playButton = QToolButton()
@@ -390,6 +397,7 @@ class AzenqosDialog(QDialog):
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
+        global currentTime
         currentTime = timestampValue
         self.timeSlider.update()
 
@@ -531,7 +539,7 @@ class AzenqosDialog(QDialog):
                 if hasattr(self, 'lte_lc_window'):
                     self.lte_lc_window.show()
                 else:
-                    self.lte_lc_window = TableWindow(windowName)
+                    self.lte_lc_window = Ui_LTE_LCwidget(windowName)
                     self.lte_lc_window.show()
             elif child == "LTE RLC":
                 if hasattr(self, 'lte_rlc_window'):
@@ -906,6 +914,7 @@ class TableModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
         self.dataSource = inputData
+        #self.testColumnValue()
 
     def rowCount(self, parent):
         return len(self.dataSource)
@@ -1354,6 +1363,296 @@ class SignalingDataQuery:
             dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
+
+# LTE Line Chart UI
+
+class Ui_LTE_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_LTE_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, LTE_LCwidget):
+        LTE_LCwidget.setObjectName("LTE_LCwidget")
+        LTE_LCwidget.resize(841, 586)
+        self.lte_GArea = QtWidgets.QScrollArea(LTE_LCwidget)
+        self.lte_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.lte_GArea.setWidgetResizable(True)
+        self.lte_GArea.setObjectName("lte_GArea")
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents,self.title)
+        self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.lte_widget.setObjectName("lte_widget")
+        self.lte_GArea.setWidget(self.scrollAreaWidgetContents)
+        self.lte_tableWidget = QtWidgets.QTableWidget(LTE_LCwidget)
+        self.lte_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 171))
+        self.lte_tableWidget.setObjectName("lte_tableWidget")
+        self.lte_tableWidget.setColumnCount(4)
+        self.lte_tableWidget.setRowCount(5)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_tableWidget.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_tableWidget.setVerticalHeaderItem(4, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_tableWidget.setItem(2, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(3, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(3, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_tableWidget.setItem(3, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(4, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(4, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setForeground(brush)
+        self.lte_tableWidget.setItem(4, 3, item)
+        self.lte_tableWidget.horizontalHeader().setVisible(True)
+        self.lte_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.lte_tableWidget.verticalHeader().setVisible(False)
+
+        self.retranslateUi(LTE_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(LTE_LCwidget)
+
+    def retranslateUi(self, LTE_LCwidget):
+        _translate = QtCore.QCoreApplication.translate
+        LTE_LCwidget.setWindowTitle(_translate("LTE_LCwidget", "LTE Line Chart [MS1]"))
+        item = self.lte_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("LTE_LCwidget", "1"))
+        item = self.lte_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("LTE_LCwidget", "2"))
+        item = self.lte_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("LTE_LCwidget", "3"))
+        item = self.lte_tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("LTE_LCwidget", "4"))
+        item = self.lte_tableWidget.verticalHeaderItem(4)
+        item.setText(_translate("LTE_LCwidget", "5"))
+        item = self.lte_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("LTE_LCwidget", "Element"))
+        item = self.lte_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("LTE_LCwidget", "Value"))
+        item = self.lte_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("LTE_LCwidget", "MS"))
+        item = self.lte_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("LTE_LCwidget", "Color"))
+        __sortingEnabled = self.lte_tableWidget.isSortingEnabled()
+        self.lte_tableWidget.setSortingEnabled(False)
+        item = self.lte_tableWidget.item(0, 0)
+        item.setText(_translate("LTE_LCwidget", "SINR Rx[0][1]"))
+        item = self.lte_tableWidget.item(0, 2)
+        item.setText(_translate("LTE_LCwidget", "MS1"))
+        item = self.lte_tableWidget.item(1, 0)
+        item.setText(_translate("LTE_LCwidget", "SINR Rx[1][1]"))
+        item = self.lte_tableWidget.item(1, 2)
+        item.setText(_translate("LTE_LCwidget", "MS1"))
+        item = self.lte_tableWidget.item(2, 0)
+        item.setText(_translate("LTE_LCwidget", "Inst RSRP[1]"))
+        item = self.lte_tableWidget.item(2, 2)
+        item.setText(_translate("LTE_LCwidget", "MS1"))
+        item = self.lte_tableWidget.item(3, 0)
+        item.setText(_translate("LTE_LCwidget", "Inst RSRQ[1]"))
+        item = self.lte_tableWidget.item(3, 2)
+        item.setText(_translate("LTE_LCwidget", "MS1"))
+        item = self.lte_tableWidget.item(4, 0)
+        item.setText(_translate("LTE_LCwidget", "Inst RSSI[1]"))
+        item = self.lte_tableWidget.item(4, 2)
+        item.setText(_translate("LTE_LCwidget", "MS1"))
+        self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
+
+#For Line Chart
+class  Line_Chart(QWidget): 
+    def  __init__ (self,parent,windowName): 
+        super().__init__(parent) 
+        self.title = windowName   
+        self.canvas  =  FigureCanvas(Figure(figsize=(4, 4))) 
+        vertical_layout  =  QVBoxLayout() 
+        vertical_layout.addWidget(self.canvas) 
+        self.canvas.axes =  self.canvas.figure.add_subplot() 
+        self.setLayout(vertical_layout)
+
+        #Toolbar
+        toolbar = NavigationToolbar(self.canvas, self) 
+        vertical_layout.addWidget(toolbar) 
+
+        #Choose Line Chart
+        if self.title is not None:
+            #LTE Line Chart
+            if self.title == 'LTE_LTE Line Chart':
+                self.LTE()
+
+    def LTE(self):
+        self.canvas.axes.set_title('LTE Line Chart')
+        Time = []
+        SINR_Rx0_1 = []
+        SINR_Rx1_1 = []
+        Inst_RSRP_1 = []
+        Inst_RSRQ_1 = []
+        Inst_RSSI_1 = []
+
+        #Open Database
+        # conn = sqlite3.connect(databasePath)
+        # c = conn.cursor()
+        # c.execute("SELECT time ,lte_sinr_rx0_1 ,lte_sinr_rx1_1 ,lte_inst_rsrp_1 ,lte_inst_rsrq_1 ,lte_inst_rssi_1 FROM lte_cell_meas")
+        
+        # for row in c.fetchall():
+        #     time = row[0].split(' ')
+        #     Time.append(time[1])
+        #     SINR_Rx0_1.append(row[1])
+        #     SINR_Rx1_1.append(row[2])
+        #     Inst_RSRP_1.append(row[3])
+        #     Inst_RSRQ_1.append(row[4])
+        #     Inst_RSSI_1.append(row[5])
+
+        azenqosDatabase.open()
+        c = QSqlQuery()
+        c.exec_("SELECT time ,lte_sinr_rx0_1 ,lte_sinr_rx1_1 ,lte_inst_rsrp_1 ,lte_inst_rsrq_1 ,lte_inst_rssi_1 FROM lte_cell_meas")
+        #Query
+        time = (c.record().indexOf("time"))
+        lte_sinr_rx0_1 = c.record().indexOf("lte_sinr_rx0_1")
+        lte_sinr_rx1_1 = c.record().indexOf("lte_sinr_rx1_1")
+        lte_inst_rsrp_1 = c.record().indexOf("lte_inst_rsrp_1")
+        lte_inst_rsrq_1 = c.record().indexOf("lte_inst_rsrq_1")
+        lte_inst_rssi_1 = c.record().indexOf("lte_inst_rssi_1")
+
+        while c.next():
+            timeValue = c.value(time).split(' ')[1]
+            Time.append(timeValue)
+            sig1Value = c.value(lte_sinr_rx0_1)
+            sig2Value = c.value(lte_sinr_rx1_1)
+            sig3Value = c.value(lte_inst_rsrp_1)
+            sig4Value = c.value(lte_inst_rsrq_1)
+            sig5Value = c.value(lte_inst_rssi_1)
+
+            if not (type(sig1Value) == float):
+                SINR_Rx0_1.append(0)        
+            else:
+                SINR_Rx0_1.append(sig1Value)
+
+            if not (type(sig2Value) == float):
+                SINR_Rx1_1.append(0)        
+            else:
+                SINR_Rx1_1.append(sig2Value)
+
+            if not (type(sig3Value) == float):
+                Inst_RSRP_1.append(0)        
+            else:
+                Inst_RSRP_1.append(sig3Value)
+
+            if not (type(sig4Value) == float):
+                Inst_RSRQ_1.append(0)        
+            else:
+                Inst_RSRQ_1.append(sig4Value)
+
+            if not (type(sig5Value) == float):
+                Inst_RSSI_1.append(0)        
+            else:
+                Inst_RSSI_1.append(sig5Value)    
+            
+            
+
+
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True) 
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+        #print(SINR_Rx0_1)      
+        line1, = self.canvas.axes.plot(Time,SINR_Rx0_1,c='#ff0000',label = 'SINR Rx[0][1]',picker=5,linewidth=1)
+        line2, = self.canvas.axes.plot(Time,SINR_Rx1_1,'#0000ff',label = 'SINR Rx[1][1]',picker=5,linewidth=1)
+        line3, = self.canvas.axes.plot(Time,Inst_RSRP_1,'#007c00',label = 'Inst RSRP[1]',picker=5,linewidth=1)
+        line4, = self.canvas.axes.plot(Time,Inst_RSRQ_1,'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1) 
+        line5, = self.canvas.axes.plot(Time,Inst_RSSI_1,'#000000',label = 'Inst RSSI[1]',picker=5,linewidth=1)
+        # self.canvas.draw()
+        self.canvas.axes.set_ylim(-120,35)
+        self.canvas.axes.set_xlim(Time[0],Time[3])
+        azenqosDatabase.close() 
+
+        lines = [line1,line2,line3,line4,line5]             
+        def on_pick(event):
+            for L in lines:
+                L.set_linewidth(1)
+            event.artist.set_linewidth(2.5)                
+            self.canvas.draw() 
+
+        pick = self.canvas.mpl_connect('pick_event', on_pick)       
 
 class setInterval :
     def __init__(self, value, interval, action) :

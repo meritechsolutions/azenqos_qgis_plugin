@@ -439,51 +439,56 @@ class AzenqosDialog(QDialog):
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
-        global currentTime
         currentTime = timestampValue
         self.timeSlider.update()
+        for window in openedWindows:
+            window.hilightRow(sampledate)
 
     def classifySelectedItems(self, parent, child):
+        global openedWindows
         windowName = parent + "_" + child
         if parent == "GSM":
             if child == "Radio Parameters":
                 if hasattr(self, 'gsm_rdp_window'):
                     self.gsm_rdp_window.show()
                 else:
-                    if hasattr(self, 'database'):
-                        self.gsm_rdp_window = TableWindow(windowName)
-                    else:
-                        self.gsm_rdp_window = TableWindow(windowName)
-                        self.gsm_rdp_window.show()
+                    self.gsm_rdp_window = TableWindow(windowName)
+                    openedWindows.append(self.gsm_rdp_window)
+                    self.gsm_rdp_window.show()
             elif child == "Serving + Neighbors":
                 if hasattr(self, 'gsm_sn_window'):
                     self.gsm_sn_window.show()
                 else:
                     self.gsm_sn_window = TableWindow(windowName)
+                    openedWindows.append(self.gsm_sn_window)
                     self.gsm_sn_window.show()
             elif child == "Current Channel":
                 if hasattr(self, 'gsm_cc_window'):
                     self.gsm_cc_window.show()
                 else:
                     self.gsm_cc_window = TableWindow(windowName)
+                    openedWindows.append(self.gsm_cc_window)
                     self.gsm_cc_window.show()
             elif child == "C/I":
                 if hasattr(self, 'gsm_ci_window'):
                     self.gsm_ci_window.show()
                 else:
                     self.gsm_ci_window = TableWindow(windowName)
+                    openedWindows.append(self.gsm_ci_window)
                     self.gsm_ci_window.show()
             elif child == "GSM Line Chart":
                 if hasattr(self, 'gsm_lc_window'):
                     self.gsm_lc_window.show()
                 else:
                     self.gsm_lc_window = TableWindow(windowName)
+                    openedWindows.append(self.gsm_lc_window)
                     self.gsm_lc_window.show()
             elif child == "Events Counter":
                 if hasattr(self, 'gsm_ec_window'):
                     self.gsm_ec_window.show()
                 else:
                     self.gsm_ec_window = TableWindow(windowName)
+                    openedWindows.append(self.gsm_ec_window)
                     self.gsm_ec_window.show()
         elif parent == "WCDMA":
             if child == "Active + Monitored Sets":
@@ -491,72 +496,84 @@ class AzenqosDialog(QDialog):
                     self.wcdma_ams_window.show()
                 else:
                     self.wcdma_ams_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_ams_window)
                     self.wcdma_ams_window.show()
             elif child == "Radio Parameters":
                 if hasattr(self, 'wcdma_rp_window'):
                     self.wcdma_rp_window.show()
                 else:
                     self.wcdma_rp_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_rp_window)
                     self.wcdma_rp_window.show()
             elif child == "Active Set List":
                 if hasattr(self, 'wcdma_asl_window'):
                     self.wcdma_asl_window.show()
                 else:
                     self.wcdma_asl_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_asl_window)
                     self.wcdma_asl_window.show()
             elif child == "Monitored Set List":
                 if hasattr(self, 'wcdma_msl_window'):
                     self.wcdma_msl_window.show()
                 else:
                     self.wcdma_msl_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_msl_window)
                     self.wcdma_msl_window.show()
             elif child == "WCDMA BLER Summary":
                 if hasattr(self, 'wcdma_bler_window'):
                     self.wcdma_bler_window.show()
                 else:
                     self.wcdma_bler_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_bler_window)
                     self.wcdma_bler_window.show()
             elif child == "WCDMA BLER / Transport Channel":
                 if hasattr(self, 'wcdma_bler_window'):
                     self.wcdma_blertc_window.show()
                 else:
                     self.wcdma_blertc_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_blertc_window)
                     self.wcdma_blertc_window.show()
             elif child == "WCDMA Line Chart":
                 if hasattr(self, 'wcdma_lc_window'):
                     self.wcdma_lc_window.show()
                 else:
                     self.wcdma_lc_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_lc_window)
                     self.wcdma_lc_window.show()
             elif child == "WCDMA Bearers":
                 if hasattr(self, 'wcdma_bearer_window'):
                     self.wcdma_bearer_window.show()
                 else:
                     self.wcdma_bearer_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_bearer_window)
                     self.wcdma_bearer_window.show()
             elif child == "Active + Monitored Bar":
                 if hasattr(self, 'wcdma_amb_window'):
                     self.wcdma_amb_window.show()
                 else:
                     self.wcdma_amb_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_amb_window)
                     self.wcdma_amb_window.show()
             elif child == "WCDMA CM GSM Reports":
                 if hasattr(self, 'wcdma_report_window'):
                     self.wcdma_report_window.show()
                 else:
                     self.wcdma_report_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_report_window)
                     self.wcdma_report_window.show()
             elif child == "WCDMA CM GSM Cells":
                 if hasattr(self, 'wcdma_cells_window'):
                     self.wcdma_cells_window.show()
                 else:
                     self.wcdma_cells_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_cells_window)
                     self.wcdma_cells_window.show()
             elif child == "WCDMA Pilot Analyzer":
                 if hasattr(self, 'wcdma_analyzer_window'):
                     self.wcdma_analyzer_window.show()
                 else:
                     self.wcdma_analyzer_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_analyzer_window)
                     self.wcdma_analyzer_window.show()
         elif parent == "LTE":
             if child == "Radio Parameters":
@@ -564,36 +581,42 @@ class AzenqosDialog(QDialog):
                     self.lte_param_window.show()
                 else:
                     self.lte_param_window = TableWindow(windowName)
+                    openedWindows.append(self.lte_param_window)
                     self.lte_param_window.show()
             elif child == "Serving + Neighbors":
                 if hasattr(self, 'lte_sn_window'):
                     self.lte_sn_window.show()
                 else:
                     self.lte_sn_window = TableWindow(windowName)
+                    openedWindows.append(self.lte_sn_window)
                     self.lte_sn_window.show()
             elif child == "PUCCH/PDSCH Parameters":
                 if hasattr(self, 'lte_ppparam_window'):
                     self.lte_ppparam_window.show()
                 else:
                     self.lte_ppparam_window = TableWindow(windowName)
+                    openedWindows.append(self.lte_ppparam_window)
                     self.lte_ppparam_window.show()
             elif child == "LTE Line Chart":
                 if hasattr(self, 'lte_lc_window'):
                     self.lte_lc_window.show()
                 else:
                     self.lte_lc_window = Ui_LTE_LCwidget(windowName)
+                    openedWindows.append(self.lte_lc_window)
                     self.lte_lc_window.show()
             elif child == "LTE RLC":
                 if hasattr(self, 'lte_rlc_window'):
                     self.lte_rlc_window.show()
                 else:
                     self.lte_rlc_window = TableWindow(windowName)
+                    openedWindows.append(self.lte_rlc_window)
                     self.lte_rlc_window.show()
             elif child == "LTE VoLTE":
                 if hasattr(self, 'lte_volte_window'):
                     self.lte_volte_window.show()
                 else:
                     self.lte_volte_window = TableWindow(windowName)
+                    openedWindows.append(self.lte_volte_window)
                     self.lte_volte_window.show()
         elif parent == "CDMA/EVDO":
             if child == "Radio Parameters":
@@ -601,18 +624,21 @@ class AzenqosDialog(QDialog):
                     self.cdma_rp_window.show()
                 else:
                     self.cdma_rp_window = TableWindow(windowName)
+                    openedWindows.append(self.cdma_rp_window)
                     self.cdma_rp_window.show()
             elif child == "Serving + Neighbors":
                 if hasattr(self, 'cdma_sn_window'):
                     self.cdma_sn_window.show()
                 else:
                     self.cdma_sn_window = TableWindow(windowName)
+                    openedWindows.append(self.cdma_sn_window)
                     self.cdma_sn_window.show()
             elif child == "EVDO Parameters":
                 if hasattr(self, 'cdma_evdo_window'):
                     self.cdma_evdo_window.show()
                 else:
                     self.cdma_evdo_window = TableWindow(windowName)
+                    openedWindows.append(self.cdma_evdo_window)
                     self.cdma_evdo_window.show()
         elif parent == "Data":
             if child == "GSM Data Line Chart":
@@ -620,66 +646,77 @@ class AzenqosDialog(QDialog):
                     self.gsm_data_lc.show()
                 else:
                     self.gsm_data_lc = TableWindow(windowName)
+                    openedWindows.append(self.gsm_data_lc)
                     self.gsm_data_lc.show()
             elif child == "WCDMA Data Line Chart":
                 if hasattr(self, 'wcdma_data_lc'):
                     self.wcdma_data_lc.show()
                 else:
                     self.wcdma_data_lc = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_data_lc)
                     self.wcdma_data_lc.show()
             elif child == "GPRS/EDGE Information":
                 if hasattr(self, 'gprs_info'):
                     self.gprs_info.show()
                 else:
                     self.gprs_info = TableWindow(windowName)
+                    openedWindows.append(self.gprs_info)
                     self.gprs_info.show()
             elif child == "Web Browser":
                 if hasattr(self, 'web_browser'):
                     self.web_browser.show()
                 else:
                     self.web_browser = TableWindow(windowName)
+                    openedWindows.append(self.web_browser)
                     self.web_browser.show()
             elif child == "HSDPA/HSPA + Statistics":
                 if hasattr(self, 'hsdpa_stat'):
                     self.hsdpa_stat.show()
                 else:
                     self.hsdpa_stat = TableWindow(windowName)
+                    openedWindows.append(self.hsdpa_stat)
                     self.hsdpa_stat.show()
             elif child == "HSUPA Statistics":
                 if hasattr(self, 'hsupa_stat'):
                     self.hsupa_stat.show()
                 else:
                     self.hsupa_stat = TableWindow(windowName)
+                    openedWindows.append(self.hsupa_stat)
                     self.hsupa_stat.show()
             elif child == "LTE Data Statistics":
                 if hasattr(self, 'lte_data_stat'):
                     self.lte_data_stat.show()
                 else:
                     self.lte_data_stat = TableWindow(windowName)
+                    openedWindows.append(self.lte_data_stat)
                     self.lte_data_stat.show()
             elif child == "LTE Data Line Chart":
                 if hasattr(self, 'lte_data_lc'):
                     self.lte_data_lc.show()
                 else:
                     self.lte_data_lc = TableWindow(windowName)
+                    openedWindows.append(self.lte_data_lc)
                     self.lte_data_lc.show()
             elif child == "Wifi Connected AP":
                 if hasattr(self, 'wifi_connected_ap'):
                     self.wifi_connected_ap.show()
                 else:
                     self.wifi_connected_ap = TableWindow(windowName)
+                    openedWindows.append(self.wifi_connected_ap)
                     self.wifi_connected_ap.show()
             elif child == "Wifi Scanned APs":
                 if hasattr(self, 'wifi_scanned_ap'):
                     self.wifi_scanned_ap.show()
                 else:
                     self.wifi_scanned_ap = TableWindow(windowName)
+                    openedWindows.append(self.wifi_scanned_ap)
                     self.wifi_scanned_ap.show()
             elif child == "Wifi Graph":
                 if hasattr(self, 'wifi_graph'):
                     self.wifi_graph.show()
                 else:
                     self.wifi_graph = TableWindow(windowName)
+                    openedWindows.append(self.wifi_graph)
                     self.wifi_graph.show()
         elif parent == "Signaling":
             if child == "Events":
@@ -687,45 +724,50 @@ class AzenqosDialog(QDialog):
                     self.events_window.show()
                 else:
                     self.events_window = TableWindow(windowName)
+                    openedWindows.append(self.events_window)
                     self.events_window.show()
             elif child == "Layer 1 Messages":
                 if hasattr(self, 'layer_one_messages'):
                     self.layer_one_messages.show()
                 else:
                     self.layer_one_messages = TableWindow(windowName)
+                    openedWindows.append(self.layer_one_messages)
                     self.layer_one_messages.show()
             elif child == "Layer 3 Messages":
                 if hasattr(self, 'layer_three_messages'):
                     self.layer_three_messages.show()
                 else:
                     self.layer_three_messages = TableWindow(windowName)
+                    openedWindows.append(self.layer_three_messages)
                     self.layer_three_messages.show()
             elif child == "Benchmark":
                 if hasattr(self, 'benchmark'):
                     self.benchmark.show()
                 else:
                     self.benchmark = TableWindow(windowName)
+                    openedWindows.append(self.benchmark)
                     self.benchmark.show()
             elif child == "MM Reg States":
                 if hasattr(self, 'mm_reg_states'):
                     self.mm_reg_states.show()
                 else:
                     self.mm_reg_states = TableWindow(windowName)
+                    openedWindows.append(self.mm_reg_states)
                     self.mm_reg_states.show()
             elif child == "Serving System Info":
                 if hasattr(self, 'serving_system_info'):
                     self.serving_system_info.show()
                 else:
                     self.serving_system_info = TableWindow(windowName)
+                    openedWindows.append(self.serving_system_info)
                     self.serving_system_info.show()
             elif child == "Debug Android/Event":
                 if hasattr(self, 'debug_event'):
                     self.debug_event.show()
                 else:
                     self.debug_event = TableWindow(windowName)
+                    openedWindows.append(self.debug_event)
                     self.debug_event.show()
-        global openedWindows
-        openedWindows.append(self)
         print(openedWindows)
         # elif parent == "Positioning":
         #     if child == "GPS":
@@ -968,10 +1010,21 @@ class TableWindow(QDialog):
             if self.dataList is not None:
                 self.setTableModel(self.dataList)
 
+    def hilightRow(self, sampledate):
+        dateString = str(sampledate)
+        model = self.tableView.model()
+        data = []
+        for row in range(model.rowCount()):
+            index = model.index(row,0)
+            value = model.data(index)
+            if value > dateString:
+                self.tableView.selectRow(row-1)
+                break
+
+
     def reject(self):
         global openedWindows
         openedWindows.remove(self)
-        print(openedWindows)
         self.hide()
 
 

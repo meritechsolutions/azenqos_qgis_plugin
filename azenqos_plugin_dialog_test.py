@@ -21,7 +21,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-import os, sys, datetime, time, threading
+import os
+import sys
+import datetime
+import time
+import threading
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray
@@ -36,22 +40,26 @@ import numpy as np
 # from qgis.core import *
 # from qgis.utils import *
 
-
 azenqosDatabase = None
 databasePath = None
 latestMenu = None
 minTimeValue = None
 maxTimeValue = None
 currentTime = None
-tableNotUsed = ['android_metadata', 'sqlite_sequence', 'spatialite_history', 'idx_signalling_geom_parent', 'idx_signalling_geom_node', 'idx_signalling_geom_rowid', 'idx_signalling_geom', 'views_layer_statistics', 'geometry_columns', 'spatial_ref_sys', 'layer_statistics']
-clickedLatLon = {
-    "lat" : 0,
-    "lon" : 0
-}
+tableNotUsed = [
+    'android_metadata', 'sqlite_sequence', 'spatialite_history',
+    'idx_signalling_geom_parent', 'idx_signalling_geom_node',
+    'idx_signalling_geom_rowid', 'idx_signalling_geom',
+    'views_layer_statistics', 'geometry_columns', 'spatial_ref_sys',
+    'layer_statistics'
+]
+clickedLatLon = {"lat": 0, "lon": 0}
 sliderLength = None
 openedWindows = []
 
 # Database select window
+
+
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
         super(Ui_DatabaseDialog, self).__init__()
@@ -70,7 +78,8 @@ class Ui_DatabaseDialog(QDialog):
         self.dbPath.setObjectName("dbPath")
         self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
         self.buttonBox.setGeometry(QtCore.QRect(370, 56, 164, 32))
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel
+                                          | QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
         self.dbPathLabel = QtWidgets.QLabel(DatabaseDialog)
         self.dbPathLabel.setGeometry(QtCore.QRect(10, 10, 181, 16))
@@ -80,17 +89,22 @@ class Ui_DatabaseDialog(QDialog):
         QtCore.QMetaObject.connectSlotsByName(DatabaseDialog)
 
         self.browseButton.clicked.connect(self.getfiles)
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(self.checkDatabase)
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.close)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
+            self.checkDatabase)
+        self.buttonBox.button(
+            QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.close)
 
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
         DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos"))
         self.browseButton.setText(_translate("DatabaseDialog", "Browse.."))
-        self.dbPathLabel.setText(_translate("DatabaseDialog", "Database path: ( .db, .sqlite )"))
+        self.dbPathLabel.setText(
+            _translate("DatabaseDialog", "Database path: ( .db, .sqlite )"))
 
     def getfiles(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, 'Single File', QtCore.QDir.rootPath(), '*.db *.sqlite')
+        fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
+                                                  QtCore.QDir.rootPath(),
+                                                  '*.db *.sqlite')
         if fileName != "":
             baseFileName = os.path.basename(str(fileName))
             self.dbPath.setText(fileName)
@@ -102,17 +116,19 @@ class Ui_DatabaseDialog(QDialog):
     def checkDatabase(self):
         self.addDatabase()
         if not azenqosDatabase.open():
-            QtWidgets.QMessageBox.critical(None, "Cannot open database",
-                                           "Unable to establish a database connection.\n"
-                                           "This example needs SQLite support. Please read "
-                                           "the Qt SQL driver documentation for information how "
-                                           "to build it.\n\n"
-                                           "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
+            QtWidgets.QMessageBox.critical(
+                None, "Cannot open database",
+                "Unable to establish a database connection.\n"
+                "This example needs SQLite support. Please read "
+                "the Qt SQL driver documentation for information how "
+                "to build it.\n\n"
+                "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
             return False
         else:
             # self.addLayerToQgis()
             self.getTimeForSlider()
-            QMessageBox.about(self, 'Connection result', 'Database is Connected, Enter the main menu')
+            QMessageBox.about(self, 'Connection result',
+                              'Database is Connected, Enter the main menu')
             self.hide()
             self.azenqosMainMenu = AzenqosDialog()
             self.azenqosMainMenu.show()
@@ -123,14 +139,18 @@ class Ui_DatabaseDialog(QDialog):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select MIN(time) as mintime, MAX(time) as maxtime from signalling")
+        query.exec_(
+            "select MIN(time) as mintime, MAX(time) as maxtime from signalling"
+        )
         while query.next():
             mintime = query.value(0)
             maxtime = query.value(1)
             global minTimeValue
-            minTimeValue = datetime.datetime.strptime(mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+            minTimeValue = datetime.datetime.strptime(
+                mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
             global maxTimeValue
-            maxTimeValue = datetime.datetime.strptime(maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+            maxTimeValue = datetime.datetime.strptime(
+                maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
         azenqosDatabase.close()
         self.setIncrementValue()
 
@@ -192,7 +212,8 @@ class AzenqosDialog(QDialog):
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.timeSlider.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.timeSlider.sizePolicy().hasHeightForWidth())
         self.timeSlider.setSizePolicy(sizePolicy)
         self.timeSlider.setBaseSize(QtCore.QSize(500, 0))
         self.timeSlider.setPageStep(1)
@@ -206,7 +227,8 @@ class AzenqosDialog(QDialog):
         self.timeEdit.setGeometry(QtCore.QRect(480, 56, 140, 22))
         self.timeEdit.setObjectName("timeEdit")
         self.timeEdit.setDisplayFormat("hh:mm:ss")
-        self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(minTimeValue))
+        self.timeEdit.setDateTime(
+            datetime.datetime.fromtimestamp(minTimeValue))
 
         # Time label
         self.timeSliderLabel = QLabel(AzenqosDialog)
@@ -234,15 +256,19 @@ class AzenqosDialog(QDialog):
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
-        AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos Main Menu"))
-        self.presentationTreeWidget.headerItem().setText(0, _translate("AzenqosDialog", "Presentation"))
+        AzenqosDialog.setWindowTitle(
+            _translate("AzenqosDialog", "Azenqos Main Menu"))
+        self.presentationTreeWidget.headerItem().setText(
+            0, _translate("AzenqosDialog", "Presentation"))
         __sortingEnabled = self.presentationTreeWidget.isSortingEnabled()
         self.presentationTreeWidget.setSortingEnabled(False)
         self.presentationTreeWidget.setSortingEnabled(__sortingEnabled)
-        self.configurationTreeWidget.headerItem().setText(0, _translate("AzenqosDialog", "Configuration"))
+        self.configurationTreeWidget.headerItem().setText(
+            0, _translate("AzenqosDialog", "Configuration"))
         self.configurationTreeWidget.setSortingEnabled(False)
         self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
-        self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
+        self.importDatabaseBtn.setText(
+            _translate("AzenqosDialog", "Import Database"))
         self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
 
@@ -253,7 +279,8 @@ class AzenqosDialog(QDialog):
         self.presentationTreeWidget.setFrameShape(QFrame.StyledPanel)
         self.presentationTreeWidget.setAllColumnsShowFocus(True)
         self.presentationTreeWidget.setObjectName("presentationTreeWidget")
-        self.presentationTreeWidget.itemDoubleClicked.connect(self.loadAllMessages)
+        self.presentationTreeWidget.itemDoubleClicked.connect(
+            self.loadAllMessages)
 
         # GSM Section
         gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
@@ -266,16 +293,19 @@ class AzenqosDialog(QDialog):
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
-        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma, ['Active + Monitored Sets'])
+        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
+                                                   ['Active + Monitored Sets'])
         wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
         wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
         wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
         wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
-        wcdmaTransportChannel = QTreeWidgetItem(wcdma, ['BLER / Transport Channel'])
+        wcdmaTransportChannel = QTreeWidgetItem(wcdma,
+                                                ['BLER / Transport Channel'])
         wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
         wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
         wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
-        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma, ['Active + Monitored Bar'])
+        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
+                                                  ['Active + Monitored Bar'])
         wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
         wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
         wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
@@ -292,7 +322,8 @@ class AzenqosDialog(QDialog):
         # CDMA/EVDO Section
         cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
         cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
-        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo, ['Serving + Neighbors'])
+        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
+                                                   ['Serving + Neighbors'])
         cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
 
         # Data Section
@@ -316,36 +347,46 @@ class AzenqosDialog(QDialog):
         signalingLayerThree = QTreeWidgetItem(signaling, ['Layer 3 Messages'])
         signalingBenchmark = QTreeWidgetItem(signaling, ['Benchmark'])
         signalingMM = QTreeWidgetItem(signaling, ['MM Reg States'])
-        signalingSystemInfo = QTreeWidgetItem(signaling, ['Serving System Info'])
+        signalingSystemInfo = QTreeWidgetItem(signaling,
+                                              ['Serving System Info'])
         signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
-        positioning = QTreeWidgetItem(self.presentationTreeWidget, ['Positioning'])
+        positioning = QTreeWidgetItem(self.presentationTreeWidget,
+                                      ['Positioning'])
         positioningGps = QTreeWidgetItem(positioning, ['GPS'])
         positioningMap = QTreeWidgetItem(positioning, ['Map'])
         positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
         # Customized Window Section
-        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget, ['Customized Window'])
-        customizedWindowStatus = QTreeWidgetItem(customizedWindow, ['Status Window'])
-        customizedWindowMessage = QTreeWidgetItem(customizedWindow, ['Message Window'])
-        customizedWindowChart = QTreeWidgetItem(customizedWindow, ['Line Chart'])
+        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
+                                           ['Customized Window'])
+        customizedWindowStatus = QTreeWidgetItem(customizedWindow,
+                                                 ['Status Window'])
+        customizedWindowMessage = QTreeWidgetItem(customizedWindow,
+                                                  ['Message Window'])
+        customizedWindowChart = QTreeWidgetItem(customizedWindow,
+                                                ['Line Chart'])
         #
         # # NB-IoT Section
         nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
-        nBIoTParams = QTreeWidgetItem(nBIoT, ['NB-IoT Radio Parameters Window'])
+        nBIoTParams = QTreeWidgetItem(nBIoT,
+                                      ['NB-IoT Radio Parameters Window'])
 
         self.presentationTreeWidget.header().setCascadingSectionResizes(True)
         self.presentationTreeWidget.header().setHighlightSections(True)
 
         # Configuration
         self.configurationTreeWidget = QTreeWidget(AzenqosDialog)
-        self.configurationTreeWidget.setGeometry(QtCore.QRect(20, 320, 260, 100))
+        self.configurationTreeWidget.setGeometry(
+            QtCore.QRect(20, 320, 260, 100))
         self.configurationTreeWidget.setFrameShape(QFrame.StyledPanel)
         self.configurationTreeWidget.setAllColumnsShowFocus(True)
         self.configurationTreeWidget.setObjectName("configurationTreeWidget")
-        cellInformation = QTreeWidgetItem(self.configurationTreeWidget, ['Cell Information'])
-        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget, ['Equipment Configuration'])
+        cellInformation = QTreeWidgetItem(self.configurationTreeWidget,
+                                          ['Cell Information'])
+        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget,
+                                                 ['Equipment Configuration'])
 
     def setupPlayStopButton(self, AzenqosDialog):
         # todo ยังไม่เสร็จ
@@ -354,7 +395,8 @@ class AzenqosDialog(QDialog):
         self.playButton = QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.pauseButton = QToolButton()
-        self.pauseButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
+        self.pauseButton.setIcon(self.style().standardIcon(
+            QStyle.SP_MediaPause))
         layout = QHBoxLayout(self.horizontalLayout)
         layout.addStretch(1)
         layout.addWidget(self.playButton)
@@ -703,6 +745,7 @@ class AzenqosDialog(QDialog):
         #     if child == "NB-IoT Radio Parameters Window":
         #         print("1")
 
+
 class TimeSlider(QSlider):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -714,7 +757,7 @@ class TimeSlider(QSlider):
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
-        self._max_value =  self._max_int
+        self._max_value = self._max_int
 
     @property
     def _value_range(self):
@@ -745,6 +788,7 @@ class TimeSlider(QSlider):
     def proportion(self):
         return (self.value() - self._min_value) / self._value_range
 
+
 class TableWindow(QDialog):
     def __init__(self, windowName):
         super(TableWindow, self).__init__()
@@ -761,8 +805,8 @@ class TableWindow(QDialog):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
-        # self.tableView.setSortingEnabled(True)
+        self.tableView.horizontalHeader().setSortIndicator(
+            -1, Qt.AscendingOrder)
         self.specifyTablesHeader()
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
@@ -771,14 +815,12 @@ class TableWindow(QDialog):
         self.activateWindow()
 
     def setTableModel(self, dataList):
-        # query = DataQuery(self.title, None)
-        # dataList = query.getData()
         self.tableModel = TableModel(dataList, self.tableHeader, self)
-        self.tableView.setModel(self.tableModel)
+        self.proxyModel = QtCore.QSortFilterProxyModel()
+        self.proxyModel.setSourceModel(self.tableModel)
+        self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(True)
         self.tableView.resizeColumnsToContents()
-        # self.tableView.selectRow(0)
-        # print(self.tableView)
 
     def specifyTablesHeader(self):
         if self.title is not None:
@@ -787,7 +829,10 @@ class TableWindow(QDialog):
                 self.tableHeader = ["Element", "Full", "Sub"]
                 self.dataList = GsmDataQuery(None).getRadioParameters()
             elif self.title == 'GSM_Serving + Neighbors':
-                self.tableHeader = ["Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1", "C2", "C31", "C32"]
+                self.tableHeader = [
+                    "Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1",
+                    "C2", "C31", "C32"
+                ]
                 self.dataList = GsmDataQuery().getServingAndNeighbors()
             elif self.title == 'GSM_Current Channel':
                 self.tableHeader = ["Element", "Value"]
@@ -804,21 +849,34 @@ class TableWindow(QDialog):
 
             # WCDMA
             elif self.title == 'WCDMA_Active + Monitored Sets':
-                self.tableHeader = ["Time", "CellName", "CellType", "SC", "Ec/Io", "RSCP", "Freq", "Event"]
+                self.tableHeader = [
+                    "Time", "CellName", "CellType", "SC", "Ec/Io", "RSCP",
+                    "Freq", "Event"
+                ]
             elif self.title == 'WCDMA_Radio Parameters':
                 self.tableHeader = ["Element", "Value"]
             elif self.title == 'WCDMA_Active Set Lists':
-                self.tableHeader = ["Time", "Freq", "PSC", "Cell Position", "Cell TPC", "Diversity"]
+                self.tableHeader = [
+                    "Time", "Freq", "PSC", "Cell Position", "Cell TPC",
+                    "Diversity"
+                ]
             elif self.title == 'WCDMA_Monitored Set List':
-                self.tableHeader = ["Time", "Freq", "PSC", "Cell Position", "Diversity"]
+                self.tableHeader = [
+                    "Time", "Freq", "PSC", "Cell Position", "Diversity"
+                ]
             elif self.title == 'WCDMA_BLER Summary':
                 self.tableHeader = ["Element", "Value"]
             elif self.title == 'WCDMA_BLER / Transport Channel':
-                self.tableHeader = ["Transport Channel", "Percent", "Err", "Rcvd"]
+                self.tableHeader = [
+                    "Transport Channel", "Percent", "Err", "Rcvd"
+                ]
             elif self.title == 'WCDMA_Line Chart':
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'WCDMA_Bearers':
-                self.tableHeader = ["N Bearers", "Bearers ID", "Bearers Rate DL", "Bearers Rate UL"]
+                self.tableHeader = [
+                    "N Bearers", "Bearers ID", "Bearers Rate DL",
+                    "Bearers Rate UL"
+                ]
             elif self.title == 'WCDMA_Pilot Poluting Cells':
                 self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
             elif self.title == 'WCDMA_Active + Monitored Bar':
@@ -826,7 +884,9 @@ class TableWindow(QDialog):
             elif self.title == 'WCDMA_CM GSM Reports':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
             elif self.title == 'WCDMA_CM GSM Cells':
-                self.tableHeader = ["Time", "ARFCN", "RxLev", "BSIC", "Measure"]
+                self.tableHeader = [
+                    "Time", "ARFCN", "RxLev", "BSIC", "Measure"
+                ]
             elif self.title == 'WCDMA_Pilot Analyzer':
                 self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 
@@ -834,7 +894,9 @@ class TableWindow(QDialog):
             elif self.title == 'LTE_Radio Parameters':
                 self.tableHeader = ["Element", "PCC", "SCC0", "SCC1"]
             elif self.title == 'LTE_Serving + Neighbors':
-                self.tableHeader = ["Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"]
+                self.tableHeader = [
+                    "Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"
+                ]
             elif self.title == 'LTE_PUCCH/PDSCH Parameters':
                 self.tableHeader = ["Element", "Value"]
             elif self.title == 'LTE_LTE Line Chart':
@@ -873,7 +935,10 @@ class TableWindow(QDialog):
             elif self.title == 'Data_Wifi Connected AP':
                 self.tableHeader = ["Element", "Value"]
             elif self.title == 'Data_Wifi Scanned APs':
-                self.tableHeader = ["Time", "BSSID", "SSID", "Freq", "Ch.", "Level", "Encryption"]
+                self.tableHeader = [
+                    "Time", "BSSID", "SSID", "Freq", "Ch.", "Level",
+                    "Encryption"
+                ]
             elif self.title == 'Data_Wifi Graph':
                 return False
 
@@ -909,12 +974,13 @@ class TableWindow(QDialog):
         print(openedWindows)
         self.hide()
 
+
 class TableModel(QAbstractTableModel):
     def __init__(self, inputData, header, parent=None, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
         self.dataSource = inputData
-        #self.testColumnValue()
+        # self.testColumnValue()
 
     def rowCount(self, parent):
         return len(self.dataSource)
@@ -933,6 +999,7 @@ class TableModel(QAbstractTableModel):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
+
 
 class GsmDataQuery:
     def __init__(self):
@@ -1010,6 +1077,7 @@ class GsmDataQuery:
         azenqosDatabase.close()
         return dataList
 
+
 class CdmaEvdoQuery:
     def __init__(self):
         self.timeFilter = currentTime
@@ -1052,6 +1120,7 @@ class CdmaEvdoQuery:
             dataList.append(None)
         azenqosDatabase.close()
         return dataList
+
 
 class DataQuery:
     def __init__(self, windowName):
@@ -1228,6 +1297,7 @@ class DataQuery:
         azenqosDatabase.close()
         return dataList
 
+
 class SignalingDataQuery:
     def __init__(self):
         self.timeFilter = currentTime
@@ -1237,7 +1307,8 @@ class SignalingDataQuery:
             azenqosDatabase.open()
         query = QSqlQuery()
         if self.timeFilter != None:
-            queryString = 'select * from events where time <= %s'%(self.timeFilter)
+            queryString = 'select * from events where time <= %s' % (
+                self.timeFilter)
         else:
             queryString = 'select * from events'
         query.exec_(queryString)
@@ -1290,7 +1361,10 @@ class SignalingDataQuery:
             else:
                 detailStrValue = ''
             if detailStrValue != '':
-                dataList.append([timeValue, symbolValue, 'MS1', detailStrValue, nameValue, ''])
+                dataList.append([
+                    timeValue, symbolValue, 'MS1', detailStrValue, nameValue,
+                    ''
+                ])
         azenqosDatabase.close()
         return dataList
 
@@ -1316,7 +1390,8 @@ class SignalingDataQuery:
             azenqosDatabase.open()
         dataList = []
         selectedColumns = 'time,mm_state_state,mm_state_substate,mm_state_update_status,mm_characteristics_network_operation_mode,mm_characteristics_service_type,mm_characteristics_mcc,mm_characteristics_mnc,mm_characteristics_lac,mm_characteristics_rai'
-        queryString = 'select %s from mm_state order by time desc limit 1'%(selectedColumns)
+        queryString = 'select %s from mm_state order by time desc limit 1' % (
+            selectedColumns)
         query = QSqlQuery()
         query.exec_(queryString)
         selectedColumns = selectedColumns.split(",")
@@ -1333,9 +1408,14 @@ class SignalingDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         dataList = []
-        fieldsList = ['Time', 'mcc', 'mnc', 'lac', 'service status', 'service domain', 'service capability', 'system mode', 'roaming status', 'system id type']
+        fieldsList = [
+            'Time', 'mcc', 'mnc', 'lac', 'service status', 'service domain',
+            'service capability', 'system mode', 'roaming status',
+            'system id type'
+        ]
         selectedColumns = 'time,serving_system_mcc,serving_system_mnc,serving_system_lac,cm_service_status,cm_service_domain,cm_service_capability,cm_system_mode,cm_roaming_status,cm_system_id_type'
-        queryString = 'select %s from serving_system order by time desc limit 1'%(selectedColumns)
+        queryString = 'select %s from serving_system order by time desc limit 1' % (
+            selectedColumns)
         query = QSqlQuery()
         query.exec_(queryString)
         fieldCount = len(selectedColumns.split(","))
@@ -1364,7 +1444,9 @@ class SignalingDataQuery:
         azenqosDatabase.close()
         return dataList
 
+
 # LTE Line Chart UI
+
 
 class Ui_LTE_LCwidget(QWidget):
     def __init__(self, windowName):
@@ -1382,7 +1464,7 @@ class Ui_LTE_LCwidget(QWidget):
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
         self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents,self.title)
+        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents, self.title)
         self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_widget.setObjectName("lte_widget")
         self.lte_GArea.setWidget(self.scrollAreaWidgetContents)
@@ -1492,7 +1574,8 @@ class Ui_LTE_LCwidget(QWidget):
 
     def retranslateUi(self, LTE_LCwidget):
         _translate = QtCore.QCoreApplication.translate
-        LTE_LCwidget.setWindowTitle(_translate("LTE_LCwidget", "LTE Line Chart [MS1]"))
+        LTE_LCwidget.setWindowTitle(
+            _translate("LTE_LCwidget", "LTE Line Chart [MS1]"))
         item = self.lte_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("LTE_LCwidget", "1"))
         item = self.lte_tableWidget.verticalHeaderItem(1)
@@ -1535,24 +1618,27 @@ class Ui_LTE_LCwidget(QWidget):
         item.setText(_translate("LTE_LCwidget", "MS1"))
         self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
 
-#For Line Chart
-class  Line_Chart(QWidget): 
-    def  __init__ (self,parent,windowName): 
-        super().__init__(parent) 
-        self.title = windowName   
-        self.canvas  =  FigureCanvas(Figure(figsize=(4, 4))) 
-        vertical_layout  =  QVBoxLayout() 
-        vertical_layout.addWidget(self.canvas) 
-        self.canvas.axes =  self.canvas.figure.add_subplot() 
+
+# For Line Chart
+
+
+class Line_Chart(QWidget):
+    def __init__(self, parent, windowName):
+        super().__init__(parent)
+        self.title = windowName
+        self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
+        vertical_layout = QVBoxLayout()
+        vertical_layout.addWidget(self.canvas)
+        self.canvas.axes = self.canvas.figure.add_subplot()
         self.setLayout(vertical_layout)
 
-        #Toolbar
-        toolbar = NavigationToolbar(self.canvas, self) 
-        vertical_layout.addWidget(toolbar) 
+        # Toolbar
+        toolbar = NavigationToolbar(self.canvas, self)
+        vertical_layout.addWidget(toolbar)
 
-        #Choose Line Chart
+        # Choose Line Chart
         if self.title is not None:
-            #LTE Line Chart
+            # LTE Line Chart
             if self.title == 'LTE_LTE Line Chart':
                 self.LTE()
 
@@ -1565,111 +1651,124 @@ class  Line_Chart(QWidget):
         Inst_RSRQ_1 = []
         Inst_RSSI_1 = []
 
-        #Open Database
-        # conn = sqlite3.connect(databasePath)
-        # c = conn.cursor()
-        # c.execute("SELECT time ,lte_sinr_rx0_1 ,lte_sinr_rx1_1 ,lte_inst_rsrp_1 ,lte_inst_rsrq_1 ,lte_inst_rssi_1 FROM lte_cell_meas")
-        
-        # for row in c.fetchall():
-        #     time = row[0].split(' ')
-        #     Time.append(time[1])
-        #     SINR_Rx0_1.append(row[1])
-        #     SINR_Rx1_1.append(row[2])
-        #     Inst_RSRP_1.append(row[3])
-        #     Inst_RSRQ_1.append(row[4])
-        #     Inst_RSSI_1.append(row[5])
-
         azenqosDatabase.open()
-        c = QSqlQuery()
-        c.exec_("SELECT time ,lte_sinr_rx0_1 ,lte_sinr_rx1_1 ,lte_inst_rsrp_1 ,lte_inst_rsrq_1 ,lte_inst_rssi_1 FROM lte_cell_meas")
-        #Query
-        time = (c.record().indexOf("time"))
-        lte_sinr_rx0_1 = c.record().indexOf("lte_sinr_rx0_1")
-        lte_sinr_rx1_1 = c.record().indexOf("lte_sinr_rx1_1")
-        lte_inst_rsrp_1 = c.record().indexOf("lte_inst_rsrp_1")
-        lte_inst_rsrq_1 = c.record().indexOf("lte_inst_rsrq_1")
-        lte_inst_rssi_1 = c.record().indexOf("lte_inst_rssi_1")
+        query = QSqlQuery()
+        query.exec_(
+            "SELECT time ,lte_sinr_rx0_1 ,lte_sinr_rx1_1 ,lte_inst_rsrp_1 ,lte_inst_rsrq_1 ,lte_inst_rssi_1 FROM lte_cell_meas"
+        )
+        # Query
+        time = (query.record().indexOf("time"))
+        lte_sinr_rx0_1 = query.record().indexOf("lte_sinr_rx0_1")
+        lte_sinr_rx1_1 = query.record().indexOf("lte_sinr_rx1_1")
+        lte_inst_rsrp_1 = query.record().indexOf("lte_inst_rsrp_1")
+        lte_inst_rsrq_1 = query.record().indexOf("lte_inst_rsrq_1")
+        lte_inst_rssi_1 = query.record().indexOf("lte_inst_rssi_1")
 
         while c.next():
-            timeValue = c.value(time).split(' ')[1]
+            timeValue = query.value(time).split(' ')[1]
             Time.append(timeValue)
-            sig1Value = c.value(lte_sinr_rx0_1)
-            sig2Value = c.value(lte_sinr_rx1_1)
-            sig3Value = c.value(lte_inst_rsrp_1)
-            sig4Value = c.value(lte_inst_rsrq_1)
-            sig5Value = c.value(lte_inst_rssi_1)
+            sig1Value = query.value(lte_sinr_rx0_1)
+            sig2Value = query.value(lte_sinr_rx1_1)
+            sig3Value = query.value(lte_inst_rsrp_1)
+            sig4Value = query.value(lte_inst_rsrq_1)
+            sig5Value = query.value(lte_inst_rssi_1)
 
             if not (type(sig1Value) == float):
-                SINR_Rx0_1.append(0)        
+                SINR_Rx0_1.append(0)
             else:
                 SINR_Rx0_1.append(sig1Value)
 
             if not (type(sig2Value) == float):
-                SINR_Rx1_1.append(0)        
+                SINR_Rx1_1.append(0)
             else:
                 SINR_Rx1_1.append(sig2Value)
 
             if not (type(sig3Value) == float):
-                Inst_RSRP_1.append(0)        
+                Inst_RSRP_1.append(0)
             else:
                 Inst_RSRP_1.append(sig3Value)
 
             if not (type(sig4Value) == float):
-                Inst_RSRQ_1.append(0)        
+                Inst_RSRQ_1.append(0)
             else:
                 Inst_RSRQ_1.append(sig4Value)
 
             if not (type(sig5Value) == float):
-                Inst_RSSI_1.append(0)        
+                Inst_RSSI_1.append(0)
             else:
-                Inst_RSSI_1.append(sig5Value)    
-            
-            
-
+                Inst_RSSI_1.append(sig5Value)
 
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
-        self.canvas.axes.yaxis.grid(True) 
+        self.canvas.axes.yaxis.grid(True)
         self.canvas.axes.set_xticklabels(Time)
         self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
-        #print(SINR_Rx0_1)      
-        line1, = self.canvas.axes.plot(Time,SINR_Rx0_1,c='#ff0000',label = 'SINR Rx[0][1]',picker=5,linewidth=1)
-        line2, = self.canvas.axes.plot(Time,SINR_Rx1_1,'#0000ff',label = 'SINR Rx[1][1]',picker=5,linewidth=1)
-        line3, = self.canvas.axes.plot(Time,Inst_RSRP_1,'#007c00',label = 'Inst RSRP[1]',picker=5,linewidth=1)
-        line4, = self.canvas.axes.plot(Time,Inst_RSRQ_1,'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1) 
-        line5, = self.canvas.axes.plot(Time,Inst_RSSI_1,'#000000',label = 'Inst RSSI[1]',picker=5,linewidth=1)
+        # print(SINR_Rx0_1)
+        line1, = self.canvas.axes.plot(Time,
+                                       SINR_Rx0_1,
+                                       c='#ff0000',
+                                       label='SINR Rx[0][1]',
+                                       picker=5,
+                                       linewidth=1)
+        line2, = self.canvas.axes.plot(Time,
+                                       SINR_Rx1_1,
+                                       '#0000ff',
+                                       label='SINR Rx[1][1]',
+                                       picker=5,
+                                       linewidth=1)
+        line3, = self.canvas.axes.plot(Time,
+                                       Inst_RSRP_1,
+                                       '#007c00',
+                                       label='Inst RSRP[1]',
+                                       picker=5,
+                                       linewidth=1)
+        line4, = self.canvas.axes.plot(Time,
+                                       Inst_RSRQ_1,
+                                       '#ff77ab',
+                                       label='Inst RSRQ[1]',
+                                       picker=5,
+                                       linewidth=1)
+        line5, = self.canvas.axes.plot(Time,
+                                       Inst_RSSI_1,
+                                       '#000000',
+                                       label='Inst RSSI[1]',
+                                       picker=5,
+                                       linewidth=1)
         # self.canvas.draw()
-        self.canvas.axes.set_ylim(-120,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
-        azenqosDatabase.close() 
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
+        azenqosDatabase.close()
 
-        lines = [line1,line2,line3,line4,line5]             
+        lines = [line1, line2, line3, line4, line5]
+
         def on_pick(event):
             for L in lines:
                 L.set_linewidth(1)
-            event.artist.set_linewidth(2.5)                
-            self.canvas.draw() 
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
 
-        pick = self.canvas.mpl_connect('pick_event', on_pick)       
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
 
-class setInterval :
-    def __init__(self, value, interval, action) :
+
+class setInterval:
+    def __init__(self, value, interval, action):
         self.interval = interval
         self.action = action
         self.stopEvent = threading.Event()
         thread = threading.Thread(target=self.__setInterval)
         thread.start()
 
-    def __setInterval(self) :
-        nextTime = time.time()+self.interval
-        while not self.stopEvent.wait(nextTime-time.time()) :
+    def __setInterval(self):
+        nextTime = time.time() + self.interval
+        while not self.stopEvent.wait(nextTime - time.time()):
             nextTime += self.interval
             self.action()
 
-    def cancel(self) :
+    def cancel(self):
         self.stopEvent.set()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -1902,27 +1902,27 @@ class LineChartQuery:
             validatedValue = value
         return validatedValue
 
-    def getList():
-        result = dict()
-        fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
-        selectField = ",".join(fields)
-        azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
-        query.exec_(queryString)
-        while query.next():
-            for field in range(len(fields)):
-                fieldName = fields[field]
-                if fieldName in result:
-                    if isinstance(result[fieldName], list):
-                        result[fieldName].append(query.value(field))
-                    else:
-                        result[fieldName] = [query.value(field)]
-                else:
-                    result[fieldName] = [query.value(field)]
+    # def getList():
+    #     result = dict()
+    #     fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
+    #     selectField = ",".join(fields)
+    #     azenqosDatabase.open()
+    #     query = QSqlQuery()
+    #     queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
+    #     query.exec_(queryString)
+    #     while query.next():
+    #         for field in range(len(fields)):
+    #             fieldName = fields[field]
+    #             if fieldName in result:
+    #                 if isinstance(result[fieldName], list):
+    #                     result[fieldName].append(query.value(field))
+    #                 else:
+    #                     result[fieldName] = [query.value(field)]
+    #             else:
+    #                 result[fieldName] = [query.value(field)]
 
-        azenqosDatabase.close()
-        print(result)
+    #     azenqosDatabase.close()
+    #     print(result)
 
 class setInterval:
     def __init__(self, value, interval, action):

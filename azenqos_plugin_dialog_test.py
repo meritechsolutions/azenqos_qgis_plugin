@@ -129,6 +129,7 @@ class Ui_DatabaseDialog(QDialog):
             self.getTimeForSlider()
             QMessageBox.about(self, 'Connection result',
                               'Database is Connected, Enter the main menu')
+            getList()
             self.hide()
             self.azenqosMainMenu = AzenqosDialog()
             self.azenqosMainMenu.show()
@@ -214,7 +215,7 @@ class AzenqosDialog(QDialog):
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-        timeSlider.sizePolicy().hasHeightForWidth())
+            timeSlider.sizePolicy().hasHeightForWidth())
         timeSlider.setSizePolicy(sizePolicy)
         timeSlider.setBaseSize(QtCore.QSize(500, 0))
         timeSlider.setPageStep(1)
@@ -294,16 +295,19 @@ class AzenqosDialog(QDialog):
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
-        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma, ['Active + Monitored Sets'])
+        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
+                                                   ['Active + Monitored Sets'])
         wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
         wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
         wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
         wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
-        wcdmaTransportChannel = QTreeWidgetItem(wcdma, ['BLER / Transport Channel'])
+        wcdmaTransportChannel = QTreeWidgetItem(wcdma,
+                                                ['BLER / Transport Channel'])
         wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
         wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
         wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
-        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma, ['Active + Monitored Bar'])
+        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
+                                                  ['Active + Monitored Bar'])
         wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
         wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
         wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
@@ -320,7 +324,8 @@ class AzenqosDialog(QDialog):
         # CDMA/EVDO Section
         cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
         cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
-        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo, ['Serving + Neighbors'])
+        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
+                                                   ['Serving + Neighbors'])
         cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
 
         # Data Section
@@ -344,24 +349,31 @@ class AzenqosDialog(QDialog):
         signalingLayerThree = QTreeWidgetItem(signaling, ['Layer 3 Messages'])
         signalingBenchmark = QTreeWidgetItem(signaling, ['Benchmark'])
         signalingMM = QTreeWidgetItem(signaling, ['MM Reg States'])
-        signalingSystemInfo = QTreeWidgetItem(signaling, ['Serving System Info'])
+        signalingSystemInfo = QTreeWidgetItem(signaling,
+                                              ['Serving System Info'])
         signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
-        positioning = QTreeWidgetItem(self.presentationTreeWidget, ['Positioning'])
+        positioning = QTreeWidgetItem(self.presentationTreeWidget,
+                                      ['Positioning'])
         positioningGps = QTreeWidgetItem(positioning, ['GPS'])
         positioningMap = QTreeWidgetItem(positioning, ['Map'])
         positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
         # Customized Window Section
-        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget, ['Customized Window'])
-        customizedWindowStatus = QTreeWidgetItem(customizedWindow, ['Status Window'])
-        customizedWindowMessage = QTreeWidgetItem(customizedWindow, ['Message Window'])
-        customizedWindowChart = QTreeWidgetItem(customizedWindow, ['Line Chart'])
+        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
+                                           ['Customized Window'])
+        customizedWindowStatus = QTreeWidgetItem(customizedWindow,
+                                                 ['Status Window'])
+        customizedWindowMessage = QTreeWidgetItem(customizedWindow,
+                                                  ['Message Window'])
+        customizedWindowChart = QTreeWidgetItem(customizedWindow,
+                                                ['Line Chart'])
         #
         # # NB-IoT Section
         nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
-        nBIoTParams = QTreeWidgetItem(nBIoT, ['NB-IoT Radio Parameters Window'])
+        nBIoTParams = QTreeWidgetItem(nBIoT,
+                                      ['NB-IoT Radio Parameters Window'])
 
         self.presentationTreeWidget.header().setCascadingSectionResizes(True)
         self.presentationTreeWidget.header().setHighlightSections(True)
@@ -373,8 +385,10 @@ class AzenqosDialog(QDialog):
         self.configurationTreeWidget.setFrameShape(QFrame.StyledPanel)
         self.configurationTreeWidget.setAllColumnsShowFocus(True)
         self.configurationTreeWidget.setObjectName("configurationTreeWidget")
-        cellInformation = QTreeWidgetItem(self.configurationTreeWidget, ['Cell Information'])
-        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget, ['Equipment Configuration'])
+        cellInformation = QTreeWidgetItem(self.configurationTreeWidget,
+                                          ['Cell Information'])
+        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget,
+                                                 ['Equipment Configuration'])
 
     def setupPlayStopButton(self, AzenqosDialog):
         # todo ยังไม่เสร็จ
@@ -1002,10 +1016,10 @@ class TableWindow(QDialog):
         model = self.tableView.model()
         data = []
         for row in range(model.rowCount()):
-            index = model.index(row,0)
+            index = model.index(row, 0)
             value = model.data(index)
             if value > dateString:
-                self.tableView.selectRow(row-1)
+                self.tableView.selectRow(row - 1)
                 break
 
     def reject(self):
@@ -1792,6 +1806,66 @@ class Line_Chart(QWidget):
         pick = self.canvas.mpl_connect('pick_event', on_pick)
 
 
+class LineChartQuery:
+    def __inti__(self, fieldArr, tableName, conditionStr):
+        self.fieldArr = fieldArr
+        self.tableName = tableName
+        self.condition = conditionStr
+
+    def countField(self):
+        fieldCount = 0
+        if self.fieldArr is not None:
+            fieldCount = len(self.fieldArr)
+        return fieldCount
+
+    def selectFieldToQuery(self):
+        selectField = '*'
+        if self.fieldArr is not None:
+            selectField = ",".join(self.fieldArr)
+        return selectField
+
+    def getData(self):
+        result = dict()
+        selectField = self.selectFieldToQuery()
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = 'select %s from %s' % (selectField, self.tableName)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(self.fieldArr)):
+                fieldName = fieldArr[field]
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(query.value(field))
+                    else:
+                        result[fieldName] = [query.value(field)]
+                else:
+                    result[fieldName] = [query.value(field)]
+        azenqosDatabase.close()
+        return result
+
+    # def getList():
+    #     result = dict()
+    #     fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
+    #     selectField = ",".join(fields)
+    #     azenqosDatabase.open()
+    #     query = QSqlQuery()
+    #     queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
+    #     query.exec_(queryString)
+    #     while query.next():
+    #         for field in range(len(fields)):
+    #             fieldName = fields[field]
+    #             if fieldName in result:
+    #                 if isinstance(result[fieldName], list):
+    #                     result[fieldName].append(query.value(field))
+    #                 else:
+    #                     result[fieldName] = [query.value(field)]
+    #             else:
+    #                 result[fieldName] = [query.value(field)]
+
+    #     azenqosDatabase.close()
+    #     print(result)
+
 class setInterval:
     def __init__(self, value, interval, action):
         self.interval = interval
@@ -1809,9 +1883,31 @@ class setInterval:
     def cancel(self):
         self.stopEvent.set()
 
+def getList():
+        result = dict()
+        fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
+        selectField = ",".join(fields)
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(fields)):
+                fieldName = fields[field]
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(query.value(field))
+                    else:
+                        result[fieldName] = [query.value(field)]
+                else:
+                    result[fieldName] = [query.value(field)]
+
+        azenqosDatabase.close()
+        print(result)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     dialog = Ui_DatabaseDialog()
     dialog.show()
+
     sys.exit(app.exec_())

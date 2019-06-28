@@ -1659,7 +1659,7 @@ class Ui_LTE_LCwidget(QWidget):
         self.lineEdit.setFont(font)
         self.lineEdit.setReadOnly(True)
         self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)  
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
         self.lte_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.lte_tableWidget,self.lineEdit)
@@ -1717,27 +1717,27 @@ class Ui_LTE_LCwidget(QWidget):
         self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
 
 # Class For Line Chart
-class  Line_Chart(QWidget): 
+class  Line_Chart(QWidget):
 
-    def  __init__ (self,parent,windowName,tablewidget,datelabel): 
-        super().__init__(parent)     
-        self.canvas  =  FigureCanvas(Figure(figsize=(4, 4))) 
-        vertical_layout  =  QVBoxLayout() 
-        vertical_layout.addWidget(self.canvas) 
-        self.canvas.axes =  self.canvas.figure.add_subplot() 
+    def  __init__ (self,parent,windowName,tablewidget,datelabel):
+        super().__init__(parent)
+        self.canvas  =  FigureCanvas(Figure(figsize=(4, 4)))
+        vertical_layout  =  QVBoxLayout()
+        vertical_layout.addWidget(self.canvas)
+        self.canvas.axes =  self.canvas.figure.add_subplot()
         self.setLayout(vertical_layout)
         self.title = windowName
         self.tablewidget = tablewidget
-        self.datelabel = datelabel 
-        #self.timeline = timeline 
+        self.datelabel = datelabel
+        #self.timeline = timeline
 
         # Graph Toolbar
-        toolbar = NavigationToolbar(self.canvas, self) 
-        vertical_layout.addWidget(toolbar) 
-    
+        toolbar = NavigationToolbar(self.canvas, self)
+        vertical_layout.addWidget(toolbar)
+
         # Choose Line Chart By WindowName
         self.GraphSelector(self.title)
-        
+
     def GraphSelector(self,argument):
         switcher = {
             'LTE_LTE Line Chart': self.LTE(),
@@ -1806,10 +1806,10 @@ class  Line_Chart(QWidget):
             if not (type(sig5Value) == float):
                 Inst_RSSI_1.append(0)
             else:
-                Inst_RSSI_1.append(sig5Value)    
-            
-        # Graph setting  
-        self.datelabel.setText(Date[0])   
+                Inst_RSSI_1.append(sig5Value)
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
@@ -1822,16 +1822,16 @@ class  Line_Chart(QWidget):
         line1, = self.canvas.axes.plot(Time,SINR_Rx0_1,'#ff0000',label = 'SINR Rx[0][1]',picker=5,linewidth=1)
         line2, = self.canvas.axes.plot(Time,SINR_Rx1_1,'#0000ff',label = 'SINR Rx[1][1]',picker=5,linewidth=1)
         line3, = self.canvas.axes.plot(Time,Inst_RSRP_1,'#007c00',label = 'Inst RSRP[1]',picker=5,linewidth=1)
-        line4, = self.canvas.axes.plot(Time,Inst_RSRQ_1,'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1) 
+        line4, = self.canvas.axes.plot(Time,Inst_RSRQ_1,'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1)
         line5, = self.canvas.axes.plot(Time,Inst_RSSI_1,'#000000',label = 'Inst RSSI[1]',picker=5,linewidth=1)
-        
+
         # Scale Editing
         self.canvas.axes.set_ylim(-120,35)
         self.canvas.axes.set_xlim(Time[0],Time[3])
-        azenqosDatabase.close() 
+        azenqosDatabase.close()
 
         # Line List
-        lines = [line1,line2,line3,line4,line5] 
+        lines = [line1,line2,line3,line4,line5]
 
         # Line Focusing Function
         def on_pick(event):
@@ -1850,12 +1850,12 @@ class  Line_Chart(QWidget):
             i=0
             while i < len(Chart_datalist):
                 Value = round(Chart_datalist[i],3)
-                self.tablewidget.item(i,1).setText(str(Value)) 
-                i+=1    
-                
+                self.tablewidget.item(i,1).setText(str(Value))
+                i+=1
+
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', on_pick)       
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data) 
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
 
 class LineChartQuery:
     def __inti__(self, fieldArr, tableName, conditionStr):
@@ -1885,15 +1885,22 @@ class LineChartQuery:
         while query.next():
             for field in range(len(self.fieldArr)):
                 fieldName = fieldArr[field]
+                validatedValue = self.valueValidation(query.value(field))
                 if fieldName in result:
                     if isinstance(result[fieldName], list):
-                        result[fieldName].append(query.value(field))
+                        result[fieldName].append(validatedValue)
                     else:
-                        result[fieldName] = [query.value(field)]
+                        result[fieldName] = [validatedValue]
                 else:
-                    result[fieldName] = [query.value(field)]
+                    result[fieldName] = [validatedValue]
         azenqosDatabase.close()
         return result
+
+    def valueValidation(self, value):
+        validatedValue = 0
+        if value is not None:
+            validatedValue = value
+        return validatedValue
 
     # def getList():
     #     result = dict()

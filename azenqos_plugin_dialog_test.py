@@ -1941,28 +1941,6 @@ class setInterval:
     def cancel(self):
         self.stopEvent.set()
 
-def getList():
-        result = dict()
-        fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
-        selectField = ",".join(fields)
-        azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
-        query.exec_(queryString)
-        while query.next():
-            for field in range(len(fields)):
-                fieldName = fields[field]
-                if fieldName in result:
-                    if isinstance(result[fieldName], list):
-                        result[fieldName].append(query.value(field))
-                    else:
-                        result[fieldName] = [query.value(field)]
-                else:
-                    result[fieldName] = [query.value(field)]
-
-        azenqosDatabase.close()
-        print(result)
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     dialog = Ui_DatabaseDialog()

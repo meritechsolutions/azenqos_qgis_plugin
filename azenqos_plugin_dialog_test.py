@@ -41,8 +41,6 @@ import numpy as np
 # from qgis.utils import *
 
 azenqosDatabase = None
-databasePath = None
-latestMenu = None
 minTimeValue = None
 maxTimeValue = None
 currentTime = None
@@ -56,6 +54,8 @@ tableNotUsed = [
 clickedLatLon = {"lat": 0, "lon": 0}
 sliderLength = None
 openedWindows = []
+timeSlider = None
+isSliderPlay = False
 
 # Database select window
 
@@ -201,26 +201,27 @@ class AzenqosDialog(QDialog):
         self.activateWindow()
 
     def setupUi(self, AzenqosDialog):
+        global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
 
         self.setupTreeWidget(AzenqosDialog)
 
         # Time Slider
-        self.timeSlider = TimeSlider(AzenqosDialog)
-        self.timeSlider.setGeometry(QtCore.QRect(300, 56, 150, 22))
+        timeSlider = TimeSlider(AzenqosDialog)
+        timeSlider.setGeometry(QtCore.QRect(300, 56, 150, 22))
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.timeSlider.sizePolicy().hasHeightForWidth())
-        self.timeSlider.setSizePolicy(sizePolicy)
-        self.timeSlider.setBaseSize(QtCore.QSize(500, 0))
-        self.timeSlider.setPageStep(1)
-        self.timeSlider.setSliderPosition(0)
-        self.timeSlider.setOrientation(QtCore.Qt.Horizontal)
-        self.timeSlider.setObjectName("timeSlider")
-        self.timeSlider.setTracking(True)
+        timeSlider.sizePolicy().hasHeightForWidth())
+        timeSlider.setSizePolicy(sizePolicy)
+        timeSlider.setBaseSize(QtCore.QSize(500, 0))
+        timeSlider.setPageStep(1)
+        timeSlider.setSliderPosition(0)
+        timeSlider.setOrientation(QtCore.Qt.Horizontal)
+        timeSlider.setObjectName("timeSlider")
+        timeSlider.setTracking(True)
 
         # Datetime Textbox
         self.timeEdit = QDateTimeEdit(AzenqosDialog)
@@ -250,7 +251,7 @@ class AzenqosDialog(QDialog):
         self.retranslateUi(AzenqosDialog)
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
 
-        self.timeSlider.valueChanged.connect(self.timeChange)
+        timeSlider.valueChanged.connect(self.timeChange)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
         # self.filterBtn.clicked.connect(self.playTime)
 
@@ -293,19 +294,16 @@ class AzenqosDialog(QDialog):
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
-        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
-                                                   ['Active + Monitored Sets'])
+        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma, ['Active + Monitored Sets'])
         wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
         wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
         wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
         wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
-        wcdmaTransportChannel = QTreeWidgetItem(wcdma,
-                                                ['BLER / Transport Channel'])
+        wcdmaTransportChannel = QTreeWidgetItem(wcdma, ['BLER / Transport Channel'])
         wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
         wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
         wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
-        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
-                                                  ['Active + Monitored Bar'])
+        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma, ['Active + Monitored Bar'])
         wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
         wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
         wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
@@ -322,8 +320,7 @@ class AzenqosDialog(QDialog):
         # CDMA/EVDO Section
         cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
         cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
-        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
-                                                   ['Serving + Neighbors'])
+        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo, ['Serving + Neighbors'])
         cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
 
         # Data Section
@@ -347,31 +344,24 @@ class AzenqosDialog(QDialog):
         signalingLayerThree = QTreeWidgetItem(signaling, ['Layer 3 Messages'])
         signalingBenchmark = QTreeWidgetItem(signaling, ['Benchmark'])
         signalingMM = QTreeWidgetItem(signaling, ['MM Reg States'])
-        signalingSystemInfo = QTreeWidgetItem(signaling,
-                                              ['Serving System Info'])
+        signalingSystemInfo = QTreeWidgetItem(signaling, ['Serving System Info'])
         signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
-        positioning = QTreeWidgetItem(self.presentationTreeWidget,
-                                      ['Positioning'])
+        positioning = QTreeWidgetItem(self.presentationTreeWidget, ['Positioning'])
         positioningGps = QTreeWidgetItem(positioning, ['GPS'])
         positioningMap = QTreeWidgetItem(positioning, ['Map'])
         positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
         # Customized Window Section
-        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
-                                           ['Customized Window'])
-        customizedWindowStatus = QTreeWidgetItem(customizedWindow,
-                                                 ['Status Window'])
-        customizedWindowMessage = QTreeWidgetItem(customizedWindow,
-                                                  ['Message Window'])
-        customizedWindowChart = QTreeWidgetItem(customizedWindow,
-                                                ['Line Chart'])
+        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget, ['Customized Window'])
+        customizedWindowStatus = QTreeWidgetItem(customizedWindow, ['Status Window'])
+        customizedWindowMessage = QTreeWidgetItem(customizedWindow, ['Message Window'])
+        customizedWindowChart = QTreeWidgetItem(customizedWindow, ['Line Chart'])
         #
         # # NB-IoT Section
         nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
-        nBIoTParams = QTreeWidgetItem(nBIoT,
-                                      ['NB-IoT Radio Parameters Window'])
+        nBIoTParams = QTreeWidgetItem(nBIoT, ['NB-IoT Radio Parameters Window'])
 
         self.presentationTreeWidget.header().setCascadingSectionResizes(True)
         self.presentationTreeWidget.header().setHighlightSections(True)
@@ -383,10 +373,8 @@ class AzenqosDialog(QDialog):
         self.configurationTreeWidget.setFrameShape(QFrame.StyledPanel)
         self.configurationTreeWidget.setAllColumnsShowFocus(True)
         self.configurationTreeWidget.setObjectName("configurationTreeWidget")
-        cellInformation = QTreeWidgetItem(self.configurationTreeWidget,
-                                          ['Cell Information'])
-        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget,
-                                                 ['Equipment Configuration'])
+        cellInformation = QTreeWidgetItem(self.configurationTreeWidget, ['Cell Information'])
+        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget, ['Equipment Configuration'])
 
     def setupPlayStopButton(self, AzenqosDialog):
         # todo ยังไม่เสร็จ
@@ -409,13 +397,13 @@ class AzenqosDialog(QDialog):
         isSliderPlay = True
         if isSliderPlay:
             for x in range(int(sliderLength)):
-                value = self.timeSlider.value() + 1
+                value = timeSlider.value() + 1
                 self.addTime(value)
         isSliderPlay = False
 
     def addTime(self, value):
-        self.timeSlider.setValue(value)
-        self.timeSlider.repaint()
+        timeSlider.setValue(value)
+        timeSlider.repaint()
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -425,8 +413,6 @@ class AzenqosDialog(QDialog):
                 getChildNode = baseNode.text(0)
                 getParentNode = baseNode.parent().text(0)
                 self.classifySelectedItems(getParentNode, getChildNode)
-                global latestMenu
-                latestMenu = getParentNode + '_' + getChildNode
 
     def importDatabase(self):
         self.databaseDialog = Ui_DatabaseDialog()
@@ -435,12 +421,13 @@ class AzenqosDialog(QDialog):
 
     def timeChange(self):
         global currentTime
-        value = self.timeSlider.value()
+        global timeSlider
+        value = timeSlider.value()
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
         currentTime = timestampValue
-        self.timeSlider.update()
+        timeSlider.update()
         for window in openedWindows:
             window.hilightRow(sampledate)
 
@@ -1021,11 +1008,11 @@ class TableWindow(QDialog):
                 self.tableView.selectRow(row-1)
                 break
 
-
     def reject(self):
         global openedWindows
         openedWindows.remove(self)
         self.hide()
+        del self
 
 
 class TableModel(QAbstractTableModel):

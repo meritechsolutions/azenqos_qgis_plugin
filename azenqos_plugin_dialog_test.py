@@ -129,7 +129,6 @@ class Ui_DatabaseDialog(QDialog):
             self.getTimeForSlider()
             QMessageBox.about(self, 'Connection result',
                               'Database is Connected, Enter the main menu')
-            getList()
             self.hide()
             self.azenqosMainMenu = AzenqosDialog()
             self.azenqosMainMenu.show()
@@ -1024,7 +1023,7 @@ class TableWindow(QDialog):
     def reject(self):
         global openedWindows
         openedWindows.remove(self)
-        self.hide()
+        # self.hide()
         del self
 
 

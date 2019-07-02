@@ -33,7 +33,7 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.lines import Line2D    
+from matplotlib.lines import Line2D
 import sqlite3
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
@@ -57,10 +57,9 @@ sliderLength = None
 openedWindows = []
 timeSlider = None
 isSliderPlay = False
+incrementValue = 0.00
 
 # Database select window
-
-
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
         super(Ui_DatabaseDialog, self).__init__()
@@ -191,6 +190,8 @@ class Ui_DatabaseDialog(QDialog):
             timeCount = query.value(0)
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
+        global incrementValue
+        incrementValue = sliderLength / timeCount
         azenqosDatabase.close()
 
 
@@ -789,6 +790,15 @@ class AzenqosDialog(QDialog):
         #     if child == "NB-IoT Radio Parameters Window":
         #         print("1")
 
+    def reject(self):
+        global openedWindows
+        if len(openedWindows) > 0:
+            for window in openedWindows:
+                openedWindows.remove(window)
+                window.reject()
+                del window
+        self.hide()
+        del self
 
 class TimeSlider(QSlider):
     def __init__(self, parent=None):
@@ -831,6 +841,9 @@ class TimeSlider(QSlider):
 
     def proportion(self):
         return (self.value() - self._min_value) / self._value_range
+
+    def tickInterval(self):
+        return super().tickInterval()
 
 
 class TableWindow(QDialog):
@@ -1009,7 +1022,7 @@ class TableWindow(QDialog):
                 self.tableHeader = ["Element", "Value"]
                 self.dataList = SignalingDataQuery().getDebugAndroidEvent()
 
-            if self.dataList is not None:
+            if self.dataList is not None or len(self.dataList) > 0:
                 self.setTableModel(self.dataList)
 
     def hilightRow(self, sampledate):
@@ -1744,7 +1757,7 @@ class  Line_Chart(QWidget):
 
     # Create LTE Line Chart
     def LTE(self):
-        self.canvas.axes.set_title('LTE Line Chart')  
+        self.canvas.axes.set_title('LTE Line Chart')
         Date = []
         Time = []
 
@@ -1769,6 +1782,7 @@ class  Line_Chart(QWidget):
 
         lines = []
         ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+        
         for data in result.items():
             if(data[0]!='time'):
                 newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
@@ -1787,7 +1801,6 @@ class  Line_Chart(QWidget):
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-
         # Show Data In Table
         def get_table_data(event):
             Chart_datalist = []
@@ -1798,13 +1811,13 @@ class  Line_Chart(QWidget):
             for i in range(len(Chart_datalist)):
                 Value = round(Chart_datalist[i],3)
                 self.tablewidget.item(i,1).setText(str(Value))
-     
+
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
-       
+
 class LineChartQuery:
-    def __init__(self, fieldArr, tableName, conditionStr):
+    def __init__(self, fieldArr, tableName, conditionStr = None):
         self.fieldArr = fieldArr
         self.tableName = tableName
         self.condition = conditionStr
@@ -1846,7 +1859,52 @@ class LineChartQuery:
         validatedValue = 0
         if value != '': 
             validatedValue = value   
-        return validatedValue   
+        return validatedValue
+
+class DataQuery:
+    def __inti__(self, fieldArr, tableName, conditionStr):
+        self.fieldArr = fieldArr
+        self.tableName = tableName
+        self.condition = conditionStr
+
+    def countField(self):
+        fieldCount = 0
+        if self.fieldArr is not None:
+            fieldCount = len(self.fieldArr)
+        return fieldCount
+
+    def selectFieldToQuery(self):
+        selectField = '*'
+        if self.fieldArr is not None:
+            selectField = ",".join(self.fieldArr)
+        return selectField
+
+    def getData(self):
+        result = dict()
+        selectField = self.selectFieldToQuery()
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = 'select %s from %s' % (selectField, self.tableName)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(self.fieldArr)):
+                fieldName = fieldArr[field]
+                validatedValue = self.valueValidation(query.value(field))
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(validatedValue)
+                    else:
+                        result[fieldName] = [validatedValue]
+                else:
+                    result[fieldName] = [validatedValue]
+        azenqosDatabase.close()
+        return result
+
+    def valueValidation(self, value):
+        validatedValue = 0
+        if value is not None:
+            validatedValue = value
+        return validatedValue
 
 class setInterval:
     def __init__(self, value, interval, action):

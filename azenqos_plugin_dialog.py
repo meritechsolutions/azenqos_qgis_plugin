@@ -37,8 +37,8 @@ import sqlite3
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 import numpy as np
-# from qgis.core import *
-# from qgis.utils import *
+from qgis.core import *
+from qgis.utils import *
 
 azenqosDatabase = None
 minTimeValue = None
@@ -125,7 +125,7 @@ class Ui_DatabaseDialog(QDialog):
                 "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
             return False
         else:
-            # self.addLayerToQgis()
+            self.addLayerToQgis()
             self.getTimeForSlider()
             QMessageBox.about(self, 'Connection result',
                               'Database is Connected, Enter the main menu')
@@ -161,6 +161,7 @@ class Ui_DatabaseDialog(QDialog):
 
     def addLayerToQgis(self):
         QgsProject.removeAllMapLayers(QgsProject.instance())
+        # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
         urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
         rlayer = QgsRasterLayer(urlWithParams, 'Longdo Map Icons', 'wms')
         if rlayer.isValid():
@@ -213,7 +214,7 @@ class AzenqosDialog(QDialog):
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-        timeSlider.sizePolicy().hasHeightForWidth())
+            timeSlider.sizePolicy().hasHeightForWidth())
         timeSlider.setSizePolicy(sizePolicy)
         timeSlider.setBaseSize(QtCore.QSize(500, 0))
         timeSlider.setPageStep(1)
@@ -293,16 +294,19 @@ class AzenqosDialog(QDialog):
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
-        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma, ['Active + Monitored Sets'])
+        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
+                                                   ['Active + Monitored Sets'])
         wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
         wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
         wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
         wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
-        wcdmaTransportChannel = QTreeWidgetItem(wcdma, ['BLER / Transport Channel'])
+        wcdmaTransportChannel = QTreeWidgetItem(wcdma,
+                                                ['BLER / Transport Channel'])
         wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
         wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
         wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
-        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma, ['Active + Monitored Bar'])
+        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
+                                                  ['Active + Monitored Bar'])
         wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
         wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
         wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
@@ -319,7 +323,8 @@ class AzenqosDialog(QDialog):
         # CDMA/EVDO Section
         cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
         cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
-        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo, ['Serving + Neighbors'])
+        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
+                                                   ['Serving + Neighbors'])
         cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
 
         # Data Section
@@ -343,24 +348,31 @@ class AzenqosDialog(QDialog):
         signalingLayerThree = QTreeWidgetItem(signaling, ['Layer 3 Messages'])
         signalingBenchmark = QTreeWidgetItem(signaling, ['Benchmark'])
         signalingMM = QTreeWidgetItem(signaling, ['MM Reg States'])
-        signalingSystemInfo = QTreeWidgetItem(signaling, ['Serving System Info'])
+        signalingSystemInfo = QTreeWidgetItem(signaling,
+                                              ['Serving System Info'])
         signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
-        positioning = QTreeWidgetItem(self.presentationTreeWidget, ['Positioning'])
+        positioning = QTreeWidgetItem(self.presentationTreeWidget,
+                                      ['Positioning'])
         positioningGps = QTreeWidgetItem(positioning, ['GPS'])
         positioningMap = QTreeWidgetItem(positioning, ['Map'])
         positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
         # Customized Window Section
-        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget, ['Customized Window'])
-        customizedWindowStatus = QTreeWidgetItem(customizedWindow, ['Status Window'])
-        customizedWindowMessage = QTreeWidgetItem(customizedWindow, ['Message Window'])
-        customizedWindowChart = QTreeWidgetItem(customizedWindow, ['Line Chart'])
+        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
+                                           ['Customized Window'])
+        customizedWindowStatus = QTreeWidgetItem(customizedWindow,
+                                                 ['Status Window'])
+        customizedWindowMessage = QTreeWidgetItem(customizedWindow,
+                                                  ['Message Window'])
+        customizedWindowChart = QTreeWidgetItem(customizedWindow,
+                                                ['Line Chart'])
         #
         # # NB-IoT Section
         nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
-        nBIoTParams = QTreeWidgetItem(nBIoT, ['NB-IoT Radio Parameters Window'])
+        nBIoTParams = QTreeWidgetItem(nBIoT,
+                                      ['NB-IoT Radio Parameters Window'])
 
         self.presentationTreeWidget.header().setCascadingSectionResizes(True)
         self.presentationTreeWidget.header().setHighlightSections(True)
@@ -372,8 +384,10 @@ class AzenqosDialog(QDialog):
         self.configurationTreeWidget.setFrameShape(QFrame.StyledPanel)
         self.configurationTreeWidget.setAllColumnsShowFocus(True)
         self.configurationTreeWidget.setObjectName("configurationTreeWidget")
-        cellInformation = QTreeWidgetItem(self.configurationTreeWidget, ['Cell Information'])
-        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget, ['Equipment Configuration'])
+        cellInformation = QTreeWidgetItem(self.configurationTreeWidget,
+                                          ['Cell Information'])
+        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget,
+                                                 ['Equipment Configuration'])
 
     def setupPlayStopButton(self, AzenqosDialog):
         # todo ยังไม่เสร็จ
@@ -1001,10 +1015,10 @@ class TableWindow(QDialog):
         model = self.tableView.model()
         data = []
         for row in range(model.rowCount()):
-            index = model.index(row,0)
+            index = model.index(row, 0)
             value = model.data(index)
             if value > dateString:
-                self.tableView.selectRow(row-1)
+                self.tableView.selectRow(row - 1)
                 break
 
     def reject(self):
@@ -1496,17 +1510,20 @@ class Ui_LTE_LCwidget(QWidget):
     def setupUi(self, LTE_LCwidget):
         LTE_LCwidget.setObjectName("LTE_LCwidget")
         LTE_LCwidget.resize(841, 586)
+
+        # Graph Area
         self.lte_GArea = QtWidgets.QScrollArea(LTE_LCwidget)
         self.lte_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
         self.lte_GArea.setWidgetResizable(True)
         self.lte_GArea.setObjectName("lte_GArea")
+
+        # Scroll Area
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
         self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents, self.title)
-        self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
-        self.lte_widget.setObjectName("lte_widget")
         self.lte_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        # DataTable
         self.lte_tableWidget = QtWidgets.QTableWidget(LTE_LCwidget)
         self.lte_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 171))
         self.lte_tableWidget.setObjectName("lte_tableWidget")
@@ -1551,6 +1568,9 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setItem(0, 0, item)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.lte_tableWidget.setItem(0, 2, item)
         item = QtWidgets.QTableWidgetItem()
         brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
@@ -1560,6 +1580,9 @@ class Ui_LTE_LCwidget(QWidget):
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.lte_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(1, 1, item)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.lte_tableWidget.setItem(1, 2, item)
@@ -1573,6 +1596,9 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setItem(2, 0, item)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.lte_tableWidget.setItem(2, 2, item)
         item = QtWidgets.QTableWidgetItem()
         brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
@@ -1584,6 +1610,9 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setItem(3, 0, item)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(3, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.lte_tableWidget.setItem(3, 2, item)
         item = QtWidgets.QTableWidgetItem()
         brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
@@ -1593,6 +1622,9 @@ class Ui_LTE_LCwidget(QWidget):
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.lte_tableWidget.setItem(4, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_tableWidget.setItem(4, 1, item)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.lte_tableWidget.setItem(4, 2, item)
@@ -1607,6 +1639,31 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.horizontalHeader().setVisible(True)
         self.lte_tableWidget.horizontalHeader().setHighlightSections(True)
         self.lte_tableWidget.verticalHeader().setVisible(False)
+
+        # DateLabel
+        self.datelabel = QtWidgets.QLabel(LTE_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(LTE_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.lte_tableWidget,self.lineEdit)
+        self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.lte_widget.setObjectName("lte_widget")
 
         self.retranslateUi(LTE_LCwidget)
         QtCore.QMetaObject.connectSlotsByName(LTE_LCwidget)
@@ -1656,55 +1713,67 @@ class Ui_LTE_LCwidget(QWidget):
         item = self.lte_tableWidget.item(4, 2)
         item.setText(_translate("LTE_LCwidget", "MS1"))
         self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
 
+# Class For Line Chart
+class  Line_Chart(QWidget):
 
-# For Line Chart
-
-
-class Line_Chart(QWidget):
-    def __init__(self, parent, windowName):
+    def  __init__ (self,parent,windowName,tablewidget,datelabel):
         super().__init__(parent)
-        self.title = windowName
-        self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
-        vertical_layout = QVBoxLayout()
+        self.canvas  =  FigureCanvas(Figure(figsize=(4, 4)))
+        vertical_layout  =  QVBoxLayout()
         vertical_layout.addWidget(self.canvas)
-        self.canvas.axes = self.canvas.figure.add_subplot()
+        self.canvas.axes =  self.canvas.figure.add_subplot()
         self.setLayout(vertical_layout)
+        self.title = windowName
+        self.tablewidget = tablewidget
+        self.datelabel = datelabel
+        #self.timeline = timeline
 
-        # Toolbar
+        # Graph Toolbar
         toolbar = NavigationToolbar(self.canvas, self)
         vertical_layout.addWidget(toolbar)
 
-        # Choose Line Chart
-        if self.title is not None:
-            # LTE Line Chart
-            if self.title == 'LTE_LTE Line Chart':
-                self.LTE()
+        # Choose Line Chart By WindowName
+        self.GraphSelector(self.title)
 
+    def GraphSelector(self,argument):
+        switcher = {
+            'LTE_LTE Line Chart': self.LTE(),
+        }
+
+        # if self.title is not None:
+        #     if self.title == 'LTE_LTE Line Chart':
+        #         self.LTE()
+
+    # Create LTE Line Chart
     def LTE(self):
         self.canvas.axes.set_title('LTE Line Chart')
+        Date = []
         Time = []
+
+        # Signal DataList
         SINR_Rx0_1 = []
         SINR_Rx1_1 = []
         Inst_RSRP_1 = []
         Inst_RSRQ_1 = []
         Inst_RSSI_1 = []
 
+        # Open Database And Query
         azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_(
-            "SELECT time ,lte_sinr_rx0_1 ,lte_sinr_rx1_1 ,lte_inst_rsrp_1 ,lte_inst_rsrq_1 ,lte_inst_rssi_1 FROM lte_cell_meas"
-        )
-        # Query
-        time = (query.record().indexOf("time"))
-        lte_sinr_rx0_1 = query.record().indexOf("lte_sinr_rx0_1")
-        lte_sinr_rx1_1 = query.record().indexOf("lte_sinr_rx1_1")
-        lte_inst_rsrp_1 = query.record().indexOf("lte_inst_rsrp_1")
-        lte_inst_rsrq_1 = query.record().indexOf("lte_inst_rsrq_1")
-        lte_inst_rssi_1 = query.record().indexOf("lte_inst_rssi_1")
+        c = QSqlQuery()
+        c.exec_("SELECT * FROM lte_cell_meas")
+        time = (c.record().indexOf("time"))
+        lte_sinr_rx0_1 = c.record().indexOf("lte_sinr_rx0_1")
+        lte_sinr_rx1_1 = c.record().indexOf("lte_sinr_rx1_1")
+        lte_inst_rsrp_1 = c.record().indexOf("lte_inst_rsrp_1")
+        lte_inst_rsrq_1 = c.record().indexOf("lte_inst_rsrq_1")
+        lte_inst_rssi_1 = c.record().indexOf("lte_inst_rssi_1")
 
         while c.next():
-            timeValue = query.value(time).split(' ')[1]
+            DateValue = c.value(time).split(' ')[0]
+            Date.append(DateValue)
+            timeValue = c.value(time).split(' ')[1]
             Time.append(timeValue)
             sig1Value = query.value(lte_sinr_rx0_1)
             sig2Value = query.value(lte_sinr_rx1_1)
@@ -1712,6 +1781,7 @@ class Line_Chart(QWidget):
             sig4Value = query.value(lte_inst_rsrq_1)
             sig5Value = query.value(lte_inst_rssi_1)
 
+            # Check Database Data For NULL
             if not (type(sig1Value) == float):
                 SINR_Rx0_1.append(0)
             else:
@@ -1737,6 +1807,8 @@ class Line_Chart(QWidget):
             else:
                 Inst_RSSI_1.append(sig5Value)
 
+        # Graph setting
+        self.datelabel.setText(Date[0])
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
@@ -1744,44 +1816,23 @@ class Line_Chart(QWidget):
         self.canvas.axes.set_xticklabels(Time)
         self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
-        # print(SINR_Rx0_1)
-        line1, = self.canvas.axes.plot(Time,
-                                       SINR_Rx0_1,
-                                       c='#ff0000',
-                                       label='SINR Rx[0][1]',
-                                       picker=5,
-                                       linewidth=1)
-        line2, = self.canvas.axes.plot(Time,
-                                       SINR_Rx1_1,
-                                       '#0000ff',
-                                       label='SINR Rx[1][1]',
-                                       picker=5,
-                                       linewidth=1)
-        line3, = self.canvas.axes.plot(Time,
-                                       Inst_RSRP_1,
-                                       '#007c00',
-                                       label='Inst RSRP[1]',
-                                       picker=5,
-                                       linewidth=1)
-        line4, = self.canvas.axes.plot(Time,
-                                       Inst_RSRQ_1,
-                                       '#ff77ab',
-                                       label='Inst RSRQ[1]',
-                                       picker=5,
-                                       linewidth=1)
-        line5, = self.canvas.axes.plot(Time,
-                                       Inst_RSSI_1,
-                                       '#000000',
-                                       label='Inst RSSI[1]',
-                                       picker=5,
-                                       linewidth=1)
-        # self.canvas.draw()
-        self.canvas.axes.set_ylim(-120, 35)
-        self.canvas.axes.set_xlim(Time[0], Time[3])
+
+        # Ploting Graph
+        line1, = self.canvas.axes.plot(Time,SINR_Rx0_1,'#ff0000',label = 'SINR Rx[0][1]',picker=5,linewidth=1)
+        line2, = self.canvas.axes.plot(Time,SINR_Rx1_1,'#0000ff',label = 'SINR Rx[1][1]',picker=5,linewidth=1)
+        line3, = self.canvas.axes.plot(Time,Inst_RSRP_1,'#007c00',label = 'Inst RSRP[1]',picker=5,linewidth=1)
+        line4, = self.canvas.axes.plot(Time,Inst_RSRQ_1,'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1)
+        line5, = self.canvas.axes.plot(Time,Inst_RSSI_1,'#000000',label = 'Inst RSSI[1]',picker=5,linewidth=1)
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-120,35)
+        self.canvas.axes.set_xlim(Time[0],Time[3])
         azenqosDatabase.close()
 
-        lines = [line1, line2, line3, line4, line5]
+        # Line List
+        lines = [line1,line2,line3,line4,line5]
 
+        # Line Focusing Function
         def on_pick(event):
             for L in lines:
                 L.set_linewidth(1)
@@ -1790,6 +1841,87 @@ class Line_Chart(QWidget):
 
         pick = self.canvas.mpl_connect('pick_event', on_pick)
 
+        # Show Data In Table
+        Chart_datalist = []
+        def get_table_data(event):
+            x,y = int(event.xdata), event.ydata
+            Chart_datalist = [SINR_Rx0_1[x],SINR_Rx1_1[x],Inst_RSRP_1[x],Inst_RSRQ_1[x],Inst_RSSI_1[x]]
+            i=0
+            while i < len(Chart_datalist):
+                Value = round(Chart_datalist[i],3)
+                self.tablewidget.item(i,1).setText(str(Value))
+                i+=1
+
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+
+class LineChartQuery:
+    def __inti__(self, fieldArr, tableName, conditionStr):
+        self.fieldArr = fieldArr
+        self.tableName = tableName
+        self.condition = conditionStr
+
+    def countField(self):
+        fieldCount = 0
+        if self.fieldArr is not None:
+            fieldCount = len(self.fieldArr)
+        return fieldCount
+
+    def selectFieldToQuery(self):
+        selectField = '*'
+        if self.fieldArr is not None:
+            selectField = ",".join(self.fieldArr)
+        return selectField
+
+    def getData(self):
+        result = dict()
+        selectField = self.selectFieldToQuery()
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = 'select %s from %s' % (selectField, self.tableName)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(self.fieldArr)):
+                fieldName = fieldArr[field]
+                validatedValue = self.valueValidation(query.value(field))
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(validatedValue)
+                    else:
+                        result[fieldName] = [validatedValue]
+                else:
+                    result[fieldName] = [validatedValue]
+        azenqosDatabase.close()
+        return result
+
+    def valueValidation(self, value):
+        validatedValue = 0
+        if value is not None:
+            validatedValue = value
+        return validatedValue
+
+    # def getList():
+    #     result = dict()
+    #     fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
+    #     selectField = ",".join(fields)
+    #     azenqosDatabase.open()
+    #     query = QSqlQuery()
+    #     queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
+    #     query.exec_(queryString)
+    #     while query.next():
+    #         for field in range(len(fields)):
+    #             fieldName = fields[field]
+    #             if fieldName in result:
+    #                 if isinstance(result[fieldName], list):
+    #                     result[fieldName].append(query.value(field))
+    #                 else:
+    #                     result[fieldName] = [query.value(field)]
+    #             else:
+    #                 result[fieldName] = [query.value(field)]
+
+    #     azenqosDatabase.close()
+    #     print(result)
 
 class setInterval:
     def __init__(self, value, interval, action):
@@ -1808,9 +1940,31 @@ class setInterval:
     def cancel(self):
         self.stopEvent.set()
 
+def getList():
+        result = dict()
+        fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
+        selectField = ",".join(fields)
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(fields)):
+                fieldName = fields[field]
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(query.value(field))
+                    else:
+                        result[fieldName] = [query.value(field)]
+                else:
+                    result[fieldName] = [query.value(field)]
+
+        azenqosDatabase.close()
+        print(result)
 
 # if __name__ == '__main__':
 #     app = QApplication(sys.argv)
 #     dialog = Ui_DatabaseDialog()
 #     dialog.show()
+
 #     sys.exit(app.exec_())

@@ -129,6 +129,7 @@ class Ui_DatabaseDialog(QDialog):
             self.getTimeForSlider()
             QMessageBox.about(self, 'Connection result',
                               'Database is Connected, Enter the main menu')
+            #getList()
             self.hide()
             self.azenqosMainMenu = AzenqosDialog()
             self.azenqosMainMenu.show()
@@ -770,6 +771,7 @@ class AzenqosDialog(QDialog):
                     self.debug_event = TableWindow(windowName)
                     openedWindows.append(self.debug_event)
                     self.debug_event.show()
+        print(openedWindows)
         # elif parent == "Positioning":
         #     if child == "GPS":
         #         print("1")
@@ -1512,6 +1514,8 @@ class SignalingDataQuery:
 
 
 # LTE Line Chart UI
+
+
 class Ui_LTE_LCwidget(QWidget):
     def __init__(self, windowName):
         super(Ui_LTE_LCwidget, self).__init__()
@@ -1728,7 +1732,6 @@ class Ui_LTE_LCwidget(QWidget):
 
 # Class For Line Chart
 class  Line_Chart(QWidget):
-
     def  __init__ (self,parent,windowName,tablewidget,datelabel):
         super().__init__(parent)
         self.canvas  =  FigureCanvas(Figure(figsize=(4, 4)))
@@ -1758,15 +1761,7 @@ class  Line_Chart(QWidget):
         Date = []
         Time = []
 
-        # Signal DataList
-        SINR_Rx0_1 = []
-        SINR_Rx1_1 = []
-        Inst_RSRP_1 = []
-        Inst_RSRQ_1 = []
-        Inst_RSSI_1 = []
-
         # Open Database And Query
-
         ChartQuery = LineChartQuery(['time','lte_sinr_rx0_1','lte_sinr_rx1_1','lte_inst_rsrp_1','lte_inst_rsrq_1','lte_inst_rssi_1'],'lte_cell_meas','')
         result = ChartQuery.getData()
         for i in range(len(result['time'])):
@@ -1785,31 +1780,19 @@ class  Line_Chart(QWidget):
 
         # Ploting Graph
 
-        # lines = []
+        lines = []
         ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
-        # line_ = Line2D(xdata = Time, ydata = result['lte_sinr_rx0_1'],c = ColorArr[0],picker=5)
-        # lines.append(line_)
-        # for y in result.items():
-        #     if not(y[0]=='time'):
-        #         for i in range(len(ColorArr)):
-        #             line_ = Line2D(xdata = Time, ydata = y[1],c = ColorArr[i],picker=5)
-        #             #self.canvas.axes.add_line(line_)
-        #             lines.append(line_)
-
-        # for L in range(len(lines)):
-        #     self.canvas.axes.add_line(lines[L])
-        line1, = self.canvas.axes.plot(Time,result['lte_sinr_rx0_1'],'#ff0000',label = 'SINR Rx[0][1]',picker=5,linewidth=1)
-        line2, = self.canvas.axes.plot(Time,result['lte_sinr_rx1_1'],'#0000ff',label = 'SINR Rx[1][1]',picker=5,linewidth=1)
-        line3, = self.canvas.axes.plot(Time,result['lte_inst_rsrp_1'],'#007c00',label = 'Inst RSRP[1]',picker=5,linewidth=1)
-        line4, = self.canvas.axes.plot(Time,result['lte_inst_rsrq_1'],'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1)
-        line5, = self.canvas.axes.plot(Time,result['lte_inst_rssi_1'],'#000000',label = 'Inst RSSI[1]',picker=5,linewidth=1)
+        
+        for data in result.items():
+            if(data[0]!='time'):
+                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
+                lines.append(newline,)
+        for c in range(len(lines)):
+            lines[c].set_color(ColorArr[c])
 
         # Scale Editing
         self.canvas.axes.set_ylim(-120,35)
         self.canvas.axes.set_xlim(Time[0],Time[3])
-
-        # Line List
-        lines = [line1,line2,line3,line4,line5]
 
         # Line Focusing Function
         def on_pick(event):
@@ -1874,8 +1857,8 @@ class LineChartQuery:
 
     def valueValidation(self, value):
         validatedValue = 0
-        if value != '':
-            validatedValue = value
+        if value != '': 
+            validatedValue = value   
         return validatedValue
 
 class DataQuery:

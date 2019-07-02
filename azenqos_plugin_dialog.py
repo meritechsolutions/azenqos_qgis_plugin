@@ -180,7 +180,7 @@ class Ui_DatabaseDialog(QDialog):
                 QgsProject.instance().addMapLayer(vlayer)
         azenqosDatabase.close()
 
-    def getSlideLength(self):
+    def setIncrementValue(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
@@ -1761,16 +1761,16 @@ class  Line_Chart(QWidget):
 
         # Open Database And Query
         azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM lte_cell_meas")
-        time = (query.record().indexOf("time"))
-        lte_sinr_rx0_1 = query.record().indexOf("lte_sinr_rx0_1")
-        lte_sinr_rx1_1 = query.record().indexOf("lte_sinr_rx1_1")
-        lte_inst_rsrp_1 = query.record().indexOf("lte_inst_rsrp_1")
-        lte_inst_rsrq_1 = query.record().indexOf("lte_inst_rsrq_1")
-        lte_inst_rssi_1 = query.record().indexOf("lte_inst_rssi_1")
+        c = QSqlQuery()
+        c.exec_("SELECT * FROM lte_cell_meas")
+        time = (c.record().indexOf("time"))
+        lte_sinr_rx0_1 = c.record().indexOf("lte_sinr_rx0_1")
+        lte_sinr_rx1_1 = c.record().indexOf("lte_sinr_rx1_1")
+        lte_inst_rsrp_1 = c.record().indexOf("lte_inst_rsrp_1")
+        lte_inst_rsrq_1 = c.record().indexOf("lte_inst_rsrq_1")
+        lte_inst_rssi_1 = c.record().indexOf("lte_inst_rssi_1")
 
-        while query.next():
+        while c.next():
             DateValue = c.value(time).split(' ')[0]
             Date.append(DateValue)
             timeValue = c.value(time).split(' ')[1]

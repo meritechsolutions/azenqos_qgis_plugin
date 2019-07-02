@@ -33,6 +33,7 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.lines import Line2D    
 import sqlite3
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
@@ -1725,7 +1726,6 @@ class  Line_Chart(QWidget):
         self.title = windowName
         self.tablewidget = tablewidget
         self.datelabel = datelabel
-        #self.timeline = timeline
 
         # Graph Toolbar
         toolbar = NavigationToolbar(self.canvas, self)
@@ -1739,13 +1739,9 @@ class  Line_Chart(QWidget):
             'LTE_LTE Line Chart': self.LTE(),
         }
 
-        # if self.title is not None:
-        #     if self.title == 'LTE_LTE Line Chart':
-        #         self.LTE()
-
     # Create LTE Line Chart
     def LTE(self):
-        self.canvas.axes.set_title('LTE Line Chart')
+        self.canvas.axes.set_title('LTE Line Chart')  
         Date = []
         Time = []
 
@@ -1757,52 +1753,12 @@ class  Line_Chart(QWidget):
         Inst_RSSI_1 = []
 
         # Open Database And Query
-        azenqosDatabase.open()
-        c = QSqlQuery()
-        c.exec_("SELECT * FROM lte_cell_meas")
-        time = (c.record().indexOf("time"))
-        lte_sinr_rx0_1 = c.record().indexOf("lte_sinr_rx0_1")
-        lte_sinr_rx1_1 = c.record().indexOf("lte_sinr_rx1_1")
-        lte_inst_rsrp_1 = c.record().indexOf("lte_inst_rsrp_1")
-        lte_inst_rsrq_1 = c.record().indexOf("lte_inst_rsrq_1")
-        lte_inst_rssi_1 = c.record().indexOf("lte_inst_rssi_1")
 
-        while c.next():
-            DateValue = c.value(time).split(' ')[0]
-            Date.append(DateValue)
-            timeValue = c.value(time).split(' ')[1]
-            Time.append(timeValue)
-            sig1Value = query.value(lte_sinr_rx0_1)
-            sig2Value = query.value(lte_sinr_rx1_1)
-            sig3Value = query.value(lte_inst_rsrp_1)
-            sig4Value = query.value(lte_inst_rsrq_1)
-            sig5Value = query.value(lte_inst_rssi_1)
-
-            # Check Database Data For NULL
-            if not (type(sig1Value) == float):
-                SINR_Rx0_1.append(0)
-            else:
-                SINR_Rx0_1.append(sig1Value)
-
-            if not (type(sig2Value) == float):
-                SINR_Rx1_1.append(0)
-            else:
-                SINR_Rx1_1.append(sig2Value)
-
-            if not (type(sig3Value) == float):
-                Inst_RSRP_1.append(0)
-            else:
-                Inst_RSRP_1.append(sig3Value)
-
-            if not (type(sig4Value) == float):
-                Inst_RSRQ_1.append(0)
-            else:
-                Inst_RSRQ_1.append(sig4Value)
-
-            if not (type(sig5Value) == float):
-                Inst_RSSI_1.append(0)
-            else:
-                Inst_RSSI_1.append(sig5Value)
+        ChartQuery = LineChartQuery(['time','lte_sinr_rx0_1','lte_sinr_rx1_1','lte_inst_rsrp_1','lte_inst_rsrq_1','lte_inst_rssi_1'],'lte_cell_meas','')
+        result = ChartQuery.getData()
+        for i in range(len(result['time'])):
+            Date.append(result['time'][i].split(' ')[0])
+            Time.append(result['time'][i].split(' ')[1])
 
         # Graph setting
         self.datelabel.setText(Date[0])
@@ -1815,16 +1771,29 @@ class  Line_Chart(QWidget):
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
-        line1, = self.canvas.axes.plot(Time,SINR_Rx0_1,'#ff0000',label = 'SINR Rx[0][1]',picker=5,linewidth=1)
-        line2, = self.canvas.axes.plot(Time,SINR_Rx1_1,'#0000ff',label = 'SINR Rx[1][1]',picker=5,linewidth=1)
-        line3, = self.canvas.axes.plot(Time,Inst_RSRP_1,'#007c00',label = 'Inst RSRP[1]',picker=5,linewidth=1)
-        line4, = self.canvas.axes.plot(Time,Inst_RSRQ_1,'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1)
-        line5, = self.canvas.axes.plot(Time,Inst_RSSI_1,'#000000',label = 'Inst RSSI[1]',picker=5,linewidth=1)
+
+        # lines = []
+        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+        # line_ = Line2D(xdata = Time, ydata = result['lte_sinr_rx0_1'],c = ColorArr[0],picker=5)
+        # lines.append(line_)
+        # for y in result.items():
+        #     if not(y[0]=='time'):
+        #         for i in range(len(ColorArr)):
+        #             line_ = Line2D(xdata = Time, ydata = y[1],c = ColorArr[i],picker=5)
+        #             #self.canvas.axes.add_line(line_)
+        #             lines.append(line_)
+
+        # for L in range(len(lines)):            
+        #     self.canvas.axes.add_line(lines[L])          
+        line1, = self.canvas.axes.plot(Time,result['lte_sinr_rx0_1'],'#ff0000',label = 'SINR Rx[0][1]',picker=5,linewidth=1)
+        line2, = self.canvas.axes.plot(Time,result['lte_sinr_rx1_1'],'#0000ff',label = 'SINR Rx[1][1]',picker=5,linewidth=1)
+        line3, = self.canvas.axes.plot(Time,result['lte_inst_rsrp_1'],'#007c00',label = 'Inst RSRP[1]',picker=5,linewidth=1)
+        line4, = self.canvas.axes.plot(Time,result['lte_inst_rsrq_1'],'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1)
+        line5, = self.canvas.axes.plot(Time,result['lte_inst_rssi_1'],'#000000',label = 'Inst RSSI[1]',picker=5,linewidth=1)
 
         # Scale Editing
         self.canvas.axes.set_ylim(-120,35)
         self.canvas.axes.set_xlim(Time[0],Time[3])
-        azenqosDatabase.close()
 
         # Line List
         lines = [line1,line2,line3,line4,line5]
@@ -1836,25 +1805,25 @@ class  Line_Chart(QWidget):
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-        pick = self.canvas.mpl_connect('pick_event', on_pick)
 
         # Show Data In Table
-        Chart_datalist = []
+        
         def get_table_data(event):
+            Chart_datalist = []
             x,y = int(event.xdata), event.ydata
-            Chart_datalist = [SINR_Rx0_1[x],SINR_Rx1_1[x],Inst_RSRP_1[x],Inst_RSRQ_1[x],Inst_RSSI_1[x]]
-            i=0
-            while i < len(Chart_datalist):
+            for k in result.items():
+                if not(k[0]=='time'):
+                    Chart_datalist.append(k[1][x])
+            for i in range(len(Chart_datalist)):
                 Value = round(Chart_datalist[i],3)
                 self.tablewidget.item(i,1).setText(str(Value))
-                i+=1
-
+     
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
-
+       
 class LineChartQuery:
-    def __inti__(self, fieldArr, tableName, conditionStr):
+    def __init__(self, fieldArr, tableName, conditionStr):
         self.fieldArr = fieldArr
         self.tableName = tableName
         self.condition = conditionStr
@@ -1880,7 +1849,7 @@ class LineChartQuery:
         query.exec_(queryString)
         while query.next():
             for field in range(len(self.fieldArr)):
-                fieldName = fieldArr[field]
+                fieldName = self.fieldArr[field]
                 validatedValue = self.valueValidation(query.value(field))
                 if fieldName in result:
                     if isinstance(result[fieldName], list):
@@ -1894,8 +1863,8 @@ class LineChartQuery:
 
     def valueValidation(self, value):
         validatedValue = 0
-        if value is not None:
-            validatedValue = value
+        if value != '': 
+            validatedValue = value   
         return validatedValue
 
 class DataQuery:

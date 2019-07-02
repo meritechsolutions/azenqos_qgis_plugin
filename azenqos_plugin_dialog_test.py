@@ -769,7 +769,6 @@ class AzenqosDialog(QDialog):
                     self.debug_event = TableWindow(windowName)
                     openedWindows.append(self.debug_event)
                     self.debug_event.show()
-        print(openedWindows)
         # elif parent == "Positioning":
         #     if child == "GPS":
         #         print("1")
@@ -1500,8 +1499,6 @@ class SignalingDataQuery:
 
 
 # LTE Line Chart UI
-
-
 class Ui_LTE_LCwidget(QWidget):
     def __init__(self, windowName):
         super(Ui_LTE_LCwidget, self).__init__()
@@ -1902,27 +1899,50 @@ class LineChartQuery:
             validatedValue = value
         return validatedValue
 
-    # def getList():
-    #     result = dict()
-    #     fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
-    #     selectField = ",".join(fields)
-    #     azenqosDatabase.open()
-    #     query = QSqlQuery()
-    #     queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
-    #     query.exec_(queryString)
-    #     while query.next():
-    #         for field in range(len(fields)):
-    #             fieldName = fields[field]
-    #             if fieldName in result:
-    #                 if isinstance(result[fieldName], list):
-    #                     result[fieldName].append(query.value(field))
-    #                 else:
-    #                     result[fieldName] = [query.value(field)]
-    #             else:
-    #                 result[fieldName] = [query.value(field)]
+class DataQuery:
+    def __inti__(self, fieldArr, tableName, conditionStr):
+        self.fieldArr = fieldArr
+        self.tableName = tableName
+        self.condition = conditionStr
 
-    #     azenqosDatabase.close()
-    #     print(result)
+    def countField(self):
+        fieldCount = 0
+        if self.fieldArr is not None:
+            fieldCount = len(self.fieldArr)
+        return fieldCount
+
+    def selectFieldToQuery(self):
+        selectField = '*'
+        if self.fieldArr is not None:
+            selectField = ",".join(self.fieldArr)
+        return selectField
+
+    def getData(self):
+        result = dict()
+        selectField = self.selectFieldToQuery()
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = 'select %s from %s' % (selectField, self.tableName)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(self.fieldArr)):
+                fieldName = fieldArr[field]
+                validatedValue = self.valueValidation(query.value(field))
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(validatedValue)
+                    else:
+                        result[fieldName] = [validatedValue]
+                else:
+                    result[fieldName] = [validatedValue]
+        azenqosDatabase.close()
+        return result
+
+    def valueValidation(self, value):
+        validatedValue = 0
+        if value is not None:
+            validatedValue = value
+        return validatedValue
 
 class setInterval:
     def __init__(self, value, interval, action):

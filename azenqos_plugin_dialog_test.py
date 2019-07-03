@@ -59,6 +59,7 @@ timeSlider = None
 isSliderPlay = False
 incrementValue = 0.00
 
+
 # Database select window
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -800,6 +801,7 @@ class AzenqosDialog(QDialog):
         self.hide()
         del self
 
+
 class TimeSlider(QSlider):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -884,7 +886,7 @@ class TableWindow(QDialog):
             # GSM
             if self.title == 'GSM_Radio Parameters':
                 self.tableHeader = ["Element", "Full", "Sub"]
-                self.dataList = GsmDataQuery(None).getRadioParameters()
+                self.dataList = GsmDataQuery().getRadioParameters()
             elif self.title == 'GSM_Serving + Neighbors':
                 self.tableHeader = [
                     "Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1",
@@ -1002,13 +1004,18 @@ class TableWindow(QDialog):
             # Signaling
             elif self.title == 'Signaling_Events':
                 self.tableHeader = ["Time", "Eq.", "Name", "Info."]
-                self.dataList = SignalingDataQuery().getEvents()
+                self.dataList = TableQuery(['time', '\' \'', 'name', 'info'],
+                                           'events', '').getData()
             elif self.title == 'Signaling_Layer 1 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                self.dataList = SignalingDataQuery().getLayerOneMessages()
+                self.dataList = TableQuery(
+                    ['time', '\'MS1\'', '\' \'', 'name', 'info'], 'events',
+                    '').getData()
             elif self.title == 'Signaling_Layer 3 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "", "Name", "Info."]
-                self.dataList = SignalingDataQuery().getLayerThreeMessages()
+                self.dataList = TableQuery(
+                    ['time', '\'MS1\'', '\' \'', '\' \'', 'name', 'info'], 'events',
+                    '').getData()
             elif self.title == 'Signaling_Benchmark':
                 self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
                 self.dataList = SignalingDataQuery().getBenchmark()
@@ -1048,7 +1055,6 @@ class TableModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
         self.dataSource = inputData
-        # self.testColumnValue()
 
     def rowCount(self, parent):
         return len(self.dataSource)
@@ -1514,8 +1520,6 @@ class SignalingDataQuery:
 
 
 # LTE Line Chart UI
-
-
 class Ui_LTE_LCwidget(QWidget):
     def __init__(self, windowName):
         super(Ui_LTE_LCwidget, self).__init__()
@@ -1676,7 +1680,8 @@ class Ui_LTE_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.lte_tableWidget,self.lineEdit)
+        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents, self.title,
+                                     self.lte_tableWidget, self.lineEdit)
         self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_widget.setObjectName("lte_widget")
 
@@ -1730,14 +1735,15 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
 
+
 # Class For Line Chart
-class  Line_Chart(QWidget):
-    def  __init__ (self,parent,windowName,tablewidget,datelabel):
+class Line_Chart(QWidget):
+    def __init__(self, parent, windowName, tablewidget, datelabel):
         super().__init__(parent)
-        self.canvas  =  FigureCanvas(Figure(figsize=(4, 4)))
-        vertical_layout  =  QVBoxLayout()
+        self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
+        vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(self.canvas)
-        self.canvas.axes =  self.canvas.figure.add_subplot()
+        self.canvas.axes = self.canvas.figure.add_subplot()
         self.setLayout(vertical_layout)
         self.title = windowName
         self.tablewidget = tablewidget
@@ -1750,7 +1756,7 @@ class  Line_Chart(QWidget):
         # Choose Line Chart By WindowName
         self.GraphSelector(self.title)
 
-    def GraphSelector(self,argument):
+    def GraphSelector(self, argument):
         switcher = {
             'LTE_LTE Line Chart': self.LTE(),
         }
@@ -1762,7 +1768,10 @@ class  Line_Chart(QWidget):
         Time = []
 
         # Open Database And Query
-        ChartQuery = LineChartQuery(['time','lte_sinr_rx0_1','lte_sinr_rx1_1','lte_inst_rsrp_1','lte_inst_rsrq_1','lte_inst_rssi_1'],'lte_cell_meas','')
+        ChartQuery = LineChartQuery([
+            'time', 'lte_sinr_rx0_1', 'lte_sinr_rx1_1', 'lte_inst_rsrp_1',
+            'lte_inst_rsrq_1', 'lte_inst_rssi_1'
+        ], 'lte_cell_meas', '')
         result = ChartQuery.getData()
         for i in range(len(result['time'])):
             Date.append(result['time'][i].split(' ')[0])
@@ -1781,18 +1790,21 @@ class  Line_Chart(QWidget):
         # Ploting Graph
 
         lines = []
-        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
-        
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+
         for data in result.items():
-            if(data[0]!='time'):
-                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-                lines.append(newline,)
+            if (data[0] != 'time'):
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
         for c in range(len(lines)):
             lines[c].set_color(ColorArr[c])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -1804,20 +1816,22 @@ class  Line_Chart(QWidget):
         # Show Data In Table
         def get_table_data(event):
             Chart_datalist = []
-            x,y = int(event.xdata), event.ydata
+            x, y = int(event.xdata), event.ydata
             for k in result.items():
-                if not(k[0]=='time'):
+                if not (k[0] == 'time'):
                     Chart_datalist.append(k[1][x])
             for i in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[i],3)
-                self.tablewidget.item(i,1).setText(str(Value))
+                Value = round(Chart_datalist[i], 3)
+                self.tablewidget.item(i, 1).setText(str(Value))
 
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
+
 
 class LineChartQuery:
-    def __init__(self, fieldArr, tableName, conditionStr = None):
+    def __init__(self, fieldArr, tableName, conditionStr=None):
         self.fieldArr = fieldArr
         self.tableName = tableName
         self.condition = conditionStr
@@ -1857,12 +1871,13 @@ class LineChartQuery:
 
     def valueValidation(self, value):
         validatedValue = 0
-        if value != '': 
-            validatedValue = value   
+        if value != '':
+            validatedValue = value
         return validatedValue
 
-class DataQuery:
-    def __inti__(self, fieldArr, tableName, conditionStr):
+
+class TableQuery:
+    def __init__(self, fieldArr, tableName, conditionStr):
         self.fieldArr = fieldArr
         self.tableName = tableName
         self.condition = conditionStr
@@ -1880,31 +1895,28 @@ class DataQuery:
         return selectField
 
     def getData(self):
-        result = dict()
         selectField = self.selectFieldToQuery()
         azenqosDatabase.open()
         query = QSqlQuery()
         queryString = 'select %s from %s' % (selectField, self.tableName)
         query.exec_(queryString)
+        row = 0
+        tableResult = []
+        countField = self.countField()
         while query.next():
-            for field in range(len(self.fieldArr)):
-                fieldName = fieldArr[field]
-                validatedValue = self.valueValidation(query.value(field))
-                if fieldName in result:
-                    if isinstance(result[fieldName], list):
-                        result[fieldName].append(validatedValue)
-                    else:
-                        result[fieldName] = [validatedValue]
-                else:
-                    result[fieldName] = [validatedValue]
+            value = []
+            for field in range(countField):
+                value.append(query.value(field))
+            tableResult.append(value)
         azenqosDatabase.close()
-        return result
+        return tableResult
 
     def valueValidation(self, value):
-        validatedValue = 0
-        if value is not None:
+        validatedValue = None
+        if value is not None or value != 0 or value != '':
             validatedValue = value
         return validatedValue
+
 
 class setInterval:
     def __init__(self, value, interval, action):
@@ -1923,9 +1935,9 @@ class setInterval:
     def cancel(self):
         self.stopEvent.set()
 
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     dialog = Ui_DatabaseDialog()
     dialog.show()
-
     sys.exit(app.exec_())

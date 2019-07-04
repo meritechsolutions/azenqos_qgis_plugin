@@ -647,14 +647,14 @@ class AzenqosDialog(QDialog):
                 if hasattr(self, 'gsm_data_lc'):
                     self.gsm_data_lc.show()
                 else:
-                    self.gsm_data_lc = TableWindow(windowName)
+                    self.gsm_data_lc = Ui_GSM_Data_LCwidget(windowName)
                     openedWindows.append(self.gsm_data_lc)
                     self.gsm_data_lc.show()
             elif child == "WCDMA Data Line Chart":
                 if hasattr(self, 'wcdma_data_lc'):
                     self.wcdma_data_lc.show()
                 else:
-                    self.wcdma_data_lc = TableWindow(windowName)
+                    self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(windowName)
                     openedWindows.append(self.wcdma_data_lc)
                     self.wcdma_data_lc.show()
             elif child == "GPRS/EDGE Information":
@@ -696,7 +696,7 @@ class AzenqosDialog(QDialog):
                 if hasattr(self, 'lte_data_lc'):
                     self.lte_data_lc.show()
                 else:
-                    self.lte_data_lc = TableWindow(windowName)
+                    self.lte_data_lc = Ui_LTE_Data_LCwidget(windowName)
                     openedWindows.append(self.lte_data_lc)
                     self.lte_data_lc.show()
             elif child == "Wifi Connected AP":
@@ -1533,6 +1533,7 @@ class Ui_GSM_LCwidget(QWidget):
         self.gsm_tableWidget.setVerticalHeaderItem(1, item)
         item = QtWidgets.QTableWidgetItem()
         self.gsm_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
@@ -1584,8 +1585,6 @@ class Ui_GSM_LCwidget(QWidget):
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
         self.gsm_tableWidget.setItem(1, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-
         self.gsm_tableWidget.horizontalHeader().setVisible(True)
         self.gsm_tableWidget.horizontalHeader().setHighlightSections(True)
         self.gsm_tableWidget.verticalHeader().setVisible(False)
@@ -1780,9 +1779,9 @@ class Ui_LTE_LCwidget(QWidget):
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setForeground(brush)
+        # brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        # brush.setStyle(QtCore.Qt.SolidPattern)
+        # item.setForeground(brush)
         self.lte_tableWidget.setItem(4, 3, item)
         self.lte_tableWidget.horizontalHeader().setVisible(True)
         self.lte_tableWidget.horizontalHeader().setHighlightSections(True)
@@ -1888,10 +1887,10 @@ class Ui_WCDMA_LCwidget(QWidget):
 
         # DataTable
         self.wcdma_tableWidget = QtWidgets.QTableWidget(WCDMA_LCwidget)
-        self.wcdma_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 171))
+        self.wcdma_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
         self.wcdma_tableWidget.setObjectName("wcdma_tableWidget")
         self.wcdma_tableWidget.setColumnCount(4)
-        self.wcdma_tableWidget.setRowCount(5)
+        self.wcdma_tableWidget.setRowCount(4)
         item = QtWidgets.QTableWidgetItem()
         self.wcdma_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1900,8 +1899,6 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.wcdma_tableWidget.setVerticalHeaderItem(2, item)
         item = QtWidgets.QTableWidgetItem()
         self.wcdma_tableWidget.setVerticalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_tableWidget.setVerticalHeaderItem(4, item)
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
@@ -1982,23 +1979,6 @@ class Ui_WCDMA_LCwidget(QWidget):
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
         self.wcdma_tableWidget.setItem(3, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(4, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(4, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(4, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setForeground(brush)
-        self.wcdma_tableWidget.setItem(4, 3, item)
         self.wcdma_tableWidget.horizontalHeader().setVisible(True)
         self.wcdma_tableWidget.horizontalHeader().setHighlightSections(True)
         self.wcdma_tableWidget.verticalHeader().setVisible(False)
@@ -2043,8 +2023,6 @@ class Ui_WCDMA_LCwidget(QWidget):
         item.setText(_translate("WCDMA_LCwidget", "3"))
         item = self.wcdma_tableWidget.verticalHeaderItem(3)
         item.setText(_translate("WCDMA_LCwidget", "4"))
-        item = self.wcdma_tableWidget.verticalHeaderItem(4)
-        item.setText(_translate("WCDMA_LCwidget", "5"))
         item = self.wcdma_tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("WCDMA_LCwidget", "Element"))
         item = self.wcdma_tableWidget.horizontalHeaderItem(1)
@@ -2056,27 +2034,577 @@ class Ui_WCDMA_LCwidget(QWidget):
         __sortingEnabled = self.wcdma_tableWidget.isSortingEnabled()
         self.wcdma_tableWidget.setSortingEnabled(False)
         item = self.wcdma_tableWidget.item(0, 0)
-        item.setText(_translate("WCDMA_LCwidget", "Signal1"))
+        item.setText(_translate("WCDMA_LCwidget", "ASET Ec/Io Avg."))
         item = self.wcdma_tableWidget.item(0, 2)
         item.setText(_translate("WCDMA_LCwidget", "MS1"))
         item = self.wcdma_tableWidget.item(1, 0)
-        item.setText(_translate("WCDMA_LCwidget", "Signal2"))
+        item.setText(_translate("WCDMA_LCwidget", "WCDMA RSSI"))
         item = self.wcdma_tableWidget.item(1, 2)
         item.setText(_translate("WCDMA_LCwidget", "MS1"))
         item = self.wcdma_tableWidget.item(2, 0)
-        item.setText(_translate("WCDMA_LCwidget", "Signal3"))
+        item.setText(_translate("WCDMA_LCwidget", "BLER Average Percent"))
         item = self.wcdma_tableWidget.item(2, 2)
         item.setText(_translate("WCDMA_LCwidget", "MS1"))
         item = self.wcdma_tableWidget.item(3, 0)
-        item.setText(_translate("WCDMA_LCwidget", "Signal4"))
+        item.setText(_translate("WCDMA_LCwidget", "ASET RSCP Avg."))
         item = self.wcdma_tableWidget.item(3, 2)
-        item.setText(_translate("WCDMA_LCwidget", "MS1"))
-        item = self.wcdma_tableWidget.item(4, 0)
-        item.setText(_translate("WCDMA_LCwidget", "Signal5"))
-        item = self.wcdma_tableWidget.item(4, 2)
         item.setText(_translate("WCDMA_LCwidget", "MS1"))
         self.wcdma_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_LCwidget", "Date :"))
+
+# LTE Data Line Chart UI
+class Ui_LTE_Data_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_LTE_Data_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, LTE_Data_LCwidget):
+        LTE_Data_LCwidget.setObjectName("LTE_Data_LCwidget")
+        LTE_Data_LCwidget.resize(841, 586)
+
+        # Graph Area
+        self.lte_datalc_GArea = QtWidgets.QScrollArea(LTE_Data_LCwidget)
+        self.lte_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.lte_datalc_GArea.setWidgetResizable(True)
+        self.lte_datalc_GArea.setObjectName("lte_datalc_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.lte_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
+
+         # DataTable
+        self.lte_data_tableWidget = QtWidgets.QTableWidget(LTE_Data_LCwidget)
+        self.lte_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
+        self.lte_data_tableWidget.setObjectName("lte_data_tableWidget")
+        self.lte_data_tableWidget.setColumnCount(4)
+        self.lte_data_tableWidget.setRowCount(4)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_data_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_data_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_data_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_data_tableWidget.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_data_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_data_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_data_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_data_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_data_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_data_tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_data_tableWidget.setItem(2, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(3, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(3, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(3, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_data_tableWidget.setItem(3, 3, item)
+        self.lte_data_tableWidget.horizontalHeader().setVisible(True)
+        self.lte_data_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.lte_data_tableWidget.verticalHeader().setVisible(False)
+
+         # DateLabel
+        self.datelabel = QtWidgets.QLabel(LTE_Data_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(LTE_Data_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.lte_data_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.lte_data_tableWidget,self.lineEdit)
+        self.lte_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.lte_data_widget.setObjectName("lte_data_widget")
+
+        self.retranslateUi(LTE_Data_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(LTE_Data_LCwidget)
+
+        
+    def retranslateUi(self, LTE_Data_LCwidget):
+        _translate = QtCore.QCoreApplication.translate
+        LTE_Data_LCwidget.setWindowTitle(
+        _translate("LTE_Data_LCwidget", "LTE Data Line Chart [MS1]"))
+        item = self.lte_data_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("LTE_Data_LCwidget", "1"))
+        item = self.lte_data_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("LTE_Data_LCwidget", "2"))
+        item = self.lte_data_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("LTE_Data_LCwidget", "3"))
+        item = self.lte_data_tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("LTE_Data_LCwidget", "4"))
+        item = self.lte_data_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("LTE_Data_LCwidget", "Element"))
+        item = self.lte_data_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("LTE_Data_LCwidget", "Value"))
+        item = self.lte_data_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS"))
+        item = self.lte_data_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("LTE_Data_LCwidget", "Color"))
+        __sortingEnabled = self.lte_data_tableWidget.isSortingEnabled()
+        self.lte_data_tableWidget.setSortingEnabled(False)
+        item = self.lte_data_tableWidget.item(0, 0)
+        item.setText(_translate("LTE_Data_LCwidget", "Download Overall Throughput(kbps)"))
+        item = self.lte_data_tableWidget.item(0, 2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
+        item = self.lte_data_tableWidget.item(1, 0)
+        item.setText(_translate("LTE_Data_LCwidget", "Upload Overall Throughput(kbps)"))
+        item = self.lte_data_tableWidget.item(1, 2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
+        item = self.lte_data_tableWidget.item(2, 0)
+        item.setText(_translate("LTE_Data_LCwidget", "LTE L1 Throughput Mbps[1]"))
+        item = self.lte_data_tableWidget.item(2, 2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
+        item = self.lte_data_tableWidget.item(3, 0)
+        item.setText(_translate("LTE_Data_LCwidget", "LTE BLER[1]"))
+        item = self.lte_data_tableWidget.item(3, 2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
+        self.lte_data_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("LTE_Data_LCwidget", "Date :"))
+
+# GSM Data Line Chart UI
+class Ui_GSM_Data_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_GSM_Data_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, GSM_Data_LCwidget):
+        GSM_Data_LCwidget.setObjectName("GSM_Data_LCwidget")
+        GSM_Data_LCwidget.resize(841, 586)
+
+        # Graph Area
+        self.gsm_datalc_GArea = QtWidgets.QScrollArea(GSM_Data_LCwidget)
+        self.gsm_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.gsm_datalc_GArea.setWidgetResizable(True)
+        self.gsm_datalc_GArea.setObjectName("gsm_datalc_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.gsm_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
+
+         # DataTable
+        self.gsm_data_tableWidget = QtWidgets.QTableWidget(GSM_Data_LCwidget)
+        self.gsm_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 111))
+        self.gsm_data_tableWidget.setObjectName("gsm_data_tableWidget")
+        self.gsm_data_tableWidget.setColumnCount(4)
+        self.gsm_data_tableWidget.setRowCount(3)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_data_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_data_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_data_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(2, item)  
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(3, item)     
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_data_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_data_tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_data_tableWidget.setItem(2, 3, item)
+        
+        self.gsm_data_tableWidget.horizontalHeader().setVisible(True)
+        self.gsm_data_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.gsm_data_tableWidget.verticalHeader().setVisible(False)
+
+         # DateLabel
+        self.datelabel = QtWidgets.QLabel(GSM_Data_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(GSM_Data_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.gsm_data_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.gsm_data_tableWidget,self.lineEdit)
+        self.gsm_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.gsm_data_widget.setObjectName("gsm_data_widget")
+
+        self.retranslateUi(GSM_Data_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(GSM_Data_LCwidget)
+
+        
+    def retranslateUi(self, GSM_Data_LCwidget): 
+        _translate = QtCore.QCoreApplication.translate
+        GSM_Data_LCwidget.setWindowTitle(
+        _translate("GSM_Data_LCwidget", "GSM Data Line Chart [MS1]"))
+        item = self.gsm_data_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("GSM_Data_LCwidget", "1"))
+        item = self.gsm_data_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("GSM_Data_LCwidget", "2"))
+        item = self.gsm_data_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("GSM_Data_LCwidget", "3"))
+        item = self.gsm_data_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("GSM_Data_LCwidget", "Element"))
+        item = self.gsm_data_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("GSM_Data_LCwidget", "Value"))
+        item = self.gsm_data_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("GSM_Data_LCwidget", "MS"))
+        item = self.gsm_data_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("GSM_Data_LCwidget", "Color"))
+        __sortingEnabled = self.gsm_data_tableWidget.isSortingEnabled()
+        self.gsm_data_tableWidget.setSortingEnabled(False)
+        item = self.gsm_data_tableWidget.item(0, 0)
+        item.setText(_translate("GSM_Data_LCwidget", "GSM RLC DL Throughput (kbit/s)"))
+        item = self.gsm_data_tableWidget.item(0, 2)
+        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
+        item = self.gsm_data_tableWidget.item(1, 0)
+        item.setText(_translate("GSM_Data_LCwidget", "Application DL Throughput(kbps)[1]"))
+        item = self.gsm_data_tableWidget.item(1, 2)
+        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
+        item = self.gsm_data_tableWidget.item(2, 0)
+        item.setText(_translate("GSM_Data_LCwidget", "Download Session Average Throughput(kbps)"))
+        item = self.gsm_data_tableWidget.item(2, 2)
+        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
+        
+        self.gsm_data_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("GSM_Data_LCwidget", "Date :"))
+
+# WCDMA Data Line Chart UI
+class Ui_WCDMA_Data_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_WCDMA_Data_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, WCDMA_Data_LCwidget):
+        WCDMA_Data_LCwidget.setObjectName("WCDMA_Data_LCwidget")
+        WCDMA_Data_LCwidget.resize(841, 586)
+
+        # Graph Area
+        self.wcdma_datalc_GArea = QtWidgets.QScrollArea(WCDMA_Data_LCwidget)
+        self.wcdma_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.wcdma_datalc_GArea.setWidgetResizable(True)
+        self.wcdma_datalc_GArea.setObjectName("wcdma_datalc_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.wcdma_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
+
+         # DataTable
+        self.wcdma_data_tableWidget = QtWidgets.QTableWidget(WCDMA_Data_LCwidget)
+        self.wcdma_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
+        self.wcdma_data_tableWidget.setObjectName("wcdma_data_tableWidget")
+        self.wcdma_data_tableWidget.setColumnCount(4)
+        self.wcdma_data_tableWidget.setRowCount(4)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_data_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_data_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_data_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_data_tableWidget.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_data_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_data_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_data_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_data_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_data_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_data_tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_data_tableWidget.setItem(2, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(3, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(3, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(3, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_data_tableWidget.setItem(3, 3, item)
+        self.wcdma_data_tableWidget.horizontalHeader().setVisible(True)
+        self.wcdma_data_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.wcdma_data_tableWidget.verticalHeader().setVisible(False)
+
+         # DateLabel
+        self.datelabel = QtWidgets.QLabel(WCDMA_Data_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(WCDMA_Data_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.wcdma_data_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.wcdma_data_tableWidget,self.lineEdit)
+        self.wcdma_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.wcdma_data_widget.setObjectName("wcdma_data_widget")
+
+        self.retranslateUi(WCDMA_Data_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(WCDMA_Data_LCwidget)
+
+        
+    def retranslateUi(self, WCDMA_Data_LCwidget):
+        _translate = QtCore.QCoreApplication.translate
+        WCDMA_Data_LCwidget.setWindowTitle(
+        _translate("WCDMA_Data_LCwidget", "WCDMA Data Line Chart [MS1]"))
+        item = self.wcdma_data_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("WCDMA_Data_LCwidget", "1"))
+        item = self.wcdma_data_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("WCDMA_Data_LCwidget", "2"))
+        item = self.wcdma_data_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "3"))
+        item = self.wcdma_data_tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("WCDMA_Data_LCwidget", "4"))
+        item = self.wcdma_data_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Element"))
+        item = self.wcdma_data_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Value"))
+        item = self.wcdma_data_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS"))
+        item = self.wcdma_data_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Color"))
+        __sortingEnabled = self.wcdma_data_tableWidget.isSortingEnabled()
+        self.wcdma_data_tableWidget.setSortingEnabled(False)
+        item = self.wcdma_data_tableWidget.item(0, 0)
+        item.setText(_translate("WCDMA_Data_LCwidget", "WCDMA RLC DL Throughput (kbit/s)"))
+        item = self.wcdma_data_tableWidget.item(0, 2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
+        item = self.wcdma_data_tableWidget.item(1, 0)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Application DL Throughput(kbps)[1]"))
+        item = self.wcdma_data_tableWidget.item(1, 2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
+        item = self.wcdma_data_tableWidget.item(2, 0)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Download Session Average Throughput(kbps)"))
+        item = self.wcdma_data_tableWidget.item(2, 2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
+        item = self.wcdma_data_tableWidget.item(3, 0)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Data HSDPA Throughput"))
+        item = self.wcdma_data_tableWidget.item(3, 2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
+        self.wcdma_data_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
+
 
 
 # Class For Line Chart
@@ -2103,16 +2631,13 @@ class  Line_Chart(QWidget):
         elif self.title == 'GSM_GSM Line Chart':
             self.GSM()
         elif self.title == 'WCDMA_Line Chart':
-            self.WCDMA() 
-
-    #     self.GraphSelector(self.title)
-
-    # def GraphSelector(self,argument):
-    #     switcher = {
-    #         'LTE_LTE Line Chart': self.LTE(),
-    #         #'GSM_GSM Line Chart': self.GSM(),
-    #         #'WCDMA_Line Chart': self.WCDMA()
-    #     }
+            self.WCDMA()
+        elif self.title == 'Data_LTE Data Line Chart':
+            self.LTE_Data() 
+        elif self.title == 'Data_GSM Data Line Chart':
+            self.GSM_Data() 
+        elif self.title == 'Data_WCDMA Data Line Chart':
+            self.WCDMA_Data()     
 
 #----------------------------------------------------------------------------------------------------------------------------------------
     # Create GSM Line Chart
@@ -2125,41 +2650,38 @@ class  Line_Chart(QWidget):
         Time = []
 
         # Open Database And Query
-        # ChartQuery = LineChartQuery([''],'','')
-        # result = ChartQuery.getData()
-        # for index in range(len(result['time'])):
-        #     Date.append(result['time'][index].split(' ')[0])
-        #     Time.append(result['time'][index].split(' ')[1])
+        ChartQuery = LineChartQuery(['time','gsm_rxlev_sub_dbm','gsm_rxqual_sub'],'gsm_cell_meas','')
+        result = ChartQuery.getData()
+        for index in range(len(result['time'])):
+            Date.append(result['time'][index].split(' ')[0])
+            Time.append(result['time'][index].split(' ')[1])
 
         # Graph setting
-        #self.datelabel.setText(Date[0])
+        self.datelabel.setText(Date[0])
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
         self.canvas.axes.yaxis.grid(True)
-        #self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.set_xticklabels(Time)
         self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
-
         lines = []
-
         #Array for line's color
         ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
 
-        # Real Ploting code
-        # for data in result.items():
-        #     if data[0]!='time':
-        #         newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-        #         lines.append(newline,)
+        for data in result.items():
+            if data[0]!='time':
+                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
+                lines.append(newline,)
 
         for colorindex in range(len(lines)):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        # self.canvas.axes.set_ylim(-120,35)
-        # self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-120,35)
+        self.canvas.axes.set_xlim(Time[0],Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -2256,48 +2778,46 @@ class  Line_Chart(QWidget):
         Time = []
 
         # Open Database And Query
-        # ChartQuery = LineChartQuery([],'','')
-        # result = ChartQuery.getData()
-        # for index in range(len(result['time'])):
-        #     Date.append(result['time'][index].split(' ')[0])
-        #     Time.append(result['time'][index].split(' ')[1])
+        ChartQuery1 = LineChartQuery(['time','wcdma_aset_ecio_avg','wcdma_aset_rscp_avg'],'wcdma_cell_meas','')
+        result1 = ChartQuery1.getData()
+        ChartQuery2 = LineChartQuery(['wcdma_rssi'],'wcdma_rx_power','')
+        result2 = ChartQuery2.getData()
+        ChartQuery3 = LineChartQuery(['wcdma_bler_average_percent_all_channels'],'wcdma_bler','')
+        result3 = ChartQuery3.getData()
+        result1.update(result2)
+        result1.update(result3)
+        for index in range(len(result1['time'])):
+            Date.append(result1['time'][index].split(' ')[0])
+            Time.append(result1['time'][index].split(' ')[1])
 
         # Graph setting
-        #self.datelabel.setText(Date[0])
+        self.datelabel.setText(Date[0])
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
         self.canvas.axes.yaxis.grid(True)
-        #self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.set_xticklabels(Time)
         self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
 
         lines = []
-                #Testing Graph
-        xlist = [0,1,2,5]
-        ylist = [12,8,2,5]
-        newline, = self.canvas.axes.plot(xlist,ylist,picker = 5,linewidth=1)
-        lines.append(newline,)
-        self.canvas.axes.set_ylim(0,20)
-        self.canvas.axes.set_xlim(0,5)
-            
+
         #Array for line's color
         ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
 
-        # Real Ploting code
-        # for data in result.items():
-        #     if data[0]!='time':
-        #         newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-        #         lines.append(newline,)
+        for data in result1.items():
+            if data[0]!='time':
+                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
+                lines.append(newline,)
 
         for colorindex in range(len(lines)):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        # self.canvas.axes.set_ylim(-120,35)
-        # self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-120,35)
+        self.canvas.axes.set_xlim(Time[0],Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -2311,7 +2831,7 @@ class  Line_Chart(QWidget):
         def get_table_data(event):
             Chart_datalist = []
             x,y = int(event.xdata), event.ydata
-            for dict_item in result.items():
+            for dict_item in result1.items():
                 if not(dict_item[0]=='time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
@@ -2321,7 +2841,220 @@ class  Line_Chart(QWidget):
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
-       
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------       
+    # Create GSM Data Line Chart
+    def GSM_Data(self):
+
+        #ยังไม่เสร็จ -- No data in Database
+
+        self.canvas.axes.set_title('GSM Data Line Chart')  
+        Date = []
+        Time = []
+
+        # Open Database And Query
+        ChartQuery1 = LineChartQuery(['time','data_gsm_rlc_dl_throughput'],'data_egprs_stats','')
+        result1 = ChartQuery1.getData()
+        ChartQuery2 = LineChartQuery(['data_app_dl_throughput_1','data_download_session_average'],'data_app_throughput','')
+        result2 = ChartQuery2.getData()
+        result1.update(result2)
+        for index in range(len(result1['time'])):
+            Date.append(result1['time'][index].split(' ')[0])
+            Time.append(result1['time'][index].split(' ')[1])
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True)
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+
+        # Ploting Graph
+
+        lines = []
+
+        #Array for line's color
+        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+
+        for data in result1.items():
+            if data[0]!='time':
+                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
+                lines.append(newline,)
+
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-120,35)
+        self.canvas.axes.set_xlim(Time[0],Time[3])
+
+        # Line Focusing Function
+        def on_pick(event):
+            for Line in lines:
+                Line.set_linewidth(1)
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
+
+
+        # Show Data In Table
+        def get_table_data(event):
+            Chart_datalist = []
+            x,y = int(event.xdata), event.ydata
+            for dict_item in result1.items():
+                if not(dict_item[0]=='time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for index in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[index],3)
+                self.tablewidget.item(index,1).setText(str(Value))
+     
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Create WCDMA Data Line Chart
+    def WCDMA_Data(self):
+
+        #ยังไม่เสร็จ -- No data in Database
+
+        self.canvas.axes.set_title('WCDMA Data Line Chart')  
+        Date = []
+        Time = []
+
+        # Open Database And Query
+        ChartQuery1 = LineChartQuery(['time','data_wcdma_rlc_dl_throughput'],'data_wcdma_rlc_stats','')
+        result1 = ChartQuery1.getData()
+        ChartQuery2 = LineChartQuery(['data_app_dl_throughput_1','data_download_session_average'],'data_app_throughput','')
+        result2 = ChartQuery2.getData()
+        ChartQuery3 = LineChartQuery(['data_hsdpa_throughput'],'wcdma_hsdpa_stats','')
+        result3 = ChartQuery3.getData()
+        result1.update(result2)
+        result1.update(result3)
+        for index in range(len(result1['time'])):
+            Date.append(result1['time'][index].split(' ')[0])
+            Time.append(result1['time'][index].split(' ')[1])
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True)
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+
+        # Ploting Graph
+
+        lines = []
+
+        #Array for line's color
+        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+
+        for data in result1.items():
+            if data[0]!='time':
+                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
+                lines.append(newline,)
+
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-120,35)
+        self.canvas.axes.set_xlim(Time[0],Time[3])
+
+        # Line Focusing Function
+        def on_pick(event):
+            for Line in lines:
+                Line.set_linewidth(1)
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
+
+
+        # Show Data In Table
+        def get_table_data(event):
+            Chart_datalist = []
+            x,y = int(event.xdata), event.ydata
+            for dict_item in result1.items():
+                if not(dict_item[0]=='time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for index in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[index],3)
+                self.tablewidget.item(index,1).setText(str(Value))
+     
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Create LTE Data Line Chart
+    def LTE_Data(self):
+
+        self.canvas.axes.set_title('LTE Data Line Chart')  
+        Date = []
+        Time = []
+
+        # Open Database And Query
+        ChartQuery1 = LineChartQuery(['time','lte_l1_throughput_mbps_1','lte_bler_1'],'lte_l1_dl_tp','')
+        result1 = ChartQuery1.getData()
+        ChartQuery2 = LineChartQuery(['data_download_overall','data_upload_overall'],'data_app_throughput','')
+        result2 = ChartQuery2.getData()
+        result1.update(result2)
+        for index in range(len(result1['time'])):
+            Date.append(result1['time'][index].split(' ')[0])
+            Time.append(result1['time'][index].split(' ')[1])
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True)
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+
+        # Ploting Graph
+        lines = []
+        #Array for line's color
+        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+
+        for data in result1.items():
+            if data[0]!='time':
+                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
+                lines.append(newline,)
+
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-20,35)
+        self.canvas.axes.set_xlim(Time[0],Time[3])
+
+        # Line Focusing Function
+        def on_pick(event):
+            for Line in lines:
+                Line.set_linewidth(1)
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
+
+
+        # Show Data In Table
+        def get_table_data(event):
+            Chart_datalist = []
+            x,y = int(event.xdata), event.ydata
+            for dict_item in result1.items():
+                if not(dict_item[0]=='time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for index in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[index],3)
+                self.tablewidget.item(index,1).setText(str(Value))
+     
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
 class LineChartQuery:
     def __init__(self, fieldArr, tableName, conditionStr):
         self.fieldArr = fieldArr

@@ -128,6 +128,7 @@ class Ui_DatabaseDialog(QDialog):
         else:
             # self.addLayerToQgis()
             self.getTimeForSlider()
+            self.setCenterMap()
             QMessageBox.about(self, 'Connection result',
                               'Database is Connected, Enter the main menu')
             #getList()
@@ -194,6 +195,21 @@ class Ui_DatabaseDialog(QDialog):
         global incrementValue
         incrementValue = sliderLength / timeCount
         azenqosDatabase.close()
+
+    def setCenterMap(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_(
+            "select positioning_lat as lat, positioning_lon as lon from location limit 1"
+        )
+        while query.next():
+            lat = float(query.value(0))
+            lon = float(query.value(1))
+        azenqosDatabase.close()
+        # canvas = iface.mapCanvas()
+        # canvas.zoomScale(100000)
+        # canvas.zoomWithCenter(lon, lat, False)
 
 
 class AzenqosDialog(QDialog):
@@ -1014,8 +1030,8 @@ class TableWindow(QDialog):
             elif self.title == 'Signaling_Layer 3 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "", "Name", "Info."]
                 self.dataList = TableQuery(
-                    ['time', '\'MS1\'', '\' \'', '\' \'', 'name', 'info'], 'events',
-                    '').getData()
+                    ['time', '\'MS1\'', '\' \'', '\' \'', 'name', 'info'],
+                    'events', '').getData()
             elif self.title == 'Signaling_Benchmark':
                 self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
                 self.dataList = SignalingDataQuery().getBenchmark()
@@ -1082,17 +1098,32 @@ class GsmDataQuery:
     def getRadioParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
         dataList = []
+        fieldsList = [
+            'Time', 'RxLev', 'RxQual', 'TA', 'RLT (Max)', 'RLT (Current)',
+            'DTX Used', 'TxPower', 'FER'
+        ]
+        selectedColumns = "gcm.time, gcm.gsm_rxlev_full_dbm, gcm.gsm_rxlev_sub_dbm, gcm.gsm_rxqual_full, gcm.gsm_rxqual_sub, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"
+        queryString = """SELECT %s
+                        FROM gsm_cell_meas gcm
+                        LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
+                        LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
+                        LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
+                        LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
+                        LEFT JOIN vocoder_info vi ON gcm.time = vi.time
+                        ORDER BY time DESC LIMIT 1""" % (selectedColumns)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        fieldCount = len(selectedColumns.split(","))
         while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            for index in range(fieldCount):
+                columnName = fieldsList[index]
+                fullValue = query.value(index)
+                subValue = ''
+                if columnName in any(('RxLev', 'RxQual')):
+                    index + 1
+                    subValue = query.value(index)
+                dataList.append([columnName, fullValue, subValue])
         azenqosDatabase.close()
         return dataList
 
@@ -1151,6 +1182,96 @@ class GsmDataQuery:
         azenqosDatabase.close()
         return dataList
 
+class LteDataQuery:
+    def __init__(self):
+        self.timeFilter = currentTime
+
+    def getRadioParameters(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        fieldsList = [
+            'Time', 'RxLev', 'RxQual', 'TA', 'RLT (Max)', 'RLT (Current)',
+            'DTX Used', 'TxPower', 'FER'
+        ]
+        selectedColumns = "gcm.time, gcm.gsm_rxlev_full_dbm, gcm.gsm_rxlev_sub_dbm, gcm.gsm_rxqual_full, gcm.gsm_rxqual_sub, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"
+        queryString = """SELECT %s
+                        FROM gsm_cell_meas gcm
+                        LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
+                        LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
+                        LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
+                        LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
+                        LEFT JOIN vocoder_info vi ON gcm.time = vi.time
+                        ORDER BY time DESC LIMIT 1""" % (selectedColumns)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        fieldCount = len(selectedColumns.split(","))
+        while query.next():
+            for index in range(fieldCount):
+                columnName = fieldsList[index]
+                fullValue = query.value(index)
+                subValue = ''
+                if columnName in any(('RxLev', 'RxQual')):
+                    index + 1
+                    subValue = query.value(index)
+                dataList.append([columnName, fullValue, subValue])
+        azenqosDatabase.close()
+        return dataList
+
+    def getServingAndNeighbors(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+    def getCurrentChannel(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+    def getCSlashI(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+    def getGSMLineChart(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
+
+    def getGSMEventsCounter(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_("select * from events")
+        dataList = []
+        while query.next():
+            dataList.append(None)
+        azenqosDatabase.close()
+        return dataList
 
 class CdmaEvdoQuery:
     def __init__(self):
@@ -1379,12 +1500,8 @@ class SignalingDataQuery:
     def getEvents(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
+        queryString = 'select * from events'
         query = QSqlQuery()
-        if self.timeFilter != None:
-            queryString = 'select * from events where time <= %s' % (
-                self.timeFilter)
-        else:
-            queryString = 'select * from events'
         query.exec_(queryString)
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")

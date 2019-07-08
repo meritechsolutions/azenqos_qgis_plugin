@@ -13,12 +13,12 @@
  ***************************************************************************/
 
 /***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
+ *                                                                        *
+ *  This program is free software; you can redistribute it and/or modify  *
+ *  it under the terms of the GNU General Public License as published by  *
+ *  the Free Software Foundation; either version 2 of the License, or     *
+ *  (at your option) any later version.                                   *
+ *                                                                        *
  ***************************************************************************/
 """
 import os
@@ -38,8 +38,8 @@ import sqlite3
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 import numpy as np
-# from qgis.core import *
-# from qgis.utils import *
+# FROM qgis.core import *
+# FROM qgis.utils import *
 
 azenqosDatabase = None
 minTimeValue = None
@@ -60,7 +60,7 @@ isSliderPlay = False
 incrementValue = 0.00
 
 
-# Database select window
+# Database SELECTwindow
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
         super(Ui_DatabaseDialog, self).__init__()
@@ -143,7 +143,7 @@ class Ui_DatabaseDialog(QDialog):
             azenqosDatabase.open()
         query = QSqlQuery()
         query.exec_(
-            "select MIN(time) as mintime, MAX(time) as maxtime from signalling"
+            "SELECT MIN(time) as mintime, MAX(time) as maxtime FROM signalling"
         )
         while query.next():
             mintime = query.value(0)
@@ -187,7 +187,7 @@ class Ui_DatabaseDialog(QDialog):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select count(distinct time) from signalling")
+        query.exec_("SELECT count(distinct time) FROM signalling")
         while query.next():
             timeCount = query.value(0)
         global sliderLength
@@ -201,7 +201,7 @@ class Ui_DatabaseDialog(QDialog):
             azenqosDatabase.open()
         query = QSqlQuery()
         query.exec_(
-            "select positioning_lat as lat, positioning_lon as lon from location limit 1"
+            "SELECT positioning_lat as lat, positioning_lon as lon FROM location limit 1"
         )
         while query.next():
             lat = float(query.value(0))
@@ -234,7 +234,7 @@ class AzenqosDialog(QDialog):
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            timeSlider.sizePolicy().hasHeightForWidth())
+        timeSlider.sizePolicy().hasHeightForWidth())
         timeSlider.setSizePolicy(sizePolicy)
         timeSlider.setBaseSize(QtCore.QSize(500, 0))
         timeSlider.setPageStep(1)
@@ -303,14 +303,14 @@ class AzenqosDialog(QDialog):
         self.presentationTreeWidget.itemDoubleClicked.connect(
             self.loadAllMessages)
 
-        # GSM Section
-        gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
-        gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
-        gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
-        gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
-        gsmCI = QTreeWidgetItem(gsm, ['C/I'])
-        gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
-        gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
+        # GSM Section (No used)
+        # gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
+        # gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
+        # gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
+        # gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
+        # gsmCI = QTreeWidgetItem(gsm, ['C/I'])
+        # gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
+        # gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
@@ -788,7 +788,6 @@ class AzenqosDialog(QDialog):
                     self.debug_event = TableWindow(windowName)
                     openedWindows.append(self.debug_event)
                     self.debug_event.show()
-        print(openedWindows)
         # elif parent == "Positioning":
         #     if child == "GPS":
         #         print("1")
@@ -902,25 +901,19 @@ class TableWindow(QDialog):
             # GSM
             if self.title == 'GSM_Radio Parameters':
                 self.tableHeader = ["Element", "Full", "Sub"]
-                self.dataList = GsmDataQuery().getRadioParameters()
             elif self.title == 'GSM_Serving + Neighbors':
                 self.tableHeader = [
                     "Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1",
                     "C2", "C31", "C32"
                 ]
-                self.dataList = GsmDataQuery().getServingAndNeighbors()
             elif self.title == 'GSM_Current Channel':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = GsmDataQuery().getCurrentChannel()
             elif self.title == 'GSM_C/I':
                 self.tableHeader = ["Time", "ARFCN", "Value"]
-                self.dataList = GsmDataQuery().getCSlashI()
             elif self.title == 'GSM_Line Chart':
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
-                self.dataList = GsmDataQuery().getGSMLineChart()
             elif self.title == 'GSM_Events Counter':
                 self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
-                self.dataList = GsmDataQuery().getGSMEventsCounter()
 
             # WCDMA
             elif self.title == 'WCDMA_Active + Monitored Sets':
@@ -968,10 +961,12 @@ class TableWindow(QDialog):
             # LTE
             elif self.title == 'LTE_Radio Parameters':
                 self.tableHeader = ["Element", "PCC", "SCC0", "SCC1"]
+                self.dataList = LteDataQuery().getRadioParameters()
             elif self.title == 'LTE_Serving + Neighbors':
                 self.tableHeader = [
                     "Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"
                 ]
+                self.dataList = LteDataQuery().getServingAndNeighbors()
             elif self.title == 'LTE_PUCCH/PDSCH Parameters':
                 self.tableHeader = ["Element", "Value"]
             elif self.title == 'LTE_LTE Line Chart':
@@ -1020,18 +1015,13 @@ class TableWindow(QDialog):
             # Signaling
             elif self.title == 'Signaling_Events':
                 self.tableHeader = ["Time", "Eq.", "Name", "Info."]
-                self.dataList = TableQuery(['time', '\' \'', 'name', 'info'],
-                                           'events', '').getData()
+                self.dataList = SignalingDataQuery().getEvents()
             elif self.title == 'Signaling_Layer 1 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                self.dataList = TableQuery(
-                    ['time', '\'MS1\'', '\' \'', 'name', 'info'], 'events',
-                    '').getData()
+                self.dataList = SignalingDataQuery().getLayerOneMessages()
             elif self.title == 'Signaling_Layer 3 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "", "Name", "Info."]
-                self.dataList = TableQuery(
-                    ['time', '\'MS1\'', '\' \'', '\' \'', 'name', 'info'],
-                    'events', '').getData()
+                self.dataList = SignalingDataQuery().getLayerThreeMessages()
             elif self.title == 'Signaling_Benchmark':
                 self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
                 self.dataList = SignalingDataQuery().getBenchmark()
@@ -1051,6 +1041,7 @@ class TableWindow(QDialog):
     def hilightRow(self, sampledate):
         dateString = str(sampledate)
         model = self.tableView.model()
+        self.specifyTablesHeader()
         data = []
         for row in range(model.rowCount()):
             index = model.index(row, 0)
@@ -1073,10 +1064,16 @@ class TableModel(QAbstractTableModel):
         self.dataSource = inputData
 
     def rowCount(self, parent):
-        return len(self.dataSource)
+        rows = 0
+        if self.dataSource:
+            rows = len(self.dataSource)
+        return rows
 
     def columnCount(self, parent):
-        return len(self.dataSource[0])
+        columns = 0
+        if self.headerLabels:
+            columns = len(self.headerLabels)
+        return columns
 
     def data(self, index, role):
         if not index.isValid():
@@ -1091,141 +1088,251 @@ class TableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-class GsmDataQuery:
-    def __init__(self):
-        self.timeFilter = currentTime
+# class GsmDataQuery:
+#     def __init__(self):
+#         self.timeFilter = currentTime
 
-    def getRadioParameters(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        dataList = []
-        fieldsList = [
-            'Time', 'RxLev', 'RxQual', 'TA', 'RLT (Max)', 'RLT (Current)',
-            'DTX Used', 'TxPower', 'FER'
-        ]
-        selectedColumns = "gcm.time, gcm.gsm_rxlev_full_dbm, gcm.gsm_rxlev_sub_dbm, gcm.gsm_rxqual_full, gcm.gsm_rxqual_sub, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"
-        queryString = """SELECT %s
-                        FROM gsm_cell_meas gcm
-                        LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
-                        LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
-                        LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
-                        LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
-                        LEFT JOIN vocoder_info vi ON gcm.time = vi.time
-                        ORDER BY time DESC LIMIT 1""" % (selectedColumns)
-        query = QSqlQuery()
-        query.exec_(queryString)
-        fieldCount = len(selectedColumns.split(","))
-        while query.next():
-            for index in range(fieldCount):
-                columnName = fieldsList[index]
-                fullValue = query.value(index)
-                subValue = ''
-                if columnName in any(('RxLev', 'RxQual')):
-                    index + 1
-                    subValue = query.value(index)
-                dataList.append([columnName, fullValue, subValue])
-        azenqosDatabase.close()
-        return dataList
+#     def getRadioParameters(self):
+#         if azenqosDatabase is not None:
+#             azenqosDatabase.open()
+#         dataList = []
+#         fieldsList = [
+#             'Time', 'RxLev', 'RxQual', 'TA', 'RLT (Max)', 'RLT (Current)',
+#             'DTX Used', 'TxPower', 'FER'
+#         ]
+#         selectedColumns = "gcm.time, gcm.gsm_rxlev_full_dbm, gcm.gsm_rxlev_sub_dbm, gcm.gsm_rxqual_full, gcm.gsm_rxqual_sub, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"
+#         queryString = """SELECT %s
+#                         FROM gsm_cell_meas gcm
+#                         LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
+#                         LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
+#                         LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
+#                         LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
+#                         LEFT JOIN vocoder_info vi ON gcm.time = vi.time
+#                         ORDER BY time DESC LIMIT 1""" % (selectedColumns)
+#         query = QSqlQuery()
+#         query.exec_(queryString)
+#         fieldCount = len(selectedColumns.split(","))
+#         while query.next():
+#             for index in range(fieldCount):
+#                 columnName = fieldsList[index]
+#                 fullValue = query.value(index)
+#                 subValue = ''
+#                 if columnName in any(('RxLev', 'RxQual')):
+#                     index + 1
+#                     subValue = query.value(index)
+#                 dataList.append([columnName, fullValue, subValue])
+#         azenqosDatabase.close()
+#         return dataList
 
-    def getServingAndNeighbors(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
+#     def getServingAndNeighbors(self):
+#         if azenqosDatabase is not None:
+#             azenqosDatabase.open()
 
-    def getCurrentChannel(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
+#         dataList = []
+#         fieldsList = [
+#             'Time', 'Cellname', 'ALC', 'BSIC', 'ARFCN', 'RxLev', 'C1', 'C2', 'C31', 'C32'
+#         ]
+#         query = QSqlQuery()
+#         query.exec_("SELECT * FROM gsm_cell_meas")
+#         while query.next():
+#             dataList.append(None)
+#         azenqosDatabase.close()
+#         return dataList
 
-    def getCSlashI(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
+#     def getCurrentChannel(self):
+#         if azenqosDatabase is not None:
+#             azenqosDatabase.open()
+#         query = QSqlQuery()
+#         query.exec_("SELECT * FROM events")
+#         dataList = []
+#         while query.next():
+#             dataList.append(None)
+#         azenqosDatabase.close()
+#         return dataList
 
-    def getGSMLineChart(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
+#     def getCSlashI(self):
+#         if azenqosDatabase is not None:
+#             azenqosDatabase.open()
+#         query = QSqlQuery()
+#         query.exec_("SELECT * FROM events")
+#         dataList = []
+#         while query.next():
+#             dataList.append(None)
+#         azenqosDatabase.close()
+#         return dataList
 
-    def getGSMEventsCounter(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
+#     def getGSMLineChart(self):
+#         if azenqosDatabase is not None:
+#             azenqosDatabase.open()
+#         query = QSqlQuery()
+#         query.exec_("SELECT * FROM events")
+#         dataList = []
+#         while query.next():
+#             dataList.append(None)
+#         azenqosDatabase.close()
+#         return dataList
+
+#     def getGSMEventsCounter(self):
+#         if azenqosDatabase is not None:
+#             azenqosDatabase.open()
+#         query = QSqlQuery()
+#         query.exec_("SELECT * FROM events")
+#         dataList = []
+#         while query.next():
+#             dataList.append(None)
+#         azenqosDatabase.close()
+#         return dataList
+
 
 class LteDataQuery:
     def __init__(self):
-        self.timeFilter = currentTime
+        self.timeFilter = ''
+        if currentTime:
+            self.timeFilter = datetime.datetime.fromtimestamp(currentTime)
+        self.initialTime  = datetime.datetime.fromtimestamp(minTimeValue)
 
     def getRadioParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         dataList = []
         fieldsList = [
-            'Time', 'RxLev', 'RxQual', 'TA', 'RLT (Max)', 'RLT (Current)',
-            'DTX Used', 'TxPower', 'FER'
+            'Time', 'Band', 'E-ARFCN', 'Serving PCI', 'Serving RSRP[0]',
+            'Serving RSRP[1]', 'Serving RSRP', 'Serving RSRQ[0]',
+            'Serving RSRQ[1]', 'Serving RSRQ', 'SINR Rx[0]', 'SINR Rx[1]',
+            'SINR', 'RSSI Rx[0]', 'RSSI Rx[1]', 'RSSI', 'BLER', 'CQI CW[0]',
+            'CQI CW[1]', 'Tx Power', 'PUCCH TxPower (dBm)',
+            'PUSCH TxPower (dBm)', 'TimingAdvance',
+            'Transmission Mode (RRC-tm)', 'LTE RRC State', 'LTE EMM State',
+            'LTE RRC Substate', 'Modern ServCellInfo', 'Allowed Access', 'MCC',
+            'MNC', 'TAC', 'Cell ID (ECI)', 'eNodeB ID', 'LCI', 'PCI',
+            'Derived SCC ECI', 'Derived SCC eNodeB ID', 'Derived SCC LCI',
+            'DL EARFCN', 'UL EARFCN', 'DL Bandwidth (Mhz)',
+            'UL Bandwidth (Mhz)', 'SCC DL Bandwidth (Mhz)', 'SIB1 info:',
+            'sib1 MCC', 'sib1 MNC', 'sib1 TAC', 'sib1 ECI', 'sib1 eNBid',
+            'sib1 LCI', 'TDD Config:', 'SubframeAssignment',
+            'SpclSubframePattern', 'DedBearer QCI'
         ]
-        selectedColumns = "gcm.time, gcm.gsm_rxlev_full_dbm, gcm.gsm_rxlev_sub_dbm, gcm.gsm_rxqual_full, gcm.gsm_rxqual_sub, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"
+        selectedColumns = """lcm.time as Time, lcm.lte_band_1 as Band, lcm.lte_earfcn_1 as 'E-ARFCN', lsci.lte_serv_cell_info_pci as 'Serving PCI',
+                                lcm.lte_inst_rsrp_rx0_1 as 'Serving RSRP[0]', lcm.lte_inst_rsrp_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrp_1 as 'Serving RSRP', lcm.lte_inst_rsrq_rx0_1 as 'Serving RSRQ[0]', lcm.lte_inst_rsrq_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrq_1 as 'Serving RSRQ', lcm.lte_sinr_rx0_1 as 'SINR Rx[0]', lcm.lte_sinr_rx1_1 as 'SINR Rx[1]', lcm.lte_sinr_1 as 'SINR', lcm.lte_inst_rssi_rx0_1 as 'RSSI Rx[0]', lcm.lte_inst_rssi_rx1_1 as 'RSSI Rx[1]', lcm.lte_inst_rssi_1 as 'RSSI', lldt.lte_bler_1 as 'BLER', lc.lte_cqi_cw0_1 as 'CQI CW[0]', lc.lte_cqi_cw1_1 as 'CQI CW[1]', ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)', lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State', les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo', lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
+                                lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID', lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
+                                lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)', '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI', lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment', ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', '' as 'DedBearer QCI'"""
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
         queryString = """SELECT %s
-                        FROM gsm_cell_meas gcm
-                        LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
-                        LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
-                        LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
-                        LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
-                        LEFT JOIN vocoder_info vi ON gcm.time = vi.time
-                        ORDER BY time DESC LIMIT 1""" % (selectedColumns)
+                        FROM lte_cell_meas lcm
+                        LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
+                        LEFT JOIN lte_l1_dl_tp lldt ON lcm.time = lldt.time
+                        LEFT JOIN lte_cqi lc ON lcm.time = lc.time
+                        LEFT JOIN lte_tx_power ltp ON lcm.time = ltp.time
+                        LEFT JOIN lte_pucch_tx_info lpcti ON lcm.time = lpcti.time
+                        LEFT JOIN lte_pusch_tx_info lpsti ON lcm.time = lpsti.time
+                        LEFT JOIN lte_frame_timing lft ON lcm.time = lft.time
+                        LEFT JOIN lte_rrc_transmode_info lrti ON lcm.time = lrti.time
+                        LEFT JOIN lte_rrc_state lrs ON lcm.time = lrs.time
+                        LEFT JOIN lte_emm_state les ON lcm.time = les.time
+                        LEFT JOIN lte_sib1_info lsoi ON lcm.time = lsoi.time
+                        LEFT JOIN lte_tdd_config ltc ON lcm.time = ltc.time
+                        %s
+                        ORDER BY lcm.time DESC LIMIT 1""" % (selectedColumns,
+                                                             condition)
         query = QSqlQuery()
         query.exec_(queryString)
         fieldCount = len(selectedColumns.split(","))
-        while query.next():
+        queryRowCount = query.record().count()
+        if queryRowCount > 0:
+            while query.next():
+                for index in range(fieldCount):
+                    columnName = fieldsList[index]
+                    value = ''
+                    if query.value(index) != '':
+                        value = query.value(index)
+                    dataList.append([columnName, value, '', ''])
+        else:
             for index in range(fieldCount):
                 columnName = fieldsList[index]
-                fullValue = query.value(index)
-                subValue = ''
-                if columnName in any(('RxLev', 'RxQual')):
-                    index + 1
-                    subValue = query.value(index)
-                dataList.append([columnName, fullValue, subValue])
+                value = ''
+                dataList.append([columnName, value, '', ''])
         azenqosDatabase.close()
         return dataList
 
     def getServingAndNeighbors(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
+        MAX_NEIGHBORS = 16
         dataList = []
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
+            dateString = '%s' % (self.timeFilter)
+        else:
+            condition = "WHERE lcm.time <= '%s'" % (self.initialTime)
+            dateString = '%s' % (self.initialTime)
+        firstRow = [dateString, 'Serving cell:', '', '', '', '']
+        dataList.append(firstRow)
+        queryString = """SELECT lcm.lte_earfcn_1, lsci.lte_serv_cell_info_band, lsci.lte_serv_cell_info_pci, lcm.lte_inst_rsrp_1,
+                        lcm.lte_inst_rsrq_1
+                        FROM lte_cell_meas as lcm
+                        LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
+                        %s
+                        ORDER BY lcm.time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
+            servingCell = [
+                '',
+                query.value(0),
+                query.value(1),
+                query.value(2),
+                query.value(3),
+                query.value(4)
+            ]
+            dataList.append(servingCell)
+        if self.timeFilter:
+            condition = "WHERE lnm.time <= '%s'" % (self.timeFilter)
+            dateString = '%s' % (self.timeFilter)
+        else:
+            condition = "WHERE lnm.time <= '%s'" % (self.initialTime)
+            dateString = '%s' % (self.initialTime)
+        for neighbor in range(1, MAX_NEIGHBORS):
+            queryString = """SELECT lnm.lte_neigh_earfcn_%d, lnm.lte_neigh_band_%d, lnm.lte_neigh_physical_cell_id_%d, lnm.lte_neigh_rsrp_%d,
+                            lnm.lte_neigh_rsrq_%d
+                            FROM lte_neigh_meas as lnm
+                            %s
+                            ORDER BY lnm.time DESC
+                            LIMIT 1""" % (neighbor, neighbor, neighbor,
+                                          neighbor, neighbor, condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0) != '':
+                        if neighbor == 1:
+                            neighborRow = ['', 'Neighbor cells:', '', '', '', '']
+                            dataList.append(neighborRow)
+                        neighCell = [
+                            '',
+                            query.value(0),
+                            query.value(1),
+                            query.value(2),
+                            query.value(3),
+                            query.value(4)
+                            ]
+                        dataList.append(neighCell)
+                    else:
+                        break
+            else:
+                neighCell = [
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    ''
+                    ]
+                dataList.append(neighCell)
         azenqosDatabase.close()
         return dataList
 
@@ -1233,7 +1340,7 @@ class LteDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         dataList = []
         while query.next():
             dataList.append(None)
@@ -1244,7 +1351,7 @@ class LteDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         dataList = []
         while query.next():
             dataList.append(None)
@@ -1255,7 +1362,7 @@ class LteDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         dataList = []
         while query.next():
             dataList.append(None)
@@ -1266,12 +1373,13 @@ class LteDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         dataList = []
         while query.next():
             dataList.append(None)
         azenqosDatabase.close()
         return dataList
+
 
 class CdmaEvdoQuery:
     def __init__(self):
@@ -1281,7 +1389,7 @@ class CdmaEvdoQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1298,7 +1406,7 @@ class CdmaEvdoQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         dataList = []
         while query.next():
             dataList.append(None)
@@ -1309,7 +1417,7 @@ class CdmaEvdoQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         dataList = []
         while query.next():
             dataList.append(None)
@@ -1326,7 +1434,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1343,7 +1451,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1360,7 +1468,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1377,7 +1485,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1394,7 +1502,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1411,7 +1519,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1428,7 +1536,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1445,7 +1553,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1462,7 +1570,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1479,7 +1587,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1500,7 +1608,7 @@ class SignalingDataQuery:
     def getEvents(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        queryString = 'select * from events'
+        queryString = 'SELECT time, name, info FROM events'
         query = QSqlQuery()
         query.exec_(queryString)
         timeField = query.record().indexOf("time")
@@ -1519,7 +1627,7 @@ class SignalingDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1536,7 +1644,7 @@ class SignalingDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from signalling")
+        query.exec_("SELECT time, name, symbol, detail_str FROM signalling")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         symbolField = query.record().indexOf("symbol")
@@ -1563,7 +1671,7 @@ class SignalingDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1581,7 +1689,7 @@ class SignalingDataQuery:
             azenqosDatabase.open()
         dataList = []
         selectedColumns = 'time,mm_state_state,mm_state_substate,mm_state_update_status,mm_characteristics_network_operation_mode,mm_characteristics_service_type,mm_characteristics_mcc,mm_characteristics_mnc,mm_characteristics_lac,mm_characteristics_rai'
-        queryString = 'select %s from mm_state order by time desc limit 1' % (
+        queryString = 'SELECT%s FROM mm_state order by time desc limit 1' % (
             selectedColumns)
         query = QSqlQuery()
         query.exec_(queryString)
@@ -1605,7 +1713,7 @@ class SignalingDataQuery:
             'system id type'
         ]
         selectedColumns = 'time,serving_system_mcc,serving_system_mnc,serving_system_lac,cm_service_status,cm_service_domain,cm_service_capability,cm_system_mode,cm_roaming_status,cm_system_id_type'
-        queryString = 'select %s from serving_system order by time desc limit 1' % (
+        queryString = 'SELECT%s FROM serving_system order by time desc limit 1' % (
             selectedColumns)
         query = QSqlQuery()
         query.exec_(queryString)
@@ -1622,7 +1730,7 @@ class SignalingDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1970,7 +2078,7 @@ class LineChartQuery:
         selectField = self.selectFieldToQuery()
         azenqosDatabase.open()
         query = QSqlQuery()
-        queryString = 'select %s from %s' % (selectField, self.tableName)
+        queryString = 'SELECT%s FROM %s' % (selectField, self.tableName)
         query.exec_(queryString)
         while query.next():
             for field in range(len(self.fieldArr)):
@@ -2015,7 +2123,7 @@ class TableQuery:
         selectField = self.selectFieldToQuery()
         azenqosDatabase.open()
         query = QSqlQuery()
-        queryString = 'select %s from %s' % (selectField, self.tableName)
+        queryString = 'SELECT%s FROM %s' % (selectField, self.tableName)
         query.exec_(queryString)
         row = 0
         tableResult = []

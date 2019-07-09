@@ -1303,14 +1303,19 @@ class LteDataQuery:
         dataList = []
         condition = ""
         maxBearers = 8
+        pucchFields = [
+            '---- PUCCH ----', 'CQI CW 0', 'CQI CW 1', 'CQI N Sub-bands',
+            'Rank Indicator'
+        ]
         pdschFields = [
-            'PDSCH Serving Cell ID', 'PDSCH RNTI ID', 'PDSCH RNTI Type',
-            'PDSCH Serving N Tx Antennas', 'PDSCH Serving N Rx Antennas',
-            'PDSCH Transmission Mode Current', 'PDSCH Spatial Rank',
-            'PDSCH Rb Allocation Slot 0', 'PDSCH Rb Allocation Slot 1',
-            'PDSCH PMI Type', 'PDSCH PMI Index', 'PDSCH Stream[0] Block Size',
-            'PDSCH Stream[0] Modulation', 'PDSCH Traffic To Pilot Ratio',
-            'PDSCH Stream[1] Block Size', 'PDSCH Stream[1] Modulation'
+            '---- PDSCH ----', 'PDSCH Serving Cell ID', 'PDSCH RNTI ID',
+            'PDSCH RNTI Type', 'PDSCH Serving N Tx Antennas',
+            'PDSCH Serving N Rx Antennas', 'PDSCH Transmission Mode Current',
+            'PDSCH Spatial Rank', 'PDSCH Rb Allocation Slot 0',
+            'PDSCH Rb Allocation Slot 1', 'PDSCH PMI Type', 'PDSCH PMI Index',
+            'PDSCH Stream[0] Block Size', 'PDSCH Stream[0] Modulation',
+            'PDSCH Traffic To Pilot Ratio', 'PDSCH Stream[1] Block Size',
+            'PDSCH Stream[1] Modulation'
         ]
 
         if self.timeFilter:
@@ -1319,7 +1324,7 @@ class LteDataQuery:
 
         dataList.append(['Time', self.timeFilter])
 
-        queryString = """SELECT time, lte_cqi_cw0_1, lte_cqi_cw1_1, lte_cqi_n_subbands_1, lte_rank_indication_1
+        queryString = """SELECT '' as header, lte_cqi_cw0_1, lte_cqi_cw1_1, lte_cqi_n_subbands_1, lte_rank_indication_1
                         FROM lte_cqi
                         %s
                         ORDER BY time DESC
@@ -1327,13 +1332,13 @@ class LteDataQuery:
         query = QSqlQuery()
         query.exec_(queryString)
         while query.next():
-            dataList.append(['---- PUCCH ----', ''])
-            dataList.append(['CQI CW 0', query.value('lte_cqi_cw0_1')])
-            dataList.append(['CQI CW 1', query.value('lte_cqi_cw1_1')])
-            dataList.append(['CQI N Sub-bands', query.value('lte_cqi_n_subbands_1')])
-            dataList.append(['Rank Indicator', query.value('lte_rank_indication_1')])
+            for field in range(len(pucchFields)):
+                if query.value(field):
+                    dataList.append([pucchFields[field], query.value(field)])
+                else:
+                    dataList.append([pucchFields[field], ''])
 
-        queryString = """SELECT lte_pdsch_serving_cell_id_1, lte_pdsch_rnti_id_1, lte_pdsch_rnti_type_1,
+        queryString = """SELECT '' as pdsch, lte_pdsch_serving_cell_id_1, lte_pdsch_rnti_id_1, lte_pdsch_rnti_type_1,
                         lte_pdsch_serving_n_tx_antennas_1, lte_pdsch_serving_n_rx_antennas_1,
                         lte_pdsch_transmission_mode_current_1, lte_pdsch_spatial_rank_1,
                         lte_pdsch_rb_allocation_slot0_1, lte_pdsch_rb_allocation_slot1_1,
@@ -1351,10 +1356,12 @@ class LteDataQuery:
 
             while query.next():
                 for field in range(len(pdschFields)):
-                    if query.value(0):
-                        if field == 0:
-                            dataList.append(['---- PDSCH ----', ''])
-                        dataList.append([pdschFields[field], query.value(field)])
+                    if query.value(field):
+                        dataList.append(
+                            [pdschFields[field],
+                             query.value(field)])
+                    else:
+                        dataList.append([pdschFields[field], ''])
         azenqosDatabase.close()
         return dataList
 
@@ -1420,7 +1427,16 @@ class LteDataQuery:
             azenqosDatabase.open()
         dataList = []
         condition = ""
-        volteFields = ['Time','Codec:','AMR SpeechCodec-RX','AMR SpeechCodec-TX','Delay interval avg:','Audio Packet delay (ms.)', 'RTP Packet delay (ms.)', 'RTCP SR Params:','RTCP Round trip time (ms.)','RTCP SR Params - Jitter DL:', 'RTCP SR Jitter DL (ts unit)','RTCP SR Jitter DL (ms.)','RTCP SR Params - Jitter UL:', 'RTCP SR Jitter UL (ts unit)','RTCP SR Jitter UL (ms.)','RTCP SR Params - Packet loss rate:','RTCP SR Packet loss DL (%)','RTCP SR Packet loss UL (%)']
+        volteFields = [
+            'Time', 'Codec:', 'AMR SpeechCodec-RX', 'AMR SpeechCodec-TX',
+            'Delay interval avg:', 'Audio Packet delay (ms.)',
+            'RTP Packet delay (ms.)', 'RTCP SR Params:',
+            'RTCP Round trip time (ms.)', 'RTCP SR Params - Jitter DL:',
+            'RTCP SR Jitter DL (ts unit)', 'RTCP SR Jitter DL (ms.)',
+            'RTCP SR Params - Jitter UL:', 'RTCP SR Jitter UL (ts unit)',
+            'RTCP SR Jitter UL (ms.)', 'RTCP SR Params - Packet loss rate:',
+            'RTCP SR Packet loss DL (%)', 'RTCP SR Packet loss UL (%)'
+        ]
 
         if self.timeFilter:
             condition = "WHERE lvs.time <= '%s'" % (self.timeFilter)
@@ -1445,7 +1461,9 @@ class LteDataQuery:
                         dataList.append([volteFields[field], self.timeFilter])
                     else:
                         if query.value(field):
-                            dataList.append([volteFields[field], query.value(field)])
+                            dataList.append(
+                                [volteFields[field],
+                                 query.value(field)])
                         else:
                             dataList.append([volteFields[field], ''])
             if len(dataList) == 0:

@@ -980,6 +980,7 @@ class TableWindow(QDialog):
                 self.dataList = LteDataQuery().getRlc()
             elif self.title == 'LTE_LTE VoLTE':
                 self.tableHeader = ["Element", "Value"]
+                self.dataList = LteDataQuery().getVolte()
 
             # CDMA/EVDO
             elif self.title == 'CDMA/EVDO_Radio Parameters':
@@ -1541,12 +1542,10 @@ class LteDataQuery:
 
         dataList = []
         condition = ""
-        dateString = ""
         maxBearers = 8
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-            dateString = '%s' % (self.timeFilter)
 
         queryString = """SELECT time, lte_rlc_dl_tp_mbps, lte_rlc_dl_tp, lte_rlc_n_bearers
                         FROM lte_rlc_stats
@@ -1556,7 +1555,7 @@ class LteDataQuery:
         query = QSqlQuery()
         query.exec_(queryString)
         while query.next():
-            dataList.append(['Time', dateString, '', '', ''])
+            dataList.append(['Time', self.timeFilter, '', '', ''])
             dataList.append(
                 ['DL TP(Mbps)',
                  query.value('lte_rlc_dl_tp_mbps'), '', '', ''])
@@ -1567,7 +1566,6 @@ class LteDataQuery:
             dataList.append(
                 ['N Bearers',
                  query.value('lte_rlc_n_bearers'), '', '', ''])
-
         for bearer in range(1, maxBearers):
             queryString = """SELECT lte_rlc_per_rb_dl_rb_mode_%d, lte_rlc_per_rb_dl_rb_type_%d, lte_rlc_per_rb_dl_rb_id_%d, lte_rlc_per_rb_cfg_index_%d,
                             lte_rlc_per_rb_dl_tp_%d
@@ -1592,6 +1590,48 @@ class LteDataQuery:
                             query.value(3),
                             query.value(4)
                         ])
+        azenqosDatabase.close()
+        return dataList
+
+    def getVolte(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ""
+        volteFields = ['Time','Codec:','AMR SpeechCodec-RX','AMR SpeechCodec-TX','Delay interval avg:','Audio Packet delay (ms.)', 'RTP Packet delay (ms.)', 'RTCP SR Params:','RTCP Round trip time (ms.)','RTCP SR Params - Jitter DL:', 'RTCP SR Jitter DL (ts unit)','RTCP SR Jitter DL (ms.)','RTCP SR Params - Jitter UL:', 'RTCP SR Jitter UL (ts unit)','RTCP SR Jitter UL (ms.)','RTCP SR Params - Packet loss rate:','RTCP SR Packet loss DL (%)','RTCP SR Packet loss UL (%)']
+
+        if self.timeFilter:
+            condition = "WHERE lvs.time <= '%s'" % (self.timeFilter)
+
+        queryString = """SELECT lvs.time, '' as codec, vi.gsm_speechcodecrx, vi.gsm_speechcodectx, '' as delay_interval,
+                        vi.vocoder_amr_audio_packet_delay_avg, lvs.lte_volte_rtp_pkt_delay_avg, '' as rtcp_sr_params,
+                        lvs.lte_volte_rtp_round_trip_time, '' as rtcp_jitter_dl, lvs.lte_volte_rtp_jitter_dl,
+                        lvs.lte_volte_rtp_jitter_dl_millis, '' as rtcp_jitter_ul, lte_volte_rtp_jitter_ul, lte_volte_rtp_jitter_ul_millis,
+                        '' as rtcp_sr_packet_loss, lte_volte_rtp_packet_loss_rate_dl, lte_volte_rtp_packet_loss_rate_ul
+                        FROM lte_volte_stats as lvs
+                        LEFT JOIN vocoder_info vi ON lvs.time = vi.time
+                        %s
+                        ORDER BY lvs.time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        rowCount = query.record().count()
+        if rowCount > 0:
+            while query.next():
+                for field in range(len(volteFields)):
+                    if field == 0:
+                        dataList.append([volteFields[field], self.timeFilter])
+                    else:
+                        if query.value(field):
+                            dataList.append([volteFields[field], query.value(field)])
+                        else:
+                            dataList.append([volteFields[field], ''])
+            if len(dataList) == 0:
+                for field in range(len(volteFields)):
+                    if field == 0:
+                        dataList.append([volteFields[field], self.timeFilter])
+                    else:
+                        dataList.append([volteFields[field], ''])
         azenqosDatabase.close()
         return dataList
 

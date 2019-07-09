@@ -1960,17 +1960,30 @@ class SignalingDataQuery:
     def getBenchmark(self): #ยังไม่เสร็จ                                                                                                                                       
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
         dataList = []
+        condition = ""
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        queryString = """SELECT time, lte_rlc_dl_tp_mbps, lte_rlc_dl_tp, lte_rlc_n_bearers
+                        FROM lte_rlc_stats
+                        %s
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
+        # query = QSqlQuery()
+        # query.exec_("SELECT * FROM events")
+        # timeField = query.record().indexOf("time")
+        # nameField = query.record().indexOf("name")
+        # detailField = query.record().indexOf("info")
+        # dataList = []
+        # while query.next():
+        #     timeValue = query.value(timeField)
+        #     nameValue = query.value(nameField)
+        #     detailStrValue = query.value(detailField)
+        #     dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 

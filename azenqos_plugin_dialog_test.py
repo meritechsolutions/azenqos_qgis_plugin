@@ -1917,7 +1917,7 @@ class SignalingDataQuery:
         azenqosDatabase.close()
         return dataList
 
-    def getBenchmark(self): #ยังไม่ทำ                                                                                                                                       
+    def getBenchmark(self): #ยังไม่เสร็จ                                                                                                                                       
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()

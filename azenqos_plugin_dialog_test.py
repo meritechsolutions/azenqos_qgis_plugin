@@ -33,7 +33,7 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.lines import Line2D    
+from matplotlib.lines import Line2D
 import sqlite3
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
@@ -44,7 +44,8 @@ import numpy as np
 azenqosDatabase = None
 minTimeValue = None
 maxTimeValue = None
-currentTime = None
+currentTimestamp = None
+currentDateTimeString = None
 tableNotUsed = [
     'android_metadata', 'sqlite_sequence', 'spatialite_history',
     'idx_signalling_geom_parent', 'idx_signalling_geom_node',
@@ -146,15 +147,24 @@ class Ui_DatabaseDialog(QDialog):
             "SELECT MIN(time) as mintime, MAX(time) as maxtime FROM signalling"
         )
         while query.next():
+            global minTimeValue
+            global maxTimeValue
+            global currentDateTimeString
+
             mintime = query.value(0)
             maxtime = query.value(1)
-            global minTimeValue
+
             minTimeValue = datetime.datetime.strptime(
                 mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
-            global maxTimeValue
+
             maxTimeValue = datetime.datetime.strptime(
                 maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+
+            currentDateTimeString = '%s' % (
+                datetime.datetime.fromtimestamp(minTimeValue))
+
         azenqosDatabase.close()
+
         self.setIncrementValue()
 
     def addDatabase(self):
@@ -232,7 +242,7 @@ class AzenqosDialog(QDialog):
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-        timeSlider.sizePolicy().hasHeightForWidth())
+            timeSlider.sizePolicy().hasHeightForWidth())
         timeSlider.setSizePolicy(sizePolicy)
         timeSlider.setBaseSize(QtCore.QSize(500, 0))
         timeSlider.setPageStep(1)
@@ -451,16 +461,19 @@ class AzenqosDialog(QDialog):
         self.hide()
 
     def timeChange(self):
-        global currentTime
+        global currentTimestamp
         global timeSlider
+        global currentDateTimeString
         value = timeSlider.value()
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
-        currentTime = timestampValue
+        currentTimestamp = timestampValue
         timeSlider.update()
         for window in openedWindows:
             window.hilightRow(sampledate)
+        currentDateTimeString = '%s' % (
+            datetime.datetime.fromtimestamp(currentTimestamp))
 
     def classifySelectedItems(self, parent, child):
         global openedWindows
@@ -551,7 +564,7 @@ class AzenqosDialog(QDialog):
                     self.wcdma_blertc_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_blertc_window)
                     self.wcdma_blertc_window.show()
-            elif child == "Line Chart": ##
+            elif child == "Line Chart":  ##
                 if hasattr(self, 'wcdma_lc_window'):
                     self.wcdma_lc_window.show()
                 else:
@@ -959,10 +972,12 @@ class TableWindow(QDialog):
                 self.dataList = LteDataQuery().getServingAndNeighbors()
             elif self.title == 'LTE_PUCCH/PDSCH Parameters':
                 self.tableHeader = ["Element", "Value"]
+                self.dataList = LteDataQuery().getPucchPdschParameters()
             elif self.title == 'LTE_LTE Line Chart':
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'LTE_LTE RLC':
                 self.tableHeader = ["Element", "Value", "", "", ""]
+                self.dataList = LteDataQuery().getRlc()
             elif self.title == 'LTE_LTE VoLTE':
                 self.tableHeader = ["Element", "Value"]
 
@@ -1178,18 +1193,18 @@ class TableModel(QAbstractTableModel):
 class WcdmaDataQuery: ##
     def __init__(self):
         self.timeFilter = ''
-        if currentTime:
-            self.timeFilter = datetime.datetime.fromtimestamp(currentTime)
-        self.initialTime  = datetime.datetime.fromtimestamp(minTimeValue)
+        if currentDateTimeString:
+            self.timeFilter = currentDateTimeString
 
     def getActiveMonitoredSets(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        dataList = [] 
+        dataList = []
         selectedColumns = """time,wcdma_cellfile_matched_cellname_1,
                              wcdma_celltype_1,wcdma_sc_1,wcdma_ecio_1,wcdma_rscp_1,
 	                         wcdma_cellfreq_1""" #ขาด Column Event
-        queryString = """SELECT %s FROM wcdma_cells_combined ORDER BY time""" % (selectedColumns)  
+        queryString = """SELECT %s FROM wcdma_cells_combined ORDER BY time""" % (
+            selectedColumns)
         query = QSqlQuery()
         query.exec_(queryString)
         timeField = query.record().indexOf("time")
@@ -1209,14 +1224,21 @@ class WcdmaDataQuery: ##
             rscpValue = query.value(rscpField)
             freqValue = query.value(freqField)
             #eventValue = query.value(eventField)
-            
+            dataList.append([
+                timeValue, nameValue, typeValue, scValue, ecioValue, rscpValue,
+                ''
+            ])
+        azenqosDatabase.close()
+        return dataList
 
     def getRadioParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        dataList = []   
-        fieldsList = ['Time', 'Tx Power', 'Max Tx Power', 'RSSI', 'SIR', 'RRC State',
-                      'Cell ID', 'RNC ID'] 
+        dataList = []
+        fieldsList = [
+            'Time', 'Tx Power', 'Max Tx Power', 'RSSI', 'SIR', 'RRC State',
+            'Cell ID', 'RNC ID'
+        ]
         selectedColumns = """wtp.time,wtp.wcdma_txagc,wtp.wcdma_maxtxpwr,wrp.wcdma_rssi,sir.wcdma_sir,
                              rrc.wcdma_rrc_state,cel.wcdma_cellid,cel.wcdma_rnc_id""" 
         condition = ''
@@ -1272,7 +1294,7 @@ class WcdmaDataQuery: ##
             # diverValue = query.value(diverField)
             dataList.append([timeValue,freqValue,pscValue,'',''])
         azenqosDatabase.close()
-        return dataList 
+        return dataList
 
     def getActiveSetList(self):
         if azenqosDatabase is not None:
@@ -1302,17 +1324,18 @@ class WcdmaDataQuery: ##
         azenqosDatabase.close()
         return dataList 
 
+
 class LteDataQuery:
     def __init__(self):
         self.timeFilter = ''
-        if currentTime:
-            self.timeFilter = datetime.datetime.fromtimestamp(currentTime)
-        self.initialTime  = datetime.datetime.fromtimestamp(minTimeValue)
+        if currentDateTimeString:
+            self.timeFilter = currentDateTimeString
 
     def getRadioParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         dataList = []
+        condition = ''
         fieldsList = [
             'Time', 'Band', 'E-ARFCN', 'Serving PCI', 'Serving RSRP[0]',
             'Serving RSRP[1]', 'Serving RSRP', 'Serving RSRQ[0]',
@@ -1334,9 +1357,10 @@ class LteDataQuery:
                                 lcm.lte_inst_rsrp_rx0_1 as 'Serving RSRP[0]', lcm.lte_inst_rsrp_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrp_1 as 'Serving RSRP', lcm.lte_inst_rsrq_rx0_1 as 'Serving RSRQ[0]', lcm.lte_inst_rsrq_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrq_1 as 'Serving RSRQ', lcm.lte_sinr_rx0_1 as 'SINR Rx[0]', lcm.lte_sinr_rx1_1 as 'SINR Rx[1]', lcm.lte_sinr_1 as 'SINR', lcm.lte_inst_rssi_rx0_1 as 'RSSI Rx[0]', lcm.lte_inst_rssi_rx1_1 as 'RSSI Rx[1]', lcm.lte_inst_rssi_1 as 'RSSI', lldt.lte_bler_1 as 'BLER', lc.lte_cqi_cw0_1 as 'CQI CW[0]', lc.lte_cqi_cw1_1 as 'CQI CW[1]', ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)', lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State', les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo', lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
                                 lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID', lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
                                 lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)', '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI', lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment', ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', '' as 'DedBearer QCI'"""
-        condition = ''
+
         if self.timeFilter:
             condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
+
         queryString = """SELECT %s
                         FROM lte_cell_meas lcm
                         LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
@@ -1379,15 +1403,20 @@ class LteDataQuery:
             azenqosDatabase.open()
         MAX_NEIGHBORS = 16
         dataList = []
+        typeHeader = {
+            'serving': ['dateString', 'Serving cell:', '', '', '', ''],
+            'neigh': ['', 'Neighbor cells:', '', '', '', '']
+        }
+        emptyRow = ['', '', '', '', '', '']
         condition = ''
+
+        # Set query condition for serving cell
         if self.timeFilter:
             condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
-            dateString = '%s' % (self.timeFilter)
-        else:
-            condition = "WHERE lcm.time <= '%s'" % (self.initialTime)
-            dateString = '%s' % (self.initialTime)
-        firstRow = [dateString, 'Serving cell:', '', '', '', '']
-        dataList.append(firstRow)
+
+        typeHeader['serving'][0] = self.timeFilter
+        dataList.append(typeHeader['serving'])
+
         queryString = """SELECT lcm.lte_earfcn_1, lsci.lte_serv_cell_info_band, lsci.lte_serv_cell_info_pci, lcm.lte_inst_rsrp_1,
                         lcm.lte_inst_rsrq_1
                         FROM lte_cell_meas as lcm
@@ -1407,12 +1436,11 @@ class LteDataQuery:
                 query.value(4)
             ]
             dataList.append(servingCell)
+
+        # Set query condition for neigh cell
         if self.timeFilter:
             condition = "WHERE lnm.time <= '%s'" % (self.timeFilter)
-            dateString = '%s' % (self.timeFilter)
-        else:
-            condition = "WHERE lnm.time <= '%s'" % (self.initialTime)
-            dateString = '%s' % (self.initialTime)
+
         for neighbor in range(1, MAX_NEIGHBORS):
             queryString = """SELECT lnm.lte_neigh_earfcn_%d, lnm.lte_neigh_band_%d, lnm.lte_neigh_physical_cell_id_%d, lnm.lte_neigh_rsrp_%d,
                             lnm.lte_neigh_rsrq_%d
@@ -1426,10 +1454,9 @@ class LteDataQuery:
             rowCount = query.record().count()
             if rowCount > 0:
                 while query.next():
-                    if query.value(0) != '':
+                    if query.value(0):
                         if neighbor == 1:
-                            neighborRow = ['', 'Neighbor cells:', '', '', '', '']
-                            dataList.append(neighborRow)
+                            dataList.append(typeHeader['neigh'])
                         neighCell = [
                             '',
                             query.value(0),
@@ -1437,31 +1464,134 @@ class LteDataQuery:
                             query.value(2),
                             query.value(3),
                             query.value(4)
-                            ]
+                        ]
                         dataList.append(neighCell)
                     else:
                         break
             else:
-                neighCell = [
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    ''
-                    ]
-                dataList.append(neighCell)
+                dataList.append(emptyRow)
         azenqosDatabase.close()
         return dataList
 
-    def getCurrentChannel(self):
+    def getPucchPdschParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
+
         dataList = []
+        condition = ""
+        maxBearers = 8
+        pdschFields = [
+            'PDSCH Serving Cell ID', 'PDSCH RNTI ID', 'PDSCH RNTI Type',
+            'PDSCH Serving N Tx Antennas', 'PDSCH Serving N Rx Antennas',
+            'PDSCH Transmission Mode Current', 'PDSCH Spatial Rank',
+            'PDSCH Rb Allocation Slot 0', 'PDSCH Rb Allocation Slot 1',
+            'PDSCH PMI Type', 'PDSCH PMI Index', 'PDSCH Stream[0] Block Size',
+            'PDSCH Stream[0] Modulation', 'PDSCH Traffic To Pilot Ratio',
+            'PDSCH Stream[1] Block Size', 'PDSCH Stream[1] Modulation'
+        ]
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+            dateString = '%s' % (self.timeFilter)
+
+        dataList.append(['Time', self.timeFilter])
+
+        queryString = """SELECT time, lte_cqi_cw0_1, lte_cqi_cw1_1, lte_cqi_n_subbands_1, lte_rank_indication_1
+                        FROM lte_cqi
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
+            dataList.append(['---- PUCCH ----', ''])
+            dataList.append(['CQI CW 0', query.value('lte_cqi_cw0_1')])
+            dataList.append(['CQI CW 1', query.value('lte_cqi_cw1_1')])
+            dataList.append(['CQI N Sub-bands', query.value('lte_cqi_n_subbands_1')])
+            dataList.append(['Rank Indicator', query.value('lte_rank_indication_1')])
+
+        queryString = """SELECT lte_pdsch_serving_cell_id_1, lte_pdsch_rnti_id_1, lte_pdsch_rnti_type_1,
+                        lte_pdsch_serving_n_tx_antennas_1, lte_pdsch_serving_n_rx_antennas_1,
+                        lte_pdsch_transmission_mode_current_1, lte_pdsch_spatial_rank_1,
+                        lte_pdsch_rb_allocation_slot0_1, lte_pdsch_rb_allocation_slot1_1,
+                        lte_pdsch_pmi_type_1, lte_pdsch_pmi_index_1,lte_pdsch_stream0_transport_block_size_bits_1,
+                        lte_pdsch_stream0_modulation_1, lte_pdsch_traffic_to_pilot_ratio_1,lte_pdsch_stream1_transport_block_size_bits_1,
+                        lte_pdsch_stream1_modulation_1
+                        FROM lte_pdsch_meas
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        rowCount = query.record().count()
+        if rowCount > 0:
+
+            while query.next():
+                for field in range(len(pdschFields)):
+                    if query.value(0):
+                        if field == 0:
+                            dataList.append(['---- PDSCH ----', ''])
+                        dataList.append([pdschFields[field], query.value(field)])
+        azenqosDatabase.close()
+        return dataList
+
+    def getRlc(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+
+        dataList = []
+        condition = ""
+        dateString = ""
+        maxBearers = 8
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+            dateString = '%s' % (self.timeFilter)
+
+        queryString = """SELECT time, lte_rlc_dl_tp_mbps, lte_rlc_dl_tp, lte_rlc_n_bearers
+                        FROM lte_rlc_stats
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        while query.next():
+            dataList.append(['Time', dateString, '', '', ''])
+            dataList.append(
+                ['DL TP(Mbps)',
+                 query.value('lte_rlc_dl_tp_mbps'), '', '', ''])
+            dataList.append(
+                ['DL TP(Kbps)',
+                 query.value('lte_rlc_dl_tp'), '', '', ''])
+            dataList.append(['Bearers:', '', '', '', ''])
+            dataList.append(
+                ['N Bearers',
+                 query.value('lte_rlc_n_bearers'), '', '', ''])
+
+        for bearer in range(1, maxBearers):
+            queryString = """SELECT lte_rlc_per_rb_dl_rb_mode_%d, lte_rlc_per_rb_dl_rb_type_%d, lte_rlc_per_rb_dl_rb_id_%d, lte_rlc_per_rb_cfg_index_%d,
+                            lte_rlc_per_rb_dl_tp_%d
+                            FROM lte_rlc_stats
+                            %s
+                            ORDER BY time DESC
+                            LIMIT 1""" % (bearer, bearer, bearer, bearer,
+                                          bearer, condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        if bearer == 1:
+                            dataList.append(
+                                ['Mode', 'Type', 'RB-ID', 'Index', 'TP Mbps'])
+                        dataList.append([
+                            query.value(0),
+                            query.value(1),
+                            query.value(2),
+                            query.value(3),
+                            query.value(4)
+                        ])
         azenqosDatabase.close()
         return dataList
 
@@ -1501,7 +1631,7 @@ class LteDataQuery:
 
 class CdmaEvdoQuery:
     def __init__(self):
-        self.timeFilter = currentTime
+        self.timeFilter = currentTimestamp
 
     def getRadioParameters(self):
         if azenqosDatabase is not None:
@@ -1546,7 +1676,7 @@ class CdmaEvdoQuery:
 class DataQuery:
     def __init__(self, windowName):
         self.windowName = windowName
-        self.timeFilter = currentTime
+        self.timeFilter = currentTimestamp
 
     def getGSMDataLineChart(self):
         if azenqosDatabase is not None:
@@ -1722,9 +1852,8 @@ class DataQuery:
 class SignalingDataQuery:
     def __init__(self):
         self.timeFilter = ''
-        if currentTime:
-            self.timeFilter = datetime.datetime.fromtimestamp(currentTime)
-        self.initialTime  = datetime.datetime.fromtimestamp(minTimeValue)
+        if currentDateTimeString:
+            self.timeFilter = currentDateTimeString
 
     def getEvents(self):
         if azenqosDatabase is not None:
@@ -1810,8 +1939,11 @@ class SignalingDataQuery:
             azenqosDatabase.open()
         dataList = []
         fieldsList = [
-            'Time', 'MM State', 'MM Substate','MM Update Status', 'MM Network Operation Mode', 'MM Service Type', 'MM MCC',
-            'MM MNC', 'MM Lac', 'MM Rai','REG State','REG UE Operation Mode','GMM State','GMM Substate','GMM Update']
+            'Time', 'MM State', 'MM Substate', 'MM Update Status',
+            'MM Network Operation Mode', 'MM Service Type', 'MM MCC', 'MM MNC',
+            'MM Lac', 'MM Rai', 'REG State', 'REG UE Operation Mode',
+            'GMM State', 'GMM Substate', 'GMM Update'
+        ]
         selectedColumns = """ms.time,ms.mm_state_state,ms.mm_state_substate,ms.mm_state_update_status,
                              ms.mm_characteristics_network_operation_mode,ms.mm_characteristics_service_type,
                              ms.mm_characteristics_mcc,ms.mm_characteristics_mnc,ms.mm_characteristics_lac,ms.mm_characteristics_rai,
@@ -1897,14 +2029,17 @@ class SignalingDataQuery:
         #     dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
         azenqosDatabase.close()
 
-        fieldsList = ['Time', 'Device Time Stamp', 'Raw Layer Message', 'Processed Event']
+        fieldsList = [
+            'Time', 'Device Time Stamp', 'Raw Layer Message', 'Processed Event'
+        ]
         fieldCount = len(fieldsList)
         for index in range(len(fieldsList)):
-                columnName = fieldsList[index]
-                dataList.append([columnName,''])
+            columnName = fieldsList[index]
+            dataList.append([columnName, ''])
         return dataList
 
-# GSM Line Chart UI        
+
+# GSM Line Chart UI
 class Ui_GSM_LCwidget(QWidget):
     def __init__(self, windowName):
         super(Ui_GSM_LCwidget, self).__init__()
@@ -2016,7 +2151,8 @@ class Ui_GSM_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.gsm_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.gsm_tableWidget,self.lineEdit)
+        self.gsm_widget = Line_Chart(self.scrollAreaWidgetContents, self.title,
+                                     self.gsm_tableWidget, self.lineEdit)
         self.gsm_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.gsm_widget.setObjectName("gsm_widget")
 
@@ -2026,7 +2162,7 @@ class Ui_GSM_LCwidget(QWidget):
     def retranslateUi(self, GSM_LCwidget):
         _translate = QtCore.QCoreApplication.translate
         GSM_LCwidget.setWindowTitle(
-        _translate("GSM_LCwidget", "GSM Line Chart [MS1]"))
+            _translate("GSM_LCwidget", "GSM Line Chart [MS1]"))
         item = self.gsm_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("GSM_LCwidget", "1"))
         item = self.gsm_tableWidget.verticalHeaderItem(1)
@@ -2214,7 +2350,8 @@ class Ui_LTE_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.lte_tableWidget,self.lineEdit)
+        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents, self.title,
+                                     self.lte_tableWidget, self.lineEdit)
         self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_widget.setObjectName("lte_widget")
 
@@ -2267,6 +2404,7 @@ class Ui_LTE_LCwidget(QWidget):
         item.setText(_translate("LTE_LCwidget", "MS1"))
         self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
+
 
 # WCDMA Line Chart UI
 class Ui_WCDMA_LCwidget(QWidget):
@@ -2410,7 +2548,9 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.wcdma_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.wcdma_tableWidget,self.lineEdit)
+        self.wcdma_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                       self.title, self.wcdma_tableWidget,
+                                       self.lineEdit)
         self.wcdma_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.wcdma_widget.setObjectName("wcdma_widget")
 
@@ -2420,7 +2560,7 @@ class Ui_WCDMA_LCwidget(QWidget):
     def retranslateUi(self, WCDMA_LCwidget):
         _translate = QtCore.QCoreApplication.translate
         WCDMA_LCwidget.setWindowTitle(
-        _translate("WCDMA_LCwidget", "WCDMA Line Chart [MS1]"))
+            _translate("WCDMA_LCwidget", "WCDMA Line Chart [MS1]"))
         item = self.wcdma_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("WCDMA_LCwidget", "1"))
         item = self.wcdma_tableWidget.verticalHeaderItem(1)
@@ -2458,6 +2598,7 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.wcdma_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_LCwidget", "Date :"))
 
+
 # LTE Data Line Chart UI
 class Ui_LTE_Data_LCwidget(QWidget):
     def __init__(self, windowName):
@@ -2481,7 +2622,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.lte_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
 
-         # DataTable
+        # DataTable
         self.lte_data_tableWidget = QtWidgets.QTableWidget(LTE_Data_LCwidget)
         self.lte_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
         self.lte_data_tableWidget.setObjectName("lte_data_tableWidget")
@@ -2579,7 +2720,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_data_tableWidget.horizontalHeader().setHighlightSections(True)
         self.lte_data_tableWidget.verticalHeader().setVisible(False)
 
-         # DateLabel
+        # DateLabel
         self.datelabel = QtWidgets.QLabel(LTE_Data_LCwidget)
         self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
         font = QtGui.QFont()
@@ -2600,18 +2741,20 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.lte_data_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.lte_data_tableWidget,self.lineEdit)
+        self.lte_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                          self.title,
+                                          self.lte_data_tableWidget,
+                                          self.lineEdit)
         self.lte_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_data_widget.setObjectName("lte_data_widget")
 
         self.retranslateUi(LTE_Data_LCwidget)
         QtCore.QMetaObject.connectSlotsByName(LTE_Data_LCwidget)
 
-        
     def retranslateUi(self, LTE_Data_LCwidget):
         _translate = QtCore.QCoreApplication.translate
         LTE_Data_LCwidget.setWindowTitle(
-        _translate("LTE_Data_LCwidget", "LTE Data Line Chart [MS1]"))
+            _translate("LTE_Data_LCwidget", "LTE Data Line Chart [MS1]"))
         item = self.lte_data_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("LTE_Data_LCwidget", "1"))
         item = self.lte_data_tableWidget.verticalHeaderItem(1)
@@ -2631,15 +2774,19 @@ class Ui_LTE_Data_LCwidget(QWidget):
         __sortingEnabled = self.lte_data_tableWidget.isSortingEnabled()
         self.lte_data_tableWidget.setSortingEnabled(False)
         item = self.lte_data_tableWidget.item(0, 0)
-        item.setText(_translate("LTE_Data_LCwidget", "Download Overall Throughput(kbps)"))
+        item.setText(
+            _translate("LTE_Data_LCwidget",
+                       "Download Overall Throughput(kbps)"))
         item = self.lte_data_tableWidget.item(0, 2)
         item.setText(_translate("LTE_Data_LCwidget", "MS1"))
         item = self.lte_data_tableWidget.item(1, 0)
-        item.setText(_translate("LTE_Data_LCwidget", "Upload Overall Throughput(kbps)"))
+        item.setText(
+            _translate("LTE_Data_LCwidget", "Upload Overall Throughput(kbps)"))
         item = self.lte_data_tableWidget.item(1, 2)
         item.setText(_translate("LTE_Data_LCwidget", "MS1"))
         item = self.lte_data_tableWidget.item(2, 0)
-        item.setText(_translate("LTE_Data_LCwidget", "LTE L1 Throughput Mbps[1]"))
+        item.setText(
+            _translate("LTE_Data_LCwidget", "LTE L1 Throughput Mbps[1]"))
         item = self.lte_data_tableWidget.item(2, 2)
         item.setText(_translate("LTE_Data_LCwidget", "MS1"))
         item = self.lte_data_tableWidget.item(3, 0)
@@ -2648,6 +2795,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         item.setText(_translate("LTE_Data_LCwidget", "MS1"))
         self.lte_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_Data_LCwidget", "Date :"))
+
 
 # GSM Data Line Chart UI
 class Ui_GSM_Data_LCwidget(QWidget):
@@ -2672,7 +2820,7 @@ class Ui_GSM_Data_LCwidget(QWidget):
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.gsm_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
 
-         # DataTable
+        # DataTable
         self.gsm_data_tableWidget = QtWidgets.QTableWidget(GSM_Data_LCwidget)
         self.gsm_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 111))
         self.gsm_data_tableWidget.setObjectName("gsm_data_tableWidget")
@@ -2701,13 +2849,13 @@ class Ui_GSM_Data_LCwidget(QWidget):
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
-        self.gsm_data_tableWidget.setHorizontalHeaderItem(2, item)  
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(2, item)
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
-        self.gsm_data_tableWidget.setHorizontalHeaderItem(3, item)     
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(3, item)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.gsm_data_tableWidget.setItem(0, 0, item)
@@ -2750,12 +2898,12 @@ class Ui_GSM_Data_LCwidget(QWidget):
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
         self.gsm_data_tableWidget.setItem(2, 3, item)
-        
+
         self.gsm_data_tableWidget.horizontalHeader().setVisible(True)
         self.gsm_data_tableWidget.horizontalHeader().setHighlightSections(True)
         self.gsm_data_tableWidget.verticalHeader().setVisible(False)
 
-         # DateLabel
+        # DateLabel
         self.datelabel = QtWidgets.QLabel(GSM_Data_LCwidget)
         self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
         font = QtGui.QFont()
@@ -2776,18 +2924,20 @@ class Ui_GSM_Data_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.gsm_data_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.gsm_data_tableWidget,self.lineEdit)
+        self.gsm_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                          self.title,
+                                          self.gsm_data_tableWidget,
+                                          self.lineEdit)
         self.gsm_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.gsm_data_widget.setObjectName("gsm_data_widget")
 
         self.retranslateUi(GSM_Data_LCwidget)
         QtCore.QMetaObject.connectSlotsByName(GSM_Data_LCwidget)
 
-        
-    def retranslateUi(self, GSM_Data_LCwidget): 
+    def retranslateUi(self, GSM_Data_LCwidget):
         _translate = QtCore.QCoreApplication.translate
         GSM_Data_LCwidget.setWindowTitle(
-        _translate("GSM_Data_LCwidget", "GSM Data Line Chart [MS1]"))
+            _translate("GSM_Data_LCwidget", "GSM Data Line Chart [MS1]"))
         item = self.gsm_data_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("GSM_Data_LCwidget", "1"))
         item = self.gsm_data_tableWidget.verticalHeaderItem(1)
@@ -2805,20 +2955,26 @@ class Ui_GSM_Data_LCwidget(QWidget):
         __sortingEnabled = self.gsm_data_tableWidget.isSortingEnabled()
         self.gsm_data_tableWidget.setSortingEnabled(False)
         item = self.gsm_data_tableWidget.item(0, 0)
-        item.setText(_translate("GSM_Data_LCwidget", "GSM RLC DL Throughput (kbit/s)"))
+        item.setText(
+            _translate("GSM_Data_LCwidget", "GSM RLC DL Throughput (kbit/s)"))
         item = self.gsm_data_tableWidget.item(0, 2)
         item.setText(_translate("GSM_Data_LCwidget", "MS1"))
         item = self.gsm_data_tableWidget.item(1, 0)
-        item.setText(_translate("GSM_Data_LCwidget", "Application DL Throughput(kbps)[1]"))
+        item.setText(
+            _translate("GSM_Data_LCwidget",
+                       "Application DL Throughput(kbps)[1]"))
         item = self.gsm_data_tableWidget.item(1, 2)
         item.setText(_translate("GSM_Data_LCwidget", "MS1"))
         item = self.gsm_data_tableWidget.item(2, 0)
-        item.setText(_translate("GSM_Data_LCwidget", "Download Session Average Throughput(kbps)"))
+        item.setText(
+            _translate("GSM_Data_LCwidget",
+                       "Download Session Average Throughput(kbps)"))
         item = self.gsm_data_tableWidget.item(2, 2)
         item.setText(_translate("GSM_Data_LCwidget", "MS1"))
-        
+
         self.gsm_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("GSM_Data_LCwidget", "Date :"))
+
 
 # WCDMA Data Line Chart UI
 class Ui_WCDMA_Data_LCwidget(QWidget):
@@ -2843,9 +2999,11 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.wcdma_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
 
-         # DataTable
-        self.wcdma_data_tableWidget = QtWidgets.QTableWidget(WCDMA_Data_LCwidget)
-        self.wcdma_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
+        # DataTable
+        self.wcdma_data_tableWidget = QtWidgets.QTableWidget(
+            WCDMA_Data_LCwidget)
+        self.wcdma_data_tableWidget.setGeometry(QtCore.QRect(
+            20, 390, 421, 141))
         self.wcdma_data_tableWidget.setObjectName("wcdma_data_tableWidget")
         self.wcdma_data_tableWidget.setColumnCount(4)
         self.wcdma_data_tableWidget.setRowCount(4)
@@ -2938,10 +3096,11 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         item.setBackground(brush)
         self.wcdma_data_tableWidget.setItem(3, 3, item)
         self.wcdma_data_tableWidget.horizontalHeader().setVisible(True)
-        self.wcdma_data_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.wcdma_data_tableWidget.horizontalHeader().setHighlightSections(
+            True)
         self.wcdma_data_tableWidget.verticalHeader().setVisible(False)
 
-         # DateLabel
+        # DateLabel
         self.datelabel = QtWidgets.QLabel(WCDMA_Data_LCwidget)
         self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
         font = QtGui.QFont()
@@ -2962,18 +3121,20 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.wcdma_data_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.wcdma_data_tableWidget,self.lineEdit)
+        self.wcdma_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                            self.title,
+                                            self.wcdma_data_tableWidget,
+                                            self.lineEdit)
         self.wcdma_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.wcdma_data_widget.setObjectName("wcdma_data_widget")
 
         self.retranslateUi(WCDMA_Data_LCwidget)
         QtCore.QMetaObject.connectSlotsByName(WCDMA_Data_LCwidget)
 
-        
     def retranslateUi(self, WCDMA_Data_LCwidget):
         _translate = QtCore.QCoreApplication.translate
         WCDMA_Data_LCwidget.setWindowTitle(
-        _translate("WCDMA_Data_LCwidget", "WCDMA Data Line Chart [MS1]"))
+            _translate("WCDMA_Data_LCwidget", "WCDMA Data Line Chart [MS1]"))
         item = self.wcdma_data_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("WCDMA_Data_LCwidget", "1"))
         item = self.wcdma_data_tableWidget.verticalHeaderItem(1)
@@ -2993,34 +3154,40 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         __sortingEnabled = self.wcdma_data_tableWidget.isSortingEnabled()
         self.wcdma_data_tableWidget.setSortingEnabled(False)
         item = self.wcdma_data_tableWidget.item(0, 0)
-        item.setText(_translate("WCDMA_Data_LCwidget", "WCDMA RLC DL Throughput (kbit/s)"))
+        item.setText(
+            _translate("WCDMA_Data_LCwidget",
+                       "WCDMA RLC DL Throughput (kbit/s)"))
         item = self.wcdma_data_tableWidget.item(0, 2)
         item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
         item = self.wcdma_data_tableWidget.item(1, 0)
-        item.setText(_translate("WCDMA_Data_LCwidget", "Application DL Throughput(kbps)[1]"))
+        item.setText(
+            _translate("WCDMA_Data_LCwidget",
+                       "Application DL Throughput(kbps)[1]"))
         item = self.wcdma_data_tableWidget.item(1, 2)
         item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
         item = self.wcdma_data_tableWidget.item(2, 0)
-        item.setText(_translate("WCDMA_Data_LCwidget", "Download Session Average Throughput(kbps)"))
+        item.setText(
+            _translate("WCDMA_Data_LCwidget",
+                       "Download Session Average Throughput(kbps)"))
         item = self.wcdma_data_tableWidget.item(2, 2)
         item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
         item = self.wcdma_data_tableWidget.item(3, 0)
-        item.setText(_translate("WCDMA_Data_LCwidget", "Data HSDPA Throughput"))
+        item.setText(_translate("WCDMA_Data_LCwidget",
+                                "Data HSDPA Throughput"))
         item = self.wcdma_data_tableWidget.item(3, 2)
         item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
         self.wcdma_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
 
 
-
 # Class For Line Chart
-class  Line_Chart(QWidget):
-    def  __init__ (self,parent,windowName,tablewidget,datelabel):
+class Line_Chart(QWidget):
+    def __init__(self, parent, windowName, tablewidget, datelabel):
         super().__init__(parent)
-        self.canvas  =  FigureCanvas(Figure(figsize=(4, 4)))
-        vertical_layout  =  QVBoxLayout()
+        self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
+        vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(self.canvas)
-        self.canvas.axes =  self.canvas.figure.add_subplot()
+        self.canvas.axes = self.canvas.figure.add_subplot()
         self.setLayout(vertical_layout)
         self.title = windowName
         self.tablewidget = tablewidget
@@ -3039,24 +3206,27 @@ class  Line_Chart(QWidget):
         elif self.title == 'WCDMA_Line Chart':
             self.WCDMA()
         elif self.title == 'Data_LTE Data Line Chart':
-            self.LTE_Data() 
+            self.LTE_Data()
         elif self.title == 'Data_GSM Data Line Chart':
-            self.GSM_Data() 
+            self.GSM_Data()
         elif self.title == 'Data_WCDMA Data Line Chart':
-            self.WCDMA_Data()     
+            self.WCDMA_Data()
 
 #----------------------------------------------------------------------------------------------------------------------------------------
-    # Create GSM Line Chart
+# Create GSM Line Chart
+
     def GSM(self):
 
         #ยังไม่เสร็จ -- No data in Database
 
-        self.canvas.axes.set_title('GSM Line Chart')  
+        self.canvas.axes.set_title('GSM Line Chart')
         Date = []
         Time = []
 
         # Open Database And Query
-        ChartQuery = LineChartQuery(['time','gsm_rxlev_sub_dbm','gsm_rxqual_sub'],'gsm_cell_meas','')
+        ChartQuery = LineChartQuery(
+            ['time', 'gsm_rxlev_sub_dbm', 'gsm_rxqual_sub'], 'gsm_cell_meas',
+            '')
         result = ChartQuery.getData()
         for index in range(len(result['time'])):
             Date.append(result['time'][index].split(' ')[0])
@@ -3075,19 +3245,22 @@ class  Line_Chart(QWidget):
         # Ploting Graph
         lines = []
         #Array for line's color
-        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
         for data in result.items():
-            if data[0]!='time':
-                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-                lines.append(newline,)
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
 
         for colorindex in range(len(lines)):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -3096,31 +3269,35 @@ class  Line_Chart(QWidget):
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-
         # Show Data In Table
         def get_table_data(event):
             Chart_datalist = []
-            x,y = int(event.xdata), event.ydata
+            x, y = int(event.xdata), event.ydata
             for dict_item in result.items():
-                if not(dict_item[0]=='time'):
+                if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index],3)
-                self.tablewidget.item(index,1).setText(str(Value))
-     
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------
-    # Create LTE Line Chart
+# Create LTE Line Chart
+
     def LTE(self):
-        self.canvas.axes.set_title('LTE Line Chart')  
+        self.canvas.axes.set_title('LTE Line Chart')
         Date = []
         Time = []
 
         # Open Database And Query
-        ChartQuery = LineChartQuery(['time','lte_sinr_rx0_1','lte_sinr_rx1_1','lte_inst_rsrp_1','lte_inst_rsrq_1','lte_inst_rssi_1'],'lte_cell_meas','')
+        ChartQuery = LineChartQuery([
+            'time', 'lte_sinr_rx0_1', 'lte_sinr_rx1_1', 'lte_inst_rsrp_1',
+            'lte_inst_rsrq_1', 'lte_inst_rssi_1'
+        ], 'lte_cell_meas', '')
         result = ChartQuery.getData()
         for index in range(len(result['time'])):
             Date.append(result['time'][index].split(' ')[0])
@@ -3139,17 +3316,20 @@ class  Line_Chart(QWidget):
         # Ploting Graph
 
         lines = []
-        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
         for data in result.items():
-            if data[0]!='time':
-                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-                lines.append(newline,)
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
         for colorindex in range(len(lines)):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -3158,37 +3338,41 @@ class  Line_Chart(QWidget):
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-
         # Show Data In Table
         def get_table_data(event):
             Chart_datalist = []
-            x,y = int(event.xdata), event.ydata
+            x, y = int(event.xdata), event.ydata
             for dict_item in result.items():
-                if not(dict_item[0]=='time'):
+                if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for row in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[row],3)
-                self.tablewidget.item(row,1).setText(str(Value))
-     
+                Value = round(Chart_datalist[row], 3)
+                self.tablewidget.item(row, 1).setText(str(Value))
+
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------
-    # Create WCDMA Line Chart
+# Create WCDMA Line Chart
+
     def WCDMA(self):
 
         #ยังไม่เสร็จ -- No data in Database
 
-        self.canvas.axes.set_title('WCDMA Line Chart')  
+        self.canvas.axes.set_title('WCDMA Line Chart')
         Date = []
         Time = []
 
         # Open Database And Query
-        ChartQuery1 = LineChartQuery(['time','wcdma_aset_ecio_avg','wcdma_aset_rscp_avg'],'wcdma_cell_meas','')
+        ChartQuery1 = LineChartQuery(
+            ['time', 'wcdma_aset_ecio_avg', 'wcdma_aset_rscp_avg'],
+            'wcdma_cell_meas', '')
         result1 = ChartQuery1.getData()
-        ChartQuery2 = LineChartQuery(['wcdma_rssi'],'wcdma_rx_power','')
+        ChartQuery2 = LineChartQuery(['wcdma_rssi'], 'wcdma_rx_power', '')
         result2 = ChartQuery2.getData()
-        ChartQuery3 = LineChartQuery(['wcdma_bler_average_percent_all_channels'],'wcdma_bler','')
+        ChartQuery3 = LineChartQuery(
+            ['wcdma_bler_average_percent_all_channels'], 'wcdma_bler', '')
         result3 = ChartQuery3.getData()
         result1.update(result2)
         result1.update(result3)
@@ -3211,19 +3395,22 @@ class  Line_Chart(QWidget):
         lines = []
 
         #Array for line's color
-        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
         for data in result1.items():
-            if data[0]!='time':
-                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-                lines.append(newline,)
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
 
         for colorindex in range(len(lines)):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -3232,35 +3419,39 @@ class  Line_Chart(QWidget):
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-
         # Show Data In Table
         def get_table_data(event):
             Chart_datalist = []
-            x,y = int(event.xdata), event.ydata
+            x, y = int(event.xdata), event.ydata
             for dict_item in result1.items():
-                if not(dict_item[0]=='time'):
+                if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index],3)
-                self.tablewidget.item(index,1).setText(str(Value))
-     
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------       
-    # Create GSM Data Line Chart
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+# Create GSM Data Line Chart
+
     def GSM_Data(self):
 
         #ยังไม่เสร็จ -- No data in Database
 
-        self.canvas.axes.set_title('GSM Data Line Chart')  
+        self.canvas.axes.set_title('GSM Data Line Chart')
         Date = []
         Time = []
 
         # Open Database And Query
-        ChartQuery1 = LineChartQuery(['time','data_gsm_rlc_dl_throughput'],'data_egprs_stats','')
+        ChartQuery1 = LineChartQuery(['time', 'data_gsm_rlc_dl_throughput'],
+                                     'data_egprs_stats', '')
         result1 = ChartQuery1.getData()
-        ChartQuery2 = LineChartQuery(['data_app_dl_throughput_1','data_download_session_average'],'data_app_throughput','')
+        ChartQuery2 = LineChartQuery(
+            ['data_app_dl_throughput_1', 'data_download_session_average'],
+            'data_app_throughput', '')
         result2 = ChartQuery2.getData()
         result1.update(result2)
         for index in range(len(result1['time'])):
@@ -3282,19 +3473,22 @@ class  Line_Chart(QWidget):
         lines = []
 
         #Array for line's color
-        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
         for data in result1.items():
-            if data[0]!='time':
-                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-                lines.append(newline,)
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
 
         for colorindex in range(len(lines)):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -3303,37 +3497,42 @@ class  Line_Chart(QWidget):
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-
         # Show Data In Table
         def get_table_data(event):
             Chart_datalist = []
-            x,y = int(event.xdata), event.ydata
+            x, y = int(event.xdata), event.ydata
             for dict_item in result1.items():
-                if not(dict_item[0]=='time'):
+                if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index],3)
-                self.tablewidget.item(index,1).setText(str(Value))
-     
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------
-    # Create WCDMA Data Line Chart
+# Create WCDMA Data Line Chart
+
     def WCDMA_Data(self):
 
         #ยังไม่เสร็จ -- No data in Database
 
-        self.canvas.axes.set_title('WCDMA Data Line Chart')  
+        self.canvas.axes.set_title('WCDMA Data Line Chart')
         Date = []
         Time = []
 
         # Open Database And Query
-        ChartQuery1 = LineChartQuery(['time','data_wcdma_rlc_dl_throughput'],'data_wcdma_rlc_stats','')
+        ChartQuery1 = LineChartQuery(['time', 'data_wcdma_rlc_dl_throughput'],
+                                     'data_wcdma_rlc_stats', '')
         result1 = ChartQuery1.getData()
-        ChartQuery2 = LineChartQuery(['data_app_dl_throughput_1','data_download_session_average'],'data_app_throughput','')
+        ChartQuery2 = LineChartQuery(
+            ['data_app_dl_throughput_1', 'data_download_session_average'],
+            'data_app_throughput', '')
         result2 = ChartQuery2.getData()
-        ChartQuery3 = LineChartQuery(['data_hsdpa_throughput'],'wcdma_hsdpa_stats','')
+        ChartQuery3 = LineChartQuery(['data_hsdpa_throughput'],
+                                     'wcdma_hsdpa_stats', '')
         result3 = ChartQuery3.getData()
         result1.update(result2)
         result1.update(result3)
@@ -3356,19 +3555,22 @@ class  Line_Chart(QWidget):
         lines = []
 
         #Array for line's color
-        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
         for data in result1.items():
-            if data[0]!='time':
-                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-                lines.append(newline,)
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
 
         for colorindex in range(len(lines)):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -3377,34 +3579,39 @@ class  Line_Chart(QWidget):
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-
         # Show Data In Table
         def get_table_data(event):
             Chart_datalist = []
-            x,y = int(event.xdata), event.ydata
+            x, y = int(event.xdata), event.ydata
             for dict_item in result1.items():
-                if not(dict_item[0]=='time'):
+                if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index],3)
-                self.tablewidget.item(index,1).setText(str(Value))
-     
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------
-    # Create LTE Data Line Chart
+# Create LTE Data Line Chart
+
     def LTE_Data(self):
 
-        self.canvas.axes.set_title('LTE Data Line Chart')  
+        self.canvas.axes.set_title('LTE Data Line Chart')
         Date = []
         Time = []
 
         # Open Database And Query
-        ChartQuery1 = LineChartQuery(['time','lte_l1_throughput_mbps_1','lte_bler_1'],'lte_l1_dl_tp','')
+        ChartQuery1 = LineChartQuery(
+            ['time', 'lte_l1_throughput_mbps_1', 'lte_bler_1'], 'lte_l1_dl_tp',
+            '')
         result1 = ChartQuery1.getData()
-        ChartQuery2 = LineChartQuery(['data_download_overall','data_upload_overall'],'data_app_throughput','')
+        ChartQuery2 = LineChartQuery(
+            ['data_download_overall', 'data_upload_overall'],
+            'data_app_throughput', '')
         result2 = ChartQuery2.getData()
         result1.update(result2)
         for index in range(len(result1['time'])):
@@ -3424,19 +3631,22 @@ class  Line_Chart(QWidget):
         # Ploting Graph
         lines = []
         #Array for line's color
-        ColorArr = ['#ff0000','#0000ff','#007c00','#ff77ab','#000000']
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
         for data in result1.items():
-            if data[0]!='time':
-                newline, = self.canvas.axes.plot(Time,data[1],picker=5,linewidth=1)
-                lines.append(newline,)
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
 
         for colorindex in range(len(lines)):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-20,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
+        self.canvas.axes.set_ylim(-20, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
 
         # Line Focusing Function
         def on_pick(event):
@@ -3445,21 +3655,23 @@ class  Line_Chart(QWidget):
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-
         # Show Data In Table
         def get_table_data(event):
             Chart_datalist = []
-            x,y = int(event.xdata), event.ydata
+            x, y = int(event.xdata), event.ydata
             for dict_item in result1.items():
-                if not(dict_item[0]=='time'):
+                if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index],3)
-                self.tablewidget.item(index,1).setText(str(Value))
-     
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
+
+
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------
 class LineChartQuery:
     def __init__(self, fieldArr, tableName, conditionStr):
@@ -3502,9 +3714,10 @@ class LineChartQuery:
 
     def valueValidation(self, value):
         validatedValue = 0
-        if value != '': 
-            validatedValue = value   
+        if value != '':
+            validatedValue = value
         return validatedValue
+
 
 class DataQuery:
     def __inti__(self, fieldArr, tableName, conditionStr):
@@ -3551,6 +3764,7 @@ class DataQuery:
             validatedValue = value
         return validatedValue
 
+
 class setInterval:
     def __init__(self, value, interval, action):
         self.interval = interval
@@ -3567,6 +3781,7 @@ class setInterval:
 
     def cancel(self):
         self.stopEvent.set()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

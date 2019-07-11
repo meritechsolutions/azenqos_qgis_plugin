@@ -348,7 +348,7 @@ class AzenqosDialog(QDialog):
 
         # Data Section
         data = QTreeWidgetItem(self.presentationTreeWidget, ['Data'])
-        dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
+        # dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
         dataWcdmaLineChart = QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
         dataEdgeInfo = QTreeWidgetItem(data, ['GPRS/EDGE Information'])
         dataWebBrowser = QTreeWidgetItem(data, ['Web Browser'])
@@ -469,50 +469,7 @@ class AzenqosDialog(QDialog):
     def classifySelectedItems(self, parent, child):
         global openedWindows
         windowName = parent + "_" + child
-        if parent == "GSM":
-            if child == "Radio Parameters":
-                if hasattr(self, 'gsm_rdp_window'):
-                    self.gsm_rdp_window.show()
-                else:
-                    self.gsm_rdp_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_rdp_window)
-                    self.gsm_rdp_window.show()
-            elif child == "Serving + Neighbors":
-                if hasattr(self, 'gsm_sn_window'):
-                    self.gsm_sn_window.show()
-                else:
-                    self.gsm_sn_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_sn_window)
-                    self.gsm_sn_window.show()
-            elif child == "Current Channel":
-                if hasattr(self, 'gsm_cc_window'):
-                    self.gsm_cc_window.show()
-                else:
-                    self.gsm_cc_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_cc_window)
-                    self.gsm_cc_window.show()
-            elif child == "C/I":
-                if hasattr(self, 'gsm_ci_window'):
-                    self.gsm_ci_window.show()
-                else:
-                    self.gsm_ci_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_ci_window)
-                    self.gsm_ci_window.show()
-            elif child == "GSM Line Chart":
-                if hasattr(self, 'gsm_lc_window'):
-                    self.gsm_lc_window.show()
-                else:
-                    self.gsm_lc_window = Ui_GSM_LCwidget(windowName)
-                    openedWindows.append(self.gsm_lc_window)
-                    self.gsm_lc_window.show()
-            elif child == "Events Counter":
-                if hasattr(self, 'gsm_ec_window'):
-                    self.gsm_ec_window.show()
-                else:
-                    self.gsm_ec_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_ec_window)
-                    self.gsm_ec_window.show()
-        elif parent == "WCDMA":
+        if parent == "WCDMA":
             if child == "Active + Monitored Sets":
                 if hasattr(self, 'wcdma_ams_window'):
                     self.wcdma_ams_window.show()
@@ -1636,40 +1593,6 @@ class DataQuery:
         self.windowName = windowName
         self.timeFilter = currentTimestamp
 
-    def getGSMDataLineChart(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getWcdmaDataLineChart(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
     def getGprsEdgeInformation(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
@@ -1722,23 +1645,6 @@ class DataQuery:
         return dataList
 
     def getLteDataStatistics(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getLteDataLineChart(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
@@ -1890,7 +1796,7 @@ class SignalingDataQuery:
                         LIMIT 1""" % (condition)
         query = QSqlQuery()
         query.exec_(queryString)
-        while query.next():
+        # while query.next():
         # query = QSqlQuery()
         # query.exec_("SELECT * FROM events")
         # timeField = query.record().indexOf("time")
@@ -1922,7 +1828,7 @@ class SignalingDataQuery:
         condition = ''
         if self.timeFilter:
             condition = "WHERE ms.time <= '%s'" % (self.timeFilter)
-        queryString = """SELECT %s FROM mm_state ms
+        queryString = """SELECT %s FROM mm_state mszx
                         LEFT JOIN reg_state rs ON ms.time = rs.time
                         LEFT JOIN gmm_state gs ON ms.time = gs.time
                         %s
@@ -3183,7 +3089,6 @@ class Line_Chart(QWidget):
         elif self.title == 'Data_WCDMA Data Line Chart':
             self.WCDMA_Data()
 
-    #----------------------------------------------------------------------------------------------------------------------------------------
     # Create GSM Line Chart
     def GSM(self):
 
@@ -3255,9 +3160,7 @@ class Line_Chart(QWidget):
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
 
-    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
     # Create LTE Line Chart
-
     def LTE(self):
         self.canvas.axes.set_title('LTE Line Chart')
         Date = []
@@ -3324,9 +3227,7 @@ class Line_Chart(QWidget):
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
 
-    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
     # Create WCDMA Line Chart
-
     def WCDMA(self):
 
         #ยังไม่เสร็จ -- No data in Database
@@ -3406,9 +3307,7 @@ class Line_Chart(QWidget):
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
 
-    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
     # Create GSM Data Line Chart
-
     def GSM_Data(self):
 
         #ยังไม่เสร็จ -- No data in Database
@@ -3485,9 +3384,7 @@ class Line_Chart(QWidget):
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
 
-    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
     # Create WCDMA Data Line Chart
-
     def WCDMA_Data(self):
 
         #ยังไม่เสร็จ -- No data in Database
@@ -3568,9 +3465,7 @@ class Line_Chart(QWidget):
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
 
-    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
     # Create LTE Data Line Chart
-
     def LTE_Data(self):
 
         self.canvas.axes.set_title('LTE Data Line Chart')

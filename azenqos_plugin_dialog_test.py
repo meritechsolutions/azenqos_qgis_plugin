@@ -38,8 +38,8 @@ import sqlite3
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 import numpy as np
-# FROM qgis.core import *
-# FROM qgis.utils import *
+# from qgis.core import *
+# from qgis.utils import *
 
 azenqosDatabase = None
 minTimeValue = None
@@ -905,7 +905,6 @@ class TableWindow(QDialog):
             elif self.title == 'WCDMA_Pilot Analyzer':
                 self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 
-
             # LTE
             elif self.title == 'LTE_Radio Parameters':
                 self.tableHeader = ["Element", "PCC", "SCC0", "SCC1"]
@@ -965,7 +964,7 @@ class TableWindow(QDialog):
 
             # Signaling
             elif self.title == 'Signaling_Events':
-                self.tableHeader = ["Time","", "Eq.", "Name", "Info."]
+                self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
                 self.dataList = SignalingDataQuery().getEvents()
             elif self.title == 'Signaling_Layer 1 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
@@ -1041,7 +1040,7 @@ class TableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-class WcdmaDataQuery: ##
+class WcdmaDataQuery:  ##
     def __init__(self):
         self.timeFilter = ''
         if currentDateTimeString:
@@ -1058,7 +1057,8 @@ class WcdmaDataQuery: ##
                              wcdma_celltype_1,wcdma_sc_1,wcdma_ecio_1,wcdma_rscp_1,
 	                         wcdma_cellfreq_1"""
         #ขาด Column Event
-        queryString = """SELECT %s FROM wcdma_cells_combined %s ORDER BY time""" % (selectedColumns,condition)
+        queryString = """SELECT %s FROM wcdma_cells_combined %s ORDER BY time""" % (
+            selectedColumns, condition)
         query = QSqlQuery()
         query.exec_(queryString)
 
@@ -1076,7 +1076,7 @@ class WcdmaDataQuery: ##
         #     dataList.append([timeValue, nameValue, typeValue, scValue, ecioValue, rscpValue,''])
 
         #Table Ui Test
-        dataList.append([self.timeFilter,'','','','','','',''])
+        dataList.append([self.timeFilter, '', '', '', '', '', '', ''])
         azenqosDatabase.close()
         return dataList
 
@@ -1086,20 +1086,22 @@ class WcdmaDataQuery: ##
         dataList = []
         fieldsList = [
             'Time', 'Tx Power', 'Max Tx Power', 'RSSI', 'SIR', 'RRC State',
-            'Cell ID', 'RNC ID']
+            'Cell ID', 'RNC ID'
+        ]
         selectedColumns = """wtp.time,wtp.wcdma_txagc,wtp.wcdma_maxtxpwr,wrp.wcdma_rssi,sir.wcdma_sir,
-                             rrc.wcdma_rrc_state,cel.wcdma_cellid,cel.wcdma_rnc_id"""
+                            rrc.wcdma_rrc_state,cel.wcdma_cellid,cel.wcdma_rnc_id"""
         condition = ''
         if self.timeFilter:
             condition = "WHERE wtp.time <= '%s'" % (self.timeFilter)
         queryString = """SELECT %s
-                         FROM wcdma_tx_power wtp
-                         LEFT JOIN wcdma_rx_power wrp ON wtp.time = wrp.time
-                         LEFT JOIN wcdma_sir sir ON wtp.time = sir.time
-                         LEFT JOIN wcdma_rrc_state rrc ON wtp.time = rrc.time
-                         LEFT JOIN wcdma_idle_cell_info cel ON wtp.time = cel.time
-                         %s
-                         ORDER BY wtp.time DESC LIMIT 1"""  % (selectedColumns,condition)
+                        FROM wcdma_tx_power wtp
+                        LEFT JOIN wcdma_rx_power wrp ON wtp.time = wrp.time
+                        LEFT JOIN wcdma_sir sir ON wtp.time = sir.time
+                        LEFT JOIN wcdma_rrc_state rrc ON wtp.time = rrc.time
+                        LEFT JOIN wcdma_idle_cell_info cel ON wtp.time = cel.time
+                        %s
+                        ORDER BY wtp.time DESC LIMIT 1""" % (selectedColumns,
+                                                             condition)
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
         #-----------------------------------------------
@@ -1113,9 +1115,9 @@ class WcdmaDataQuery: ##
         #             dataList.append([fieldsList[field],''])
 
         #Table Ui Test
-        dataList.append(['Time',self.timeFilter])
-        for field in range(1,len(fieldsList)):
-            dataList.append([fieldsList[field],''])
+        dataList.append(['Time', self.timeFilter])
+        for field in range(1, len(fieldsList)):
+            dataList.append([fieldsList[field], ''])
         azenqosDatabase.close()
         return dataList
 
@@ -1129,7 +1131,8 @@ class WcdmaDataQuery: ##
 
         selectedColumns = """time,wcdma_mset_cellfreq_1,wcdma_mset_sc_1"""
         #ขาด Column Cell Position และ Diversity
-        queryString = """SELECT %s FROM wcdma_cell_meas %s ORDER BY time"""  % (selectedColumns,condition)
+        queryString = """SELECT %s FROM wcdma_cell_meas %s ORDER BY time""" % (
+            selectedColumns, condition)
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
         #-----------------------------------------------
@@ -1144,7 +1147,7 @@ class WcdmaDataQuery: ##
         #     dataList.append([timeValue,freqValue,pscValue,'',''])
 
         #Table Ui Test
-        dataList.append([self.timeFilter,'','','','',''])
+        dataList.append([self.timeFilter, '', '', '', '', ''])
 
         azenqosDatabase.close()
         return dataList
@@ -1158,13 +1161,14 @@ class WcdmaDataQuery: ##
             condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
 
         selectedColumns = """wcm.time,wcm.wcdma_aset_cellfreq_1,wafl.wcdma_activeset_psc_1,
-                             wafl.wcdma_activeset_cellposition_1,wafl.wcdma_activeset_celltpc_1,
-                             wafl.wcdma_activeset_diversity_1"""
+                            wafl.wcdma_activeset_cellposition_1,wafl.wcdma_activeset_celltpc_1,
+                            wafl.wcdma_activeset_diversity_1"""
         queryString = """SELECT %s
-                         FROM wcdma_cell_meas wcm
-                         LEFT JOIN wcdma_aset_full_list wafl ON wcm.time = wafl.time
-                         %s
-                         ORDER BY wcm.time DESC"""  % (selectedColumns,condition)
+                        FROM wcdma_cell_meas wcm
+                        LEFT JOIN wcdma_aset_full_list wafl ON wcm.time = wafl.time
+                        %s
+                        ORDER BY wcm.time DESC""" % (selectedColumns,
+                                                     condition)
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
         #-----------------------------------------------
@@ -1180,7 +1184,7 @@ class WcdmaDataQuery: ##
         #     dataList.append([timeValue,freqValue,pscValue,celposValue,tpcValue,diverValue])
 
         #Table Ui Test
-        dataList.append([self.timeFilter,'','','','',''])
+        dataList.append([self.timeFilter, '', '', '', '', ''])
 
         azenqosDatabase.close()
         return dataList
@@ -1189,16 +1193,19 @@ class WcdmaDataQuery: ##
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         dataList = []
-        fieldsList = ['Time','BLER Average Percent','BLER Calculation Window Size','BLER N Transport Channels']
+        fieldsList = [
+            'Time', 'BLER Average Percent', 'BLER Calculation Window Size',
+            'BLER N Transport Channels'
+        ]
         condition = ''
         if self.timeFilter:
             condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
 
         queryString = """Select time,wcdma_bler_average_percent_all_channels,wcdma_bler_calculation_window_size,
-                         wcdma_bler_n_transport_channels
-                         FROM wcdma_bler
-                         %s
-                         ORDER BY time DESC LIMIT 1""" % (condition)
+                        wcdma_bler_n_transport_channels
+                        FROM wcdma_bler
+                        %s
+                        ORDER BY time DESC LIMIT 1""" % (condition)
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
         #-----------------------------------------------
@@ -1212,9 +1219,9 @@ class WcdmaDataQuery: ##
         #             dataList.append([fieldsList[field],''])
 
         #Table Ui Test
-        dataList.append(['Time',self.timeFilter])
-        for field in range(1,len(fieldsList)):
-            dataList.append([fieldsList[field],''])
+        dataList.append(['Time', self.timeFilter])
+        for field in range(1, len(fieldsList)):
+            dataList.append([fieldsList[field], ''])
         azenqosDatabase.close()
         return dataList
 
@@ -1227,12 +1234,13 @@ class WcdmaDataQuery: ##
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        for channel in range(1,maxChannel):
+        for channel in range(1, maxChannel):
             queryString = """SELECT wcdma_bler_channel_%d,wcdma_bler_percent_%d,
-                             wcdma_bler_err_%d,wcdma_bler_rcvd_%d
-                             FROM wcdma_bler
-                             %s
-                             ORDER BY time DESC LIMIT 1""" % (channel,channel,channel,channel,condition)
+                            wcdma_bler_err_%d,wcdma_bler_rcvd_%d
+                            FROM wcdma_bler
+                            %s
+                            ORDER BY time DESC LIMIT 1""" % (
+                channel, channel, channel, channel, condition)
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -1255,13 +1263,14 @@ class WcdmaDataQuery: ##
         condition = ''
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        row = ['','','','']
+        row = ['', '', '', '']
         maxBearers = 10
-        for bearers in range(1,maxBearers):
+        for bearers in range(1, maxBearers):
             queryString = """SELECT data_wcdma_n_bearers,data_wcdma_bearer_id_%d,data_wcdma_bearer_rate_dl_%d,
-                             data_wcdma_bearer_rate_ul_%d
-                             FROM wcdma_bearers %s
-                             ORDER BY time DESC LIMIT 1""" % (bearers,bearers,bearers,condition)
+                            data_wcdma_bearer_rate_ul_%d
+                            FROM wcdma_bearers %s
+                            ORDER BY time DESC LIMIT 1""" % (
+                bearers, bearers, bearers, condition)
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -1269,7 +1278,7 @@ class WcdmaDataQuery: ##
                 while query.next():
                     if query.value(0):
                         row[0] = query.value(0)
-                        for index in range(1,len(row)):
+                        for index in range(1, len(row)):
                             row[index] = query.value(index)
                         dataList.append(row)
         azenqosDatabase.close()
@@ -1282,14 +1291,15 @@ class WcdmaDataQuery: ##
         condition = ''
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        row = ['','','','','']
+        row = ['', '', '', '', '']
         maxPollution = 32
-        for pollution in range(1,maxPollution):
+        for pollution in range(1, maxPollution):
             queryString = """SELECT time,wcdma_n_pilot_polluting_cells,wcdma_pilot_polluting_cell_sc_%d,
-                             wcdma_pilot_polluting_cell_rscp_%d,wcdma_pilot_polluting_cell_ecio_%d
-                             FROM wcdma_pilot_pollution
-                             %s
-                             ORDER BY time DESC LIMIT 1""" % (pollution,pollution,pollution,condition)
+                            wcdma_pilot_polluting_cell_rscp_%d,wcdma_pilot_polluting_cell_ecio_%d
+                            FROM wcdma_pilot_pollution
+                            %s
+                            ORDER BY time DESC LIMIT 1""" % (
+                pollution, pollution, pollution, condition)
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -1298,7 +1308,7 @@ class WcdmaDataQuery: ##
                     if query.value(0):
                         row[0] = query.value(0)
                         row[1] = query.value(1)
-                        for index in range(2,len(row)):
+                        for index in range(2, len(row)):
                             row[index] = query.value(index)
                         dataList.append(row)
 
@@ -1315,22 +1325,22 @@ class WcdmaDataQuery: ##
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
-        for item in range(1,maxItem):
+        for item in range(1, maxItem):
             queryString = """SELECT wcdma_celltype_%d,wcdma_ecio_%d,wcdma_rscp_%d
-                             FROM wcdma_cells_combined
-                             %s
-                             ORDER BY time DESC""" % (item,item,item,condition)
+                            FROM wcdma_cells_combined
+                            %s
+                            ORDER BY time DESC""" % (item, item, item,
+                                                     condition)
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
             if rowCount > 0:
                 while query.next():
                     if query.value(0):
-                        dataList.append([
-                            query.value(0),
-                            query.value(1),
-                            query.value(2)
-                        ])
+                        dataList.append(
+                            [query.value(0),
+                             query.value(1),
+                             query.value(2)])
 
         azenqosDatabase.close()
         return dataList
@@ -1342,10 +1352,10 @@ class WcdmaDataQuery: ##
         condition = ''
 
         queryString = """Select time,wcdma_cm_gsm_meas_arfcn,wcdma_cm_gsm_meas_rxlev,
-                         wcdma_cm_gsm_meas_bsic,wcdma_cm_gsm_meas_cell_measure_state
-                         FROM wcdma_cm_gsm_meas
-                         %s
-                         ORDER BY time DESC""" % (condition)
+                        wcdma_cm_gsm_meas_bsic,wcdma_cm_gsm_meas_cell_measure_state
+                        FROM wcdma_cm_gsm_meas
+                        %s
+                        ORDER BY time DESC""" % (condition)
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
         # -----------------------------------------------
@@ -1362,10 +1372,9 @@ class WcdmaDataQuery: ##
         #         dataList.append([self.timeFilter,'','','',''])
 
         #Table Ui Test
-        dataList.append([self.timeFilter,'','','',''])
+        dataList.append([self.timeFilter, '', '', '', ''])
         azenqosDatabase.close()
         return dataList
-
 
 
 class LteDataQuery:
@@ -1771,9 +1780,7 @@ class CdmaEvdoQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         dataList = []
-        evdoFields = [
-            'Time', 'DRC', 'PER', '', 'SINR Per PN:', 'PN', 'SINR'
-        ]
+        evdoFields = ['Time', 'DRC', 'PER', '', 'SINR Per PN:', 'PN', 'SINR']
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
@@ -1940,11 +1947,11 @@ class SignalingDataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '','MS1', nameValue, detailStrValue])
+            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 
-    def getLayerOneMessages(self): ##ต้องแก้ query
+    def getLayerOneMessages(self):  ##ต้องแก้ query
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
@@ -1988,21 +1995,24 @@ class SignalingDataQuery:
         azenqosDatabase.close()
         return dataList
 
-    def getBenchmark(self): #ยังไม่เสร็จ
+    def getBenchmark(self):  #ยังไม่เสร็จ
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         dataList = []
         condition = ""
 
         #Voice section (ยังไม่มีข้อมูลใน database)
-        dataList.append(['---- Voice ----','','','',''])
-        dataList.append(['Call Count',0,0,0,0])
-        dataList.append(['Drop Count',0,0,0,0])
-        dataList.append(['Block Count',0,0,0,0])
-        dataList.append(['Handover Fail Count',0,0,0,0])
+        dataList.append(['---- Voice ----', '', '', '', ''])
+        dataList.append(['Call Count', 0, 0, 0, 0])
+        dataList.append(['Drop Count', 0, 0, 0, 0])
+        dataList.append(['Block Count', 0, 0, 0, 0])
+        dataList.append(['Handover Fail Count', 0, 0, 0, 0])
 
         #LTE section
-        lteField = ['---- LTE ----','SINR Rx[0][1]','SINR RX[1][1]','Inst RSRP[1]','Inst RSRQ[1]','Inst RSSI','Cell ID','Cell Name']
+        lteField = [
+            '---- LTE ----', 'SINR Rx[0][1]', 'SINR RX[1][1]', 'Inst RSRP[1]',
+            'Inst RSRQ[1]', 'Inst RSSI', 'Cell ID', 'Cell Name'
+        ]
         if self.timeFilter:
             condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
         queryString = """SELECT '' as header,lcm.lte_sinr_rx0_1,lcm.lte_sinr_rx1_1,lcm.lte_inst_rsrp_1,lcm.lte_inst_rsrq_1,
@@ -2016,12 +2026,17 @@ class SignalingDataQuery:
         while query.next():
             for field in range(len(lteField)):
                 if query.value(field):
-                    dataList.append([lteField[field],query.value(field),'','',''])
+                    dataList.append(
+                        [lteField[field],
+                         query.value(field), '', '', ''])
                 else:
-                    dataList.append([lteField[field],'','','',''])
+                    dataList.append([lteField[field], '', '', '', ''])
 
         #WCDMA section
-        wcdmaField = ['---- WCDMA ----','ASET Ec/Io Avg.','ASET RSCP Avg.','RSSI','BLER Avg.','Cell ID','Cell Name']
+        wcdmaField = [
+            '---- WCDMA ----', 'ASET Ec/Io Avg.', 'ASET RSCP Avg.', 'RSSI',
+            'BLER Avg.', 'Cell ID', 'Cell Name'
+        ]
         if self.timeFilter:
             condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
         queryString = """SELECT '' as header,wcm.wcdma_aset_ecio_avg,wcm.wcdma_aset_rscp_avg,wrp.wcdma_rssi,
@@ -2047,10 +2062,13 @@ class SignalingDataQuery:
 
         #Table Ui Test for WCDMA section
         for field in range(len(wcdmaField)):
-            dataList.append([wcdmaField[field],'','','',''])
+            dataList.append([wcdmaField[field], '', '', '', ''])
 
         # #Data Section
-        dataField = ['---- Data ----','DL Application Throughput','UL Application Throughput']
+        dataField = [
+            '---- Data ----', 'DL Application Throughput',
+            'UL Application Throughput'
+        ]
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         queryString = """SELECT '' as header,data_app_dl_throughput_1,data_app_ul_throughput_1
@@ -2071,13 +2089,15 @@ class SignalingDataQuery:
 
         #Table Ui Test for Data section
         for field in range(len(dataField)):
-            dataList.append([dataField[field],'','','',''])
+            dataList.append([dataField[field], '', '', '', ''])
         #'Data Connect Fail Count','Download Timeout'
-        dataList.append(['Data Connect Fail Count',0,0,0,0])
-        dataList.append(['Download Timeout',0,0,0,0])
+        dataList.append(['Data Connect Fail Count', 0, 0, 0, 0])
+        dataList.append(['Download Timeout', 0, 0, 0, 0])
 
         #LTE RLC section
-        lte_rlcField = ['---- LTE ----','RLC DL Thoughput','RLC UL Thoughput']
+        lte_rlcField = [
+            '---- LTE ----', 'RLC DL Thoughput', 'RLC UL Thoughput'
+        ]
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         queryString = """SELECT '' as header,lte_rlc_dl_tp,'' as lte_rlc_ul_tp
@@ -2091,12 +2111,17 @@ class SignalingDataQuery:
         while query.next():
             for field in range(len(lte_rlcField)):
                 if query.value(field):
-                    dataList.append([lte_rlcField[field],query.value(field),'','',''])
+                    dataList.append(
+                        [lte_rlcField[field],
+                         query.value(field), '', '', ''])
                 else:
-                    dataList.append([lte_rlcField[field],'','','',''])
+                    dataList.append([lte_rlcField[field], '', '', '', ''])
 
         #WCDMA RLC section
-        wcdma_rlcField = ['---- WCDMA ----','HS-DSCH Throughput','WCDMA RLC DL Thoughput','WCDMA RLC UL Thoughput']
+        wcdma_rlcField = [
+            '---- WCDMA ----', 'HS-DSCH Throughput', 'WCDMA RLC DL Thoughput',
+            'WCDMA RLC UL Thoughput'
+        ]
         if self.timeFilter:
             condition = "WHERE whs.time <= '%s'" % (self.timeFilter)
         queryString = """SELECT '' as header,whs.data_hsdpa_thoughput,dwrs.data_wcdma_rlc_dl_throughput,
@@ -2119,7 +2144,7 @@ class SignalingDataQuery:
 
         #Table Ui Test for Data section
         for field in range(len(wcdma_rlcField)):
-            dataList.append([wcdma_rlcField[field],'','','',''])
+            dataList.append([wcdma_rlcField[field], '', '', '', ''])
 
         azenqosDatabase.close()
         return dataList
@@ -2145,16 +2170,19 @@ class SignalingDataQuery:
                         LEFT JOIN reg_state rs ON ms.time = rs.time
                         LEFT JOIN gmm_state gs ON ms.time = gs.time
                         %s
-                        ORDER BY ms.time DESC LIMIT 1""" % (selectedColumns,condition)
+                        ORDER BY ms.time DESC LIMIT 1""" % (selectedColumns,
+                                                            condition)
         query = QSqlQuery()
         query.exec_(queryString)
         queryRowCount = query.record().count()
         while query.next():
             for field in range(len(fieldsList)):
                 if query.value(field):
-                    dataList.append([fieldsList[field],query.value(field),'','',''])
+                    dataList.append(
+                        [fieldsList[field],
+                         query.value(field), '', '', ''])
                 else:
-                    dataList.append([fieldsList[field],'','','',''])
+                    dataList.append([fieldsList[field], '', '', '', ''])
         azenqosDatabase.close()
         return dataList
 
@@ -2172,15 +2200,17 @@ class SignalingDataQuery:
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         queryString = 'select %s from serving_system %s order by time desc limit 1' % (
-            selectedColumns,condition)
+            selectedColumns, condition)
         query = QSqlQuery()
         query.exec_(queryString)
         while query.next():
             for field in range(len(fieldsList)):
                 if query.value(field):
-                    dataList.append([fieldsList[field],query.value(field),'','',''])
+                    dataList.append(
+                        [fieldsList[field],
+                         query.value(field), '', '', ''])
                 else:
-                    dataList.append([fieldsList[field],'','','',''])
+                    dataList.append([fieldsList[field], '', '', '', ''])
         azenqosDatabase.close()
         return dataList
 
@@ -2206,8 +2236,8 @@ class SignalingDataQuery:
             'Time', 'Device Time Stamp', 'Raw Layer Message', 'Processed Event'
         ]
         fieldCount = len(fieldsList)
-        dataList.append(['Time',self.timeFilter])
-        for index in range(1,len(fieldsList)):
+        dataList.append(['Time', self.timeFilter])
+        for index in range(1, len(fieldsList)):
             columnName = fieldsList[index]
             dataList.append([columnName, ''])
         return dataList

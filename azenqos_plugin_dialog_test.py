@@ -185,7 +185,7 @@ class Ui_DatabaseDialog(QDialog):
     #     uri.setDatabase(self.databasePath)
     #     azenqosDatabase.open()
     #     query = QSqlQuery()
-    #     query.exec_("SELECT name FROM sqlite_master WHERE type='table'")
+    #     query.exec_("SELECT table_name FROM layer_statistic")
     #     while query.next():
     #         if query.value(0) not in tableNotUsed:
     #             uri.setDataSource('', query.value(0), 'geom')
@@ -310,15 +310,6 @@ class AzenqosDialog(QDialog):
         self.presentationTreeWidget.setObjectName("presentationTreeWidget")
         self.presentationTreeWidget.itemDoubleClicked.connect(
             self.loadAllMessages)
-
-        # GSM Section (No used)
-        # gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
-        # gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
-        # gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
-        # gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
-        # gsmCI = QTreeWidgetItem(gsm, ['C/I'])
-        # gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
-        # gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
@@ -903,24 +894,6 @@ class TableWindow(QDialog):
 
     def specifyTablesHeader(self):
         if self.title is not None:
-            # GSM
-            # if self.title == 'GSM_Radio Parameters':
-            #     self.tableHeader = ["Element", "Full", "Sub"]
-            #     self.dataList = GsmDataQuery(None).getRadioParameters()
-            # elif self.title == 'GSM_Serving + Neighbors':
-            #     self.tableHeader = [
-            #         "Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1",
-            #         "C2", "C31", "C32"
-            #     ]
-            # elif self.title == 'GSM_Current Channel':
-            #     self.tableHeader = ["Element", "Value"]
-            # elif self.title == 'GSM_C/I':
-            #     self.tableHeader = ["Time", "ARFCN", "Value"]
-            # elif self.title == 'GSM_Line Chart':
-            #     self.tableHeader = ["Element", "Value", "MS", "Color"]
-            # elif self.title == 'GSM_Events Counter':
-            #     self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
-
             # WCDMA
             if self.title == 'WCDMA_Active + Monitored Sets':
                 self.tableHeader = [
@@ -1075,7 +1048,7 @@ class TableWindow(QDialog):
     def reject(self):
         global openedWindows
         openedWindows.remove(self)
-        # self.hide()
+        self.hide()
         del self
 
 
@@ -1111,102 +1084,7 @@ class TableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-# class GsmDataQuery:
-#     def __init__(self):
-#         self.timeFilter = currentTime
-
-#     def getRadioParameters(self):
-#         if azenqosDatabase is not None:
-#             azenqosDatabase.open()
-#         dataList = []
-#         fieldsList = [
-#             'Time', 'RxLev', 'RxQual', 'TA', 'RLT (Max)', 'RLT (Current)',
-#             'DTX Used', 'TxPower', 'FER'
-#         ]
-#         selectedColumns = "gcm.time, gcm.gsm_rxlev_full_dbm, gcm.gsm_rxlev_sub_dbm, gcm.gsm_rxqual_full, gcm.gsm_rxqual_sub, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"
-#         queryString = """SELECT %s
-#                         FROM gsm_cell_meas gcm
-#                         LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
-#                         LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
-#                         LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
-#                         LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
-#                         LEFT JOIN vocoder_info vi ON gcm.time = vi.time
-#                         ORDER BY time DESC LIMIT 1""" % (selectedColumns)
-#         query = QSqlQuery()
-#         query.exec_(queryString)
-#         fieldCount = len(selectedColumns.split(","))
-#         while query.next():
-#             for index in range(fieldCount):
-#                 columnName = fieldsList[index]
-#                 fullValue = query.value(index)
-#                 subValue = ''
-#                 if columnName in any(('RxLev', 'RxQual')):
-#                     index + 1
-#                     subValue = query.value(index)
-#                 dataList.append([columnName, fullValue, subValue])
-#         azenqosDatabase.close()
-#         return dataList
-
-#     def getServingAndNeighbors(self):
-#         if azenqosDatabase is not None:
-#             azenqosDatabase.open()
-
-#         dataList = []
-#         fieldsList = [
-#             'Time', 'Cellname', 'ALC', 'BSIC', 'ARFCN', 'RxLev', 'C1', 'C2', 'C31', 'C32'
-#         ]
-#         query = QSqlQuery()
-#         query.exec_("SELECT * FROM gsm_cell_meas")
-#         while query.next():
-#             dataList.append(None)
-#         azenqosDatabase.close()
-#         return dataList
-
-#     def getCurrentChannel(self):
-#         if azenqosDatabase is not None:
-#             azenqosDatabase.open()
-#         query = QSqlQuery()
-#         query.exec_("SELECT * FROM events")
-#         dataList = []
-#         while query.next():
-#             dataList.append(None)
-#         azenqosDatabase.close()
-#         return dataList
-
-#     def getCSlashI(self):
-#         if azenqosDatabase is not None:
-#             azenqosDatabase.open()
-#         query = QSqlQuery()
-#         query.exec_("SELECT * FROM events")
-#         dataList = []
-#         while query.next():
-#             dataList.append(None)
-#         azenqosDatabase.close()
-#         return dataList
-
-#     def getGSMLineChart(self):
-#         if azenqosDatabase is not None:
-#             azenqosDatabase.open()
-#         query = QSqlQuery()
-#         query.exec_("SELECT * FROM events")
-#         dataList = []
-#         while query.next():
-#             dataList.append(None)
-#         azenqosDatabase.close()
-#         return dataList
-
-#     def getGSMEventsCounter(self):
-#         if azenqosDatabase is not None:
-#             azenqosDatabase.open()
-#         query = QSqlQuery()
-#         query.exec_("SELECT * FROM events")
-#         dataList = []
-#         while query.next():
-#             dataList.append(None)
-#         azenqosDatabase.close()
-#         return dataList
-
-class WcdmaDataQuery: 
+class WcdmaDataQuery: ##
     def __init__(self):
         self.timeFilter = ''
         if currentDateTimeString:
@@ -1253,11 +1131,11 @@ class WcdmaDataQuery:
             'Time', 'Tx Power', 'Max Tx Power', 'RSSI', 'SIR', 'RRC State',
             'Cell ID', 'RNC ID']
         selectedColumns = """wtp.time,wtp.wcdma_txagc,wtp.wcdma_maxtxpwr,wrp.wcdma_rssi,sir.wcdma_sir,
-                             rrc.wcdma_rrc_state,cel.wcdma_cellid,cel.wcdma_rnc_id""" 
+                             rrc.wcdma_rrc_state,cel.wcdma_cellid,cel.wcdma_rnc_id"""
         condition = ''
         if self.timeFilter:
-            condition = "WHERE wtp.time <= '%s'" % (self.timeFilter)  
-        queryString = """SELECT %s 
+            condition = "WHERE wtp.time <= '%s'" % (self.timeFilter)
+        queryString = """SELECT %s
                          FROM wcdma_tx_power wtp
                          LEFT JOIN wcdma_rx_power wrp ON wtp.time = wrp.time
                          LEFT JOIN wcdma_sir sir ON wtp.time = sir.time
@@ -1282,7 +1160,7 @@ class WcdmaDataQuery:
         for field in range(1,len(fieldsList)):
             dataList.append([fieldsList[field],''])
         azenqosDatabase.close()
-        return dataList 
+        return dataList
 
     def getMonitoredSetList(self):
         if azenqosDatabase is not None:
@@ -1325,8 +1203,8 @@ class WcdmaDataQuery:
         selectedColumns = """wcm.time,wcm.wcdma_aset_cellfreq_1,wafl.wcdma_activeset_psc_1,
                              wafl.wcdma_activeset_cellposition_1,wafl.wcdma_activeset_celltpc_1,
                              wafl.wcdma_activeset_diversity_1"""
-        queryString = """SELECT %s 
-                         FROM wcdma_cell_meas wcm 
+        queryString = """SELECT %s
+                         FROM wcdma_cell_meas wcm
                          LEFT JOIN wcdma_aset_full_list wafl ON wcm.time = wafl.time
                          %s
                          ORDER BY wcm.time DESC"""  % (selectedColumns,condition)
@@ -1381,7 +1259,7 @@ class WcdmaDataQuery:
         for field in range(1,len(fieldsList)):
             dataList.append([fieldsList[field],''])
         azenqosDatabase.close()
-        return dataList 
+        return dataList
 
     def getBLER_TransportChannel(self):
         if azenqosDatabase is not None:
@@ -1860,39 +1738,6 @@ class LteDataQuery:
         azenqosDatabase.close()
         return dataList
 
-    def getCSlashI(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
-
-    def getGSMLineChart(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
-
-    def getGSMEventsCounter(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
-
 
 class CdmaEvdoQuery:
     def __init__(self):
@@ -1901,39 +1746,94 @@ class CdmaEvdoQuery:
     def getRadioParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
         dataList = []
+        cdmaFields = [
+            'Time', 'Active PN (Best)', 'Ec/Io', 'RX Power', 'TX Power', 'FER',
+            'Channel', 'Band class', 'N Active Set Cells'
+        ]
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        query = QSqlQuery()
+        queryString = """SELECT time, cdma_cell_pn, cdma_ecio, cdma_rx_power, cdma_tx_power, cdma_fer, cdma_channel, cdma_band_class, cdma_n_aset_cells                   FROM cdma
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query.exec_(queryString)
         while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            for field in range(len(cdmaFields)):
+                if query.value(field):
+                    dataList.append([cdmaFields[field], query.value(field)])
+                else:
+                    dataList.append([cdmaFields[field], ''])
         azenqosDatabase.close()
         return dataList
 
     def getServingAndNeighbors(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
+        MAX_NEIGHBORS = 32
         dataList = []
-        while query.next():
-            dataList.append(None)
+        condition = ''
+
+        # Set query condition for serving cell
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        dataList.append([self.timeFilter, '', '', ''])
+
+        for neighbor in range(1, MAX_NEIGHBORS):
+            queryString = """SELECT cdma_cell_pn_%d, cdma_cell_ecio_%d, cdma_cell_type_%d
+                            FROM cdma
+                            %s
+                            ORDER BY time DESC
+                            LIMIT 1""" % (neighbor, neighbor, neighbor,
+                                          condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        neighCell = [
+                            '',
+                            query.value(0),
+                            query.value(1),
+                            query.value(2)
+                        ]
+                        dataList.append(neighCell)
+                    else:
+                        break
+            else:
+                dataList.append(['', '', '', ''])
         azenqosDatabase.close()
         return dataList
 
     def getEvdoParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
         dataList = []
+        evdoFields = [
+            'Time', 'DRC', 'PER', '', 'SINR Per PN:', 'PN', 'SINR'
+        ]
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        query = QSqlQuery()
+        queryString = """SELECT time, cdma_evdo_drc, cdma_evdo_per, '' as empty1, '' as empty2, cdma_evdo_pn, cdma_evdo_sinr
+                        FROM cdma
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
+            for field in range(len(evdoFields)):
+                if query.value(field):
+                    dataList.append([evdoFields[field], query.value(field)])
+                else:
+                    dataList.append([evdoFields[field], ''])
         azenqosDatabase.close()
         return dataList
 
@@ -2182,7 +2082,7 @@ class SignalingDataQuery:
         azenqosDatabase.close()
         return dataList
 
-    def getBenchmark(self): #ยังไม่เสร็จ                                                                                                                                       
+    def getBenchmark(self): #ยังไม่เสร็จ
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         dataList = []
@@ -2335,8 +2235,8 @@ class SignalingDataQuery:
         condition = ''
         if self.timeFilter:
             condition = "WHERE ms.time <= '%s'" % (self.timeFilter)
-        queryString = """SELECT %s FROM mm_state ms 
-                        LEFT JOIN reg_state rs ON ms.time = rs.time 
+        queryString = """SELECT %s FROM mm_state ms
+                        LEFT JOIN reg_state rs ON ms.time = rs.time
                         LEFT JOIN gmm_state gs ON ms.time = gs.time
                         %s
                         ORDER BY ms.time DESC LIMIT 1""" % (selectedColumns,condition)
@@ -3580,9 +3480,8 @@ class Line_Chart(QWidget):
         elif self.title == 'Data_WCDMA Data Line Chart':
             self.WCDMA_Data()
 
-#----------------------------------------------------------------------------------------------------------------------------------------
-# Create GSM Line Chart
-
+    #----------------------------------------------------------------------------------------------------------------------------------------
+    # Create GSM Line Chart
     def GSM(self):
 
         #ยังไม่เสร็จ -- No data in Database
@@ -3653,8 +3552,8 @@ class Line_Chart(QWidget):
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
 
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------
-# Create LTE Line Chart
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Create LTE Line Chart
 
     def LTE(self):
         self.canvas.axes.set_title('LTE Line Chart')
@@ -3721,8 +3620,9 @@ class Line_Chart(QWidget):
         pick = self.canvas.mpl_connect('pick_event', on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------
-# Create WCDMA Line Chart
+
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Create WCDMA Line Chart
 
     def WCDMA(self):
 
@@ -3802,8 +3702,9 @@ class Line_Chart(QWidget):
         pick = self.canvas.mpl_connect('pick_event', on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------
-# Create GSM Data Line Chart
+
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Create GSM Data Line Chart
 
     def GSM_Data(self):
 
@@ -3880,8 +3781,9 @@ class Line_Chart(QWidget):
         pick = self.canvas.mpl_connect('pick_event', on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------
-# Create WCDMA Data Line Chart
+
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Create WCDMA Data Line Chart
 
     def WCDMA_Data(self):
 
@@ -3963,8 +3865,8 @@ class Line_Chart(QWidget):
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
 
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------
-# Create LTE Data Line Chart
+    #-----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Create LTE Data Line Chart
 
     def LTE_Data(self):
 

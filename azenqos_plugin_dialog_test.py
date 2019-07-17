@@ -407,6 +407,8 @@ class AzenqosDialog(QDialog):
                                           ['Cell Information'])
         equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget,
                                                  ['Equipment Configuration'])
+        self.configurationTreeWidget.itemDoubleClicked.connect(
+            self.selectConfiguration)
 
     def setupPlayStopButton(self, AzenqosDialog):
         # todo ยังไม่เสร็จ
@@ -754,6 +756,7 @@ class AzenqosDialog(QDialog):
                     self.debug_event = TableWindow(windowName)
                     openedWindows.append(self.debug_event)
                     self.debug_event.show()
+        # if parent == ''
         # elif parent == "Positioning":
         #     if child == "GPS":
         #         print("1")
@@ -771,6 +774,19 @@ class AzenqosDialog(QDialog):
         # elif parent == "NB-IoT":
         #     if child == "NB-IoT Radio Parameters Window":
         #         print("1")
+
+    def selectConfiguration(self):
+        getSelected = self.configurationTreeWidget.selectedItems()
+        if getSelected:
+            baseNode = getSelected[0]
+            print(baseNode)
+            if baseNode.text(0) is not None:
+                getChildNode = baseNode.text(0)
+                if getChildNode == 'Cell Information':
+                    self.cell_information = CellInformation(self)
+                    self.cell_information.show()
+                elif getChildNode == 'Equipment Configuration':
+                    pass
 
 
 class TimeSlider(QSlider):
@@ -3867,7 +3883,6 @@ class Line_Chart(QWidget):
                                             get_table_data)
 
 
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------
 class LineChartQuery:
     def __init__(self, fieldArr, tableName, conditionStr):
         self.fieldArr = fieldArr
@@ -3976,6 +3991,166 @@ class setInterval:
 
     def cancel(self):
         self.stopEvent.set()
+
+
+class CellInformation(QDialog):
+    def __init__(self, parent = None):
+        super(CellInformation, self).__init__(parent)
+        self.setupUi(self)
+
+    def setupUi(self, CellInformation):
+        CellInformation.setObjectName("Cell Information")
+        CellInformation.resize(640, 522)
+        CellInformation.setGeometry(QtCore.QRect(0, 0, 640, 522))
+        CellInformation.setMinimumSize(640,522)
+        self.verticalLayoutWidget = QtWidgets.QWidget(CellInformation)
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 320, 601, 151))
+        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
+        self.SettingLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
+        self.SettingLayout.setContentsMargins(10, 10, 10, 10)
+        self.SettingLayout.setObjectName("SettingLayout")
+        self.Setting = QtWidgets.QGroupBox(self.verticalLayoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.Setting.sizePolicy().hasHeightForWidth())
+        self.Setting.setSizePolicy(sizePolicy)
+        self.Setting.setMinimumSize(QtCore.QSize(0, 0))
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        self.Setting.setFont(font)
+        self.Setting.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
+        self.Setting.setObjectName("Setting")
+        self.OpacityCheckbox = QtWidgets.QCheckBox(self.Setting)
+        self.OpacityCheckbox.setGeometry(QtCore.QRect(30, 30, 86, 31))
+        self.OpacityCheckbox.setObjectName("OpacityCheckbox")
+        self.PercentageCombobox = QtWidgets.QComboBox(self.Setting)
+        self.PercentageCombobox.setGeometry(QtCore.QRect(100, 30, 71, 31))
+        self.PercentageCombobox.setObjectName("PercentageCombobox")
+        self.PercentageLabel = QtWidgets.QLabel(self.Setting)
+        self.PercentageLabel.setGeometry(QtCore.QRect(170, 30, 21, 31))
+        self.PercentageLabel.setObjectName("PercentageLabel")
+        self.CellDefinitionLabel = QtWidgets.QLabel(self.Setting)
+        self.CellDefinitionLabel.setGeometry(QtCore.QRect(30, 70, 121, 16))
+        self.CellDefinitionLabel.setObjectName("CellDefinitionLabel")
+        self.CellDefinitionCombobox = QtWidgets.QComboBox(self.Setting)
+        self.CellDefinitionCombobox.setGeometry(QtCore.QRect(160, 60, 121, 41))
+        self.CellDefinitionCombobox.setObjectName("CellDefinitionCombobox")
+        self.SearchCellDistanceLabel = QtWidgets.QLabel(self.Setting)
+        self.SearchCellDistanceLabel.setGeometry(QtCore.QRect(30, 100, 131, 16))
+        self.SearchCellDistanceLabel.setObjectName("SearchCellDistanceLabel")
+        self.KiloAmount = QtWidgets.QLineEdit(self.Setting)
+        self.KiloAmount.setGeometry(QtCore.QRect(180, 100, 61, 21))
+        self.KiloAmount.setObjectName("KiloAmount")
+        self.KilometerLabel = QtWidgets.QLabel(self.Setting)
+        self.KilometerLabel.setGeometry(QtCore.QRect(260, 100, 59, 16))
+        self.KilometerLabel.setObjectName("KilometerLabel")
+        self.SettingLayout.addWidget(self.Setting)
+        self.verticalLayoutWidget_2 = QtWidgets.QWidget(CellInformation)
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 601, 321))
+        self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
+        self.CellLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
+        self.CellLayout.setContentsMargins(10, 20, 10, 10)
+        self.CellLayout.setObjectName("CellLayout")
+        self.CellDifinitionFile = QtWidgets.QGroupBox(self.verticalLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.CellDifinitionFile.sizePolicy().hasHeightForWidth())
+        self.CellDifinitionFile.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        self.CellDifinitionFile.setFont(font)
+        self.CellDifinitionFile.setObjectName("CellDifinitionFile")
+        self.FilePath4 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath4.setGeometry(QtCore.QRect(110, 270, 341, 21))
+        self.FilePath4.setObjectName("FilePath4")
+        self.CdmaCellFileCheckbox = QtWidgets.QCheckBox(self.CellDifinitionFile)
+        self.CdmaCellFileCheckbox.setGeometry(QtCore.QRect(30, 240, 151, 20))
+        self.CdmaCellFileCheckbox.setObjectName("CdmaCellFileCheckbox")
+        self.LteCellFileCheckbox = QtWidgets.QCheckBox(self.CellDifinitionFile)
+        self.LteCellFileCheckbox.setGeometry(QtCore.QRect(30, 170, 131, 20))
+        self.LteCellFileCheckbox.setObjectName("LteCellFileCheckbox")
+        self.FilePath2 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath2.setGeometry(QtCore.QRect(110, 130, 341, 21))
+        self.FilePath2.setObjectName("FilePath2")
+        self.FilenameLabel1 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel1.setGeometry(QtCore.QRect(40, 60, 59, 16))
+        self.FilenameLabel1.setObjectName("FilenameLabel1")
+        self.FilenameLabel4 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel4.setGeometry(QtCore.QRect(40, 270, 59, 16))
+        self.FilenameLabel4.setObjectName("FilenameLabel4")
+        self.WcdmaCellFileCheckbox = QtWidgets.QCheckBox(self.CellDifinitionFile)
+        self.WcdmaCellFileCheckbox.setGeometry(QtCore.QRect(30, 100, 161, 20))
+        self.WcdmaCellFileCheckbox.setObjectName("WcdmaCellFileCheckbox")
+        self.FilePath1 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath1.setGeometry(QtCore.QRect(110, 60, 341, 21))
+        self.FilePath1.setObjectName("FilePath1")
+        self.FilePath3 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath3.setGeometry(QtCore.QRect(110, 200, 341, 21))
+        self.FilePath3.setObjectName("FilePath3")
+        self.FilenameLabel3 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel3.setGeometry(QtCore.QRect(40, 200, 59, 16))
+        self.FilenameLabel3.setObjectName("FilenameLabel3")
+        self.GsmCellFileCheckbox = QtWidgets.QCheckBox(self.CellDifinitionFile)
+        self.GsmCellFileCheckbox.setGeometry(QtCore.QRect(30, 30, 141, 20))
+        self.GsmCellFileCheckbox.setObjectName("GsmCellFileCheckbox")
+        self.FilenameLabel2 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel2.setGeometry(QtCore.QRect(40, 130, 59, 16))
+        self.FilenameLabel2.setObjectName("FilenameLabel2")
+        self.BrowseButton1 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton1.setGeometry(QtCore.QRect(460, 60, 51, 22))
+        self.BrowseButton1.setObjectName("BrowseButton1")
+        self.BrowseButton2 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton2.setGeometry(QtCore.QRect(460, 130, 51, 22))
+        self.BrowseButton2.setObjectName("BrowseButton2")
+        self.BrowseButton3 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton3.setGeometry(QtCore.QRect(460, 200, 51, 22))
+        self.BrowseButton3.setObjectName("BrowseButton3")
+        self.BrowseButton4 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton4.setGeometry(QtCore.QRect(460, 270, 51, 22))
+        self.BrowseButton4.setObjectName("BrowseButton4")
+        self.CellLayout.addWidget(self.CellDifinitionFile)
+        self.verticalLayoutWidget_3 = QtWidgets.QWidget(CellInformation)
+        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(0, 470, 601, 55))
+        self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
+        self.ButtonLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_3)
+        self.ButtonLayout.setContentsMargins(10, 10, 10, 10)
+        self.ButtonLayout.setObjectName("ButtonLayout")
+        self.buttonBox = QtWidgets.QDialogButtonBox(self.verticalLayoutWidget_3)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.ButtonLayout.addWidget(self.buttonBox)
+
+        self.retranslateUi(CellInformation)
+        QtCore.QMetaObject.connectSlotsByName(CellInformation)
+
+    def retranslateUi(self, CellInformation):
+        _translate = QtCore.QCoreApplication.translate
+        CellInformation.setWindowTitle(_translate("CellInformation", "CellInformation"))
+        self.Setting.setTitle(_translate("CellInformation", "Setting"))
+        self.OpacityCheckbox.setText(_translate("CellInformation", "Opacity"))
+        self.PercentageLabel.setText(_translate("CellInformation", "%"))
+        self.CellDefinitionLabel.setText(_translate("CellInformation", "Cell Definition Text"))
+        self.SearchCellDistanceLabel.setText(_translate("CellInformation", "Search Cell Distance"))
+        self.KilometerLabel.setText(_translate("CellInformation", "Kilometer"))
+        self.CellDifinitionFile.setTitle(_translate("CellInformation", "Cell definition file"))
+        self.CdmaCellFileCheckbox.setText(_translate("CellInformation", "Use CDMA cell file"))
+        self.LteCellFileCheckbox.setText(_translate("CellInformation", "Use LTE cell file"))
+        self.FilenameLabel1.setText(_translate("CellInformation", "Filename"))
+        self.FilenameLabel4.setText(_translate("CellInformation", "Filename"))
+        self.WcdmaCellFileCheckbox.setText(_translate("CellInformation", "Use WCDMA cell file"))
+        self.FilenameLabel3.setText(_translate("CellInformation", "Filename"))
+        self.GsmCellFileCheckbox.setText(_translate("CellInformation", "Use GSM cell file"))
+        self.FilenameLabel2.setText(_translate("CellInformation", "Filename"))
+        self.BrowseButton1.setText(_translate("CellInformation", "Browse"))
+        self.BrowseButton2.setText(_translate("CellInformation", "Browse"))
+        self.BrowseButton3.setText(_translate("CellInformation", "Browse"))
+        self.BrowseButton4.setText(_translate("CellInformation", "Browse"))
+
+    def browseFile(self):
+        return False
+
 
 
 if __name__ == '__main__':

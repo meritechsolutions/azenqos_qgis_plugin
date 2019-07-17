@@ -13,12 +13,12 @@
  ***************************************************************************/
 
 /***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
+ *                                                                        *
+ *  This program is free software; you can redistribute it and/or modify  *
+ *  it under the terms of the GNU General Public License as published by  *
+ *  the Free Software Foundation; either version 2 of the License, or     *
+ *  (at your option) any later version.                                   *
+ *                                                                        *
  ***************************************************************************/
 """
 import os
@@ -33,6 +33,7 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.lines import Line2D
 import sqlite3
 import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
@@ -43,7 +44,8 @@ from qgis.utils import *
 azenqosDatabase = None
 minTimeValue = None
 maxTimeValue = None
-currentTime = None
+currentTimestamp = None
+currentDateTimeString = None
 tableNotUsed = [
     'android_metadata', 'sqlite_sequence', 'spatialite_history',
     'idx_signalling_geom_parent', 'idx_signalling_geom_node',
@@ -127,6 +129,7 @@ class Ui_DatabaseDialog(QDialog):
         else:
             self.addLayerToQgis()
             self.getTimeForSlider()
+            # self.setCenterMap()
             QMessageBox.about(self, 'Connection result',
                               'Database is Connected, Enter the main menu')
             self.hide()
@@ -140,18 +143,27 @@ class Ui_DatabaseDialog(QDialog):
             azenqosDatabase.open()
         query = QSqlQuery()
         query.exec_(
-            "select MIN(time) as mintime, MAX(time) as maxtime from signalling"
+            "SELECT MIN(time) as mintime, MAX(time) as maxtime FROM signalling"
         )
         while query.next():
+            global minTimeValue
+            global maxTimeValue
+            global currentDateTimeString
+
             mintime = query.value(0)
             maxtime = query.value(1)
-            global minTimeValue
+
             minTimeValue = datetime.datetime.strptime(
                 mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
-            global maxTimeValue
+
             maxTimeValue = datetime.datetime.strptime(
                 maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+
+            currentDateTimeString = '%s' % (
+                datetime.datetime.fromtimestamp(minTimeValue))
+
         azenqosDatabase.close()
+
         self.setIncrementValue()
 
     def addDatabase(self):
@@ -168,7 +180,7 @@ class Ui_DatabaseDialog(QDialog):
             QgsProject.instance().addMapLayer(rlayer)
         else:
             print('invalid layer')
-        uri =QgsDataSourceUri()
+        uri = QgsDataSourceUri()
         uri.setDatabase(self.databasePath)
         azenqosDatabase.open()
         query = QSqlQuery()
@@ -184,12 +196,27 @@ class Ui_DatabaseDialog(QDialog):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select count(distinct time) from signalling")
+        query.exec_("SELECT count(distinct time) FROM signalling")
         while query.next():
             timeCount = query.value(0)
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
         azenqosDatabase.close()
+
+    def setCenterMap(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_(
+            "SELECT positioning_lat as lat, positioning_lon as lon FROM location limit 1"
+        )
+        while query.next():
+            lat = float(query.value(0))
+            lon = float(query.value(1))
+        azenqosDatabase.close()
+        # canvas = iface.mapCanvas()
+        # canvas.zoomScale(100000)
+        # canvas.zoomWithCenter(lon, lat, False)
 
 
 class AzenqosDialog(QDialog):
@@ -283,15 +310,6 @@ class AzenqosDialog(QDialog):
         self.presentationTreeWidget.itemDoubleClicked.connect(
             self.loadAllMessages)
 
-        # GSM Section
-        gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
-        gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
-        gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
-        gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
-        gsmCI = QTreeWidgetItem(gsm, ['C/I'])
-        gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
-        gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
-
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
         wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
@@ -329,7 +347,7 @@ class AzenqosDialog(QDialog):
 
         # Data Section
         data = QTreeWidgetItem(self.presentationTreeWidget, ['Data'])
-        dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
+        # dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
         dataWcdmaLineChart = QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
         dataEdgeInfo = QTreeWidgetItem(data, ['GPRS/EDGE Information'])
         dataWebBrowser = QTreeWidgetItem(data, ['Web Browser'])
@@ -433,64 +451,24 @@ class AzenqosDialog(QDialog):
         self.hide()
 
     def timeChange(self):
-        global currentTime
+        global currentTimestamp
         global timeSlider
+        global currentDateTimeString
         value = timeSlider.value()
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
-        currentTime = timestampValue
+        currentTimestamp = timestampValue
         timeSlider.update()
         for window in openedWindows:
             window.hilightRow(sampledate)
+        currentDateTimeString = '%s' % (
+            datetime.datetime.fromtimestamp(currentTimestamp))
 
     def classifySelectedItems(self, parent, child):
         global openedWindows
         windowName = parent + "_" + child
-        if parent == "GSM":
-            if child == "Radio Parameters":
-                if hasattr(self, 'gsm_rdp_window'):
-                    self.gsm_rdp_window.show()
-                else:
-                    self.gsm_rdp_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_rdp_window)
-                    self.gsm_rdp_window.show()
-            elif child == "Serving + Neighbors":
-                if hasattr(self, 'gsm_sn_window'):
-                    self.gsm_sn_window.show()
-                else:
-                    self.gsm_sn_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_sn_window)
-                    self.gsm_sn_window.show()
-            elif child == "Current Channel":
-                if hasattr(self, 'gsm_cc_window'):
-                    self.gsm_cc_window.show()
-                else:
-                    self.gsm_cc_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_cc_window)
-                    self.gsm_cc_window.show()
-            elif child == "C/I":
-                if hasattr(self, 'gsm_ci_window'):
-                    self.gsm_ci_window.show()
-                else:
-                    self.gsm_ci_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_ci_window)
-                    self.gsm_ci_window.show()
-            elif child == "GSM Line Chart":
-                if hasattr(self, 'gsm_lc_window'):
-                    self.gsm_lc_window.show()
-                else:
-                    self.gsm_lc_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_lc_window)
-                    self.gsm_lc_window.show()
-            elif child == "Events Counter":
-                if hasattr(self, 'gsm_ec_window'):
-                    self.gsm_ec_window.show()
-                else:
-                    self.gsm_ec_window = TableWindow(windowName)
-                    openedWindows.append(self.gsm_ec_window)
-                    self.gsm_ec_window.show()
-        elif parent == "WCDMA":
+        if parent == "WCDMA":
             if child == "Active + Monitored Sets":
                 if hasattr(self, 'wcdma_ams_window'):
                     self.wcdma_ams_window.show()
@@ -519,34 +497,41 @@ class AzenqosDialog(QDialog):
                     self.wcdma_msl_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_msl_window)
                     self.wcdma_msl_window.show()
-            elif child == "WCDMA BLER Summary":
+            elif child == "BLER Summary":
                 if hasattr(self, 'wcdma_bler_window'):
                     self.wcdma_bler_window.show()
                 else:
                     self.wcdma_bler_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_bler_window)
                     self.wcdma_bler_window.show()
-            elif child == "WCDMA BLER / Transport Channel":
-                if hasattr(self, 'wcdma_bler_window'):
+            elif child == "BLER / Transport Channel":
+                if hasattr(self, 'wcdma_blertc_window'):
                     self.wcdma_blertc_window.show()
                 else:
                     self.wcdma_blertc_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_blertc_window)
                     self.wcdma_blertc_window.show()
-            elif child == "WCDMA Line Chart":
+            elif child == "Line Chart":
                 if hasattr(self, 'wcdma_lc_window'):
                     self.wcdma_lc_window.show()
                 else:
-                    self.wcdma_lc_window = TableWindow(windowName)
+                    self.wcdma_lc_window = Ui_WCDMA_LCwidget(windowName)
                     openedWindows.append(self.wcdma_lc_window)
                     self.wcdma_lc_window.show()
-            elif child == "WCDMA Bearers":
+            elif child == "Bearers":
                 if hasattr(self, 'wcdma_bearer_window'):
                     self.wcdma_bearer_window.show()
                 else:
                     self.wcdma_bearer_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_bearer_window)
                     self.wcdma_bearer_window.show()
+            elif child == "Pilot Poluting Cells":
+                if hasattr(self, 'wcdma_ppc_window'):
+                    self.wcdma_ppc_window.show()
+                else:
+                    self.wcdma_ppc_window = TableWindow(windowName)
+                    openedWindows.append(self.wcdma_ppc_window)
+                    self.wcdma_ppc_window.show()
             elif child == "Active + Monitored Bar":
                 if hasattr(self, 'wcdma_amb_window'):
                     self.wcdma_amb_window.show()
@@ -554,21 +539,21 @@ class AzenqosDialog(QDialog):
                     self.wcdma_amb_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_amb_window)
                     self.wcdma_amb_window.show()
-            elif child == "WCDMA CM GSM Reports":
+            elif child == "CM GSM Reports":
                 if hasattr(self, 'wcdma_report_window'):
                     self.wcdma_report_window.show()
                 else:
                     self.wcdma_report_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_report_window)
                     self.wcdma_report_window.show()
-            elif child == "WCDMA CM GSM Cells":
+            elif child == "CM GSM Cells":
                 if hasattr(self, 'wcdma_cells_window'):
                     self.wcdma_cells_window.show()
                 else:
                     self.wcdma_cells_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_cells_window)
                     self.wcdma_cells_window.show()
-            elif child == "WCDMA Pilot Analyzer":
+            elif child == "Pilot Analyzer":
                 if hasattr(self, 'wcdma_analyzer_window'):
                     self.wcdma_analyzer_window.show()
                 else:
@@ -645,14 +630,14 @@ class AzenqosDialog(QDialog):
                 if hasattr(self, 'gsm_data_lc'):
                     self.gsm_data_lc.show()
                 else:
-                    self.gsm_data_lc = TableWindow(windowName)
+                    self.gsm_data_lc = Ui_GSM_Data_LCwidget(windowName)
                     openedWindows.append(self.gsm_data_lc)
                     self.gsm_data_lc.show()
             elif child == "WCDMA Data Line Chart":
                 if hasattr(self, 'wcdma_data_lc'):
                     self.wcdma_data_lc.show()
                 else:
-                    self.wcdma_data_lc = TableWindow(windowName)
+                    self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(windowName)
                     openedWindows.append(self.wcdma_data_lc)
                     self.wcdma_data_lc.show()
             elif child == "GPRS/EDGE Information":
@@ -694,7 +679,7 @@ class AzenqosDialog(QDialog):
                 if hasattr(self, 'lte_data_lc'):
                     self.lte_data_lc.show()
                 else:
-                    self.lte_data_lc = TableWindow(windowName)
+                    self.lte_data_lc = Ui_LTE_Data_LCwidget(windowName)
                     openedWindows.append(self.lte_data_lc)
                     self.lte_data_lc.show()
             elif child == "Wifi Connected AP":
@@ -768,7 +753,6 @@ class AzenqosDialog(QDialog):
                     self.debug_event = TableWindow(windowName)
                     openedWindows.append(self.debug_event)
                     self.debug_event.show()
-        print(openedWindows)
         # elif parent == "Positioning":
         #     if child == "GPS":
         #         print("1")
@@ -866,52 +850,35 @@ class TableWindow(QDialog):
 
     def specifyTablesHeader(self):
         if self.title is not None:
-            # GSM
-            if self.title == 'GSM_Radio Parameters':
-                self.tableHeader = ["Element", "Full", "Sub"]
-                self.dataList = GsmDataQuery(None).getRadioParameters()
-            elif self.title == 'GSM_Serving + Neighbors':
-                self.tableHeader = [
-                    "Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1",
-                    "C2", "C31", "C32"
-                ]
-                self.dataList = GsmDataQuery().getServingAndNeighbors()
-            elif self.title == 'GSM_Current Channel':
-                self.tableHeader = ["Element", "Value"]
-                self.dataList = GsmDataQuery().getCurrentChannel()
-            elif self.title == 'GSM_C/I':
-                self.tableHeader = ["Time", "ARFCN", "Value"]
-                self.dataList = GsmDataQuery().getCSlashI()
-            elif self.title == 'GSM_Line Chart':
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
-                self.dataList = GsmDataQuery().getGSMLineChart()
-            elif self.title == 'GSM_Events Counter':
-                self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
-                self.dataList = GsmDataQuery().getGSMEventsCounter()
-
             # WCDMA
-            elif self.title == 'WCDMA_Active + Monitored Sets':
+            if self.title == 'WCDMA_Active + Monitored Sets':
                 self.tableHeader = [
                     "Time", "CellName", "CellType", "SC", "Ec/Io", "RSCP",
                     "Freq", "Event"
                 ]
+                self.dataList = WcdmaDataQuery().getActiveMonitoredSets()
             elif self.title == 'WCDMA_Radio Parameters':
                 self.tableHeader = ["Element", "Value"]
-            elif self.title == 'WCDMA_Active Set Lists':
+                self.dataList = WcdmaDataQuery().getRadioParameters()
+            elif self.title == 'WCDMA_Active Set List':
                 self.tableHeader = [
                     "Time", "Freq", "PSC", "Cell Position", "Cell TPC",
                     "Diversity"
                 ]
+                self.dataList = WcdmaDataQuery().getActiveSetList()
             elif self.title == 'WCDMA_Monitored Set List':
                 self.tableHeader = [
                     "Time", "Freq", "PSC", "Cell Position", "Diversity"
                 ]
+                self.dataList = WcdmaDataQuery().getMonitoredSetList()
             elif self.title == 'WCDMA_BLER Summary':
                 self.tableHeader = ["Element", "Value"]
+                self.dataList = WcdmaDataQuery().getBlerSummary()
             elif self.title == 'WCDMA_BLER / Transport Channel':
                 self.tableHeader = [
                     "Transport Channel", "Percent", "Err", "Rcvd"
                 ]
+                self.dataList = WcdmaDataQuery().getBLER_TransportChannel()
             elif self.title == 'WCDMA_Line Chart':
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'WCDMA_Bearers':
@@ -919,34 +886,44 @@ class TableWindow(QDialog):
                     "N Bearers", "Bearers ID", "Bearers Rate DL",
                     "Bearers Rate UL"
                 ]
+                self.dataList = WcdmaDataQuery().getBearers()
             elif self.title == 'WCDMA_Pilot Poluting Cells':
                 self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
+                self.dataList = WcdmaDataQuery().getPilotPolutingCells()
             elif self.title == 'WCDMA_Active + Monitored Bar':
                 self.tableHeader = ["Cell Type", "Ec/Io", "RSCP"]
+                self.dataList = WcdmaDataQuery().getActiveMonitoredBar()
             elif self.title == 'WCDMA_CM GSM Reports':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
+
             elif self.title == 'WCDMA_CM GSM Cells':
                 self.tableHeader = [
                     "Time", "ARFCN", "RxLev", "BSIC", "Measure"
                 ]
+                self.dataList = WcdmaDataQuery().getCmGsmCells()
             elif self.title == 'WCDMA_Pilot Analyzer':
                 self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 
             # LTE
             elif self.title == 'LTE_Radio Parameters':
                 self.tableHeader = ["Element", "PCC", "SCC0", "SCC1"]
+                self.dataList = LteDataQuery().getRadioParameters()
             elif self.title == 'LTE_Serving + Neighbors':
                 self.tableHeader = [
                     "Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"
                 ]
+                self.dataList = LteDataQuery().getServingAndNeighbors()
             elif self.title == 'LTE_PUCCH/PDSCH Parameters':
                 self.tableHeader = ["Element", "Value"]
+                self.dataList = LteDataQuery().getPucchPdschParameters()
             elif self.title == 'LTE_LTE Line Chart':
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'LTE_LTE RLC':
                 self.tableHeader = ["Element", "Value", "", "", ""]
+                self.dataList = LteDataQuery().getRlc()
             elif self.title == 'LTE_LTE VoLTE':
                 self.tableHeader = ["Element", "Value"]
+                self.dataList = LteDataQuery().getVolte()
 
             # CDMA/EVDO
             elif self.title == 'CDMA/EVDO_Radio Parameters':
@@ -986,13 +963,14 @@ class TableWindow(QDialog):
 
             # Signaling
             elif self.title == 'Signaling_Events':
-                self.tableHeader = ["Time", "Eq.", "Name", "Info."]
+                self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
                 self.dataList = SignalingDataQuery().getEvents()
             elif self.title == 'Signaling_Layer 1 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
                 self.dataList = SignalingDataQuery().getLayerOneMessages()
             elif self.title == 'Signaling_Layer 3 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "", "Name", "Info."]
+
                 self.dataList = SignalingDataQuery().getLayerThreeMessages()
             elif self.title == 'Signaling_Benchmark':
                 self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
@@ -1013,6 +991,7 @@ class TableWindow(QDialog):
     def hilightRow(self, sampledate):
         dateString = str(sampledate)
         model = self.tableView.model()
+        self.specifyTablesHeader()
         data = []
         for row in range(model.rowCount()):
             index = model.index(row, 0)
@@ -1036,10 +1015,16 @@ class TableModel(QAbstractTableModel):
         # self.testColumnValue()
 
     def rowCount(self, parent):
-        return len(self.dataSource)
+        rows = 0
+        if self.dataSource:
+            rows = len(self.dataSource)
+        return rows
 
     def columnCount(self, parent):
-        return len(self.dataSource[0])
+        columns = 0
+        if self.headerLabels:
+            columns = len(self.headerLabels)
+        return columns
 
     def data(self, index, role):
         if not index.isValid():
@@ -1054,123 +1039,764 @@ class TableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-class GsmDataQuery:
+class WcdmaDataQuery:  ##
     def __init__(self):
-        self.timeFilter = currentTime
+        self.timeFilter = ''
+        if currentDateTimeString:
+            self.timeFilter = currentDateTimeString
+
+    def getActiveMonitoredSets(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        selectedColumns = """time,wcdma_cellfile_matched_cellname_1,
+                             wcdma_celltype_1,wcdma_sc_1,wcdma_ecio_1,wcdma_rscp_1,
+	                         wcdma_cellfreq_1"""
+        #ขาด Column Event
+        queryString = """SELECT %s FROM wcdma_cells_combined %s ORDER BY time""" % (
+            selectedColumns, condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        #-----------------------------------------------
+        # while query.next():
+        #     timeValue = query.value(0)
+        #     nameValue = query.value(1)
+        #     typeValue = query.value(2)
+        #     scValue = query.value(3)
+        #     ecioValue = query.value(4)
+        #     rscpValue = query.value(5)
+        #     freqValue = query.value(6)
+        #     #eventValue = query.value(eventField)
+        #     dataList.append([timeValue, nameValue, typeValue, scValue, ecioValue, rscpValue,''])
+
+        #Table Ui Test
+        dataList.append([self.timeFilter, '', '', '', '', '', '', ''])
+        azenqosDatabase.close()
+        return dataList
 
     def getRadioParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
         dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+        fieldsList = [
+            'Time', 'Tx Power', 'Max Tx Power', 'RSSI', 'SIR', 'RRC State',
+            'Cell ID', 'RNC ID'
+        ]
+        selectedColumns = """wtp.time,wtp.wcdma_txagc,wtp.wcdma_maxtxpwr,wrp.wcdma_rssi,sir.wcdma_sir,
+                            rrc.wcdma_rrc_state,cel.wcdma_cellid,cel.wcdma_rnc_id"""
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE wtp.time <= '%s'" % (self.timeFilter)
+        queryString = """SELECT %s
+                        FROM wcdma_tx_power wtp
+                        LEFT JOIN wcdma_rx_power wrp ON wtp.time = wrp.time
+                        LEFT JOIN wcdma_sir sir ON wtp.time = sir.time
+                        LEFT JOIN wcdma_rrc_state rrc ON wtp.time = rrc.time
+                        LEFT JOIN wcdma_idle_cell_info cel ON wtp.time = cel.time
+                        %s
+                        ORDER BY wtp.time DESC LIMIT 1""" % (selectedColumns,
+                                                             condition)
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        #-----------------------------------------------
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # while query.next():
+        #     for field in range(len(fieldsList)):
+        #         if query.value(fieldsList):
+        #             dataList.append([fieldsList[field],query.value(field)])
+        #         else:
+        #             dataList.append([fieldsList[field],''])
+
+        #Table Ui Test
+        dataList.append(['Time', self.timeFilter])
+        for field in range(1, len(fieldsList)):
+            dataList.append([fieldsList[field], ''])
+        azenqosDatabase.close()
+        return dataList
+
+    def getMonitoredSetList(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        selectedColumns = """time,wcdma_mset_cellfreq_1,wcdma_mset_sc_1"""
+        #ขาด Column Cell Position และ Diversity
+        queryString = """SELECT %s FROM wcdma_cell_meas %s ORDER BY time""" % (
+            selectedColumns, condition)
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        #-----------------------------------------------
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # while query.next():
+        #     timeValue = query.value(0)
+        #     freqValue = query.value(1)
+        #     pscValue = query.value(2)
+        #     # celposValue = query.value(3)
+        #     # diverValue = query.value(4)
+        #     dataList.append([timeValue,freqValue,pscValue,'',''])
+
+        #Table Ui Test
+        dataList.append([self.timeFilter, '', '', '', '', ''])
+
+        azenqosDatabase.close()
+        return dataList
+
+    def getActiveSetList(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
+
+        selectedColumns = """wcm.time,wcm.wcdma_aset_cellfreq_1,wafl.wcdma_activeset_psc_1,
+                            wafl.wcdma_activeset_cellposition_1,wafl.wcdma_activeset_celltpc_1,
+                            wafl.wcdma_activeset_diversity_1"""
+        queryString = """SELECT %s
+                        FROM wcdma_cell_meas wcm
+                        LEFT JOIN wcdma_aset_full_list wafl ON wcm.time = wafl.time
+                        %s
+                        ORDER BY wcm.time DESC""" % (selectedColumns,
+                                                     condition)
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        #-----------------------------------------------
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # while query.next():
+        #     timeValue = query.value(0)
+        #     freqValue = query.value(1)
+        #     pscValue = query.value(2)
+        #     celposValue = query.value(3)
+        #     tpcValue = query.value(4)
+        #     diverValue = query.value(5)
+        #     dataList.append([timeValue,freqValue,pscValue,celposValue,tpcValue,diverValue])
+
+        #Table Ui Test
+        dataList.append([self.timeFilter, '', '', '', '', ''])
+
+        azenqosDatabase.close()
+        return dataList
+
+    def getBlerSummary(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        fieldsList = [
+            'Time', 'BLER Average Percent', 'BLER Calculation Window Size',
+            'BLER N Transport Channels'
+        ]
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
+
+        queryString = """Select time,wcdma_bler_average_percent_all_channels,wcdma_bler_calculation_window_size,
+                        wcdma_bler_n_transport_channels
+                        FROM wcdma_bler
+                        %s
+                        ORDER BY time DESC LIMIT 1""" % (condition)
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        #-----------------------------------------------
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # while query.next():
+        #     for field in range(len(fieldsList)):
+        #         if query.value(fieldsList):
+        #             dataList.append([fieldsList[field],query.value(field)])
+        #         else:
+        #             dataList.append([fieldsList[field],''])
+
+        #Table Ui Test
+        dataList.append(['Time', self.timeFilter])
+        for field in range(1, len(fieldsList)):
+            dataList.append([fieldsList[field], ''])
+        azenqosDatabase.close()
+        return dataList
+
+    def getBLER_TransportChannel(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+        maxChannel = 16
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        for channel in range(1, maxChannel):
+            queryString = """SELECT wcdma_bler_channel_%d,wcdma_bler_percent_%d,
+                            wcdma_bler_err_%d,wcdma_bler_rcvd_%d
+                            FROM wcdma_bler
+                            %s
+                            ORDER BY time DESC LIMIT 1""" % (
+                channel, channel, channel, channel, condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        dataList.append([
+                            query.value(0),
+                            query.value(1),
+                            query.value(2),
+                            query.value(3)
+                        ])
+        azenqosDatabase.close()
+        return dataList
+
+    def getBearers(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        row = ['', '', '', '']
+        maxBearers = 10
+        for bearers in range(1, maxBearers):
+            queryString = """SELECT data_wcdma_n_bearers,data_wcdma_bearer_id_%d,data_wcdma_bearer_rate_dl_%d,
+                            data_wcdma_bearer_rate_ul_%d
+                            FROM wcdma_bearers %s
+                            ORDER BY time DESC LIMIT 1""" % (
+                bearers, bearers, bearers, condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        row[0] = query.value(0)
+                        for index in range(1, len(row)):
+                            row[index] = query.value(index)
+                        dataList.append(row)
+        azenqosDatabase.close()
+        return dataList
+
+    def getPilotPolutingCells(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        row = ['', '', '', '', '']
+        maxPollution = 32
+        for pollution in range(1, maxPollution):
+            queryString = """SELECT time,wcdma_n_pilot_polluting_cells,wcdma_pilot_polluting_cell_sc_%d,
+                            wcdma_pilot_polluting_cell_rscp_%d,wcdma_pilot_polluting_cell_ecio_%d
+                            FROM wcdma_pilot_pollution
+                            %s
+                            ORDER BY time DESC LIMIT 1""" % (
+                pollution, pollution, pollution, condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        row[0] = query.value(0)
+                        row[1] = query.value(1)
+                        for index in range(2, len(row)):
+                            row[index] = query.value(index)
+                        dataList.append(row)
+
+        azenqosDatabase.close()
+        return dataList
+
+    def getActiveMonitoredBar(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+        maxItem = 27
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        for item in range(1, maxItem):
+            queryString = """SELECT wcdma_celltype_%d,wcdma_ecio_%d,wcdma_rscp_%d
+                            FROM wcdma_cells_combined
+                            %s
+                            ORDER BY time DESC""" % (item, item, item,
+                                                     condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        dataList.append(
+                            [query.value(0),
+                             query.value(1),
+                             query.value(2)])
+
+        azenqosDatabase.close()
+        return dataList
+
+    def getCmGsmCells(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+
+        queryString = """Select time,wcdma_cm_gsm_meas_arfcn,wcdma_cm_gsm_meas_rxlev,
+                        wcdma_cm_gsm_meas_bsic,wcdma_cm_gsm_meas_cell_measure_state
+                        FROM wcdma_cm_gsm_meas
+                        %s
+                        ORDER BY time DESC""" % (condition)
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        # -----------------------------------------------
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # while query.next():
+        #     if query.value(0):
+        #         dataList.append([query.value(0),
+        #                           query.value(1),
+        #                           query.value(2),
+        #                           query.value(3),
+        #                           query.value(4)])
+        #     else:
+        #         dataList.append([self.timeFilter,'','','',''])
+
+        #Table Ui Test
+        dataList.append([self.timeFilter, '', '', '', ''])
+        azenqosDatabase.close()
+        return dataList
+
+
+class LteDataQuery:
+    def __init__(self):
+        self.timeFilter = ''
+        if currentDateTimeString:
+            self.timeFilter = currentDateTimeString
+
+    def getRadioParameters(self):
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        dataList = []
+        condition = ''
+        fieldsList = [
+            'Time', 'Band', 'E-ARFCN', 'Serving PCI', 'Serving RSRP[0]',
+            'Serving RSRP[1]', 'Serving RSRP', 'Serving RSRQ[0]',
+            'Serving RSRQ[1]', 'Serving RSRQ', 'SINR Rx[0]', 'SINR Rx[1]',
+            'SINR', 'RSSI Rx[0]', 'RSSI Rx[1]', 'RSSI', 'BLER', 'CQI CW[0]',
+            'CQI CW[1]', 'Tx Power', 'PUCCH TxPower (dBm)',
+            'PUSCH TxPower (dBm)', 'TimingAdvance',
+            'Transmission Mode (RRC-tm)', 'LTE RRC State', 'LTE EMM State',
+            'LTE RRC Substate', 'Modern ServCellInfo', 'Allowed Access', 'MCC',
+            'MNC', 'TAC', 'Cell ID (ECI)', 'eNodeB ID', 'LCI', 'PCI',
+            'Derived SCC ECI', 'Derived SCC eNodeB ID', 'Derived SCC LCI',
+            'DL EARFCN', 'UL EARFCN', 'DL Bandwidth (Mhz)',
+            'UL Bandwidth (Mhz)', 'SCC DL Bandwidth (Mhz)', 'SIB1 info:',
+            'sib1 MCC', 'sib1 MNC', 'sib1 TAC', 'sib1 ECI', 'sib1 eNBid',
+            'sib1 LCI', 'TDD Config:', 'SubframeAssignment',
+            'SpclSubframePattern', 'DedBearer QCI'
+        ]
+        selectedColumns = """lcm.time as Time, lcm.lte_band_1 as Band, lcm.lte_earfcn_1 as 'E-ARFCN', lsci.lte_serv_cell_info_pci as 'Serving PCI',
+                                lcm.lte_inst_rsrp_rx0_1 as 'Serving RSRP[0]', lcm.lte_inst_rsrp_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrp_1 as 'Serving RSRP', lcm.lte_inst_rsrq_rx0_1 as 'Serving RSRQ[0]', lcm.lte_inst_rsrq_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrq_1 as 'Serving RSRQ', lcm.lte_sinr_rx0_1 as 'SINR Rx[0]', lcm.lte_sinr_rx1_1 as 'SINR Rx[1]', lcm.lte_sinr_1 as 'SINR', lcm.lte_inst_rssi_rx0_1 as 'RSSI Rx[0]', lcm.lte_inst_rssi_rx1_1 as 'RSSI Rx[1]', lcm.lte_inst_rssi_1 as 'RSSI', lldt.lte_bler_1 as 'BLER', lc.lte_cqi_cw0_1 as 'CQI CW[0]', lc.lte_cqi_cw1_1 as 'CQI CW[1]', ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)', lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State', les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo', lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
+                                lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID', lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
+                                lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)', '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI', lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment', ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', '' as 'DedBearer QCI'"""
+
+        if self.timeFilter:
+            condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
+
+        queryString = """SELECT %s
+                        FROM lte_cell_meas lcm
+                        LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
+                        LEFT JOIN lte_l1_dl_tp lldt ON lcm.time = lldt.time
+                        LEFT JOIN lte_cqi lc ON lcm.time = lc.time
+                        LEFT JOIN lte_tx_power ltp ON lcm.time = ltp.time
+                        LEFT JOIN lte_pucch_tx_info lpcti ON lcm.time = lpcti.time
+                        LEFT JOIN lte_pusch_tx_info lpsti ON lcm.time = lpsti.time
+                        LEFT JOIN lte_frame_timing lft ON lcm.time = lft.time
+                        LEFT JOIN lte_rrc_transmode_info lrti ON lcm.time = lrti.time
+                        LEFT JOIN lte_rrc_state lrs ON lcm.time = lrs.time
+                        LEFT JOIN lte_emm_state les ON lcm.time = les.time
+                        LEFT JOIN lte_sib1_info lsoi ON lcm.time = lsoi.time
+                        LEFT JOIN lte_tdd_config ltc ON lcm.time = ltc.time
+                        %s
+                        ORDER BY lcm.time DESC LIMIT 1""" % (selectedColumns,
+                                                             condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        fieldCount = len(selectedColumns.split(","))
+        queryRowCount = query.record().count()
+        if queryRowCount > 0:
+            while query.next():
+                for index in range(fieldCount):
+                    columnName = fieldsList[index]
+                    value = ''
+                    if query.value(index) != '':
+                        value = query.value(index)
+                    dataList.append([columnName, value, '', ''])
+        else:
+            for index in range(fieldCount):
+                columnName = fieldsList[index]
+                value = ''
+                dataList.append([columnName, value, '', ''])
         azenqosDatabase.close()
         return dataList
 
     def getServingAndNeighbors(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
+        MAX_NEIGHBORS = 16
         dataList = []
+        typeHeader = {
+            'serving': ['dateString', 'Serving cell:', '', '', '', ''],
+            'neigh': ['', 'Neighbor cells:', '', '', '', '']
+        }
+        emptyRow = ['', '', '', '', '', '']
+        condition = ''
+
+        # Set query condition for serving cell
+        if self.timeFilter:
+            condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
+
+        typeHeader['serving'][0] = self.timeFilter
+        dataList.append(typeHeader['serving'])
+
+        queryString = """SELECT lcm.lte_earfcn_1, lsci.lte_serv_cell_info_band, lsci.lte_serv_cell_info_pci, lcm.lte_inst_rsrp_1,
+                        lcm.lte_inst_rsrq_1
+                        FROM lte_cell_meas as lcm
+                        LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
+                        %s
+                        ORDER BY lcm.time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
+            servingCell = [
+                '',
+                query.value(0),
+                query.value(1),
+                query.value(2),
+                query.value(3),
+                query.value(4)
+            ]
+            dataList.append(servingCell)
+
+        # Set query condition for neigh cell
+        if self.timeFilter:
+            condition = "WHERE lnm.time <= '%s'" % (self.timeFilter)
+
+        for neighbor in range(1, MAX_NEIGHBORS):
+            queryString = """SELECT lnm.lte_neigh_earfcn_%d, lnm.lte_neigh_band_%d, lnm.lte_neigh_physical_cell_id_%d, lnm.lte_neigh_rsrp_%d,
+                            lnm.lte_neigh_rsrq_%d
+                            FROM lte_neigh_meas as lnm
+                            %s
+                            ORDER BY lnm.time DESC
+                            LIMIT 1""" % (neighbor, neighbor, neighbor,
+                                          neighbor, neighbor, condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        if neighbor == 1:
+                            dataList.append(typeHeader['neigh'])
+                        neighCell = [
+                            '',
+                            query.value(0),
+                            query.value(1),
+                            query.value(2),
+                            query.value(3),
+                            query.value(4)
+                        ]
+                        dataList.append(neighCell)
+                    else:
+                        break
+            else:
+                dataList.append(emptyRow)
         azenqosDatabase.close()
         return dataList
 
-    def getCurrentChannel(self):
+    def getPucchPdschParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
+
         dataList = []
+        condition = ""
+        maxBearers = 8
+        pucchFields = [
+            '---- PUCCH ----', 'CQI CW 0', 'CQI CW 1', 'CQI N Sub-bands',
+            'Rank Indicator'
+        ]
+        pdschFields = [
+            '---- PDSCH ----', 'PDSCH Serving Cell ID', 'PDSCH RNTI ID',
+            'PDSCH RNTI Type', 'PDSCH Serving N Tx Antennas',
+            'PDSCH Serving N Rx Antennas', 'PDSCH Transmission Mode Current',
+            'PDSCH Spatial Rank', 'PDSCH Rb Allocation Slot 0',
+            'PDSCH Rb Allocation Slot 1', 'PDSCH PMI Type', 'PDSCH PMI Index',
+            'PDSCH Stream[0] Block Size', 'PDSCH Stream[0] Modulation',
+            'PDSCH Traffic To Pilot Ratio', 'PDSCH Stream[1] Block Size',
+            'PDSCH Stream[1] Modulation'
+        ]
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+            dateString = '%s' % (self.timeFilter)
+
+        dataList.append(['Time', self.timeFilter])
+
+        queryString = """SELECT '' as header, lte_cqi_cw0_1, lte_cqi_cw1_1, lte_cqi_n_subbands_1, lte_rank_indication_1
+                        FROM lte_cqi
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
+            for field in range(len(pucchFields)):
+                if query.value(field):
+                    dataList.append([pucchFields[field], query.value(field)])
+                else:
+                    dataList.append([pucchFields[field], ''])
+
+        queryString = """SELECT '' as pdsch, lte_pdsch_serving_cell_id_1, lte_pdsch_rnti_id_1, lte_pdsch_rnti_type_1,
+                        lte_pdsch_serving_n_tx_antennas_1, lte_pdsch_serving_n_rx_antennas_1,
+                        lte_pdsch_transmission_mode_current_1, lte_pdsch_spatial_rank_1,
+                        lte_pdsch_rb_allocation_slot0_1, lte_pdsch_rb_allocation_slot1_1,
+                        lte_pdsch_pmi_type_1, lte_pdsch_pmi_index_1,lte_pdsch_stream0_transport_block_size_bits_1,
+                        lte_pdsch_stream0_modulation_1, lte_pdsch_traffic_to_pilot_ratio_1,lte_pdsch_stream1_transport_block_size_bits_1,
+                        lte_pdsch_stream1_modulation_1
+                        FROM lte_pdsch_meas
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
+        rowCount = query.record().count()
+        if rowCount > 0:
+
+            while query.next():
+                for field in range(len(pdschFields)):
+                    if query.value(field):
+                        dataList.append(
+                            [pdschFields[field],
+                             query.value(field)])
+                    else:
+                        dataList.append([pdschFields[field], ''])
         azenqosDatabase.close()
         return dataList
 
-    def getCSlashI(self):
+    def getRlc(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
+
         dataList = []
+        condition = ""
+        maxBearers = 8
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        queryString = """SELECT time, lte_rlc_dl_tp_mbps, lte_rlc_dl_tp, lte_rlc_n_bearers
+                        FROM lte_rlc_stats
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
+            dataList.append(['Time', self.timeFilter, '', '', ''])
+            dataList.append(
+                ['DL TP(Mbps)',
+                 query.value('lte_rlc_dl_tp_mbps'), '', '', ''])
+            dataList.append(
+                ['DL TP(Kbps)',
+                 query.value('lte_rlc_dl_tp'), '', '', ''])
+            dataList.append(['Bearers:', '', '', '', ''])
+            dataList.append(
+                ['N Bearers',
+                 query.value('lte_rlc_n_bearers'), '', '', ''])
+        for bearer in range(1, maxBearers):
+            queryString = """SELECT lte_rlc_per_rb_dl_rb_mode_%d, lte_rlc_per_rb_dl_rb_type_%d, lte_rlc_per_rb_dl_rb_id_%d, lte_rlc_per_rb_cfg_index_%d,
+                            lte_rlc_per_rb_dl_tp_%d
+                            FROM lte_rlc_stats
+                            %s
+                            ORDER BY time DESC
+                            LIMIT 1""" % (bearer, bearer, bearer, bearer,
+                                          bearer, condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        if bearer == 1:
+                            dataList.append(
+                                ['Mode', 'Type', 'RB-ID', 'Index', 'TP Mbps'])
+                        dataList.append([
+                            query.value(0),
+                            query.value(1),
+                            query.value(2),
+                            query.value(3),
+                            query.value(4)
+                        ])
         azenqosDatabase.close()
         return dataList
 
-    def getGSMLineChart(self):
+    def getVolte(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
         dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
+        condition = ""
+        volteFields = [
+            'Time', 'Codec:', 'AMR SpeechCodec-RX', 'AMR SpeechCodec-TX',
+            'Delay interval avg:', 'Audio Packet delay (ms.)',
+            'RTP Packet delay (ms.)', 'RTCP SR Params:',
+            'RTCP Round trip time (ms.)', 'RTCP SR Params - Jitter DL:',
+            'RTCP SR Jitter DL (ts unit)', 'RTCP SR Jitter DL (ms.)',
+            'RTCP SR Params - Jitter UL:', 'RTCP SR Jitter UL (ts unit)',
+            'RTCP SR Jitter UL (ms.)', 'RTCP SR Params - Packet loss rate:',
+            'RTCP SR Packet loss DL (%)', 'RTCP SR Packet loss UL (%)'
+        ]
 
-    def getGSMEventsCounter(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
+        if self.timeFilter:
+            condition = "WHERE lvs.time <= '%s'" % (self.timeFilter)
+
+        queryString = """SELECT lvs.time, '' as codec, vi.gsm_speechcodecrx, vi.gsm_speechcodectx, '' as delay_interval,
+                        vi.vocoder_amr_audio_packet_delay_avg, lvs.lte_volte_rtp_pkt_delay_avg, '' as rtcp_sr_params,
+                        lvs.lte_volte_rtp_round_trip_time, '' as rtcp_jitter_dl, lvs.lte_volte_rtp_jitter_dl,
+                        lvs.lte_volte_rtp_jitter_dl_millis, '' as rtcp_jitter_ul, lte_volte_rtp_jitter_ul, lte_volte_rtp_jitter_ul_millis,
+                        '' as rtcp_sr_packet_loss, lte_volte_rtp_packet_loss_rate_dl, lte_volte_rtp_packet_loss_rate_ul
+                        FROM lte_volte_stats as lvs
+                        LEFT JOIN vocoder_info vi ON lvs.time = vi.time
+                        %s
+                        ORDER BY lvs.time DESC
+                        LIMIT 1""" % (condition)
         query = QSqlQuery()
-        query.exec_("select * from events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
+        query.exec_(queryString)
+        rowCount = query.record().count()
+        if rowCount > 0:
+            while query.next():
+                for field in range(len(volteFields)):
+                    if field == 0:
+                        dataList.append([volteFields[field], self.timeFilter])
+                    else:
+                        if query.value(field):
+                            dataList.append(
+                                [volteFields[field],
+                                 query.value(field)])
+                        else:
+                            dataList.append([volteFields[field], ''])
+            if len(dataList) == 0:
+                for field in range(len(volteFields)):
+                    if field == 0:
+                        dataList.append([volteFields[field], self.timeFilter])
+                    else:
+                        dataList.append([volteFields[field], ''])
         azenqosDatabase.close()
         return dataList
 
 
 class CdmaEvdoQuery:
     def __init__(self):
-        self.timeFilter = currentTime
+        self.timeFilter = currentTimestamp
 
     def getRadioParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
         dataList = []
+        cdmaFields = [
+            'Time', 'Active PN (Best)', 'Ec/Io', 'RX Power', 'TX Power', 'FER',
+            'Channel', 'Band class', 'N Active Set Cells'
+        ]
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        query = QSqlQuery()
+        queryString = """SELECT time, cdma_cell_pn, cdma_ecio, cdma_rx_power, cdma_tx_power, cdma_fer, cdma_channel, cdma_band_class, cdma_n_aset_cells                   FROM cdma
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query.exec_(queryString)
         while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            for field in range(len(cdmaFields)):
+                if query.value(field):
+                    dataList.append([cdmaFields[field], query.value(field)])
+                else:
+                    dataList.append([cdmaFields[field], ''])
         azenqosDatabase.close()
         return dataList
 
     def getServingAndNeighbors(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
+        MAX_NEIGHBORS = 32
         dataList = []
-        while query.next():
-            dataList.append(None)
+        condition = ''
+
+        # Set query condition for serving cell
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        dataList.append([self.timeFilter, '', '', ''])
+
+        for neighbor in range(1, MAX_NEIGHBORS):
+            queryString = """SELECT cdma_cell_pn_%d, cdma_cell_ecio_%d, cdma_cell_type_%d
+                            FROM cdma
+                            %s
+                            ORDER BY time DESC
+                            LIMIT 1""" % (neighbor, neighbor, neighbor,
+                                          condition)
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        neighCell = [
+                            '',
+                            query.value(0),
+                            query.value(1),
+                            query.value(2)
+                        ]
+                        dataList.append(neighCell)
+                    else:
+                        break
+            else:
+                dataList.append(['', '', '', ''])
         azenqosDatabase.close()
         return dataList
 
     def getEvdoParameters(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
         dataList = []
+        evdoFields = ['Time', 'DRC', 'PER', '', 'SINR Per PN:', 'PN', 'SINR']
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+
+        query = QSqlQuery()
+        queryString = """SELECT time, cdma_evdo_drc, cdma_evdo_per, '' as empty1, '' as empty2, cdma_evdo_pn, cdma_evdo_sinr
+                        FROM cdma
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (condition)
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
+            for field in range(len(evdoFields)):
+                if query.value(field):
+                    dataList.append([evdoFields[field], query.value(field)])
+                else:
+                    dataList.append([evdoFields[field], ''])
         azenqosDatabase.close()
         return dataList
 
@@ -1178,47 +1804,13 @@ class CdmaEvdoQuery:
 class DataQuery:
     def __init__(self, windowName):
         self.windowName = windowName
-        self.timeFilter = currentTime
-
-    def getGSMDataLineChart(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getWcdmaDataLineChart(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
+        self.timeFilter = currentTimestamp
 
     def getGprsEdgeInformation(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1235,7 +1827,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1252,7 +1844,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1269,24 +1861,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getLteDataLineChart(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1303,7 +1878,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1320,7 +1895,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1337,7 +1912,7 @@ class DataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1353,17 +1928,15 @@ class DataQuery:
 
 class SignalingDataQuery:
     def __init__(self):
-        self.timeFilter = currentTime
+        self.timeFilter = ''
+        if currentDateTimeString:
+            self.timeFilter = currentDateTimeString
 
     def getEvents(self):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
+        queryString = 'SELECT time, name, info FROM events'
         query = QSqlQuery()
-        if self.timeFilter != None:
-            queryString = 'select * from events where time <= %s' % (
-                self.timeFilter)
-        else:
-            queryString = 'select * from events'
         query.exec_(queryString)
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
@@ -1373,15 +1946,15 @@ class SignalingDataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 
-    def getLayerOneMessages(self):
+    def getLayerOneMessages(self):  ##ต้องแก้ query
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from events")
+        query.exec_("SELECT * FROM events")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         detailField = query.record().indexOf("info")
@@ -1398,7 +1971,7 @@ class SignalingDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_("select * from signalling")
+        query.exec_("SELECT time, name, symbol, detail_str FROM signalling")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         symbolField = query.record().indexOf("symbol")
@@ -1421,20 +1994,157 @@ class SignalingDataQuery:
         azenqosDatabase.close()
         return dataList
 
-    def getBenchmark(self):
+    def getBenchmark(self):  #ยังไม่เสร็จ
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
         dataList = []
+        condition = ""
+
+        #Voice section (ยังไม่มีข้อมูลใน database)
+        dataList.append(['---- Voice ----', '', '', '', ''])
+        dataList.append(['Call Count', 0, 0, 0, 0])
+        dataList.append(['Drop Count', 0, 0, 0, 0])
+        dataList.append(['Block Count', 0, 0, 0, 0])
+        dataList.append(['Handover Fail Count', 0, 0, 0, 0])
+
+        #LTE section
+        lteField = [
+            '---- LTE ----', 'SINR Rx[0][1]', 'SINR RX[1][1]', 'Inst RSRP[1]',
+            'Inst RSRQ[1]', 'Inst RSSI', 'Cell ID', 'Cell Name'
+        ]
+        if self.timeFilter:
+            condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
+        queryString = """SELECT '' as header,lcm.lte_sinr_rx0_1,lcm.lte_sinr_rx1_1,lcm.lte_inst_rsrp_1,lcm.lte_inst_rsrq_1,
+                         lcm.lte_inst_rssi_1,lsci.lte_serv_cell_info_eci,lsci.lte_serv_cell_info_cellname
+                         FROM lte_cell_meas lcm
+                         LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
+                         %s
+                         ORDER BY lcm.time DESC LIMIT 1""" % (condition)
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
+            for field in range(len(lteField)):
+                if query.value(field):
+                    dataList.append(
+                        [lteField[field],
+                         query.value(field), '', '', ''])
+                else:
+                    dataList.append([lteField[field], '', '', '', ''])
+
+        #WCDMA section
+        wcdmaField = [
+            '---- WCDMA ----', 'ASET Ec/Io Avg.', 'ASET RSCP Avg.', 'RSSI',
+            'BLER Avg.', 'Cell ID', 'Cell Name'
+        ]
+        if self.timeFilter:
+            condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
+        queryString = """SELECT '' as header,wcm.wcdma_aset_ecio_avg,wcm.wcdma_aset_rscp_avg,wrp.wcdma_rssi,
+                         wb.wcdma_bler_average_percent_all_channels,wici.wcdma_cellid, '' as cellname
+                         FROM wcdma_cell_meas wcm
+                         LEFT JOIN wcdma_rx_power wrp ON wcm.time = wrp.time
+                         LEFT JOIN wcdma_bler wb ON wcm.time = wb.time
+                         LEFT JOIN wcdma_idle_cell_info wici ON wcm.time = wici.time
+                         %s
+                         ORDER BY wcm.time DESC LIMIT 1""" % (condition)
+        #ยังหา WCDMA Cellname ไม่เจอ
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        #-----------------------------------------------
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # while query.next():
+        #     for field in range(len(wcdmaField)):
+        #         if query.value(field):
+        #             dataList.append([wcdmaField[field],query.value(field),'','',''])
+        #         else:
+        #             dataList.append([wcdmaField[field],'','','',''])
+
+        #Table Ui Test for WCDMA section
+        for field in range(len(wcdmaField)):
+            dataList.append([wcdmaField[field], '', '', '', ''])
+
+        # #Data Section
+        dataField = [
+            '---- Data ----', 'DL Application Throughput',
+            'UL Application Throughput'
+        ]
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        queryString = """SELECT '' as header,data_app_dl_throughput_1,data_app_ul_throughput_1
+                            FROM data_app_throughput
+                            %s
+                            ORDER BY time DESC LIMIT 1""" % (condition)
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        #-----------------------------------------------
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # while query.next():
+        #     for field in range(len(dataField)):
+        #         if query.value(field):
+        #             dataList.append([dataField[field],query.value(field),'','',''])
+        #         else:
+        #             dataList.append([dataField[field],'','','',''])
+
+        #Table Ui Test for Data section
+        for field in range(len(dataField)):
+            dataList.append([dataField[field], '', '', '', ''])
+        #'Data Connect Fail Count','Download Timeout'
+        dataList.append(['Data Connect Fail Count', 0, 0, 0, 0])
+        dataList.append(['Download Timeout', 0, 0, 0, 0])
+
+        #LTE RLC section
+        lte_rlcField = [
+            '---- LTE ----', 'RLC DL Thoughput', 'RLC UL Thoughput'
+        ]
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        queryString = """SELECT '' as header,lte_rlc_dl_tp,'' as lte_rlc_ul_tp
+                         FROM lte_rlc_stats
+                         %s
+                         ORDER BY time DESC LIMIT 1""" % (condition)
+        #ยังไม่มี LTE RLC UL Throughput ใน DB
+
+        query = QSqlQuery()
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(lte_rlcField)):
+                if query.value(field):
+                    dataList.append(
+                        [lte_rlcField[field],
+                         query.value(field), '', '', ''])
+                else:
+                    dataList.append([lte_rlcField[field], '', '', '', ''])
+
+        #WCDMA RLC section
+        wcdma_rlcField = [
+            '---- WCDMA ----', 'HS-DSCH Throughput', 'WCDMA RLC DL Thoughput',
+            'WCDMA RLC UL Thoughput'
+        ]
+        if self.timeFilter:
+            condition = "WHERE whs.time <= '%s'" % (self.timeFilter)
+        queryString = """SELECT '' as header,whs.data_hsdpa_thoughput,dwrs.data_wcdma_rlc_dl_throughput,
+                         dwrs.data_wcdma_rlc_ul_throughput
+                         FROM wcdma_hsdpa_stats whs
+                         LEFT JOIN data_wcdma_rlc_stats dwrs ON whs.time = dwrs.time
+                         %s
+                         ORDER BY whs.time DESC LIMIT 1""" % (condition)
+
+        # Real Query Code (รันไม่ได้เพราะ no data in DB)
+        #-----------------------------------------------
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # while query.next():
+        #     for field in range(len(wcdma_rlcField)):
+        #         if query.value(field):
+        #             dataList.append([wcdma_rlcField[field],query.value(field),'','',''])
+        #         else:
+        #             dataList.append([wcdma_rlcField[field],'','','',''])
+
+        #Table Ui Test for Data section
+        for field in range(len(wcdma_rlcField)):
+            dataList.append([wcdma_rlcField[field], '', '', '', ''])
+
         azenqosDatabase.close()
         return dataList
 
@@ -1442,18 +2152,36 @@ class SignalingDataQuery:
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         dataList = []
-        selectedColumns = 'time,mm_state_state,mm_state_substate,mm_state_update_status,mm_characteristics_network_operation_mode,mm_characteristics_service_type,mm_characteristics_mcc,mm_characteristics_mnc,mm_characteristics_lac,mm_characteristics_rai'
-        queryString = 'select %s from mm_state order by time desc limit 1' % (
-            selectedColumns)
+        fieldsList = [
+            'Time', 'MM State', 'MM Substate', 'MM Update Status',
+            'MM Network Operation Mode', 'MM Service Type', 'MM MCC', 'MM MNC',
+            'MM Lac', 'MM Rai', 'REG State', 'REG UE Operation Mode',
+            'GMM State', 'GMM Substate', 'GMM Update'
+        ]
+        selectedColumns = """ms.time,ms.mm_state_state,ms.mm_state_substate,ms.mm_state_update_status,
+                             ms.mm_characteristics_network_operation_mode,ms.mm_characteristics_service_type,
+                             ms.mm_characteristics_mcc,ms.mm_characteristics_mnc,ms.mm_characteristics_lac,ms.mm_characteristics_rai,
+                             rs.reg_state_state,rs.reg_state_ue_operation_mode,gs.gmm_state_state,gs.gmm_state_substate,gs.gmm_state_update"""
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE ms.time <= '%s'" % (self.timeFilter)
+        queryString = """SELECT %s FROM mm_state mszx
+                        LEFT JOIN reg_state rs ON ms.time = rs.time
+                        LEFT JOIN gmm_state gs ON ms.time = gs.time
+                        %s
+                        ORDER BY ms.time DESC LIMIT 1""" % (selectedColumns,
+                                                            condition)
         query = QSqlQuery()
         query.exec_(queryString)
-        selectedColumns = selectedColumns.split(",")
-        fieldCount = len(selectedColumns)
+        queryRowCount = query.record().count()
         while query.next():
-            for index in range(fieldCount):
-                columnName = selectedColumns[index]
-                value = query.value(index)
-                dataList.append([columnName, value])
+            for field in range(len(fieldsList)):
+                if query.value(field):
+                    dataList.append(
+                        [fieldsList[field],
+                         query.value(field), '', '', ''])
+                else:
+                    dataList.append([fieldsList[field], '', '', '', ''])
         azenqosDatabase.close()
         return dataList
 
@@ -1467,40 +2195,204 @@ class SignalingDataQuery:
             'system id type'
         ]
         selectedColumns = 'time,serving_system_mcc,serving_system_mnc,serving_system_lac,cm_service_status,cm_service_domain,cm_service_capability,cm_system_mode,cm_roaming_status,cm_system_id_type'
-        queryString = 'select %s from serving_system order by time desc limit 1' % (
-            selectedColumns)
+        condition = ''
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        queryString = 'select %s from serving_system %s order by time desc limit 1' % (
+            selectedColumns, condition)
         query = QSqlQuery()
         query.exec_(queryString)
-        fieldCount = len(selectedColumns.split(","))
         while query.next():
-            for index in range(fieldCount):
-                columnName = fieldsList[index]
-                value = query.value(index)
-                dataList.append([columnName, value])
+            for field in range(len(fieldsList)):
+                if query.value(field):
+                    dataList.append(
+                        [fieldsList[field],
+                         query.value(field), '', '', ''])
+                else:
+                    dataList.append([fieldsList[field], '', '', '', ''])
         azenqosDatabase.close()
         return dataList
 
     def getDebugAndroidEvent(self):
+        #ยังไม่มีข้อมูลใน database
+
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("select * from events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
+        # query = QSqlQuery()
+        # query.exec_("select * from events")
+        # timeField = query.record().indexOf("time")
+        # nameField = query.record().indexOf("name")
+        # detailField = query.record().indexOf("info")
         dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
+        # while query.next():
+        #     timeValue = query.value(timeField)
+        #     nameValue = query.value(nameField)
+        #     detailStrValue = query.value(detailField)
+        #     dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
         azenqosDatabase.close()
+
+        fieldsList = [
+            'Time', 'Device Time Stamp', 'Raw Layer Message', 'Processed Event'
+        ]
+        fieldCount = len(fieldsList)
+        dataList.append(['Time', self.timeFilter])
+        for index in range(1, len(fieldsList)):
+            columnName = fieldsList[index]
+            dataList.append([columnName, ''])
         return dataList
 
 
+# GSM Line Chart UI
+class Ui_GSM_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_GSM_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, GSM_LCwidget):
+        GSM_LCwidget.setObjectName("GSM_LCwidget")
+        GSM_LCwidget.resize(841, 586)
+
+        # Graph Area
+        self.gsm_GArea = QtWidgets.QScrollArea(GSM_LCwidget)
+        self.gsm_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.gsm_GArea.setWidgetResizable(True)
+        self.gsm_GArea.setObjectName("gsm_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.gsm_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        # DataTable
+        self.gsm_tableWidget = QtWidgets.QTableWidget(GSM_LCwidget)
+        self.gsm_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 81))
+        self.gsm_tableWidget.setObjectName("gsm_tableWidget")
+        self.gsm_tableWidget.setColumnCount(4)
+        self.gsm_tableWidget.setRowCount(2)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_tableWidget.setItem(1, 3, item)
+        self.gsm_tableWidget.horizontalHeader().setVisible(True)
+        self.gsm_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.gsm_tableWidget.verticalHeader().setVisible(False)
+
+        # DateLabel
+        self.datelabel = QtWidgets.QLabel(GSM_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(GSM_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.gsm_widget = Line_Chart(self.scrollAreaWidgetContents, self.title,
+                                     self.gsm_tableWidget, self.lineEdit)
+        self.gsm_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.gsm_widget.setObjectName("gsm_widget")
+
+        self.retranslateUi(GSM_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(GSM_LCwidget)
+
+    def retranslateUi(self, GSM_LCwidget):
+        _translate = QtCore.QCoreApplication.translate
+        GSM_LCwidget.setWindowTitle(
+            _translate("GSM_LCwidget", "GSM Line Chart [MS1]"))
+        item = self.gsm_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("GSM_LCwidget", "1"))
+        item = self.gsm_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("GSM_LCwidget", "2"))
+        item = self.gsm_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("GSM_LCwidget", "Element"))
+        item = self.gsm_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("GSM_LCwidget", "Value"))
+        item = self.gsm_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("GSM_LCwidget", "MS"))
+        item = self.gsm_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("GSM_LCwidget", "Color"))
+        __sortingEnabled = self.gsm_tableWidget.isSortingEnabled()
+        self.gsm_tableWidget.setSortingEnabled(False)
+        item = self.gsm_tableWidget.item(0, 0)
+        item.setText(_translate("GSM_LCwidget", "RxLev Sub (dBm)"))
+        item = self.gsm_tableWidget.item(0, 2)
+        item.setText(_translate("GSM_LCwidget", "MS1"))
+        item = self.gsm_tableWidget.item(1, 0)
+        item.setText(_translate("GSM_LCwidget", "RxQual Sub"))
+        item = self.gsm_tableWidget.item(1, 2)
+        item.setText(_translate("GSM_LCwidget", "MS1"))
+        self.gsm_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("GSM_LCwidget", "Date :"))
+
+
 # LTE Line Chart UI
-
-
 class Ui_LTE_LCwidget(QWidget):
     def __init__(self, windowName):
         super(Ui_LTE_LCwidget, self).__init__()
@@ -1632,9 +2524,9 @@ class Ui_LTE_LCwidget(QWidget):
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setForeground(brush)
+        # brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        # brush.setStyle(QtCore.Qt.SolidPattern)
+        # item.setForeground(brush)
         self.lte_tableWidget.setItem(4, 3, item)
         self.lte_tableWidget.horizontalHeader().setVisible(True)
         self.lte_tableWidget.horizontalHeader().setHighlightSections(True)
@@ -1661,7 +2553,8 @@ class Ui_LTE_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents,self.title,self.lte_tableWidget,self.lineEdit)
+        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents, self.title,
+                                     self.lte_tableWidget, self.lineEdit)
         self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_widget.setObjectName("lte_widget")
 
@@ -1715,97 +2608,830 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
 
-# Class For Line Chart
-class  Line_Chart(QWidget):
 
-    def  __init__ (self,parent,windowName,tablewidget,datelabel):
+# WCDMA Line Chart UI
+class Ui_WCDMA_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_WCDMA_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, WCDMA_LCwidget):
+        WCDMA_LCwidget.setObjectName("WCDMA_LCwidget")
+        WCDMA_LCwidget.resize(841, 586)
+
+        # Graph Area
+        self.wcdma_GArea = QtWidgets.QScrollArea(WCDMA_LCwidget)
+        self.wcdma_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.wcdma_GArea.setWidgetResizable(True)
+        self.wcdma_GArea.setObjectName("wcdma_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.wcdma_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        # DataTable
+        self.wcdma_tableWidget = QtWidgets.QTableWidget(WCDMA_LCwidget)
+        self.wcdma_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
+        self.wcdma_tableWidget.setObjectName("wcdma_tableWidget")
+        self.wcdma_tableWidget.setColumnCount(4)
+        self.wcdma_tableWidget.setRowCount(4)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_tableWidget.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_tableWidget.setItem(2, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(3, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(3, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_tableWidget.setItem(3, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_tableWidget.setItem(3, 3, item)
+        self.wcdma_tableWidget.horizontalHeader().setVisible(True)
+        self.wcdma_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.wcdma_tableWidget.verticalHeader().setVisible(False)
+
+        # DateLabel
+        self.datelabel = QtWidgets.QLabel(WCDMA_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(WCDMA_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.wcdma_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                       self.title, self.wcdma_tableWidget,
+                                       self.lineEdit)
+        self.wcdma_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.wcdma_widget.setObjectName("wcdma_widget")
+
+        self.retranslateUi(WCDMA_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(WCDMA_LCwidget)
+
+    def retranslateUi(self, WCDMA_LCwidget):
+        _translate = QtCore.QCoreApplication.translate
+        WCDMA_LCwidget.setWindowTitle(
+            _translate("WCDMA_LCwidget", "WCDMA Line Chart [MS1]"))
+        item = self.wcdma_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("WCDMA_LCwidget", "1"))
+        item = self.wcdma_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("WCDMA_LCwidget", "2"))
+        item = self.wcdma_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("WCDMA_LCwidget", "3"))
+        item = self.wcdma_tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("WCDMA_LCwidget", "4"))
+        item = self.wcdma_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("WCDMA_LCwidget", "Element"))
+        item = self.wcdma_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("WCDMA_LCwidget", "Value"))
+        item = self.wcdma_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("WCDMA_LCwidget", "MS"))
+        item = self.wcdma_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("WCDMA_LCwidget", "Color"))
+        __sortingEnabled = self.wcdma_tableWidget.isSortingEnabled()
+        self.wcdma_tableWidget.setSortingEnabled(False)
+        item = self.wcdma_tableWidget.item(0, 0)
+        item.setText(_translate("WCDMA_LCwidget", "ASET Ec/Io Avg."))
+        item = self.wcdma_tableWidget.item(0, 2)
+        item.setText(_translate("WCDMA_LCwidget", "MS1"))
+        item = self.wcdma_tableWidget.item(1, 0)
+        item.setText(_translate("WCDMA_LCwidget", "WCDMA RSSI"))
+        item = self.wcdma_tableWidget.item(1, 2)
+        item.setText(_translate("WCDMA_LCwidget", "MS1"))
+        item = self.wcdma_tableWidget.item(2, 0)
+        item.setText(_translate("WCDMA_LCwidget", "BLER Average Percent"))
+        item = self.wcdma_tableWidget.item(2, 2)
+        item.setText(_translate("WCDMA_LCwidget", "MS1"))
+        item = self.wcdma_tableWidget.item(3, 0)
+        item.setText(_translate("WCDMA_LCwidget", "ASET RSCP Avg."))
+        item = self.wcdma_tableWidget.item(3, 2)
+        item.setText(_translate("WCDMA_LCwidget", "MS1"))
+        self.wcdma_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("WCDMA_LCwidget", "Date :"))
+
+
+# LTE Data Line Chart UI
+class Ui_LTE_Data_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_LTE_Data_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, LTE_Data_LCwidget):
+        LTE_Data_LCwidget.setObjectName("LTE_Data_LCwidget")
+        LTE_Data_LCwidget.resize(841, 586)
+
+        # Graph Area
+        self.lte_datalc_GArea = QtWidgets.QScrollArea(LTE_Data_LCwidget)
+        self.lte_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.lte_datalc_GArea.setWidgetResizable(True)
+        self.lte_datalc_GArea.setObjectName("lte_datalc_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.lte_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        # DataTable
+        self.lte_data_tableWidget = QtWidgets.QTableWidget(LTE_Data_LCwidget)
+        self.lte_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
+        self.lte_data_tableWidget.setObjectName("lte_data_tableWidget")
+        self.lte_data_tableWidget.setColumnCount(4)
+        self.lte_data_tableWidget.setRowCount(4)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_data_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_data_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_data_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.lte_data_tableWidget.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_data_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_data_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_data_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.lte_data_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_data_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_data_tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_data_tableWidget.setItem(2, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(3, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(3, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.lte_data_tableWidget.setItem(3, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.lte_data_tableWidget.setItem(3, 3, item)
+        self.lte_data_tableWidget.horizontalHeader().setVisible(True)
+        self.lte_data_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.lte_data_tableWidget.verticalHeader().setVisible(False)
+
+        # DateLabel
+        self.datelabel = QtWidgets.QLabel(LTE_Data_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(LTE_Data_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.lte_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                          self.title,
+                                          self.lte_data_tableWidget,
+                                          self.lineEdit)
+        self.lte_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.lte_data_widget.setObjectName("lte_data_widget")
+
+        self.retranslateUi(LTE_Data_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(LTE_Data_LCwidget)
+
+    def retranslateUi(self, LTE_Data_LCwidget):
+        _translate = QtCore.QCoreApplication.translate
+        LTE_Data_LCwidget.setWindowTitle(
+            _translate("LTE_Data_LCwidget", "LTE Data Line Chart [MS1]"))
+        item = self.lte_data_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("LTE_Data_LCwidget", "1"))
+        item = self.lte_data_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("LTE_Data_LCwidget", "2"))
+        item = self.lte_data_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("LTE_Data_LCwidget", "3"))
+        item = self.lte_data_tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("LTE_Data_LCwidget", "4"))
+        item = self.lte_data_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("LTE_Data_LCwidget", "Element"))
+        item = self.lte_data_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("LTE_Data_LCwidget", "Value"))
+        item = self.lte_data_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS"))
+        item = self.lte_data_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("LTE_Data_LCwidget", "Color"))
+        __sortingEnabled = self.lte_data_tableWidget.isSortingEnabled()
+        self.lte_data_tableWidget.setSortingEnabled(False)
+        item = self.lte_data_tableWidget.item(0, 0)
+        item.setText(
+            _translate("LTE_Data_LCwidget",
+                       "Download Overall Throughput(kbps)"))
+        item = self.lte_data_tableWidget.item(0, 2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
+        item = self.lte_data_tableWidget.item(1, 0)
+        item.setText(
+            _translate("LTE_Data_LCwidget", "Upload Overall Throughput(kbps)"))
+        item = self.lte_data_tableWidget.item(1, 2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
+        item = self.lte_data_tableWidget.item(2, 0)
+        item.setText(
+            _translate("LTE_Data_LCwidget", "LTE L1 Throughput Mbps[1]"))
+        item = self.lte_data_tableWidget.item(2, 2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
+        item = self.lte_data_tableWidget.item(3, 0)
+        item.setText(_translate("LTE_Data_LCwidget", "LTE BLER[1]"))
+        item = self.lte_data_tableWidget.item(3, 2)
+        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
+        self.lte_data_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("LTE_Data_LCwidget", "Date :"))
+
+
+# GSM Data Line Chart UI
+class Ui_GSM_Data_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_GSM_Data_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, GSM_Data_LCwidget):
+        GSM_Data_LCwidget.setObjectName("GSM_Data_LCwidget")
+        GSM_Data_LCwidget.resize(841, 586)
+
+        # Graph Area
+        self.gsm_datalc_GArea = QtWidgets.QScrollArea(GSM_Data_LCwidget)
+        self.gsm_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.gsm_datalc_GArea.setWidgetResizable(True)
+        self.gsm_datalc_GArea.setObjectName("gsm_datalc_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.gsm_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        # DataTable
+        self.gsm_data_tableWidget = QtWidgets.QTableWidget(GSM_Data_LCwidget)
+        self.gsm_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 111))
+        self.gsm_data_tableWidget.setObjectName("gsm_data_tableWidget")
+        self.gsm_data_tableWidget.setColumnCount(4)
+        self.gsm_data_tableWidget.setRowCount(3)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_data_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_data_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_data_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_data_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_data_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_data_tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_data_tableWidget.setItem(2, 3, item)
+
+        self.gsm_data_tableWidget.horizontalHeader().setVisible(True)
+        self.gsm_data_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.gsm_data_tableWidget.verticalHeader().setVisible(False)
+
+        # DateLabel
+        self.datelabel = QtWidgets.QLabel(GSM_Data_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(GSM_Data_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.gsm_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                          self.title,
+                                          self.gsm_data_tableWidget,
+                                          self.lineEdit)
+        self.gsm_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.gsm_data_widget.setObjectName("gsm_data_widget")
+
+        self.retranslateUi(GSM_Data_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(GSM_Data_LCwidget)
+
+    def retranslateUi(self, GSM_Data_LCwidget):
+        _translate = QtCore.QCoreApplication.translate
+        GSM_Data_LCwidget.setWindowTitle(
+            _translate("GSM_Data_LCwidget", "GSM Data Line Chart [MS1]"))
+        item = self.gsm_data_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("GSM_Data_LCwidget", "1"))
+        item = self.gsm_data_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("GSM_Data_LCwidget", "2"))
+        item = self.gsm_data_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("GSM_Data_LCwidget", "3"))
+        item = self.gsm_data_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("GSM_Data_LCwidget", "Element"))
+        item = self.gsm_data_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("GSM_Data_LCwidget", "Value"))
+        item = self.gsm_data_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("GSM_Data_LCwidget", "MS"))
+        item = self.gsm_data_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("GSM_Data_LCwidget", "Color"))
+        __sortingEnabled = self.gsm_data_tableWidget.isSortingEnabled()
+        self.gsm_data_tableWidget.setSortingEnabled(False)
+        item = self.gsm_data_tableWidget.item(0, 0)
+        item.setText(
+            _translate("GSM_Data_LCwidget", "GSM RLC DL Throughput (kbit/s)"))
+        item = self.gsm_data_tableWidget.item(0, 2)
+        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
+        item = self.gsm_data_tableWidget.item(1, 0)
+        item.setText(
+            _translate("GSM_Data_LCwidget",
+                       "Application DL Throughput(kbps)[1]"))
+        item = self.gsm_data_tableWidget.item(1, 2)
+        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
+        item = self.gsm_data_tableWidget.item(2, 0)
+        item.setText(
+            _translate("GSM_Data_LCwidget",
+                       "Download Session Average Throughput(kbps)"))
+        item = self.gsm_data_tableWidget.item(2, 2)
+        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
+
+        self.gsm_data_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("GSM_Data_LCwidget", "Date :"))
+
+
+# WCDMA Data Line Chart UI
+class Ui_WCDMA_Data_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_WCDMA_Data_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, WCDMA_Data_LCwidget):
+        WCDMA_Data_LCwidget.setObjectName("WCDMA_Data_LCwidget")
+        WCDMA_Data_LCwidget.resize(841, 586)
+
+        # Graph Area
+        self.wcdma_datalc_GArea = QtWidgets.QScrollArea(WCDMA_Data_LCwidget)
+        self.wcdma_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.wcdma_datalc_GArea.setWidgetResizable(True)
+        self.wcdma_datalc_GArea.setObjectName("wcdma_datalc_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.wcdma_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        # DataTable
+        self.wcdma_data_tableWidget = QtWidgets.QTableWidget(
+            WCDMA_Data_LCwidget)
+        self.wcdma_data_tableWidget.setGeometry(QtCore.QRect(
+            20, 390, 421, 141))
+        self.wcdma_data_tableWidget.setObjectName("wcdma_data_tableWidget")
+        self.wcdma_data_tableWidget.setColumnCount(4)
+        self.wcdma_data_tableWidget.setRowCount(4)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_data_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_data_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_data_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.wcdma_data_tableWidget.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_data_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_data_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_data_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.wcdma_data_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_data_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_data_tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_data_tableWidget.setItem(2, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(3, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(3, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.wcdma_data_tableWidget.setItem(3, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.wcdma_data_tableWidget.setItem(3, 3, item)
+        self.wcdma_data_tableWidget.horizontalHeader().setVisible(True)
+        self.wcdma_data_tableWidget.horizontalHeader().setHighlightSections(
+            True)
+        self.wcdma_data_tableWidget.verticalHeader().setVisible(False)
+
+        # DateLabel
+        self.datelabel = QtWidgets.QLabel(WCDMA_Data_LCwidget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(WCDMA_Data_LCwidget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.wcdma_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                            self.title,
+                                            self.wcdma_data_tableWidget,
+                                            self.lineEdit)
+        self.wcdma_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.wcdma_data_widget.setObjectName("wcdma_data_widget")
+
+        self.retranslateUi(WCDMA_Data_LCwidget)
+        QtCore.QMetaObject.connectSlotsByName(WCDMA_Data_LCwidget)
+
+    def retranslateUi(self, WCDMA_Data_LCwidget):
+        _translate = QtCore.QCoreApplication.translate
+        WCDMA_Data_LCwidget.setWindowTitle(
+            _translate("WCDMA_Data_LCwidget", "WCDMA Data Line Chart [MS1]"))
+        item = self.wcdma_data_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("WCDMA_Data_LCwidget", "1"))
+        item = self.wcdma_data_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("WCDMA_Data_LCwidget", "2"))
+        item = self.wcdma_data_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "3"))
+        item = self.wcdma_data_tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("WCDMA_Data_LCwidget", "4"))
+        item = self.wcdma_data_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Element"))
+        item = self.wcdma_data_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Value"))
+        item = self.wcdma_data_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS"))
+        item = self.wcdma_data_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("WCDMA_Data_LCwidget", "Color"))
+        __sortingEnabled = self.wcdma_data_tableWidget.isSortingEnabled()
+        self.wcdma_data_tableWidget.setSortingEnabled(False)
+        item = self.wcdma_data_tableWidget.item(0, 0)
+        item.setText(
+            _translate("WCDMA_Data_LCwidget",
+                       "WCDMA RLC DL Throughput (kbit/s)"))
+        item = self.wcdma_data_tableWidget.item(0, 2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
+        item = self.wcdma_data_tableWidget.item(1, 0)
+        item.setText(
+            _translate("WCDMA_Data_LCwidget",
+                       "Application DL Throughput(kbps)[1]"))
+        item = self.wcdma_data_tableWidget.item(1, 2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
+        item = self.wcdma_data_tableWidget.item(2, 0)
+        item.setText(
+            _translate("WCDMA_Data_LCwidget",
+                       "Download Session Average Throughput(kbps)"))
+        item = self.wcdma_data_tableWidget.item(2, 2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
+        item = self.wcdma_data_tableWidget.item(3, 0)
+        item.setText(_translate("WCDMA_Data_LCwidget",
+                                "Data HSDPA Throughput"))
+        item = self.wcdma_data_tableWidget.item(3, 2)
+        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
+        self.wcdma_data_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
+
+
+# Class For Line Chart
+class Line_Chart(QWidget):
+    def __init__(self, parent, windowName, tablewidget, datelabel):
         super().__init__(parent)
-        self.canvas  =  FigureCanvas(Figure(figsize=(4, 4)))
-        vertical_layout  =  QVBoxLayout()
+        self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
+        vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(self.canvas)
-        self.canvas.axes =  self.canvas.figure.add_subplot()
+        self.canvas.axes = self.canvas.figure.add_subplot()
         self.setLayout(vertical_layout)
         self.title = windowName
         self.tablewidget = tablewidget
         self.datelabel = datelabel
-        #self.timeline = timeline
+        #print(self.title)
 
         # Graph Toolbar
         toolbar = NavigationToolbar(self.canvas, self)
         vertical_layout.addWidget(toolbar)
 
         # Choose Line Chart By WindowName
-        self.GraphSelector(self.title)
+        if self.title == 'LTE_LTE Line Chart':
+            self.LTE()
+        elif self.title == 'GSM_GSM Line Chart':
+            self.GSM()
+        elif self.title == 'WCDMA_Line Chart':
+            self.WCDMA()
+        elif self.title == 'Data_LTE Data Line Chart':
+            self.LTE_Data()
+        elif self.title == 'Data_GSM Data Line Chart':
+            self.GSM_Data()
+        elif self.title == 'Data_WCDMA Data Line Chart':
+            self.WCDMA_Data()
 
-    def GraphSelector(self,argument):
-        switcher = {
-            'LTE_LTE Line Chart': self.LTE(),
-        }
+    # Create GSM Line Chart
+    def GSM(self):
 
-        # if self.title is not None:
-        #     if self.title == 'LTE_LTE Line Chart':
-        #         self.LTE()
+        #ยังไม่เสร็จ -- No data in Database
 
-    # Create LTE Line Chart
-    def LTE(self):
-        self.canvas.axes.set_title('LTE Line Chart')
+        self.canvas.axes.set_title('GSM Line Chart')
         Date = []
         Time = []
 
-        # Signal DataList
-        SINR_Rx0_1 = []
-        SINR_Rx1_1 = []
-        Inst_RSRP_1 = []
-        Inst_RSRQ_1 = []
-        Inst_RSSI_1 = []
-
         # Open Database And Query
-        azenqosDatabase.open()
-        c = QSqlQuery()
-        c.exec_("SELECT * FROM lte_cell_meas")
-        time = (c.record().indexOf("time"))
-        lte_sinr_rx0_1 = c.record().indexOf("lte_sinr_rx0_1")
-        lte_sinr_rx1_1 = c.record().indexOf("lte_sinr_rx1_1")
-        lte_inst_rsrp_1 = c.record().indexOf("lte_inst_rsrp_1")
-        lte_inst_rsrq_1 = c.record().indexOf("lte_inst_rsrq_1")
-        lte_inst_rssi_1 = c.record().indexOf("lte_inst_rssi_1")
-
-        while c.next():
-            DateValue = c.value(time).split(' ')[0]
-            Date.append(DateValue)
-            timeValue = c.value(time).split(' ')[1]
-            Time.append(timeValue)
-            sig1Value = query.value(lte_sinr_rx0_1)
-            sig2Value = query.value(lte_sinr_rx1_1)
-            sig3Value = query.value(lte_inst_rsrp_1)
-            sig4Value = query.value(lte_inst_rsrq_1)
-            sig5Value = query.value(lte_inst_rssi_1)
-
-            # Check Database Data For NULL
-            if not (type(sig1Value) == float):
-                SINR_Rx0_1.append(0)
-            else:
-                SINR_Rx0_1.append(sig1Value)
-
-            if not (type(sig2Value) == float):
-                SINR_Rx1_1.append(0)
-            else:
-                SINR_Rx1_1.append(sig2Value)
-
-            if not (type(sig3Value) == float):
-                Inst_RSRP_1.append(0)
-            else:
-                Inst_RSRP_1.append(sig3Value)
-
-            if not (type(sig4Value) == float):
-                Inst_RSRQ_1.append(0)
-            else:
-                Inst_RSRQ_1.append(sig4Value)
-
-            if not (type(sig5Value) == float):
-                Inst_RSSI_1.append(0)
-            else:
-                Inst_RSSI_1.append(sig5Value)
+        ChartQuery = LineChartQuery(
+            ['time', 'gsm_rxlev_sub_dbm', 'gsm_rxqual_sub'], 'gsm_cell_meas',
+            '')
+        result = ChartQuery.getData()
+        for index in range(len(result['time'])):
+            Date.append(result['time'][index].split(' ')[0])
+            Time.append(result['time'][index].split(' ')[1])
 
         # Graph setting
         self.datelabel.setText(Date[0])
@@ -1818,45 +3444,476 @@ class  Line_Chart(QWidget):
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
-        line1, = self.canvas.axes.plot(Time,SINR_Rx0_1,'#ff0000',label = 'SINR Rx[0][1]',picker=5,linewidth=1)
-        line2, = self.canvas.axes.plot(Time,SINR_Rx1_1,'#0000ff',label = 'SINR Rx[1][1]',picker=5,linewidth=1)
-        line3, = self.canvas.axes.plot(Time,Inst_RSRP_1,'#007c00',label = 'Inst RSRP[1]',picker=5,linewidth=1)
-        line4, = self.canvas.axes.plot(Time,Inst_RSRQ_1,'#ff77ab',label = 'Inst RSRQ[1]',picker=5,linewidth=1)
-        line5, = self.canvas.axes.plot(Time,Inst_RSSI_1,'#000000',label = 'Inst RSSI[1]',picker=5,linewidth=1)
+        lines = []
+        #Array for line's color
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+
+        for data in result.items():
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
+
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120,35)
-        self.canvas.axes.set_xlim(Time[0],Time[3])
-        azenqosDatabase.close()
-
-        # Line List
-        lines = [line1,line2,line3,line4,line5]
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
 
         # Line Focusing Function
         def on_pick(event):
-            for L in lines:
-                L.set_linewidth(1)
+            for Line in lines:
+                Line.set_linewidth(1)
             event.artist.set_linewidth(2.5)
             self.canvas.draw()
 
-        pick = self.canvas.mpl_connect('pick_event', on_pick)
-
         # Show Data In Table
-        Chart_datalist = []
         def get_table_data(event):
-            x,y = int(event.xdata), event.ydata
-            Chart_datalist = [SINR_Rx0_1[x],SINR_Rx1_1[x],Inst_RSRP_1[x],Inst_RSRQ_1[x],Inst_RSSI_1[x]]
-            i=0
-            while i < len(Chart_datalist):
-                Value = round(Chart_datalist[i],3)
-                self.tablewidget.item(i,1).setText(str(Value))
-                i+=1
+            Chart_datalist = []
+            x, y = int(event.xdata), event.ydata
+            for dict_item in result.items():
+                if not (dict_item[0] == 'time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for index in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
 
         # Call Event Function
         pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event', get_table_data)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
 
+    # Create LTE Line Chart
+    def LTE(self):
+        self.canvas.axes.set_title('LTE Line Chart')
+        Date = []
+        Time = []
+
+        # Open Database And Query
+        ChartQuery = LineChartQuery([
+            'time', 'lte_sinr_rx0_1', 'lte_sinr_rx1_1', 'lte_inst_rsrp_1',
+            'lte_inst_rsrq_1', 'lte_inst_rssi_1'
+        ], 'lte_cell_meas', '')
+        result = ChartQuery.getData()
+        for index in range(len(result['time'])):
+            Date.append(result['time'][index].split(' ')[0])
+            Time.append(result['time'][index].split(' ')[1])
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True)
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+
+        # Ploting Graph
+
+        lines = []
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+        for data in result.items():
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
+
+        # Line Focusing Function
+        def on_pick(event):
+            for Line in lines:
+                Line.set_linewidth(1)
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
+
+        # Show Data In Table
+        def get_table_data(event):
+            Chart_datalist = []
+            x, y = int(event.xdata), event.ydata
+            for dict_item in result.items():
+                if not (dict_item[0] == 'time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for row in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[row], 3)
+                self.tablewidget.item(row, 1).setText(str(Value))
+
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
+
+    # Create WCDMA Line Chart
+    def WCDMA(self):
+
+        #ยังไม่เสร็จ -- No data in Database
+
+        self.canvas.axes.set_title('WCDMA Line Chart')
+        Date = []
+        Time = []
+
+        # Open Database And Query
+        ChartQuery1 = LineChartQuery(
+            ['time', 'wcdma_aset_ecio_avg', 'wcdma_aset_rscp_avg'],
+            'wcdma_cell_meas', '')
+        result1 = ChartQuery1.getData()
+        ChartQuery2 = LineChartQuery(['wcdma_rssi'], 'wcdma_rx_power', '')
+        result2 = ChartQuery2.getData()
+        ChartQuery3 = LineChartQuery(
+            ['wcdma_bler_average_percent_all_channels'], 'wcdma_bler', '')
+        result3 = ChartQuery3.getData()
+        result1.update(result2)
+        result1.update(result3)
+        for index in range(len(result1['time'])):
+            Date.append(result1['time'][index].split(' ')[0])
+            Time.append(result1['time'][index].split(' ')[1])
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True)
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+
+        # Ploting Graph
+
+        lines = []
+
+        #Array for line's color
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+
+        for data in result1.items():
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
+
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
+
+        # Line Focusing Function
+        def on_pick(event):
+            for Line in lines:
+                Line.set_linewidth(1)
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
+
+        # Show Data In Table
+        def get_table_data(event):
+            Chart_datalist = []
+            x, y = int(event.xdata), event.ydata
+            for dict_item in result1.items():
+                if not (dict_item[0] == 'time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for index in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
+
+    # Create GSM Data Line Chart
+    def GSM_Data(self):
+
+        #ยังไม่เสร็จ -- No data in Database
+
+        self.canvas.axes.set_title('GSM Data Line Chart')
+        Date = []
+        Time = []
+
+        # Open Database And Query
+        ChartQuery1 = LineChartQuery(['time', 'data_gsm_rlc_dl_throughput'],
+                                     'data_egprs_stats', '')
+        result1 = ChartQuery1.getData()
+        ChartQuery2 = LineChartQuery(
+            ['data_app_dl_throughput_1', 'data_download_session_average'],
+            'data_app_throughput', '')
+        result2 = ChartQuery2.getData()
+        result1.update(result2)
+        for index in range(len(result1['time'])):
+            Date.append(result1['time'][index].split(' ')[0])
+            Time.append(result1['time'][index].split(' ')[1])
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True)
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+
+        # Ploting Graph
+
+        lines = []
+
+        #Array for line's color
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+
+        for data in result1.items():
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
+
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
+
+        # Line Focusing Function
+        def on_pick(event):
+            for Line in lines:
+                Line.set_linewidth(1)
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
+
+        # Show Data In Table
+        def get_table_data(event):
+            Chart_datalist = []
+            x, y = int(event.xdata), event.ydata
+            for dict_item in result1.items():
+                if not (dict_item[0] == 'time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for index in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
+
+    # Create WCDMA Data Line Chart
+    def WCDMA_Data(self):
+
+        #ยังไม่เสร็จ -- No data in Database
+
+        self.canvas.axes.set_title('WCDMA Data Line Chart')
+        Date = []
+        Time = []
+
+        # Open Database And Query
+        ChartQuery1 = LineChartQuery(['time', 'data_wcdma_rlc_dl_throughput'],
+                                     'data_wcdma_rlc_stats', '')
+        result1 = ChartQuery1.getData()
+        ChartQuery2 = LineChartQuery(
+            ['data_app_dl_throughput_1', 'data_download_session_average'],
+            'data_app_throughput', '')
+        result2 = ChartQuery2.getData()
+        ChartQuery3 = LineChartQuery(['data_hsdpa_throughput'],
+                                     'wcdma_hsdpa_stats', '')
+        result3 = ChartQuery3.getData()
+        result1.update(result2)
+        result1.update(result3)
+        for index in range(len(result1['time'])):
+            Date.append(result1['time'][index].split(' ')[0])
+            Time.append(result1['time'][index].split(' ')[1])
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True)
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+
+        # Ploting Graph
+
+        lines = []
+
+        #Array for line's color
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+
+        for data in result1.items():
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
+
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-120, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
+
+        # Line Focusing Function
+        def on_pick(event):
+            for Line in lines:
+                Line.set_linewidth(1)
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
+
+        # Show Data In Table
+        def get_table_data(event):
+            Chart_datalist = []
+            x, y = int(event.xdata), event.ydata
+            for dict_item in result1.items():
+                if not (dict_item[0] == 'time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for index in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
+
+    # Create LTE Data Line Chart
+    def LTE_Data(self):
+
+        self.canvas.axes.set_title('LTE Data Line Chart')
+        Date = []
+        Time = []
+
+        # Open Database And Query
+        ChartQuery1 = LineChartQuery(
+            ['time', 'lte_l1_throughput_mbps_1', 'lte_bler_1'], 'lte_l1_dl_tp',
+            '')
+        result1 = ChartQuery1.getData()
+        ChartQuery2 = LineChartQuery(
+            ['data_download_overall', 'data_upload_overall'],
+            'data_app_throughput', '')
+        result2 = ChartQuery2.getData()
+        result1.update(result2)
+        for index in range(len(result1['time'])):
+            Date.append(result1['time'][index].split(' ')[0])
+            Time.append(result1['time'][index].split(' ')[1])
+
+        # Graph setting
+        self.datelabel.setText(Date[0])
+        self.canvas.axes.set_facecolor('#fef8e7')
+        self.canvas.axes.autoscale(False)
+        self.canvas.axes.xaxis.grid(True)
+        self.canvas.axes.yaxis.grid(True)
+        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+
+        # Ploting Graph
+        lines = []
+        #Array for line's color
+        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+
+        for data in result1.items():
+            if data[0] != 'time':
+                newline, = self.canvas.axes.plot(Time,
+                                                 data[1],
+                                                 picker=5,
+                                                 linewidth=1)
+                lines.append(newline, )
+
+        for colorindex in range(len(lines)):
+            lines[colorindex].set_color(ColorArr[colorindex])
+
+        # Scale Editing
+        self.canvas.axes.set_ylim(-20, 35)
+        self.canvas.axes.set_xlim(Time[0], Time[3])
+
+        # Line Focusing Function
+        def on_pick(event):
+            for Line in lines:
+                Line.set_linewidth(1)
+            event.artist.set_linewidth(2.5)
+            self.canvas.draw()
+
+        # Show Data In Table
+        def get_table_data(event):
+            Chart_datalist = []
+            x, y = int(event.xdata), event.ydata
+            for dict_item in result1.items():
+                if not (dict_item[0] == 'time'):
+                    Chart_datalist.append(dict_item[1][x])
+            for index in range(len(Chart_datalist)):
+                Value = round(Chart_datalist[index], 3)
+                self.tablewidget.item(index, 1).setText(str(Value))
+
+        # Call Event Function
+        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        tabledata = self.canvas.mpl_connect('button_press_event',
+                                            get_table_data)
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
 class LineChartQuery:
+    def __init__(self, fieldArr, tableName, conditionStr):
+        self.fieldArr = fieldArr
+        self.tableName = tableName
+        self.condition = conditionStr
+
+    def countField(self):
+        fieldCount = 0
+        if self.fieldArr is not None:
+            fieldCount = len(self.fieldArr)
+        return fieldCount
+
+    def selectFieldToQuery(self):
+        selectField = '*'
+        if self.fieldArr is not None:
+            selectField = ",".join(self.fieldArr)
+        return selectField
+
+    def getData(self):
+        result = dict()
+        selectField = self.selectFieldToQuery()
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = 'select %s from %s' % (selectField, self.tableName)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(self.fieldArr)):
+                fieldName = self.fieldArr[field]
+                validatedValue = self.valueValidation(query.value(field))
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(validatedValue)
+                    else:
+                        result[fieldName] = [validatedValue]
+                else:
+                    result[fieldName] = [validatedValue]
+        azenqosDatabase.close()
+        return result
+
+    def valueValidation(self, value):
+        validatedValue = 0
+        if value != '':
+            validatedValue = value
+        return validatedValue
+
+
+class DataQuery:
     def __inti__(self, fieldArr, tableName, conditionStr):
         self.fieldArr = fieldArr
         self.tableName = tableName
@@ -1901,27 +3958,6 @@ class LineChartQuery:
             validatedValue = value
         return validatedValue
 
-    # def getList():
-    #     result = dict()
-    #     fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
-    #     selectField = ",".join(fields)
-    #     azenqosDatabase.open()
-    #     query = QSqlQuery()
-    #     queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
-    #     query.exec_(queryString)
-    #     while query.next():
-    #         for field in range(len(fields)):
-    #             fieldName = fields[field]
-    #             if fieldName in result:
-    #                 if isinstance(result[fieldName], list):
-    #                     result[fieldName].append(query.value(field))
-    #                 else:
-    #                     result[fieldName] = [query.value(field)]
-    #             else:
-    #                 result[fieldName] = [query.value(field)]
-
-    #     azenqosDatabase.close()
-    #     print(result)
 
 class setInterval:
     def __init__(self, value, interval, action):
@@ -1940,27 +3976,6 @@ class setInterval:
     def cancel(self):
         self.stopEvent.set()
 
-def getList():
-        result = dict()
-        fields = ['time' ,'lte_sinr_rx0_1' ,'lte_sinr_rx1_1' ,'lte_inst_rsrp_1' ,'lte_inst_rsrq_1' ,'lte_inst_rssi_1']
-        selectField = ",".join(fields)
-        azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "SELECT %s FROM lte_cell_meas"%(selectField)
-        query.exec_(queryString)
-        while query.next():
-            for field in range(len(fields)):
-                fieldName = fields[field]
-                if fieldName in result:
-                    if isinstance(result[fieldName], list):
-                        result[fieldName].append(query.value(field))
-                    else:
-                        result[fieldName] = [query.value(field)]
-                else:
-                    result[fieldName] = [query.value(field)]
-
-        azenqosDatabase.close()
-        print(result)
 
 # if __name__ == '__main__':
 #     app = QApplication(sys.argv)

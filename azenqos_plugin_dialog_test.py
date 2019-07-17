@@ -431,6 +431,7 @@ class AzenqosDialog(QDialog):
             for x in range(int(sliderLength)):
                 value = timeSlider.value() + 1
                 self.addTime(value)
+        print(int(sliderLength))        
         isSliderPlay = False
 
     def addTime(self, value):
@@ -816,7 +817,7 @@ class AzenqosDialog(QDialog):
         #         print("1")
 
 
-class TimeSlider(QSlider):
+class TimeSlider(QSlider): ##
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -1305,6 +1306,7 @@ class WcdmaDataQuery: ##
                              data_wcdma_bearer_rate_ul_%d 
                              FROM wcdma_bearers %s 
                              ORDER BY time DESC LIMIT 1""" % (bearers,bearers,bearers,condition)
+                             
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -1333,13 +1335,15 @@ class WcdmaDataQuery: ##
                              FROM wcdma_pilot_pollution
                              %s
                              ORDER BY time DESC LIMIT 1""" % (pollution,pollution,pollution,condition)
+   
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
             if rowCount > 0:
                 while query.next():
                     if query.value(0):             
-                        row[0] = query.value(0)
+                        #row[0] = query.value(0)
+                        row[0] = self.timeFilter
                         row[1] = query.value(1)
                         for index in range(2,len(row)):
                             row[index] = query.value(index)

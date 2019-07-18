@@ -201,7 +201,7 @@ class Ui_DatabaseDialog(QDialog):
         while query.next():
             timeCount = query.value(0)
         global sliderLength
-        sliderLength = maxTimeValue - minTimeValue
+        sliderLength = maxTimeValue - minTimeValue      
         azenqosDatabase.close()
 
     def setCenterMap(self):
@@ -250,6 +250,7 @@ class AzenqosDialog(QDialog):
         timeSlider.setOrientation(QtCore.Qt.Horizontal)
         timeSlider.setObjectName("timeSlider")
         timeSlider.setTracking(True)
+        timeSlider.setRange(0,int(sliderLength))
 
         # Datetime Textbox
         self.timeEdit = QDateTimeEdit(AzenqosDialog)
@@ -424,18 +425,32 @@ class AzenqosDialog(QDialog):
         layout.addWidget(self.playButton)
         layout.addWidget(self.pauseButton)
         self.playButton.clicked.connect(self.playTime)
+        self.pauseButton.clicked.connect(self.pauseTime)
 
     def playTime(self):
         # todo ยังไม่เสร็จ
+        #timeSlider.setRange(timeSlider.value(),int(sliderLength))
         global isSliderPlay
         isSliderPlay = True
-        if isSliderPlay:
-            for x in range(int(sliderLength)):
-                value = timeSlider.value() + 1
-                self.addTime(value)
+        if isSliderPlay:        
+            for x in range(int(sliderLength)):                         
+                if not isSliderPlay:
+                    #QApplication.exec_()
+                    break         
+                else:
+                    time.sleep(0.5)          
+                    value = timeSlider.value() + 1  
+                    self.addTime(value) 
+                    QApplication.processEvents()                
+        isSliderPlay = False  
+
+    def pauseTime(self):
+        global isSliderPlay
         isSliderPlay = False
+        QApplication.exec_()       
 
     def addTime(self, value):
+        #self.timeChange()
         timeSlider.setValue(value)
         timeSlider.repaint()
 
@@ -463,8 +478,10 @@ class AzenqosDialog(QDialog):
         self.timeEdit.setDateTime(sampledate)
         currentTimestamp = timestampValue
         timeSlider.update()
+        linechartWindowname = ['WCDMA_Line Chart','LTE_LTE Line Chart','Data_WCDMA Data Line Chart','Data_LTE Data Line Chart']
         for window in openedWindows:
-            window.hilightRow(sampledate)
+            if not window.title in linechartWindowname:
+                window.hilightRow(sampledate)
         currentDateTimeString = '%s' % (
             datetime.datetime.fromtimestamp(currentTimestamp))
 
@@ -789,7 +806,7 @@ class AzenqosDialog(QDialog):
                     pass
 
 
-class TimeSlider(QSlider):
+class TimeSlider(QSlider): ##
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -1056,7 +1073,7 @@ class TableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-class WcdmaDataQuery:  ##
+class WcdmaDataQuery:  
     def __init__(self):
         self.timeFilter = ''
         if currentDateTimeString:
@@ -1283,10 +1300,10 @@ class WcdmaDataQuery:  ##
         maxBearers = 10
         for bearers in range(1, maxBearers):
             queryString = """SELECT data_wcdma_n_bearers,data_wcdma_bearer_id_%d,data_wcdma_bearer_rate_dl_%d,
-                            data_wcdma_bearer_rate_ul_%d
-                            FROM wcdma_bearers %s
-                            ORDER BY time DESC LIMIT 1""" % (
-                bearers, bearers, bearers, condition)
+                             data_wcdma_bearer_rate_ul_%d 
+                             FROM wcdma_bearers %s 
+                             ORDER BY time DESC LIMIT 1""" % (bearers,bearers,bearers,condition)
+                             
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -1311,18 +1328,19 @@ class WcdmaDataQuery:  ##
         maxPollution = 32
         for pollution in range(1, maxPollution):
             queryString = """SELECT time,wcdma_n_pilot_polluting_cells,wcdma_pilot_polluting_cell_sc_%d,
-                            wcdma_pilot_polluting_cell_rscp_%d,wcdma_pilot_polluting_cell_ecio_%d
-                            FROM wcdma_pilot_pollution
-                            %s
-                            ORDER BY time DESC LIMIT 1""" % (
-                pollution, pollution, pollution, condition)
+                             wcdma_pilot_polluting_cell_rscp_%d,wcdma_pilot_polluting_cell_ecio_%d
+                             FROM wcdma_pilot_pollution
+                             %s
+                             ORDER BY time DESC LIMIT 1""" % (pollution,pollution,pollution,condition)
+   
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
             if rowCount > 0:
                 while query.next():
-                    if query.value(0):
-                        row[0] = query.value(0)
+                    if query.value(0):             
+                        #row[0] = query.value(0)
+                        row[0] = self.timeFilter
                         row[1] = query.value(1)
                         for index in range(2, len(row)):
                             row[index] = query.value(index)
@@ -2116,11 +2134,10 @@ class SignalingDataQuery:
         ]
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        queryString = """SELECT '' as header,lte_rlc_dl_tp,'' as lte_rlc_ul_tp
+        queryString = """SELECT '' as header,lte_rlc_dl_tp,lte_rlc_ul_tp
                          FROM lte_rlc_stats
                          %s
                          ORDER BY time DESC LIMIT 1""" % (condition)
-        #ยังไม่มี LTE RLC UL Throughput ใน DB
 
         query = QSqlQuery()
         query.exec_(queryString)

@@ -4127,7 +4127,7 @@ class CellInformation(QDialog):
 
     def retranslateUi(self, CellInformation):
         _translate = QtCore.QCoreApplication.translate
-        CellInformation.setWindowTitle(_translate("CellInformation", "CellInformation"))
+        CellInformation.setWindowTitle(_translate("CellInformation", "Cell Information"))
         self.Setting.setTitle(_translate("CellInformation", "Setting"))
         self.OpacityCheckbox.setText(_translate("CellInformation", "Opacity"))
         self.PercentageLabel.setText(_translate("CellInformation", "%"))

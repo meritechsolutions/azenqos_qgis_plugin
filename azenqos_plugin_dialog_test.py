@@ -201,7 +201,7 @@ class Ui_DatabaseDialog(QDialog):
         while query.next():
             timeCount = query.value(0)
         global sliderLength
-        sliderLength = maxTimeValue - minTimeValue      
+        sliderLength = maxTimeValue - minTimeValue
         azenqosDatabase.close()
 
     def setCenterMap(self):
@@ -432,22 +432,22 @@ class AzenqosDialog(QDialog):
         #timeSlider.setRange(timeSlider.value(),int(sliderLength))
         global isSliderPlay
         isSliderPlay = True
-        if isSliderPlay:        
-            for x in range(int(sliderLength)):                         
+        if isSliderPlay:
+            for x in range(int(sliderLength)):
                 if not isSliderPlay:
                     #QApplication.exec_()
-                    break         
+                    break
                 else:
-                    time.sleep(0.5)          
-                    value = timeSlider.value() + 1  
-                    self.addTime(value) 
-                    QApplication.processEvents()                
-        isSliderPlay = False  
+                    time.sleep(0.5)
+                    value = timeSlider.value() + 1
+                    self.addTime(value)
+                    QApplication.processEvents()
+        isSliderPlay = False
 
     def pauseTime(self):
         global isSliderPlay
         isSliderPlay = False
-        QApplication.exec_()       
+        QApplication.exec_()
 
     def addTime(self, value):
         #self.timeChange()
@@ -1073,7 +1073,7 @@ class TableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-class WcdmaDataQuery:  
+class WcdmaDataQuery:
     def __init__(self):
         self.timeFilter = ''
         if currentDateTimeString:
@@ -1300,10 +1300,10 @@ class WcdmaDataQuery:
         maxBearers = 10
         for bearers in range(1, maxBearers):
             queryString = """SELECT data_wcdma_n_bearers,data_wcdma_bearer_id_%d,data_wcdma_bearer_rate_dl_%d,
-                             data_wcdma_bearer_rate_ul_%d 
-                             FROM wcdma_bearers %s 
+                             data_wcdma_bearer_rate_ul_%d
+                             FROM wcdma_bearers %s
                              ORDER BY time DESC LIMIT 1""" % (bearers,bearers,bearers,condition)
-                             
+
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -1332,13 +1332,13 @@ class WcdmaDataQuery:
                              FROM wcdma_pilot_pollution
                              %s
                              ORDER BY time DESC LIMIT 1""" % (pollution,pollution,pollution,condition)
-   
+
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
             if rowCount > 0:
                 while query.next():
-                    if query.value(0):             
+                    if query.value(0):
                         #row[0] = query.value(0)
                         row[0] = self.timeFilter
                         row[1] = query.value(1)
@@ -2213,9 +2213,9 @@ class SignalingDataQuery:
                 if query.value(field):
                     dataList.append(
                         [fieldsList[field],
-                         query.value(field), '', '', ''])
+                         query.value(field)])
                 else:
-                    dataList.append([fieldsList[field], '', '', '', ''])
+                    dataList.append([fieldsList[field], ''])
         azenqosDatabase.close()
         return dataList
 
@@ -3992,24 +3992,6 @@ class DataQuery:
         return validatedValue
 
 
-class setInterval:
-    def __init__(self, value, interval, action):
-        self.interval = interval
-        self.action = action
-        self.stopEvent = threading.Event()
-        thread = threading.Thread(target=self.__setInterval)
-        thread.start()
-
-    def __setInterval(self):
-        nextTime = time.time() + self.interval
-        while not self.stopEvent.wait(nextTime - time.time()):
-            nextTime += self.interval
-            self.action()
-
-    def cancel(self):
-        self.stopEvent.set()
-
-
 class CellInformation(QDialog):
     def __init__(self, parent = None):
         super(CellInformation, self).__init__(parent)
@@ -4139,6 +4121,11 @@ class CellInformation(QDialog):
         self.buttonBox.setObjectName("buttonBox")
         self.ButtonLayout.addWidget(self.buttonBox)
 
+        self.BrowseButton1.clicked.connect(self.browseFile(1))
+        self.BrowseButton2.clicked.connect(self.browseFile(2))
+        self.BrowseButton3.clicked.connect(self.browseFile(3))
+        self.BrowseButton4.clicked.connect(self.browseFile(4))
+
         self.retranslateUi(CellInformation)
         QtCore.QMetaObject.connectSlotsByName(CellInformation)
 
@@ -4165,7 +4152,26 @@ class CellInformation(QDialog):
         self.BrowseButton3.setText(_translate("CellInformation", "Browse"))
         self.BrowseButton4.setText(_translate("CellInformation", "Browse"))
 
-    def browseFile(self):
+    def browseFile(self, buttonNo):
+        fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
+                                                  QtCore.QDir.rootPath(),
+                                                  '*.cel')
+        if buttonNo == 1:
+            return False
+        elif buttonNo == 2:
+            return False
+        elif buttonNo == 3:
+            return False
+        elif buttonNo == 4:
+            return False
+
+        if fileName != "":
+            baseFileName = os.path.basename(str(fileName))
+            self.dbPath.setText(fileName)
+            self.databasePath = fileName
+        else:
+            if self.dbPath.toPlainText() != "":
+                self.databasePath = self.dbPath.toPlainText()
         return False
 
 

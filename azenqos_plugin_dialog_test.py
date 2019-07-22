@@ -121,7 +121,6 @@ class Ui_DatabaseDialog(QDialog):
 
     def checkDatabase(self):
         self.addDatabase()
-        self.findMinMaxTimeDate()
         if not azenqosDatabase.open():
             QtWidgets.QMessageBox.critical(
                 None, "Cannot open database",

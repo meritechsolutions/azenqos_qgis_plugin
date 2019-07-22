@@ -3105,7 +3105,8 @@ class Line_Chart(QWidget):
         self.tablewidget = tablewidget
         self.datelabel = datelabel
         self.Date = []
-        self.Time = []    
+        self.Time = [] 
+        self.lines = []   
         self.result = {}
         #print(self.title)
 
@@ -3122,6 +3123,24 @@ class Line_Chart(QWidget):
             self.LTE_Data()
         elif self.title == 'Data_WCDMA Data Line Chart':
             self.WCDMA_Data()
+
+    # Event Function
+    def on_pick(self,event):
+        for Line in self.lines:
+            Line.set_linewidth(1)
+        event.artist.set_linewidth(2.5)
+        self.canvas.draw()
+
+    # Show Data In Table
+    def get_table_data(self,event):
+        Chart_datalist = []
+        x, y = int(event.xdata), event.ydata
+        for dict_item in self.result.items():
+            if not (dict_item[0] == 'time'):
+                Chart_datalist.append(dict_item[1][x])
+        for row in range(len(Chart_datalist)):
+            Value = round(Chart_datalist[row], 3)
+            self.tablewidget.item(row, 1).setText(str(Value))        
        
     # Create LTE Line Chart
     def LTE(self):
@@ -3149,7 +3168,7 @@ class Line_Chart(QWidget):
 
         # Ploting Graph
 
-        lines = []
+        #lines = []
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
         for data in self.result.items():
             if data[0] != 'time':
@@ -3157,36 +3176,18 @@ class Line_Chart(QWidget):
                                                  data[1],
                                                  picker=5,
                                                  linewidth=1)
-                lines.append(newline, )
-        for colorindex in range(len(lines)):
-            lines[colorindex].set_color(ColorArr[colorindex])
+                self.lines.append(newline, )
+        for colorindex in range(len(self.lines)):
+            self.lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
         self.canvas.axes.set_ylim(-120, 20)
         self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
-        # Line Focusing Function
-        def on_pick(event):
-            for Line in lines:
-                Line.set_linewidth(1)
-            event.artist.set_linewidth(2.5)
-            self.canvas.draw()
-
-        # Show Data In Table
-        def get_table_data(event):
-            Chart_datalist = []
-            x, y = int(event.xdata), event.ydata
-            for dict_item in self.result.items():
-                if not (dict_item[0] == 'time'):
-                    Chart_datalist.append(dict_item[1][x])
-            for row in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[row], 3)
-                self.tablewidget.item(row, 1).setText(str(Value))
-
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        pick = self.canvas.mpl_connect('pick_event', self.on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event',
-                                            get_table_data)
+                                            self.get_table_data)
 
     # Create WCDMA Line Chart
     def WCDMA(self):
@@ -3223,8 +3224,6 @@ class Line_Chart(QWidget):
 
         # Ploting Graph
 
-        lines = []
-
         #Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
@@ -3234,37 +3233,19 @@ class Line_Chart(QWidget):
                                                  data[1],
                                                  picker=5,
                                                  linewidth=1)
-                lines.append(newline, )
+                self.lines.append(newline, )
 
-        for colorindex in range(len(lines)):
-            lines[colorindex].set_color(ColorArr[colorindex])
+        for colorindex in range(len(self.lines)):
+            self.lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
         self.canvas.axes.set_ylim(-120, 20)
         self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
-        # Line Focusing Function
-        def on_pick(event):
-            for Line in lines:
-                Line.set_linewidth(1)
-            event.artist.set_linewidth(2.5)
-            self.canvas.draw()
-
-        # Show Data In Table
-        def get_table_data(event):
-            Chart_datalist = []
-            x, y = int(event.xdata), event.ydata
-            for dict_item in self.result.items():
-                if not (dict_item[0] == 'time'):
-                    Chart_datalist.append(dict_item[1][x])
-            for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index], 3)
-                self.tablewidget.item(index, 1).setText(str(Value))
-
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        pick = self.canvas.mpl_connect('pick_event', self.on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event',
-                                            get_table_data)
+                                            self.get_table_data)
 
     # Create WCDMA Data Line Chart
     def WCDMA_Data(self):
@@ -3302,8 +3283,6 @@ class Line_Chart(QWidget):
 
         # Ploting Graph
 
-        lines = []
-
         #Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
@@ -3313,37 +3292,19 @@ class Line_Chart(QWidget):
                                                  data[1],
                                                  picker=5,
                                                  linewidth=1)
-                lines.append(newline, )
+                self.lines.append(newline, )
 
-        for colorindex in range(len(lines)):
-            lines[colorindex].set_color(ColorArr[colorindex])
+        for colorindex in range(len(self.lines)):
+            self.lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
         self.canvas.axes.set_ylim(-120, 20)
         self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
-        # Line Focusing Function
-        def on_pick(event):
-            for Line in lines:
-                Line.set_linewidth(1)
-            event.artist.set_linewidth(2.5)
-            self.canvas.draw()
-
-        # Show Data In Table
-        def get_table_data(event):
-            Chart_datalist = []
-            x, y = int(event.xdata), event.ydata
-            for dict_item in self.result.items():
-                if not (dict_item[0] == 'time'):
-                    Chart_datalist.append(dict_item[1][x])
-            for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index], 3)
-                self.tablewidget.item(index, 1).setText(str(Value))
-
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        pick = self.canvas.mpl_connect('pick_event', self.on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event',
-                                            get_table_data)
+                                            self.get_table_data)
 
     # Create LTE Data Line Chart
     def LTE_Data(self):
@@ -3375,7 +3336,7 @@ class Line_Chart(QWidget):
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
-        lines = []
+ 
         #Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
@@ -3385,39 +3346,22 @@ class Line_Chart(QWidget):
                                                  data[1],
                                                  picker=5,
                                                  linewidth=1)
-                lines.append(newline, )
+                self.lines.append(newline, )
 
-        for colorindex in range(len(lines)):
-            lines[colorindex].set_color(ColorArr[colorindex])
+        for colorindex in range(len(self.lines)):
+            self.lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
         self.canvas.axes.set_ylim(-20, 35)
         self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
-        # Line Focusing Function
-        def on_pick(event):
-            for Line in lines:
-                Line.set_linewidth(1)
-            event.artist.set_linewidth(2.5)
-            self.canvas.draw()
-
-        # Show Data In Table
-        def get_table_data(event):
-            Chart_datalist = []
-            x, y = int(event.xdata), event.ydata
-            for dict_item in self.result.items():
-                if not (dict_item[0] == 'time'):
-                    Chart_datalist.append(dict_item[1][x])
-            for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index], 3)
-                self.tablewidget.item(index, 1).setText(str(Value))
-
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', on_pick)
+        pick = self.canvas.mpl_connect('pick_event', self.on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event',
-                                            get_table_data)
+                                            self.get_table_data)
 
     def moveLineChart(self,sampledate):
+    # Shift Part
         dateString = str(sampledate)
         timeString = dateString.split(' ')[1][:8]
         currentTimeindex = 0
@@ -3426,13 +3370,15 @@ class Line_Chart(QWidget):
                 currentTimeindex = self.Time.index(timeItem)
                 self.canvas.axes.set_xlim(self.Time[currentTimeindex], self.Time[currentTimeindex+4]) 
                 break
+    # Update table part
         Chart_datalist = []
         for dict_item in self.result.items():
             if not (dict_item[0] == 'time'):
                 Chart_datalist.append(dict_item[1][currentTimeindex])
         for row in range(len(Chart_datalist)):
             Value = round(Chart_datalist[row], 3)
-            self.tablewidget.item(row, 1).setText(str(Value))        
+            self.tablewidget.item(row, 1).setText(str(Value)) 
+                   
         self.canvas.draw()
                  
 class LineChartQuery:

@@ -15,7 +15,7 @@ class WcdmaDataQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         selectedColumns = """time,wcdma_cellfile_matched_cellname_1,
                              wcdma_celltype_1,wcdma_sc_1,wcdma_ecio_1,wcdma_rscp_1,
-	                         wcdma_cellfreq_1"""
+	                           wcdma_cellfreq_1"""
         #ขาด Column Event
         queryString = """SELECT %s FROM wcdma_cells_combined %s ORDER BY time""" % (
             selectedColumns, condition)

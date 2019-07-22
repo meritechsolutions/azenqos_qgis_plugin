@@ -489,6 +489,8 @@ class AzenqosDialog(QDialog):
         for window in openedWindows:
             if not window.title in linechartWindowname:
                 window.hilightRow(sampledate)
+            else:      
+                window.moveChart(sampledate)    
         currentDateTimeString = '%s' % (
             datetime.datetime.fromtimestamp(currentTimestamp))
 
@@ -653,14 +655,7 @@ class AzenqosDialog(QDialog):
                     openedWindows.append(self.cdma_evdo_window)
                     self.cdma_evdo_window.show()
         elif parent == "Data":
-            if child == "GSM Data Line Chart":
-                if hasattr(self, 'gsm_data_lc'):
-                    self.gsm_data_lc.show()
-                else:
-                    self.gsm_data_lc = Ui_GSM_Data_LCwidget(windowName)
-                    openedWindows.append(self.gsm_data_lc)
-                    self.gsm_data_lc.show()
-            elif child == "WCDMA Data Line Chart":
+            if child == "WCDMA Data Line Chart":
                 if hasattr(self, 'wcdma_data_lc'):
                     self.wcdma_data_lc.show()
                 else:
@@ -1207,157 +1202,6 @@ class DataQuery:
         azenqosDatabase.close()
         return dataList
 
-
-# GSM Line Chart UI
-class Ui_GSM_LCwidget(QWidget):
-    def __init__(self, windowName):
-        super(Ui_GSM_LCwidget, self).__init__()
-        self.title = windowName
-        self.setupUi(self)
-
-    def setupUi(self, GSM_LCwidget):
-        GSM_LCwidget.setObjectName("GSM_LCwidget")
-        GSM_LCwidget.resize(841, 586)
-
-        # Graph Area
-        self.gsm_GArea = QtWidgets.QScrollArea(GSM_LCwidget)
-        self.gsm_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
-        self.gsm_GArea.setWidgetResizable(True)
-        self.gsm_GArea.setObjectName("gsm_GArea")
-
-        # Scroll Area
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.gsm_GArea.setWidget(self.scrollAreaWidgetContents)
-
-        # DataTable
-        self.gsm_tableWidget = QtWidgets.QTableWidget(GSM_LCwidget)
-        self.gsm_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 81))
-        self.gsm_tableWidget.setObjectName("gsm_tableWidget")
-        self.gsm_tableWidget.setColumnCount(4)
-        self.gsm_tableWidget.setRowCount(2)
-        item = QtWidgets.QTableWidgetItem()
-        self.gsm_tableWidget.setVerticalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.gsm_tableWidget.setVerticalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.gsm_tableWidget.setVerticalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.gsm_tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.gsm_tableWidget.setHorizontalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.gsm_tableWidget.setHorizontalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.gsm_tableWidget.setHorizontalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_tableWidget.setItem(0, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_tableWidget.setItem(0, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_tableWidget.setItem(0, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.gsm_tableWidget.setItem(0, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_tableWidget.setItem(1, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_tableWidget.setItem(1, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_tableWidget.setItem(1, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.gsm_tableWidget.setItem(1, 3, item)
-        self.gsm_tableWidget.horizontalHeader().setVisible(True)
-        self.gsm_tableWidget.horizontalHeader().setHighlightSections(True)
-        self.gsm_tableWidget.verticalHeader().setVisible(False)
-
-        # DateLabel
-        self.datelabel = QtWidgets.QLabel(GSM_LCwidget)
-        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.datelabel.setFont(font)
-        self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QtWidgets.QLineEdit(GSM_LCwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lineEdit.setFont(font)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
-
-        # Graph's Widget
-        self.gsm_widget = Line_Chart(self.scrollAreaWidgetContents, self.title,
-                                     self.gsm_tableWidget, self.lineEdit)
-        self.gsm_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
-        self.gsm_widget.setObjectName("gsm_widget")
-
-        self.retranslateUi(GSM_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(GSM_LCwidget)
-
-    def retranslateUi(self, GSM_LCwidget):
-        _translate = QtCore.QCoreApplication.translate
-        GSM_LCwidget.setWindowTitle(
-            _translate("GSM_LCwidget", "GSM Line Chart [MS1]"))
-        item = self.gsm_tableWidget.verticalHeaderItem(0)
-        item.setText(_translate("GSM_LCwidget", "1"))
-        item = self.gsm_tableWidget.verticalHeaderItem(1)
-        item.setText(_translate("GSM_LCwidget", "2"))
-        item = self.gsm_tableWidget.horizontalHeaderItem(0)
-        item.setText(_translate("GSM_LCwidget", "Element"))
-        item = self.gsm_tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("GSM_LCwidget", "Value"))
-        item = self.gsm_tableWidget.horizontalHeaderItem(2)
-        item.setText(_translate("GSM_LCwidget", "MS"))
-        item = self.gsm_tableWidget.horizontalHeaderItem(3)
-        item.setText(_translate("GSM_LCwidget", "Color"))
-        __sortingEnabled = self.gsm_tableWidget.isSortingEnabled()
-        self.gsm_tableWidget.setSortingEnabled(False)
-        item = self.gsm_tableWidget.item(0, 0)
-        item.setText(_translate("GSM_LCwidget", "RxLev Sub (dBm)"))
-        item = self.gsm_tableWidget.item(0, 2)
-        item.setText(_translate("GSM_LCwidget", "MS1"))
-        item = self.gsm_tableWidget.item(1, 0)
-        item.setText(_translate("GSM_LCwidget", "RxQual Sub"))
-        item = self.gsm_tableWidget.item(1, 2)
-        item.setText(_translate("GSM_LCwidget", "MS1"))
-        self.gsm_tableWidget.setSortingEnabled(__sortingEnabled)
-        self.datelabel.setText(_translate("GSM_LCwidget", "Date :"))
-
-
 # LTE Line Chart UI
 class Ui_LTE_LCwidget(QWidget):
     def __init__(self, windowName):
@@ -1574,6 +1418,8 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
 
+    def moveChart(self,sampledate):      
+        self.lte_widget.moveLineChart(sampledate)
 
 # WCDMA Line Chart UI
 class Ui_WCDMA_LCwidget(QWidget):
@@ -1767,6 +1613,8 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.wcdma_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_LCwidget", "Date :"))
 
+    def moveChart(self,sampledate):      
+        self.wcdma_widget.moveLineChart(sampledate)
 
 # LTE Data Line Chart UI
 class Ui_LTE_Data_LCwidget(QWidget):
@@ -1965,185 +1813,8 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_Data_LCwidget", "Date :"))
 
-
-# GSM Data Line Chart UI
-class Ui_GSM_Data_LCwidget(QWidget):
-    def __init__(self, windowName):
-        super(Ui_GSM_Data_LCwidget, self).__init__()
-        self.title = windowName
-        self.setupUi(self)
-
-    def setupUi(self, GSM_Data_LCwidget):
-        GSM_Data_LCwidget.setObjectName("GSM_Data_LCwidget")
-        GSM_Data_LCwidget.resize(841, 586)
-
-        # Graph Area
-        self.gsm_datalc_GArea = QtWidgets.QScrollArea(GSM_Data_LCwidget)
-        self.gsm_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
-        self.gsm_datalc_GArea.setWidgetResizable(True)
-        self.gsm_datalc_GArea.setObjectName("gsm_datalc_GArea")
-
-        # Scroll Area
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.gsm_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
-
-        # DataTable
-        self.gsm_data_tableWidget = QtWidgets.QTableWidget(GSM_Data_LCwidget)
-        self.gsm_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 111))
-        self.gsm_data_tableWidget.setObjectName("gsm_data_tableWidget")
-        self.gsm_data_tableWidget.setColumnCount(4)
-        self.gsm_data_tableWidget.setRowCount(3)
-        item = QtWidgets.QTableWidgetItem()
-        self.gsm_data_tableWidget.setVerticalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.gsm_data_tableWidget.setVerticalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.gsm_data_tableWidget.setVerticalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.gsm_data_tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.gsm_data_tableWidget.setHorizontalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.gsm_data_tableWidget.setHorizontalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.gsm_data_tableWidget.setHorizontalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(0, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(0, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(0, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.gsm_data_tableWidget.setItem(0, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(1, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(1, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(1, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.gsm_data_tableWidget.setItem(1, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(2, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(2, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.gsm_data_tableWidget.setItem(2, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.gsm_data_tableWidget.setItem(2, 3, item)
-
-        self.gsm_data_tableWidget.horizontalHeader().setVisible(True)
-        self.gsm_data_tableWidget.horizontalHeader().setHighlightSections(True)
-        self.gsm_data_tableWidget.verticalHeader().setVisible(False)
-
-        # DateLabel
-        self.datelabel = QtWidgets.QLabel(GSM_Data_LCwidget)
-        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.datelabel.setFont(font)
-        self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QtWidgets.QLineEdit(GSM_Data_LCwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lineEdit.setFont(font)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
-
-        # Graph's Widget
-        self.gsm_data_widget = Line_Chart(self.scrollAreaWidgetContents,
-                                          self.title,
-                                          self.gsm_data_tableWidget,
-                                          self.lineEdit)
-        self.gsm_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
-        self.gsm_data_widget.setObjectName("gsm_data_widget")
-
-        self.retranslateUi(GSM_Data_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(GSM_Data_LCwidget)
-
-    def retranslateUi(self, GSM_Data_LCwidget):
-        _translate = QtCore.QCoreApplication.translate
-        GSM_Data_LCwidget.setWindowTitle(
-            _translate("GSM_Data_LCwidget", "GSM Data Line Chart [MS1]"))
-        item = self.gsm_data_tableWidget.verticalHeaderItem(0)
-        item.setText(_translate("GSM_Data_LCwidget", "1"))
-        item = self.gsm_data_tableWidget.verticalHeaderItem(1)
-        item.setText(_translate("GSM_Data_LCwidget", "2"))
-        item = self.gsm_data_tableWidget.verticalHeaderItem(2)
-        item.setText(_translate("GSM_Data_LCwidget", "3"))
-        item = self.gsm_data_tableWidget.horizontalHeaderItem(0)
-        item.setText(_translate("GSM_Data_LCwidget", "Element"))
-        item = self.gsm_data_tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("GSM_Data_LCwidget", "Value"))
-        item = self.gsm_data_tableWidget.horizontalHeaderItem(2)
-        item.setText(_translate("GSM_Data_LCwidget", "MS"))
-        item = self.gsm_data_tableWidget.horizontalHeaderItem(3)
-        item.setText(_translate("GSM_Data_LCwidget", "Color"))
-        __sortingEnabled = self.gsm_data_tableWidget.isSortingEnabled()
-        self.gsm_data_tableWidget.setSortingEnabled(False)
-        item = self.gsm_data_tableWidget.item(0, 0)
-        item.setText(
-            _translate("GSM_Data_LCwidget", "GSM RLC DL Throughput (kbit/s)"))
-        item = self.gsm_data_tableWidget.item(0, 2)
-        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
-        item = self.gsm_data_tableWidget.item(1, 0)
-        item.setText(
-            _translate("GSM_Data_LCwidget",
-                       "Application DL Throughput(kbps)[1]"))
-        item = self.gsm_data_tableWidget.item(1, 2)
-        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
-        item = self.gsm_data_tableWidget.item(2, 0)
-        item.setText(
-            _translate("GSM_Data_LCwidget",
-                       "Download Session Average Throughput(kbps)"))
-        item = self.gsm_data_tableWidget.item(2, 2)
-        item.setText(_translate("GSM_Data_LCwidget", "MS1"))
-
-        self.gsm_data_tableWidget.setSortingEnabled(__sortingEnabled)
-        self.datelabel.setText(_translate("GSM_Data_LCwidget", "Date :"))
-
+    def moveChart(self,sampledate):      
+        self.lte_data_widget.moveLineChart(sampledate)
 
 # WCDMA Data Line Chart UI
 class Ui_WCDMA_Data_LCwidget(QWidget):
@@ -2348,6 +2019,8 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.wcdma_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
 
+    def moveChart(self,sampledate):      
+        self.wcdma_data_widget.moveLineChart(sampledate)
 
 # Class For Line Chart
 class Line_Chart(QWidget):
@@ -2361,6 +2034,9 @@ class Line_Chart(QWidget):
         self.title = windowName
         self.tablewidget = tablewidget
         self.datelabel = datelabel
+        self.Date = []
+        self.Time = []    
+        self.result = {}
         #print(self.title)
 
         # Graph Toolbar
@@ -2370,111 +2046,34 @@ class Line_Chart(QWidget):
         # Choose Line Chart By WindowName
         if self.title == 'LTE_LTE Line Chart':
             self.LTE()
-        elif self.title == 'GSM_GSM Line Chart':
-            self.GSM()
         elif self.title == 'WCDMA_Line Chart':
             self.WCDMA()
         elif self.title == 'Data_LTE Data Line Chart':
             self.LTE_Data()
-        elif self.title == 'Data_GSM Data Line Chart':
-            self.GSM_Data()
         elif self.title == 'Data_WCDMA Data Line Chart':
             self.WCDMA_Data()
-
-    # Create GSM Line Chart
-    def GSM(self):
-
-        #ยังไม่เสร็จ -- No data in Database
-
-        self.canvas.axes.set_title('GSM Line Chart')
-        Date = []
-        Time = []
-
-        # Open Database And Query
-        ChartQuery = LineChartQuery(
-            ['time', 'gsm_rxlev_sub_dbm', 'gsm_rxqual_sub'], 'gsm_cell_meas',
-            '')
-        result = ChartQuery.getData()
-        for index in range(len(result['time'])):
-            Date.append(result['time'][index].split(' ')[0])
-            Time.append(result['time'][index].split(' ')[1])
-
-        # Graph setting
-        self.datelabel.setText(Date[0])
-        self.canvas.axes.set_facecolor('#fef8e7')
-        self.canvas.axes.autoscale(False)
-        self.canvas.axes.xaxis.grid(True)
-        self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(Time)
-        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
-
-        # Ploting Graph
-        lines = []
-        #Array for line's color
-        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-
-        for data in result.items():
-            if data[0] != 'time':
-                newline, = self.canvas.axes.plot(Time,
-                                                 data[1],
-                                                 picker=5,
-                                                 linewidth=1)
-                lines.append(newline, )
-
-        for colorindex in range(len(lines)):
-            lines[colorindex].set_color(ColorArr[colorindex])
-
-        # Scale Editing
-        self.canvas.axes.set_ylim(-120, 35)
-        self.canvas.axes.set_xlim(Time[0], Time[3])
-
-        # Line Focusing Function
-        def on_pick(event):
-            for Line in lines:
-                Line.set_linewidth(1)
-            event.artist.set_linewidth(2.5)
-            self.canvas.draw()
-
-        # Show Data In Table
-        def get_table_data(event):
-            Chart_datalist = []
-            x, y = int(event.xdata), event.ydata
-            for dict_item in result.items():
-                if not (dict_item[0] == 'time'):
-                    Chart_datalist.append(dict_item[1][x])
-            for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index], 3)
-                self.tablewidget.item(index, 1).setText(str(Value))
-
-        # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event',
-                                            get_table_data)
-
+       
     # Create LTE Line Chart
     def LTE(self):
         self.canvas.axes.set_title('LTE Line Chart')
-        Date = []
-        Time = []
 
         # Open Database And Query
         ChartQuery = LineChartQuery([
             'time', 'lte_sinr_rx0_1', 'lte_sinr_rx1_1', 'lte_inst_rsrp_1',
             'lte_inst_rsrq_1', 'lte_inst_rssi_1'
-        ], 'lte_cell_meas', '')
-        result = ChartQuery.getData()
-        for index in range(len(result['time'])):
-            Date.append(result['time'][index].split(' ')[0])
-            Time.append(result['time'][index].split(' ')[1])
+        ], 'lte_cell_meas','')
+        self.result = ChartQuery.getData()
+        for index in range(len(self.result['time'])):
+            self.Date.append(self.result['time'][index].split(' ')[0])
+            self.Time.append(self.result['time'][index].split(' ')[1])
 
         # Graph setting
-        self.datelabel.setText(Date[0])
+        self.datelabel.setText(self.Date[0])
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
         self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.set_xticklabels(self.Time)
         self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
@@ -2482,9 +2081,9 @@ class Line_Chart(QWidget):
 
         lines = []
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-        for data in result.items():
+        for data in self.result.items():
             if data[0] != 'time':
-                newline, = self.canvas.axes.plot(Time,
+                newline, = self.canvas.axes.plot(self.Time,
                                                  data[1],
                                                  picker=5,
                                                  linewidth=1)
@@ -2493,8 +2092,8 @@ class Line_Chart(QWidget):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120, 35)
-        self.canvas.axes.set_xlim(Time[0], Time[3])
+        self.canvas.axes.set_ylim(-120, 20)
+        self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
         # Line Focusing Function
         def on_pick(event):
@@ -2507,7 +2106,7 @@ class Line_Chart(QWidget):
         def get_table_data(event):
             Chart_datalist = []
             x, y = int(event.xdata), event.ydata
-            for dict_item in result.items():
+            for dict_item in self.result.items():
                 if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for row in range(len(Chart_datalist)):
@@ -2525,32 +2124,30 @@ class Line_Chart(QWidget):
         #ยังไม่เสร็จ -- No data in Database
 
         self.canvas.axes.set_title('WCDMA Line Chart')
-        Date = []
-        Time = []
 
         # Open Database And Query
         ChartQuery1 = LineChartQuery(
             ['time', 'wcdma_aset_ecio_avg', 'wcdma_aset_rscp_avg'],
             'wcdma_cell_meas', '')
-        result1 = ChartQuery1.getData()
+        self.result = ChartQuery1.getData()
         ChartQuery2 = LineChartQuery(['wcdma_rssi'], 'wcdma_rx_power', '')
         result2 = ChartQuery2.getData()
         ChartQuery3 = LineChartQuery(
             ['wcdma_bler_average_percent_all_channels'], 'wcdma_bler', '')
         result3 = ChartQuery3.getData()
-        result1.update(result2)
-        result1.update(result3)
-        for index in range(len(result1['time'])):
-            Date.append(result1['time'][index].split(' ')[0])
-            Time.append(result1['time'][index].split(' ')[1])
+        self.result.update(result2)
+        self.result.update(result3)
+        for index in range(len(self.result['time'])):
+            self.Date.append(self.result['time'][index].split(' ')[0])
+            self.Time.append(self.result['time'][index].split(' ')[1])
 
         # Graph setting
-        self.datelabel.setText(Date[0])
+        self.datelabel.setText(self.Date[0])
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
         self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.set_xticklabels(self.Time)
         self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
@@ -2561,9 +2158,9 @@ class Line_Chart(QWidget):
         #Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
-        for data in result1.items():
+        for data in self.result.items():
             if data[0] != 'time':
-                newline, = self.canvas.axes.plot(Time,
+                newline, = self.canvas.axes.plot(self.Time,
                                                  data[1],
                                                  picker=5,
                                                  linewidth=1)
@@ -2573,8 +2170,8 @@ class Line_Chart(QWidget):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120, 35)
-        self.canvas.axes.set_xlim(Time[0], Time[3])
+        self.canvas.axes.set_ylim(-120, 20)
+        self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
         # Line Focusing Function
         def on_pick(event):
@@ -2587,84 +2184,7 @@ class Line_Chart(QWidget):
         def get_table_data(event):
             Chart_datalist = []
             x, y = int(event.xdata), event.ydata
-            for dict_item in result1.items():
-                if not (dict_item[0] == 'time'):
-                    Chart_datalist.append(dict_item[1][x])
-            for index in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[index], 3)
-                self.tablewidget.item(index, 1).setText(str(Value))
-
-        # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event',
-                                            get_table_data)
-
-    # Create GSM Data Line Chart
-    def GSM_Data(self):
-
-        #ยังไม่เสร็จ -- No data in Database
-
-        self.canvas.axes.set_title('GSM Data Line Chart')
-        Date = []
-        Time = []
-
-        # Open Database And Query
-        ChartQuery1 = LineChartQuery(['time', 'data_gsm_rlc_dl_throughput'],
-                                     'data_egprs_stats', '')
-        result1 = ChartQuery1.getData()
-        ChartQuery2 = LineChartQuery(
-            ['data_app_dl_throughput_1', 'data_download_session_average'],
-            'data_app_throughput', '')
-        result2 = ChartQuery2.getData()
-        result1.update(result2)
-        for index in range(len(result1['time'])):
-            Date.append(result1['time'][index].split(' ')[0])
-            Time.append(result1['time'][index].split(' ')[1])
-
-        # Graph setting
-        self.datelabel.setText(Date[0])
-        self.canvas.axes.set_facecolor('#fef8e7')
-        self.canvas.axes.autoscale(False)
-        self.canvas.axes.xaxis.grid(True)
-        self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(Time)
-        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
-
-        # Ploting Graph
-
-        lines = []
-
-        #Array for line's color
-        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-
-        for data in result1.items():
-            if data[0] != 'time':
-                newline, = self.canvas.axes.plot(Time,
-                                                 data[1],
-                                                 picker=5,
-                                                 linewidth=1)
-                lines.append(newline, )
-
-        for colorindex in range(len(lines)):
-            lines[colorindex].set_color(ColorArr[colorindex])
-
-        # Scale Editing
-        self.canvas.axes.set_ylim(-120, 35)
-        self.canvas.axes.set_xlim(Time[0], Time[3])
-
-        # Line Focusing Function
-        def on_pick(event):
-            for Line in lines:
-                Line.set_linewidth(1)
-            event.artist.set_linewidth(2.5)
-            self.canvas.draw()
-
-        # Show Data In Table
-        def get_table_data(event):
-            Chart_datalist = []
-            x, y = int(event.xdata), event.ydata
-            for dict_item in result1.items():
+            for dict_item in self.result.items():
                 if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
@@ -2682,13 +2202,11 @@ class Line_Chart(QWidget):
         #ยังไม่เสร็จ -- No data in Database
 
         self.canvas.axes.set_title('WCDMA Data Line Chart')
-        Date = []
-        Time = []
 
         # Open Database And Query
         ChartQuery1 = LineChartQuery(['time', 'data_wcdma_rlc_dl_throughput'],
                                      'data_wcdma_rlc_stats', '')
-        result1 = ChartQuery1.getData()
+        self.result = ChartQuery1.getData()
         ChartQuery2 = LineChartQuery(
             ['data_app_dl_throughput_1', 'data_download_session_average'],
             'data_app_throughput', '')
@@ -2696,19 +2214,19 @@ class Line_Chart(QWidget):
         ChartQuery3 = LineChartQuery(['data_hsdpa_throughput'],
                                      'wcdma_hsdpa_stats', '')
         result3 = ChartQuery3.getData()
-        result1.update(result2)
-        result1.update(result3)
-        for index in range(len(result1['time'])):
-            Date.append(result1['time'][index].split(' ')[0])
-            Time.append(result1['time'][index].split(' ')[1])
+        self.result.update(result2)
+        self.result.update(result3)
+        for index in range(len(self.result['time'])):
+            self.Date.append(self.result['time'][index].split(' ')[0])
+            self.Time.append(self.result['time'][index].split(' ')[1])
 
         # Graph setting
-        self.datelabel.setText(Date[0])
+        self.datelabel.setText(self.Date[0])
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
         self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.set_xticklabels(self.Time)
         self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
@@ -2719,9 +2237,9 @@ class Line_Chart(QWidget):
         #Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
-        for data in result1.items():
+        for data in self.result.items():
             if data[0] != 'time':
-                newline, = self.canvas.axes.plot(Time,
+                newline, = self.canvas.axes.plot(self.Time,
                                                  data[1],
                                                  picker=5,
                                                  linewidth=1)
@@ -2731,8 +2249,8 @@ class Line_Chart(QWidget):
             lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120, 35)
-        self.canvas.axes.set_xlim(Time[0], Time[3])
+        self.canvas.axes.set_ylim(-120, 20)
+        self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
         # Line Focusing Function
         def on_pick(event):
@@ -2745,7 +2263,7 @@ class Line_Chart(QWidget):
         def get_table_data(event):
             Chart_datalist = []
             x, y = int(event.xdata), event.ydata
-            for dict_item in result1.items():
+            for dict_item in self.result.items():
                 if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
@@ -2761,30 +2279,28 @@ class Line_Chart(QWidget):
     def LTE_Data(self):
 
         self.canvas.axes.set_title('LTE Data Line Chart')
-        Date = []
-        Time = []
 
         # Open Database And Query
         ChartQuery1 = LineChartQuery(
             ['time', 'lte_l1_throughput_mbps_1', 'lte_bler_1'], 'lte_l1_dl_tp',
             '')
-        result1 = ChartQuery1.getData()
+        self.result = ChartQuery1.getData()
         ChartQuery2 = LineChartQuery(
             ['data_download_overall', 'data_upload_overall'],
             'data_app_throughput', '')
         result2 = ChartQuery2.getData()
-        result1.update(result2)
-        for index in range(len(result1['time'])):
-            Date.append(result1['time'][index].split(' ')[0])
-            Time.append(result1['time'][index].split(' ')[1])
+        self.result.update(result2)
+        for index in range(len(self.result['time'])):
+            self.Date.append(self.result['time'][index].split(' ')[0])
+            self.Time.append(self.result['time'][index].split(' ')[1])
 
         # Graph setting
-        self.datelabel.setText(Date[0])
+        self.datelabel.setText(self.Date[0])
         self.canvas.axes.set_facecolor('#fef8e7')
         self.canvas.axes.autoscale(False)
         self.canvas.axes.xaxis.grid(True)
         self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(Time)
+        self.canvas.axes.set_xticklabels(self.Time)
         self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
@@ -2793,9 +2309,9 @@ class Line_Chart(QWidget):
         #Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
-        for data in result1.items():
+        for data in self.result.items():
             if data[0] != 'time':
-                newline, = self.canvas.axes.plot(Time,
+                newline, = self.canvas.axes.plot(self.Time,
                                                  data[1],
                                                  picker=5,
                                                  linewidth=1)
@@ -2806,7 +2322,7 @@ class Line_Chart(QWidget):
 
         # Scale Editing
         self.canvas.axes.set_ylim(-20, 35)
-        self.canvas.axes.set_xlim(Time[0], Time[3])
+        self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
         # Line Focusing Function
         def on_pick(event):
@@ -2819,7 +2335,7 @@ class Line_Chart(QWidget):
         def get_table_data(event):
             Chart_datalist = []
             x, y = int(event.xdata), event.ydata
-            for dict_item in result1.items():
+            for dict_item in self.result.items():
                 if not (dict_item[0] == 'time'):
                     Chart_datalist.append(dict_item[1][x])
             for index in range(len(Chart_datalist)):
@@ -2830,6 +2346,133 @@ class Line_Chart(QWidget):
         pick = self.canvas.mpl_connect('pick_event', on_pick)
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             get_table_data)
+
+    def moveLineChart(self,sampledate):
+        dateString = str(sampledate)
+        timeString = dateString.split(' ')[1][:8]
+        currentTimeindex = 0
+        for timeItem in self.Time:
+            if timeItem[:8] == timeString:
+                currentTimeindex = self.Time.index(timeItem)
+                self.canvas.axes.set_xlim(self.Time[currentTimeindex], self.Time[currentTimeindex+4]) 
+                break
+        Chart_datalist = []
+        for dict_item in self.result.items():
+            if not (dict_item[0] == 'time'):
+                Chart_datalist.append(dict_item[1][currentTimeindex])
+        for row in range(len(Chart_datalist)):
+            Value = round(Chart_datalist[row], 3)
+            self.tablewidget.item(row, 1).setText(str(Value))        
+        self.canvas.draw()
+                 
+class LineChartQuery:
+    def __init__(self, fieldArr, tableName, conditionStr):
+        self.fieldArr = fieldArr
+        self.tableName = tableName
+        self.condition = conditionStr
+
+    def countField(self):
+        fieldCount = 0
+        if self.fieldArr is not None:
+            fieldCount = len(self.fieldArr)
+        return fieldCount
+
+    def selectFieldToQuery(self):
+        selectField = '*'
+        if self.fieldArr is not None:
+            selectField = ",".join(self.fieldArr)
+        return selectField
+
+    def getData(self):
+        result = dict()
+        selectField = self.selectFieldToQuery()
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = 'select %s from %s %s' % (selectField, self.tableName,self.condition)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(self.fieldArr)):
+                fieldName = self.fieldArr[field]
+                validatedValue = self.valueValidation(query.value(field))
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(validatedValue)
+                    else:
+                        result[fieldName] = [validatedValue]
+                else:
+                    result[fieldName] = [validatedValue]
+        azenqosDatabase.close()
+        return result
+
+    def valueValidation(self, value):
+        validatedValue = 0
+        if value != '':
+            validatedValue = value
+        return validatedValue
+
+
+class DataQuery:
+    def __inti__(self, fieldArr, tableName, conditionStr):
+        self.fieldArr = fieldArr
+        self.tableName = tableName
+        self.condition = conditionStr
+
+    def countField(self):
+        fieldCount = 0
+        if self.fieldArr is not None:
+            fieldCount = len(self.fieldArr)
+        return fieldCount
+
+    def selectFieldToQuery(self):
+        selectField = '*'
+        if self.fieldArr is not None:
+            selectField = ",".join(self.fieldArr)
+        return selectField
+
+    def getData(self):
+        result = dict()
+        selectField = self.selectFieldToQuery()
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = 'select %s from %s' % (selectField, self.tableName)
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(self.fieldArr)):
+                fieldName = fieldArr[field]
+                validatedValue = self.valueValidation(query.value(field))
+                if fieldName in result:
+                    if isinstance(result[fieldName], list):
+                        result[fieldName].append(validatedValue)
+                    else:
+                        result[fieldName] = [validatedValue]
+                else:
+                    result[fieldName] = [validatedValue]
+        azenqosDatabase.close()
+        return result
+
+    def valueValidation(self, value):
+        validatedValue = 0
+        if value is not None:
+            validatedValue = value
+        return validatedValue
+
+
+class setInterval:
+    def __init__(self, value, interval, action):
+        self.interval = interval
+        self.action = action
+        self.stopEvent = threading.Event()
+        thread = threading.Thread(target=self.__setInterval)
+        thread.start()
+
+    def __setInterval(self):
+        nextTime = time.time() + self.interval
+        while not self.stopEvent.wait(nextTime - time.time()):
+            nextTime += self.interval
+            self.action()
+
+    def cancel(self):
+        self.stopEvent.set()
 
 
 class CellInformation(QDialog):

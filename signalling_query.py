@@ -1,5 +1,6 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
+
 class SignalingDataQuery:
     def __init__(self, database, currentDateTimeString):
         self.timeFilter = ''
@@ -219,8 +220,7 @@ class SignalingDataQuery:
         return dataList
 
     def getMmRegStates(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
+        self.openConnection()
         dataList = []
         fieldsList = [
             'Time', 'MM State', 'MM Substate', 'MM Update Status',
@@ -235,7 +235,7 @@ class SignalingDataQuery:
         condition = ''
         if self.timeFilter:
             condition = "WHERE ms.time <= '%s'" % (self.timeFilter)
-        queryString = """SELECT %s FROM mm_state mszx
+        queryString = """SELECT %s FROM mm_state ms
                         LEFT JOIN reg_state rs ON ms.time = rs.time
                         LEFT JOIN gmm_state gs ON ms.time = gs.time
                         %s
@@ -244,18 +244,20 @@ class SignalingDataQuery:
         query = QSqlQuery()
         query.exec_(queryString)
         queryRowCount = query.record().count()
+        for field in range(len(fieldsList)):
+            dataList.append([fieldsList[field], ''])
         while query.next():
             for field in range(len(fieldsList)):
                 if query.value(field):
-                    dataList.append([fieldsList[field], query.value(field)])
-                else:
-                    dataList.append([fieldsList[field], ''])
+                    dataList[field][1] = query.value(field)
+                    # dataList.append(
+                    #     [fieldsList[field],
+                    #      query.value(field)])
         self.closeConnection()
         return dataList
 
     def getServingSystemInfo(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
+        self.openConnection()
         dataList = []
         fieldsList = [
             'Time', 'mcc', 'mnc', 'lac', 'service status', 'service domain',
@@ -273,19 +275,21 @@ class SignalingDataQuery:
         while query.next():
             for field in range(len(fieldsList)):
                 if query.value(field):
-                    dataList.append(
-                        [fieldsList[field],
-                         query.value(field), '', '', ''])
+                    if field == 0:
+                        dataList.append([fieldsList[field], self.timeFilter])
+                    else:
+                        dataList.append(
+                            [fieldsList[field],
+                             query.value(field)])
                 else:
-                    dataList.append([fieldsList[field], '', '', '', ''])
+                    dataList.append([fieldsList[field], ''])
         self.closeConnection()
         return dataList
 
     def getDebugAndroidEvent(self):
         #ยังไม่มีข้อมูลใน database
 
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
+        self.openConnection()
         # query = QSqlQuery()
         # query.exec_("select * from events")
         # timeField = query.record().indexOf("time")
@@ -310,8 +314,8 @@ class SignalingDataQuery:
         return dataList
 
     def openConnection(self):
-      if self.azenqosDatabase is not None:
-          self.azenqosDatabase.open()
+        if self.azenqosDatabase is not None:
+            self.azenqosDatabase.open()
 
     def closeConnection(self):
-      self.azenqosDatabase.close()
+        self.azenqosDatabase.close()

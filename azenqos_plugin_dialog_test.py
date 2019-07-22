@@ -416,7 +416,6 @@ class AzenqosDialog(QDialog):
             self.selectConfiguration)
 
     def setupPlayStopButton(self, AzenqosDialog):
-        # todo ยังไม่เสร็จ
         self.horizontalLayout = QWidget(AzenqosDialog)
         self.horizontalLayout.setGeometry(QtCore.QRect(290, 70, 90, 48))
         self.playButton = QToolButton()
@@ -432,8 +431,6 @@ class AzenqosDialog(QDialog):
         self.pauseButton.clicked.connect(self.pauseTime)
 
     def playTime(self):
-        # todo ยังไม่เสร็จ
-        #timeSlider.setRange(timeSlider.value(),int(sliderLength))
         global isSliderPlay
         isSliderPlay = True
         if isSliderPlay:
@@ -454,7 +451,6 @@ class AzenqosDialog(QDialog):
         QApplication.exec_()
 
     def addTime(self, value):
-        #self.timeChange()
         timeSlider.setValue(value)
         timeSlider.repaint()
 

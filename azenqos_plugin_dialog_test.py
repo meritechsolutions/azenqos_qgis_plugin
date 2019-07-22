@@ -121,6 +121,7 @@ class Ui_DatabaseDialog(QDialog):
 
     def checkDatabase(self):
         self.addDatabase()
+        self.findMinMaxTimeDate()
         if not azenqosDatabase.open():
             QtWidgets.QMessageBox.critical(
                 None, "Cannot open database",
@@ -144,31 +145,48 @@ class Ui_DatabaseDialog(QDialog):
             self.azenqosMainMenu.activateWindow()
 
     def getTimeForSlider(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
+        global minTimeValue
+        global maxTimeValue
+        global currentDateTimeString
+        azenqosDatabase.open()
+        dataList= []
         query = QSqlQuery()
-        query.exec_(
-            "SELECT MIN(time) as mintime, MAX(time) as maxtime FROM signalling"
-        )
+        queryString = "SELECT name FROM sqlite_master WHERE type='table'"
+        query.exec_(queryString)
         while query.next():
-            global minTimeValue
-            global maxTimeValue
-            global currentDateTimeString
+            tableName = query.value(0)
+            if tableName not in tableNotUsed:
+                subQuery = QSqlQuery()
+                queryString = "SELECT MIN(time), MAX(time) FROM %s" % (tableName)
+                subQuery.exec_(queryString)
+                while subQuery.next():
+                    dataList.append([tableName, subQuery.value(0), subQuery.value(1)])
+        mintime = ''
+        maxtime = ''
+        for row in range(len(dataList)):
+            if row > 0:
+                if dataList[row][1] != '':
+                    if dataList[row][1] < mintime:
+                        mintime = dataList[row][1]
+                if dataList[row][2] != '':
+                    if dataList[row][2] > maxtime:
+                        maxtime = dataList[row][2]
+            else:
+                if dataList[row][1] != '':
+                    mintime = dataList[row][1]
+                if dataList[row][2] != '':
+                    maxtime = dataList[row][2]
 
-            mintime = query.value(0)
-            maxtime = query.value(1)
+        minTimeValue = datetime.datetime.strptime(
+            mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
 
-            minTimeValue = datetime.datetime.strptime(
-                mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+        maxTimeValue = datetime.datetime.strptime(
+            maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
 
-            maxTimeValue = datetime.datetime.strptime(
-                maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
-
-            currentDateTimeString = '%s' % (
-                datetime.datetime.fromtimestamp(minTimeValue))
+        currentDateTimeString = '%s' % (
+            datetime.datetime.fromtimestamp(minTimeValue))
 
         azenqosDatabase.close()
-
         self.setIncrementValue()
 
     def addDatabase(self):
@@ -189,7 +207,7 @@ class Ui_DatabaseDialog(QDialog):
     #     uri.setDatabase(self.databasePath)
     #     azenqosDatabase.open()
     #     query = QSqlQuery()
-    #     query.exec_("SELECT table_name FROM layer_statistic")
+    #     query.exec_("SELECT name FROM sqlite_master WHERE type='table'")
     #     while query.next():
     #         if query.value(0) not in tableNotUsed:
     #             uri.setDataSource('', query.value(0), 'geom')
@@ -198,15 +216,8 @@ class Ui_DatabaseDialog(QDialog):
     #     azenqosDatabase.close()
 
     def setIncrementValue(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT count(distinct time) FROM signalling")
-        while query.next():
-            timeCount = query.value(0)
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
-        azenqosDatabase.close()
 
     def setCenterMap(self):
         if azenqosDatabase is not None:
@@ -485,8 +496,8 @@ class AzenqosDialog(QDialog):
         for window in openedWindows:
             if not window.title in linechartWindowname:
                 window.hilightRow(sampledate)
-            else:      
-                window.moveChart(sampledate)    
+            else:
+                window.moveChart(sampledate)
         currentDateTimeString = '%s' % (
             datetime.datetime.fromtimestamp(currentTimestamp))
 
@@ -1414,7 +1425,7 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
 
-    def moveChart(self,sampledate):      
+    def moveChart(self,sampledate):
         self.lte_widget.moveLineChart(sampledate)
 
 # WCDMA Line Chart UI
@@ -1609,7 +1620,7 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.wcdma_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_LCwidget", "Date :"))
 
-    def moveChart(self,sampledate):      
+    def moveChart(self,sampledate):
         self.wcdma_widget.moveLineChart(sampledate)
 
 # LTE Data Line Chart UI
@@ -1809,7 +1820,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_Data_LCwidget", "Date :"))
 
-    def moveChart(self,sampledate):      
+    def moveChart(self,sampledate):
         self.lte_data_widget.moveLineChart(sampledate)
 
 # WCDMA Data Line Chart UI
@@ -2015,7 +2026,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.wcdma_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
 
-    def moveChart(self,sampledate):      
+    def moveChart(self,sampledate):
         self.wcdma_data_widget.moveLineChart(sampledate)
 
 # Class For Line Chart
@@ -2031,8 +2042,8 @@ class Line_Chart(QWidget):
         self.tablewidget = tablewidget
         self.datelabel = datelabel
         self.Date = []
-        self.Time = [] 
-        self.lines = []   
+        self.Time = []
+        self.lines = []
         self.result = {}
         #print(self.title)
 
@@ -2066,8 +2077,8 @@ class Line_Chart(QWidget):
                 Chart_datalist.append(dict_item[1][x])
         for row in range(len(Chart_datalist)):
             Value = round(Chart_datalist[row], 3)
-            self.tablewidget.item(row, 1).setText(str(Value))        
-       
+            self.tablewidget.item(row, 1).setText(str(Value))
+
     # Create LTE Line Chart
     def LTE(self):
         self.canvas.axes.set_title('LTE Line Chart')
@@ -2262,7 +2273,7 @@ class Line_Chart(QWidget):
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
- 
+
         #Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
@@ -2294,7 +2305,7 @@ class Line_Chart(QWidget):
         for timeItem in self.Time:
             if timeItem[:8] == timeString:
                 currentTimeindex = self.Time.index(timeItem)
-                self.canvas.axes.set_xlim(self.Time[currentTimeindex], self.Time[currentTimeindex+4]) 
+                self.canvas.axes.set_xlim(self.Time[currentTimeindex], self.Time[currentTimeindex+4])
                 break
     # Update table part
         Chart_datalist = []
@@ -2303,10 +2314,10 @@ class Line_Chart(QWidget):
                 Chart_datalist.append(dict_item[1][currentTimeindex])
         for row in range(len(Chart_datalist)):
             Value = round(Chart_datalist[row], 3)
-            self.tablewidget.item(row, 1).setText(str(Value)) 
-                   
+            self.tablewidget.item(row, 1).setText(str(Value))
+
         self.canvas.draw()
-                 
+
 class LineChartQuery:
     def __init__(self, fieldArr, tableName, conditionStr):
         self.fieldArr = fieldArr
@@ -2630,6 +2641,7 @@ class CellInformation(QDialog):
                 self.FilePath1.setText(fileName)
             return False
         return False
+
 
 
 if __name__ == '__main__':

@@ -121,7 +121,6 @@ class Ui_DatabaseDialog(QDialog):
 
     def checkDatabase(self):
         self.addDatabase()
-        self.findMinMaxTimeDate()
         if not azenqosDatabase.open():
             QtWidgets.QMessageBox.critical(
                 None, "Cannot open database",
@@ -446,13 +445,15 @@ class AzenqosDialog(QDialog):
         isSliderPlay = True
         if isSliderPlay:
             for x in range(int(sliderLength)):
+                print(x)
                 if not isSliderPlay:
                     #QApplication.exec_()
                     break
                 else:
-                    time.sleep(0.5)
+                    time.sleep(0.01)
                     value = timeSlider.value() + 1
                     self.addTime(value)
+                    #print(value)
                     QApplication.processEvents()
         isSliderPlay = False
 

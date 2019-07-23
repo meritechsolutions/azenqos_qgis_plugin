@@ -28,7 +28,7 @@ import time
 import threading
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray
+from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray, QThread, pyqtSignal
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -62,7 +62,6 @@ sliderLength = None
 openedWindows = []
 timeSlider = None
 isSliderPlay = False
-
 
 
 # Database select window
@@ -136,7 +135,6 @@ class Ui_DatabaseDialog(QDialog):
             self.setCenterMap()
             QMessageBox.about(self, 'Connection result',
                               'Database is Connected, Enter the main menu')
-            #getList()
             self.hide()
             self.azenqosMainMenu = AzenqosDialog()
             self.azenqosMainMenu.show()
@@ -148,7 +146,7 @@ class Ui_DatabaseDialog(QDialog):
         global maxTimeValue
         global currentDateTimeString
         azenqosDatabase.open()
-        dataList= []
+        dataList = []
         query = QSqlQuery()
         queryString = "SELECT name FROM sqlite_master WHERE type='table'"
         query.exec_(queryString)
@@ -156,10 +154,14 @@ class Ui_DatabaseDialog(QDialog):
             tableName = query.value(0)
             if tableName not in tableNotUsed:
                 subQuery = QSqlQuery()
-                queryString = "SELECT MIN(time), MAX(time) FROM %s" % (tableName)
+                queryString = "SELECT MIN(time), MAX(time) FROM %s" % (
+                    tableName)
                 subQuery.exec_(queryString)
                 while subQuery.next():
-                    dataList.append([tableName, subQuery.value(0), subQuery.value(1)])
+                    dataList.append(
+                        [tableName,
+                         subQuery.value(0),
+                         subQuery.value(1)])
         mintime = ''
         maxtime = ''
         for row in range(len(dataList)):
@@ -238,15 +240,16 @@ class AzenqosDialog(QDialog):
     def __init__(self):
         """Constructor."""
         super(AzenqosDialog, self).__init__(None)
+        self.timeSliderThread = TimeSliderThread()
         self.setupUi(self)
         self.raise_()
         self.activateWindow()
+
 
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
-
         self.setupTreeWidget(AzenqosDialog)
 
         # Time Slider
@@ -296,7 +299,6 @@ class AzenqosDialog(QDialog):
 
         timeSlider.valueChanged.connect(self.timeChange)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
-        # self.filterBtn.clicked.connect(self.playTime)
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -426,7 +428,6 @@ class AzenqosDialog(QDialog):
             self.selectConfiguration)
 
     def setupPlayStopButton(self, AzenqosDialog):
-        # todo ยังไม่เสร็จ
         self.horizontalLayout = QWidget(AzenqosDialog)
         self.horizontalLayout.setGeometry(QtCore.QRect(290, 70, 90, 48))
         self.playButton = QToolButton()
@@ -438,35 +439,21 @@ class AzenqosDialog(QDialog):
         layout.addStretch(1)
         layout.addWidget(self.playButton)
         layout.addWidget(self.pauseButton)
-        self.playButton.clicked.connect(self.playTime)
+        self.playButton.clicked.connect(self.startPlaytimeThread)
         self.pauseButton.clicked.connect(self.pauseTime)
 
-    def playTime(self):
-        # todo ยังไม่เสร็จ
-        #timeSlider.setRange(timeSlider.value(),int(sliderLength))
-        global isSliderPlay
-        isSliderPlay = True
-        if isSliderPlay:
-            for x in range(int(sliderLength)):
-                if not isSliderPlay:
-                    #QApplication.exec_()
-                    break
-                else:
-                    time.sleep(0.5)
-                    value = timeSlider.value() + 1
-                    self.addTime(value)
-                    QApplication.processEvents()
-        isSliderPlay = False
+
+    def startPlaytimeThread(self):
+        self.playButton.setDisabled(True)
+        self.timeSliderThread.start()
+
 
     def pauseTime(self):
         global isSliderPlay
         isSliderPlay = False
-        QApplication.exec_()
-
-    def addTime(self, value):
-        #self.timeChange()
-        timeSlider.setValue(value)
-        timeSlider.repaint()
+        timeSlider.setEnabled(True)
+        self.playButton.setEnabled(True)
+        # self.timeSliderThread.exit()
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -503,6 +490,8 @@ class AzenqosDialog(QDialog):
                 window.moveChart(sampledate)
         currentDateTimeString = '%s' % (
             datetime.datetime.fromtimestamp(currentTimestamp))
+
+        self.timeSliderThread.set(value)
 
     def classifySelectedItems(self, parent, child):
         global openedWindows
@@ -818,7 +807,7 @@ class AzenqosDialog(QDialog):
                     pass
 
 
-class TimeSlider(QSlider):  ##
+class TimeSlider(QSlider):
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -843,7 +832,7 @@ class TimeSlider(QSlider):  ##
     def setValue(self, value):
         resultValue = int(value / self._value_range * self._max_int)
         super().setValue(resultValue)
-        super().repaint()
+        # super().repaint()
 
     def setMinimum(self, value):
         self.setRange(value, self._max_value)
@@ -902,29 +891,39 @@ class TableWindow(QDialog):
                     "Time", "CellName", "CellType", "SC", "Ec/Io", "RSCP",
                     "Freq", "Event"
                 ]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getActiveMonitoredSets()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getActiveMonitoredSets()
             elif self.title == 'WCDMA_Radio Parameters':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getRadioParameters()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getRadioParameters()
             elif self.title == 'WCDMA_Active Set List':
                 self.tableHeader = [
                     "Time", "Freq", "PSC", "Cell Position", "Cell TPC",
                     "Diversity"
                 ]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getActiveSetList()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase, currentDateTimeString).getActiveSetList()
             elif self.title == 'WCDMA_Monitored Set List':
                 self.tableHeader = [
                     "Time", "Freq", "PSC", "Cell Position", "Diversity"
                 ]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getMonitoredSetList()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getMonitoredSetList()
             elif self.title == 'WCDMA_BLER Summary':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getBlerSummary()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase, currentDateTimeString).getBlerSummary()
             elif self.title == 'WCDMA_BLER / Transport Channel':
                 self.tableHeader = [
                     "Transport Channel", "Percent", "Err", "Rcvd"
                 ]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getBLER_TransportChannel()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getBLER_TransportChannel()
             elif self.title == 'WCDMA_Line Chart':
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'WCDMA_Bearers':
@@ -932,13 +931,18 @@ class TableWindow(QDialog):
                     "N Bearers", "Bearers ID", "Bearers Rate DL",
                     "Bearers Rate UL"
                 ]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getBearers()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase, currentDateTimeString).getBearers()
             elif self.title == 'WCDMA_Pilot Poluting Cells':
                 self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getPilotPolutingCells()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getPilotPolutingCells()
             elif self.title == 'WCDMA_Active + Monitored Bar':
                 self.tableHeader = ["Cell Type", "Ec/Io", "RSCP"]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getActiveMonitoredBar()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getActiveMonitoredBar()
             elif self.title == 'WCDMA_CM GSM Reports':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
 
@@ -946,41 +950,56 @@ class TableWindow(QDialog):
                 self.tableHeader = [
                     "Time", "ARFCN", "RxLev", "BSIC", "Measure"
                 ]
-                self.dataList = WcdmaDataQuery(azenqosDatabase, currentDateTimeString).getCmGsmCells()
+                self.dataList = WcdmaDataQuery(
+                    azenqosDatabase, currentDateTimeString).getCmGsmCells()
             elif self.title == 'WCDMA_Pilot Analyzer':
                 self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 
             # LTE
             elif self.title == 'LTE_Radio Parameters':
                 self.tableHeader = ["Element", "PCC", "SCC0", "SCC1"]
-                self.dataList = LteDataQuery(azenqosDatabase, currentDateTimeString).getRadioParameters()
+                self.dataList = LteDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getRadioParameters()
             elif self.title == 'LTE_Serving + Neighbors':
                 self.tableHeader = [
                     "Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"
                 ]
-                self.dataList = LteDataQuery(azenqosDatabase, currentDateTimeString).getServingAndNeighbors()
+                self.dataList = LteDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getServingAndNeighbors()
             elif self.title == 'LTE_PUCCH/PDSCH Parameters':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = LteDataQuery(azenqosDatabase, currentDateTimeString).getPucchPdschParameters()
+                self.dataList = LteDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getPucchPdschParameters()
             elif self.title == 'LTE_LTE Line Chart':
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
             elif self.title == 'LTE_LTE RLC':
                 self.tableHeader = ["Element", "Value", "", "", ""]
-                self.dataList = LteDataQuery(azenqosDatabase, currentDateTimeString).getRlc()
+                self.dataList = LteDataQuery(azenqosDatabase,
+                                             currentDateTimeString).getRlc()
             elif self.title == 'LTE_LTE VoLTE':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = LteDataQuery(azenqosDatabase, currentDateTimeString).getVolte()
+                self.dataList = LteDataQuery(azenqosDatabase,
+                                             currentDateTimeString).getVolte()
 
             # CDMA/EVDO
             elif self.title == 'CDMA/EVDO_Radio Parameters':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = CdmaEvdoQuery(azenqosDatabase, currentDateTimeString).getRadioParameters()
+                self.dataList = CdmaEvdoQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getRadioParameters()
             elif self.title == 'CDMA/EVDO_Serving + Neighbors':
                 self.tableHeader = ["Time", "PN", "Ec/Io", "Type"]
-                self.dataList = CdmaEvdoQuery(azenqosDatabase, currentDateTimeString).getServingAndNeighbors()
+                self.dataList = CdmaEvdoQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getServingAndNeighbors()
             elif self.title == 'CDMA/EVDO_EVDO Parameters':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = CdmaEvdoQuery(azenqosDatabase, currentDateTimeString).getEvdoParameters()
+                self.dataList = CdmaEvdoQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getEvdoParameters()
 
             # Data
             elif self.title == 'Data_GSM Data Line Chart':
@@ -1013,26 +1032,37 @@ class TableWindow(QDialog):
             # Signaling
             elif self.title == 'Signaling_Events':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                self.dataList = SignalingDataQuery(azenqosDatabase, currentDateTimeString).getEvents()
+                self.dataList = SignalingDataQuery(
+                    azenqosDatabase, currentDateTimeString).getEvents()
             elif self.title == 'Signaling_Layer 1 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                self.dataList = SignalingDataQuery(azenqosDatabase, currentDateTimeString).getLayerOneMessages()
+                self.dataList = SignalingDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getLayerOneMessages()
             elif self.title == 'Signaling_Layer 3 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "", "Name", "Info."]
 
-                self.dataList = SignalingDataQuery(azenqosDatabase, currentDateTimeString).getLayerThreeMessages()
+                self.dataList = SignalingDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getLayerThreeMessages()
             elif self.title == 'Signaling_Benchmark':
                 self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
-                self.dataList = SignalingDataQuery(azenqosDatabase, currentDateTimeString).getBenchmark()
+                self.dataList = SignalingDataQuery(
+                    azenqosDatabase, currentDateTimeString).getBenchmark()
             elif self.title == 'Signaling_MM Reg States':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = SignalingDataQuery(azenqosDatabase, currentDateTimeString).getMmRegStates()
+                self.dataList = SignalingDataQuery(
+                    azenqosDatabase, currentDateTimeString).getMmRegStates()
             elif self.title == 'Signaling_Serving System Info':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = SignalingDataQuery(azenqosDatabase, currentDateTimeString).getServingSystemInfo()
+                self.dataList = SignalingDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getServingSystemInfo()
             elif self.title == 'Signaling_Debug Android/Event':
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = SignalingDataQuery(azenqosDatabase, currentDateTimeString).getDebugAndroidEvent()
+                self.dataList = SignalingDataQuery(
+                    azenqosDatabase,
+                    currentDateTimeString).getDebugAndroidEvent()
 
             if self.dataList is not None:
                 self.setTableModel(self.dataList)
@@ -1211,6 +1241,7 @@ class DataQuery:
             dataList.append([timeValue, '', nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
+
 
 # LTE Line Chart UI
 class Ui_LTE_LCwidget(QWidget):
@@ -1428,8 +1459,9 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
 
-    def moveChart(self,sampledate):
+    def moveChart(self, sampledate):
         self.lte_widget.moveLineChart(sampledate)
+
 
 # WCDMA Line Chart UI
 class Ui_WCDMA_LCwidget(QWidget):
@@ -1623,8 +1655,9 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.wcdma_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_LCwidget", "Date :"))
 
-    def moveChart(self,sampledate):
+    def moveChart(self, sampledate):
         self.wcdma_widget.moveLineChart(sampledate)
+
 
 # LTE Data Line Chart UI
 class Ui_LTE_Data_LCwidget(QWidget):
@@ -1823,8 +1856,9 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("LTE_Data_LCwidget", "Date :"))
 
-    def moveChart(self,sampledate):
+    def moveChart(self, sampledate):
         self.lte_data_widget.moveLineChart(sampledate)
+
 
 # WCDMA Data Line Chart UI
 class Ui_WCDMA_Data_LCwidget(QWidget):
@@ -2029,8 +2063,9 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.wcdma_data_tableWidget.setSortingEnabled(__sortingEnabled)
         self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
 
-    def moveChart(self,sampledate):
+    def moveChart(self, sampledate):
         self.wcdma_data_widget.moveLineChart(sampledate)
+
 
 # Class For Line Chart
 class Line_Chart(QWidget):
@@ -2048,7 +2083,7 @@ class Line_Chart(QWidget):
         self.Time = []
         self.lines = []
         self.result = {}
-        #print(self.title)
+        # print(self.title)
 
         # Graph Toolbar
         toolbar = NavigationToolbar(self.canvas, self)
@@ -2065,14 +2100,14 @@ class Line_Chart(QWidget):
             self.WCDMA_Data()
 
     # Event Function
-    def on_pick(self,event):
+    def on_pick(self, event):
         for Line in self.lines:
             Line.set_linewidth(1)
         event.artist.set_linewidth(2.5)
         self.canvas.draw()
 
     # Show Data In Table
-    def get_table_data(self,event):
+    def get_table_data(self, event):
         Chart_datalist = []
         x, y = int(event.xdata), event.ydata
         for dict_item in self.result.items():
@@ -2090,7 +2125,7 @@ class Line_Chart(QWidget):
         ChartQuery = LineChartQuery([
             'time', 'lte_sinr_rx0_1', 'lte_sinr_rx1_1', 'lte_inst_rsrp_1',
             'lte_inst_rsrq_1', 'lte_inst_rssi_1'
-        ], 'lte_cell_meas','')
+        ], 'lte_cell_meas', '')
         self.result = ChartQuery.getData()
         for index in range(len(self.result['time'])):
             self.Date.append(self.result['time'][index].split(' ')[0])
@@ -2132,7 +2167,7 @@ class Line_Chart(QWidget):
     # Create WCDMA Line Chart
     def WCDMA(self):
 
-        #ยังไม่เสร็จ -- No data in Database
+        # ยังไม่เสร็จ -- No data in Database
 
         self.canvas.axes.set_title('WCDMA Line Chart')
 
@@ -2164,7 +2199,7 @@ class Line_Chart(QWidget):
 
         # Ploting Graph
 
-        #Array for line's color
+        # Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
         for data in self.result.items():
@@ -2190,7 +2225,7 @@ class Line_Chart(QWidget):
     # Create WCDMA Data Line Chart
     def WCDMA_Data(self):
 
-        #ยังไม่เสร็จ -- No data in Database
+        # ยังไม่เสร็จ -- No data in Database
 
         self.canvas.axes.set_title('WCDMA Data Line Chart')
 
@@ -2223,7 +2258,7 @@ class Line_Chart(QWidget):
 
         # Ploting Graph
 
-        #Array for line's color
+        # Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
         for data in self.result.items():
@@ -2277,7 +2312,7 @@ class Line_Chart(QWidget):
 
         # Ploting Graph
 
-        #Array for line's color
+        # Array for line's color
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
 
         for data in self.result.items():
@@ -2300,16 +2335,18 @@ class Line_Chart(QWidget):
         tabledata = self.canvas.mpl_connect('button_press_event',
                                             self.get_table_data)
 
-    def moveLineChart(self,sampledate):
-    # Shift Part
+    def moveLineChart(self, sampledate):
+        # Shift Part
         dateString = str(sampledate)
         timeString = dateString.split(' ')[1][:8]
         currentTimeindex = 0
         for timeItem in self.Time:
             if timeItem[:8] == timeString:
                 currentTimeindex = self.Time.index(timeItem)
-                self.canvas.axes.set_xlim(self.Time[currentTimeindex], self.Time[currentTimeindex+4])
+                self.canvas.axes.set_xlim(self.Time[currentTimeindex],
+                                          self.Time[currentTimeindex + 4])
                 break
+
     # Update table part
         Chart_datalist = []
         for dict_item in self.result.items():
@@ -2320,6 +2357,7 @@ class Line_Chart(QWidget):
             self.tablewidget.item(row, 1).setText(str(Value))
 
         self.canvas.draw()
+
 
 class LineChartQuery:
     def __init__(self, fieldArr, tableName, conditionStr):
@@ -2344,7 +2382,8 @@ class LineChartQuery:
         selectField = self.selectFieldToQuery()
         azenqosDatabase.open()
         query = QSqlQuery()
-        queryString = 'select %s from %s %s' % (selectField, self.tableName,self.condition)
+        queryString = 'select %s from %s %s' % (selectField, self.tableName,
+                                                self.condition)
         query.exec_(queryString)
         while query.next():
             for field in range(len(self.fieldArr)):
@@ -2645,6 +2684,53 @@ class CellInformation(QDialog):
             return False
         return False
 
+
+class TimeSliderThread(QThread):
+    signal = pyqtSignal('PyQt_PyObject')
+
+    def __init__(self):
+        QThread.__init__(self)
+        self.currentSliderValue = None
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        self.playTime()
+
+    def playTime(self):
+        timeSlider.setDisabled(True)
+        global isSliderPlay
+        isSliderPlay = True
+        if isSliderPlay:
+            if self.currentSliderValue:
+                for x in range(int(self.currentSliderValue), int(sliderLength)):
+                    if not isSliderPlay:
+                        break
+                    else:
+                        time.sleep(0.1)
+                        value = timeSlider.value() + 1
+                        timeSlider.setValue(value)
+
+                    if x >= int(sliderLength):
+                        isSliderPlay = False
+                        break
+            else:
+                for x in range(int(sliderLength)):
+                    if not isSliderPlay:
+                        break
+                    else:
+                        time.sleep(0.1)
+                        value = timeSlider.value() + 1
+                        timeSlider.setValue(value)
+
+                    if x >= int(sliderLength):
+                        isSliderPlay = False
+                        break
+        isSliderPlay = False
+
+    def set(self, value):
+        self.currentSliderValue = value
 
 
 if __name__ == '__main__':

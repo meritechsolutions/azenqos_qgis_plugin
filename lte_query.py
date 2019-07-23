@@ -216,8 +216,7 @@ class LteDataQuery:
         return dataList
 
     def getRlc(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
+        self.openConnection()
 
         dataList = []
         condition = ""
@@ -269,7 +268,7 @@ class LteDataQuery:
                             query.value(3),
                             query.value(4)
                         ])
-        azenqosDatabase.close()
+        self.closeConnection()
         return dataList
 
     def getVolte(self):

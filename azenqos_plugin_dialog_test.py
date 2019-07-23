@@ -2708,7 +2708,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(0.1)
+                        time.sleep(1)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
 
@@ -2720,7 +2720,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(0.1)
+                        time.sleep(1)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
 

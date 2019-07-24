@@ -67,7 +67,7 @@ class SignalingDataQuery:
         self.closeConnection()
         return dataList
 
-    def getBenchmark(self):  #ยังไม่เสร็จ
+    def getBenchmark(self):  
         self.openConnection()
         dataList = []
         condition = ""
@@ -94,14 +94,18 @@ class SignalingDataQuery:
                          ORDER BY lcm.time DESC LIMIT 1""" % (condition)
         query = QSqlQuery()
         query.exec_(queryString)
+        for field in range(len(lteField)):
+            dataList.append([lteField[field], '', '', '', ''])
         while query.next():
             for field in range(len(lteField)):
                 if query.value(field):
-                    dataList.append(
-                        [lteField[field],
-                         query.value(field), '', '', ''])
+                    dataList[field+5][1] = query.value(field)   
+                    # dataList.append(
+                    #     [lteField[field],
+                    #      query.value(field), '', '', ''])
                 else:
-                    dataList.append([lteField[field], '', '', '', ''])
+                    dataList[field+5][1] = ''
+                    #dataList.append([lteField[field], '', '', '', ''])
 
         #WCDMA section
         wcdmaField = [
@@ -178,14 +182,18 @@ class SignalingDataQuery:
 
         query = QSqlQuery()
         query.exec_(queryString)
+        for field in range(len(lte_rlcField)):
+            dataList.append([lte_rlcField[field], '', '', '', ''])
         while query.next():
             for field in range(len(lte_rlcField)):
                 if query.value(field):
-                    dataList.append(
-                        [lte_rlcField[field],
-                         query.value(field), '', '', ''])
+                     dataList[field+25][1] = query.value(field)
+                    # dataList.append(
+                    #     [lte_rlcField[field],
+                    #      query.value(field), '', '', ''])
                 else:
-                    dataList.append([lte_rlcField[field], '', '', '', ''])
+                     dataList[field+25][1] = query.value(field)
+                #     dataList.append([lte_rlcField[field], '', '', '', ''])
 
         #WCDMA RLC section
         wcdma_rlcField = [
@@ -272,23 +280,27 @@ class SignalingDataQuery:
             selectedColumns, condition)
         query = QSqlQuery()
         query.exec_(queryString)
+        for field in range(len(fieldsList)):
+            dataList.append([fieldsList[field], ''])
         while query.next():
             for field in range(len(fieldsList)):
                 if query.value(field):
                     if field == 0:
-                        dataList.append([fieldsList[field], self.timeFilter])
+                        dataList[field][1] = self.timeFilter
+                        #dataList.append([fieldsList[field], self.timeFilter])
                     else:
-                        dataList.append(
-                            [fieldsList[field],
-                             query.value(field)])
+                        dataList[field][1] = query.value(field)
+                        # dataList.append(
+                        #     [fieldsList[field],
+                        #      query.value(field)])
                 else:
-                    dataList.append([fieldsList[field], ''])
+                    dataList[field][1] = ''
+                    # dataList.append([fieldsList[field], ''])
         self.closeConnection()
         return dataList
 
-    def getDebugAndroidEvent(self):
-        #ยังไม่มีข้อมูลใน database
-
+    def getDebugAndroidEvent(self): #ยังไม่มีข้อมูลใน database
+    
         self.openConnection()
         # query = QSqlQuery()
         # query.exec_("select * from events")

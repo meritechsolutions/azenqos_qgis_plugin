@@ -2342,10 +2342,13 @@ class Line_Chart(QWidget):
         currentTimeindex = 0
         for timeItem in self.Time:
             if timeItem[:8] == timeString:
-                currentTimeindex = self.Time.index(timeItem)
-                self.canvas.axes.set_xlim(self.Time[currentTimeindex],
-                                          self.Time[currentTimeindex + 4])
-                break
+                if self.Time.index(timeItem)+4 < len(self.Time):
+                    currentTimeindex = self.Time.index(timeItem)
+                    self.canvas.axes.set_xlim(self.Time[currentTimeindex],
+                                            self.Time[currentTimeindex + 4])
+                    break
+                else:          
+                    break    
 
     # Update table part
         Chart_datalist = []
@@ -2708,7 +2711,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(1)
+                        time.sleep(0.5)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
 
@@ -2720,7 +2723,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(1)
+                        time.sleep(0.5)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
 

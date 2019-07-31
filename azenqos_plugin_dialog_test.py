@@ -35,6 +35,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
+from matplotlib.ticker import StrMethodFormatter
+import numpy as np
+import pyqtgraph as pg
 from lte_query import LteDataQuery
 from wcdma_query import WcdmaDataQuery
 from cdma_evdo_query import CdmaEvdoQuery
@@ -1262,10 +1265,11 @@ class Ui_LTE_LCwidget(QWidget):
 
         # DataTable
         self.lte_tableWidget = QtWidgets.QTableWidget(LTE_LCwidget)
-        self.lte_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 171))
+        self.lte_tableWidget.setGeometry(QtCore.QRect(20, 395, 451, 171))
         self.lte_tableWidget.setObjectName("lte_tableWidget")
         self.lte_tableWidget.setColumnCount(4)
-        self.lte_tableWidget.setRowCount(5)
+        self.lte_tableWidget.setRowCount(5) 
+        self.lte_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch) 
         item = QtWidgets.QTableWidgetItem()
         self.lte_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1481,10 +1485,12 @@ class Ui_WCDMA_LCwidget(QWidget):
 
         # DataTable
         self.wcdma_tableWidget = QtWidgets.QTableWidget(WCDMA_LCwidget)
-        self.wcdma_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
+        self.wcdma_tableWidget.setGeometry(QtCore.QRect(20, 395, 451, 161))
         self.wcdma_tableWidget.setObjectName("wcdma_tableWidget")
         self.wcdma_tableWidget.setColumnCount(4)
         self.wcdma_tableWidget.setRowCount(4)
+        self.wcdma_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch) 
+        self.wcdma_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch) 
         item = QtWidgets.QTableWidgetItem()
         self.wcdma_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1677,10 +1683,12 @@ class Ui_LTE_Data_LCwidget(QWidget):
 
         # DataTable
         self.lte_data_tableWidget = QtWidgets.QTableWidget(LTE_Data_LCwidget)
-        self.lte_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 141))
+        self.lte_data_tableWidget.setGeometry(QtCore.QRect(20, 395, 530, 161))
         self.lte_data_tableWidget.setObjectName("lte_data_tableWidget")
         self.lte_data_tableWidget.setColumnCount(4)
         self.lte_data_tableWidget.setRowCount(4)
+        self.lte_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch) 
+        self.lte_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch) 
         item = QtWidgets.QTableWidgetItem()
         self.lte_data_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1880,10 +1888,12 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.wcdma_data_tableWidget = QtWidgets.QTableWidget(
             WCDMA_Data_LCwidget)
         self.wcdma_data_tableWidget.setGeometry(QtCore.QRect(
-            20, 390, 421, 141))
+            20, 395, 515, 171))
         self.wcdma_data_tableWidget.setObjectName("wcdma_data_tableWidget")
         self.wcdma_data_tableWidget.setColumnCount(4)
         self.wcdma_data_tableWidget.setRowCount(4)
+        self.wcdma_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch) 
+        self.wcdma_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
         item = QtWidgets.QTableWidgetItem()
         self.wcdma_data_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -2064,11 +2074,30 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
 class Line_Chart(QWidget):
     def __init__(self, parent, windowName, tablewidget, datelabel):
         super().__init__(parent)
-        self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
+
+        #For Matplotlib--------------------------------------------
+        #self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
+        #self.canvas.axes = self.canvas.figure.add_subplot()
+
+        #For pyqtgraph--------------------------------------------
+        pg.setConfigOptions(foreground = '#000000',background = 'w',antialias = True)
+        pg.TickSliderItem(orientation='bottom', allowAdd=True)
+        self.canvas = pg.GraphicsWindow()
+
+        #SetLayOut(Both)
         vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(self.canvas)
-        self.canvas.axes = self.canvas.figure.add_subplot()
+
+        #pyqtgraph Defualt Setting---------------------------------------------------------
+        self.stringaxis = pg.AxisItem(orientation='bottom')
+        self.canvas.axes = self.canvas.addPlot(axisItems={'bottom': self.stringaxis})         
         self.setLayout(vertical_layout)
+        self.canvas.axes.disableAutoRange()
+        self.canvas.axes.showGrid(y=True)
+        self.canvas.axes.setMouseEnabled(x=True, y=False)     
+        self.canvas.axes.scene().sigMouseClicked.connect(self.get_table_data)
+        #----------------------------------------------------------------------------------
+
         self.title = windowName
         self.tablewidget = tablewidget
         self.datelabel = datelabel
@@ -2076,11 +2105,12 @@ class Line_Chart(QWidget):
         self.Time = []
         self.lines = []
         self.result = {}
-        # print(self.title)
+        self.xdict = {}
+        self.ColorArr = []
 
-        # Graph Toolbar
-        toolbar = NavigationToolbar(self.canvas, self)
-        vertical_layout.addWidget(toolbar)
+        # Matplotlib Graph Toolbar
+        #toolbar = NavigationToolbar(self.canvas, self)
+        #vertical_layout.addWidget(toolbar)
 
         # Choose Line Chart By WindowName
         if self.title == 'LTE_LTE Line Chart':
@@ -2093,28 +2123,41 @@ class Line_Chart(QWidget):
             self.WCDMA_Data()
 
     # Event Function
-    def on_pick(self, event):
-        for Line in self.lines:
-            Line.set_linewidth(1)
-        event.artist.set_linewidth(2.5)
-        self.canvas.draw()
-        self.canvas.flush_events()
-
+    def on_pick(self,event):
+    #For pyqtgraph---------------------------------------------------------------------
+        for Line in range(len(self.lines)):
+            if self.lines[Line] == event:
+                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=4))  
+            else:
+                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=2))
+    #For Matplotlib---------------------------------------------------------------------
+        # for Line in self.lines:
+        #     Line.set_linewidth(1)
+        # event.artist.set_linewidth(2.5)
+        # self.canvas.draw()
+    #----------------------------------------------------------------------------------- 
+       
     # Show Data In Table
     def get_table_data(self, event):
         Chart_datalist = []
-        x, y = int(event.xdata), event.ydata
+        #For pyqtgraph-----------------------------------------------
+        mousePoint = self.canvas.axes.vb.mapSceneToView(event.pos())
+        x, y = int(mousePoint.x()), mousePoint.y()
+        #For Matplotlib----------------------------------------------
+        # x, y = int(event.xdata), event.ydata
+        #------------------------------------------------------------ 
+
         for dict_item in self.result.items():
-            if not (dict_item[0] == 'time'):
+            keyStr = dict_item[0]
+            if not keyStr.endswith('time'):
                 Chart_datalist.append(dict_item[1][x])
         for row in range(len(Chart_datalist)):
             Value = round(Chart_datalist[row], 3)
             self.tablewidget.item(row, 1).setText(str(Value))
+        
 
     # Create LTE Line Chart
     def LTE(self):
-        self.canvas.axes.set_title('LTE Line Chart')
-
         # Open Database And Query
         ChartQuery = LineChartQuery([
             'time', 'lte_sinr_rx0_1', 'lte_sinr_rx1_1', 'lte_inst_rsrp_1',
@@ -2127,207 +2170,271 @@ class Line_Chart(QWidget):
 
         # Graph setting
         self.datelabel.setText(self.Date[0])
-        self.canvas.axes.set_facecolor('#fef8e7')
-        self.canvas.axes.autoscale(False)
-        self.canvas.axes.xaxis.grid(True)
-        self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(self.Time)
-        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+        # For Matplotlib-----------------------------------------
+        # self.canvas.axes.set_title('LTE Line Chart')
+        # self.canvas.axes.set_facecolor('#fef8e7')
+        # self.canvas.axes.autoscale(False)
+        # self.canvas.axes.xaxis.grid(True)
+        # self.canvas.axes.yaxis.grid(True)
+        # self.canvas.axes.set_xticklabels(self.Time)
+        # self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        # self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
-        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-        for data in self.result.items():
-            if data[0] != 'time':
-                newline, = self.canvas.axes.plot(self.Time,
-                                                 data[1],
-                                                 picker=5,
-                                                 linewidth=1)
-                self.lines.append(newline, )
-        for colorindex in range(len(self.lines)):
-            self.lines[colorindex].set_color(ColorArr[colorindex])
+        self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+
+        # For Matplotlib-----------------------------------------
+        # for data in self.result.items():
+        #     if data[0] != 'time':
+        #         newline, = self.canvas.axes.plot(self.Time,
+        #                                          data[1]
+        #                                          )
+        #         self.lines.append(newline, )
+        #for colorindex in range(len(self.lines)):
+            #self.lines[colorindex].set_color(self.ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120, 20)
-        self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
+        # self.canvas.axes.set_ylim(-120, 20)
+        # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', self.on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event',
-                                            self.get_table_data)
+        # pick = self.canvas.mpl_connect('pick_event', self.on_pick) 
+        # tabledata = self.canvas.mpl_connect('button_press_event',self.get_table_data)
+
+        # For pyqtgraph-----------------------------------------------------------------
+        x = self.Time
+        self.xdict = dict(enumerate(x))
+        self.stringaxis.setTicks([self.xdict.items()])
+        for data in self.result.items():
+            if data[0] != 'time':   
+                newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
+                newline.curve.setClickable(True)
+                self.lines.append(newline)
+
+        for colorindex in range(len(self.lines)):
+            self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+
+        # Scale Editing 
+        self.canvas.axes.setYRange(-120,30)
+        self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+
+        # Call Event Function
+        pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
 
     # Create WCDMA Line Chart
     def WCDMA(self):
 
         # ยังไม่เสร็จ -- No data in Database
 
-        self.canvas.axes.set_title('WCDMA Line Chart')
-
         # Open Database And Query
-        ChartQuery1 = LineChartQuery(
-            ['time', 'wcdma_aset_ecio_avg', 'wcdma_aset_rscp_avg'],
-            'wcdma_cell_meas', '')
-        self.result = ChartQuery1.getData()
-        ChartQuery2 = LineChartQuery(['wcdma_rssi'], 'wcdma_rx_power', '')
-        result2 = ChartQuery2.getData()
-        ChartQuery3 = LineChartQuery(
-            ['wcdma_bler_average_percent_all_channels'], 'wcdma_bler', '')
-        result3 = ChartQuery3.getData()
-        self.result.update(result2)
-        self.result.update(result3)
-        for index in range(len(self.result['time'])):
-            self.Date.append(self.result['time'][index].split(' ')[0])
-            self.Time.append(self.result['time'][index].split(' ')[1])
+
+        condition = """LEFT JOIN wcdma_rx_power wrp ON wcm.time = wrp.time
+                       LEFT JOIN wcdma_bler wb ON wcm.time = wb.time"""
+        ChartQuery = LineChartQuery(['wcm.time','wcm.wcdma_aset_ecio_avg','wcm.wcdma_aset_rscp_avg',
+                    'wrp.wcdma_rssi','wb.wcdma_bler_average_percent_all_channels'],'wcdma_cell_meas wcm',condition)
+        self.result = ChartQuery.getData()
+
+        for index in range(len(self.result['wcm.time'])):
+            self.Date.append(self.result['wcm.time'][index].split(' ')[0])
+            self.Time.append(self.result['wcm.time'][index].split(' ')[1])
 
         # Graph setting
         self.datelabel.setText(self.Date[0])
-        self.canvas.axes.set_facecolor('#fef8e7')
-        self.canvas.axes.autoscale(False)
-        self.canvas.axes.xaxis.grid(True)
-        self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(self.Time)
-        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+        # For Matplotlib-----------------------------------------
+        # self.canvas.axes.set_title('WCDMA Line Chart')
+        # self.canvas.axes.set_facecolor('#fef8e7')
+        # self.canvas.axes.autoscale(False)
+        # self.canvas.axes.xaxis.grid(True)
+        # self.canvas.axes.yaxis.grid(True)
+        # self.canvas.axes.set_xticklabels(self.Time)
+        # self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        # self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
+        self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+        # For Matplotlib-----------------------------------------
+        # for data in self.result.items():
+        #     if data[0] != 'wcm.time':
+        #         newline, = self.canvas.axes.plot(self.Time,
+        #                                          data[1],
+        #                                          picker=5,
+        #                                          linewidth=1)
+        #         self.lines.append(newline, )
 
-        # Array for line's color
-        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-
-        for data in self.result.items():
-            if data[0] != 'time':
-                newline, = self.canvas.axes.plot(self.Time,
-                                                 data[1],
-                                                 picker=5,
-                                                 linewidth=1)
-                self.lines.append(newline, )
-
-        for colorindex in range(len(self.lines)):
-            self.lines[colorindex].set_color(ColorArr[colorindex])
+        # for colorindex in range(len(self.lines)):
+        #     self.lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120, 20)
-        self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
+        # self.canvas.axes.set_ylim(-120, 20)
+        # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', self.on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event',
-                                            self.get_table_data)
+        # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
+        # tabledata = self.canvas.mpl_connect('button_press_event',
+        #                                     self.get_table_data)
+
+        # For pyqtgraph-----------------------------------------------------------------
+        x = self.Time
+        self.xdict = dict(enumerate(x))
+        self.stringaxis.setTicks([self.xdict.items()])
+        for data in self.result.items():
+            if data[0] != 'wcm.time':   
+                newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
+                newline.curve.setClickable(True)
+                self.lines.append(newline)
+
+        for colorindex in range(len(self.lines)):
+            self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+
+        # Scale Editing 
+        self.canvas.axes.setYRange(-120,20)
+        self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+
+        # Call Event Function
+        pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
 
     # Create WCDMA Data Line Chart
     def WCDMA_Data(self):
 
         # ยังไม่เสร็จ -- No data in Database
 
-        self.canvas.axes.set_title('WCDMA Data Line Chart')
-
         # Open Database And Query
-        ChartQuery1 = LineChartQuery(['time', 'data_wcdma_rlc_dl_throughput'],
-                                     'data_wcdma_rlc_stats', '')
-        self.result = ChartQuery1.getData()
-        ChartQuery2 = LineChartQuery(
-            ['data_app_dl_throughput_1', 'data_download_session_average'],
-            'data_app_throughput', '')
-        result2 = ChartQuery2.getData()
-        ChartQuery3 = LineChartQuery(['data_hsdpa_throughput'],
-                                     'wcdma_hsdpa_stats', '')
-        result3 = ChartQuery3.getData()
-        self.result.update(result2)
-        self.result.update(result3)
-        for index in range(len(self.result['time'])):
-            self.Date.append(self.result['time'][index].split(' ')[0])
-            self.Time.append(self.result['time'][index].split(' ')[1])
+
+        condition = """LEFT JOIN data_app_throughput dat ON dwrs.time = dat.time
+                       LEFT JOIN wcdma_hsdpa_stats whs ON dwrs.time = whs.time"""
+        ChartQuery = LineChartQuery(['dwrs.time','dwrs.data_wcdma_rlc_dl_throughput','dat.data_app_dl_throughput_1',
+                                    'dat.data_download_session_average','whs.data_hsdpa_thoughput'],'data_wcdma_rlc_stats dwrs',condition)
+        self.result = ChartQuery.getData()
+
+        for index in range(len(self.result['dwrs.time'])):
+            self.Date.append(self.result['dwrs.time'][index].split(' ')[0])
+            self.Time.append(self.result['dwrs.time'][index].split(' ')[1])
 
         # Graph setting
         self.datelabel.setText(self.Date[0])
-        self.canvas.axes.set_facecolor('#fef8e7')
-        self.canvas.axes.autoscale(False)
-        self.canvas.axes.xaxis.grid(True)
-        self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(self.Time)
-        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+        # For Matplotlib-----------------------------------------
+        #self.canvas.axes.set_title('WCDMA Data Line Chart')
+        # self.canvas.axes.set_facecolor('#fef8e7')
+        # self.canvas.axes.autoscale(False)
+        # self.canvas.axes.xaxis.grid(True)
+        # self.canvas.axes.yaxis.grid(True)
+        # self.canvas.axes.set_xticklabels(self.Time)
+        # self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
+        # self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
+        self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+        # For Matplotlib-----------------------------------------
+        # for data in self.result.items():
+        #     if data[0] != 'dwrs.time':
+        #         newline, = self.canvas.axes.plot(self.Time,
+        #                                          data[1],
+        #                                          picker=5,
+        #                                          linewidth=1)
+        #         self.lines.append(newline, )
 
-        # Array for line's color
-        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-
-        for data in self.result.items():
-            if data[0] != 'time':
-                newline, = self.canvas.axes.plot(self.Time,
-                                                 data[1],
-                                                 picker=5,
-                                                 linewidth=1)
-                self.lines.append(newline, )
-
-        for colorindex in range(len(self.lines)):
-            self.lines[colorindex].set_color(ColorArr[colorindex])
+        # for colorindex in range(len(self.lines)):
+        #     self.lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-120, 20)
-        self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
+        # self.canvas.axes.set_ylim(-120, 20)
+        # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', self.on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event',
-                                            self.get_table_data)
+        # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
+        # tabledata = self.canvas.mpl_connect('button_press_event',
+        #                                     self.get_table_data)
+
+        # For pyqtgraph-----------------------------------------------------------------
+        x = self.Time
+        self.xdict = dict(enumerate(x))
+        self.stringaxis.setTicks([self.xdict.items()])
+        for data in self.result.items():
+            if data[0] != 'dwrs.time':   
+                newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
+                newline.curve.setClickable(True)
+                self.lines.append(newline)
+
+        for colorindex in range(len(self.lines)):
+            self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+
+        # Scale Editing 
+        self.canvas.axes.setYRange(-120,20)
+        self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+
+        # Call Event Function
+        pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
 
     # Create LTE Data Line Chart
     def LTE_Data(self):
 
-        self.canvas.axes.set_title('LTE Data Line Chart')
-
         # Open Database And Query
-        ChartQuery1 = LineChartQuery(
-            ['time', 'lte_l1_throughput_mbps_1', 'lte_bler_1'], 'lte_l1_dl_tp',
-            '')
-        self.result = ChartQuery1.getData()
-        ChartQuery2 = LineChartQuery(
-            ['data_download_overall', 'data_upload_overall'],
-            'data_app_throughput', '')
-        result2 = ChartQuery2.getData()
-        self.result.update(result2)
-        for index in range(len(self.result['time'])):
-            self.Date.append(self.result['time'][index].split(' ')[0])
-            self.Time.append(self.result['time'][index].split(' ')[1])
+        condition = """LEFT JOIN data_app_throughput dat ON lldt.time = dat.time"""
+        ChartQuery = LineChartQuery(['lldt.time','dat.data_download_overall','dat.data_upload_overall',
+                        'lldt.lte_l1_throughput_mbps_1','lldt.lte_bler_1'],'lte_l1_dl_tp lldt',condition)
+        self.result = ChartQuery.getData()
+
+        for index in range(len(self.result['lldt.time'])):
+            self.Date.append(self.result['lldt.time'][index].split(' ')[0])
+            self.Time.append(self.result['lldt.time'][index].split(' ')[1])
 
         # Graph setting
         self.datelabel.setText(self.Date[0])
-        self.canvas.axes.set_facecolor('#fef8e7')
-        self.canvas.axes.autoscale(False)
-        self.canvas.axes.xaxis.grid(True)
-        self.canvas.axes.yaxis.grid(True)
-        self.canvas.axes.set_xticklabels(self.Time)
-        self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-        self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
+        # For Matplotlib-----------------------------------------
+        # self.canvas.axes.set_title('LTE Data Line Chart')
+        # self.canvas.axes.set_facecolor('#fef8e7')
+        # self.canvas.axes.autoscale(False)
+        # self.canvas.axes.xaxis.grid(True)
+        # self.canvas.axes.yaxis.grid(True)
+        # self.canvas.axes.set_xticklabels(self.Time)
+        # self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(5))
+        # self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
+        self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+        # For Matplotlib-----------------------------------------
+        # for data in self.result.items():
+        #     if data[0] != 'lldt.time':
+        #         newline, = self.canvas.axes.plot(self.Time,
+        #                                          data[1],
+        #                                          picker=5,
+        #                                          linewidth=1)
+        #         self.lines.append(newline, )
 
-        # Array for line's color
-        ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-
-        for data in self.result.items():
-            if data[0] != 'time':
-                newline, = self.canvas.axes.plot(self.Time,
-                                                 data[1],
-                                                 picker=5,
-                                                 linewidth=1)
-                self.lines.append(newline, )
-
-        for colorindex in range(len(self.lines)):
-            self.lines[colorindex].set_color(ColorArr[colorindex])
+        # for colorindex in range(len(self.lines)):
+        #     self.lines[colorindex].set_color(ColorArr[colorindex])
 
         # Scale Editing
-        self.canvas.axes.set_ylim(-20, 35)
-        self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
+        # self.canvas.axes.set_ylim(-5, 35)
+        # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
         # Call Event Function
-        pick = self.canvas.mpl_connect('pick_event', self.on_pick)
-        tabledata = self.canvas.mpl_connect('button_press_event',
-                                            self.get_table_data)
+        # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
+        # tabledata = self.canvas.mpl_connect('button_press_event',
+        #                                     self.get_table_data)
+
+        # For pyqtgraph-----------------------------------------------------------------
+        x = self.Time
+        self.xdict = dict(enumerate(x))
+        self.stringaxis.setTicks([self.xdict.items()])
+        for data in self.result.items():
+            if data[0] != 'lldt.time':   
+                newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
+                newline.curve.setClickable(True)
+                self.lines.append(newline)
+
+        for colorindex in range(len(self.lines)):
+            self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+
+        # Scale Editing 
+        self.canvas.axes.setYRange(-5, 35)
+        self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+
+        # Call Event Function
+        pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
 
     def moveLineChart(self, sampledate):
+        #For pyqtgraph-----------------------------------------------
         # Shift Part
         dateString = str(sampledate)
         timeString = dateString.split(' ')[1][:8]
@@ -2336,23 +2443,39 @@ class Line_Chart(QWidget):
             if timeItem[:8] == timeString:
                 if self.Time.index(timeItem) + 4 < len(self.Time):
                     currentTimeindex = self.Time.index(timeItem)
-                    self.canvas.axes.set_xlim(self.Time[currentTimeindex],
-                                              self.Time[currentTimeindex + 4])
+                    self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
                     break
-                else:
+                else:          
                     break
+      
+        #For Matplotlib----------------------------------------------
+        # # Shift Part
+        # dateString = str(sampledate)
+        # timeString = dateString.split(' ')[1][:8]
+        # currentTimeindex = 0
+        # for timeItem in self.Time:
+        #     if timeItem[:8] == timeString:
+        #         if self.Time.index(timeItem)+4 < len(self.Time):
+        #             currentTimeindex = self.Time.index(timeItem)
+        #             self.canvas.axes.set_xlim(self.Time[currentTimeindex],
+        #                                     self.Time[currentTimeindex + 4])
+        #             break
+        #         else:          
+        #             break    
+        # self.canvas.draw()
+        #---------------------------------------------------------------------
 
-    # Update table part
+        # Update table part
         Chart_datalist = []
         for dict_item in self.result.items():
-            if not (dict_item[0] == 'time'):
+            keyStr = dict_item[0]
+            if not keyStr.endswith('time'):
                 Chart_datalist.append(dict_item[1][currentTimeindex])
         for row in range(len(Chart_datalist)):
             Value = round(Chart_datalist[row], 3)
             self.tablewidget.item(row, 1).setText(str(Value))
 
-        self.canvas.draw()
-        self.canvas.flush_events()
+        
 
 
 class LineChartQuery:
@@ -2360,6 +2483,7 @@ class LineChartQuery:
         self.fieldArr = fieldArr
         self.tableName = tableName
         self.condition = conditionStr
+        self.result = dict()
 
     def countField(self):
         fieldCount = 0
@@ -2374,7 +2498,7 @@ class LineChartQuery:
         return selectField
 
     def getData(self):
-        result = dict()
+        #result = dict()
         selectField = self.selectFieldToQuery()
         azenqosDatabase.open()
         query = QSqlQuery()
@@ -2385,15 +2509,20 @@ class LineChartQuery:
             for field in range(len(self.fieldArr)):
                 fieldName = self.fieldArr[field]
                 validatedValue = self.valueValidation(query.value(field))
-                if fieldName in result:
-                    if isinstance(result[fieldName], list):
-                        result[fieldName].append(validatedValue)
+                if fieldName in self.result:
+                    if isinstance(self.result[fieldName], list):
+                        self.result[fieldName].append(validatedValue)
                     else:
-                        result[fieldName] = [validatedValue]
+                        self.result[fieldName] = [validatedValue]
                 else:
-                    result[fieldName] = [validatedValue]
+                    self.result[fieldName] = [validatedValue]
+
+        if not self.result:
+            for field in range(len(self.fieldArr)):
+                fieldName = self.fieldArr[field]
+                self.result[fieldName] = ''    
         azenqosDatabase.close()
-        return result
+        return self.result
 
     def valueValidation(self, value):
         validatedValue = 0
@@ -2700,8 +2829,7 @@ class TimeSliderThread(QThread):
         isSliderPlay = True
         if isSliderPlay:
             if self.currentSliderValue:
-                for x in range(int(self.currentSliderValue),
-                               int(sliderLength)):
+                for x in range(int(self.currentSliderValue), int(sliderLength)):
                     if not isSliderPlay:
                         break
                     else:

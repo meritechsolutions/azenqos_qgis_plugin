@@ -32,12 +32,9 @@ from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray, QThread,
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.lines import Line2D
-import sqlite3
 import matplotlib.pyplot as plt
-from matplotlib.ticker import StrMethodFormatter
-import numpy as np
 from lte_query import LteDataQuery
 from wcdma_query import WcdmaDataQuery
 from cdma_evdo_query import CdmaEvdoQuery
@@ -245,7 +242,6 @@ class AzenqosDialog(QDialog):
         self.raise_()
         self.activateWindow()
 
-
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
@@ -442,11 +438,9 @@ class AzenqosDialog(QDialog):
         self.playButton.clicked.connect(self.startPlaytimeThread)
         self.pauseButton.clicked.connect(self.pauseTime)
 
-
     def startPlaytimeThread(self):
         self.playButton.setDisabled(True)
         self.timeSliderThread.start()
-
 
     def pauseTime(self):
         global isSliderPlay
@@ -1408,7 +1402,6 @@ class Ui_LTE_LCwidget(QWidget):
                                      self.lte_tableWidget, self.lineEdit)
         self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_widget.setObjectName("lte_widget")
-
         self.retranslateUi(LTE_LCwidget)
         QtCore.QMetaObject.connectSlotsByName(LTE_LCwidget)
 
@@ -2105,6 +2098,7 @@ class Line_Chart(QWidget):
             Line.set_linewidth(1)
         event.artist.set_linewidth(2.5)
         self.canvas.draw()
+        self.canvas.flush_events()
 
     # Show Data In Table
     def get_table_data(self, event):
@@ -2142,8 +2136,6 @@ class Line_Chart(QWidget):
         self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
 
         # Ploting Graph
-
-        #lines = []
         ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
         for data in self.result.items():
             if data[0] != 'time':
@@ -2342,13 +2334,13 @@ class Line_Chart(QWidget):
         currentTimeindex = 0
         for timeItem in self.Time:
             if timeItem[:8] == timeString:
-                if self.Time.index(timeItem)+4 < len(self.Time):
+                if self.Time.index(timeItem) + 4 < len(self.Time):
                     currentTimeindex = self.Time.index(timeItem)
                     self.canvas.axes.set_xlim(self.Time[currentTimeindex],
-                                            self.Time[currentTimeindex + 4])
+                                              self.Time[currentTimeindex + 4])
                     break
-                else:          
-                    break    
+                else:
+                    break
 
     # Update table part
         Chart_datalist = []
@@ -2360,6 +2352,7 @@ class Line_Chart(QWidget):
             self.tablewidget.item(row, 1).setText(str(Value))
 
         self.canvas.draw()
+        self.canvas.flush_events()
 
 
 class LineChartQuery:
@@ -2707,11 +2700,12 @@ class TimeSliderThread(QThread):
         isSliderPlay = True
         if isSliderPlay:
             if self.currentSliderValue:
-                for x in range(int(self.currentSliderValue), int(sliderLength)):
+                for x in range(int(self.currentSliderValue),
+                               int(sliderLength)):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(0.5)
+                        time.sleep(1)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
 
@@ -2723,7 +2717,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(0.5)
+                        time.sleep(1)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
 

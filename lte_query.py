@@ -28,6 +28,7 @@ class LteDataQuery:
             'sib1 LCI', 'TDD Config:', 'SubframeAssignment',
             'SpclSubframePattern', 'DedBearer QCI'
         ]
+
         selectedColumns = """lcm.time as Time, lcm.lte_band_1 as Band, lcm.lte_earfcn_1 as 'E-ARFCN', lsci.lte_serv_cell_info_pci as 'Serving PCI',
                                 lcm.lte_inst_rsrp_rx0_1 as 'Serving RSRP[0]', lcm.lte_inst_rsrp_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrp_1 as 'Serving RSRP', lcm.lte_inst_rsrq_rx0_1 as 'Serving RSRQ[0]', lcm.lte_inst_rsrq_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrq_1 as 'Serving RSRQ', lcm.lte_sinr_rx0_1 as 'SINR Rx[0]', lcm.lte_sinr_rx1_1 as 'SINR Rx[1]', lcm.lte_sinr_1 as 'SINR', lcm.lte_inst_rssi_rx0_1 as 'RSSI Rx[0]', lcm.lte_inst_rssi_rx1_1 as 'RSSI Rx[1]', lcm.lte_inst_rssi_1 as 'RSSI', lldt.lte_bler_1 as 'BLER', lc.lte_cqi_cw0_1 as 'CQI CW[0]', lc.lte_cqi_cw1_1 as 'CQI CW[1]', ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)', lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State', les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo', lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
                                 lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID', lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
@@ -56,20 +57,15 @@ class LteDataQuery:
         query = QSqlQuery()
         query.exec_(queryString)
         fieldCount = len(selectedColumns.split(","))
-        queryRowCount = query.record().count()
-        if queryRowCount > 0:
-            while query.next():
-                for index in range(fieldCount):
-                    columnName = fieldsList[index]
-                    value = ''
-                    if query.value(index) != '':
-                        value = query.value(index)
-                    dataList.append([columnName, value, '', ''])
-        else:
+        while query.next():
             for index in range(fieldCount):
                 columnName = fieldsList[index]
                 value = ''
+                if query.value(index) != '':
+                    value = query.value(index)
                 dataList.append([columnName, value, '', ''])
+        if len(dataList) == 0:
+            dataList = self.defaultData()
         self.closeConnection()
         return dataList
 
@@ -224,7 +220,7 @@ class LteDataQuery:
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-
+        dataList.append(['Time', self.timeFilter, '', '', ''])
         queryString = """SELECT time, lte_rlc_dl_tp_mbps, lte_rlc_dl_tp, lte_rlc_n_bearers
                         FROM lte_rlc_stats
                         %s
@@ -233,7 +229,7 @@ class LteDataQuery:
         query = QSqlQuery()
         query.exec_(queryString)
         while query.next():
-            dataList.append(['Time', self.timeFilter, '', '', ''])
+
             dataList.append(
                 ['DL TP(Mbps)',
                  query.value('lte_rlc_dl_tp_mbps'), '', '', ''])
@@ -321,6 +317,15 @@ class LteDataQuery:
                     else:
                         dataList.append([volteFields[field], ''])
         self.closeConnection()
+        return dataList
+
+    def defaultData(self, fieldsList):
+        fieldCount = len(fieldsList.split(","))
+        dataList = []
+        for index in range(fieldCount):
+                columnName = fieldsList[index]
+                value = ''
+                dataList.append([columnName, value, '', ''])
         return dataList
 
     def openConnection(self):

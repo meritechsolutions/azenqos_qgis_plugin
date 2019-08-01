@@ -478,7 +478,7 @@ class AzenqosDialog(QDialog):
         timeSlider.update()
         linechartWindowname = [
             'WCDMA_Line Chart', 'LTE_LTE Line Chart',
-            'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart'
+            'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart','WCDMA_Pilot Analyzer'
         ]
         for window in openedWindows:
             if not window.title in linechartWindowname:
@@ -582,7 +582,8 @@ class AzenqosDialog(QDialog):
                 if hasattr(self, 'wcdma_analyzer_window'):
                     self.wcdma_analyzer_window.show()
                 else:
-                    self.wcdma_analyzer_window = TableWindow(windowName)
+                    self.wcdma_analyzer_window = Ui_WCDMA_PA_LCwidget(windowName)
+                    #self.wcdma_analyzer_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_analyzer_window)
                     self.wcdma_analyzer_window.show()
         elif parent == "LTE":
@@ -2069,6 +2070,190 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
     def moveChart(self, sampledate):
         self.wcdma_data_widget.moveLineChart(sampledate)
 
+# WCDMA Pilot Analyzer Line Chart
+class Ui_WCDMA_PA_LCwidget(QWidget):
+    def __init__(self, windowName):
+        super(Ui_WCDMA_PA_LCwidget, self).__init__()
+        self.title = windowName
+        self.setupUi(self)
+
+    def setupUi(self, PA_widget):
+
+        PA_widget.setObjectName("PA_widget")
+        PA_widget.resize(841, 586)
+
+        #Graph Area
+        self.pa_GArea = QtWidgets.QScrollArea(PA_widget)
+        self.pa_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.pa_GArea.setWidgetResizable(True)
+        self.pa_GArea.setObjectName("pa_GArea")
+
+        #Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+
+        #Data Table
+        self.tableWidget = QtWidgets.QTableWidget(PA_widget)
+        self.tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 171))
+        self.tableWidget.setObjectName("tableWidget")
+        self.tableWidget.setColumnCount(4)
+        self.tableWidget.setRowCount(5)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setVerticalHeaderItem(4, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.tableWidget.setItem(1, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.tableWidget.setItem(2, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(3, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(3, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.tableWidget.setItem(3, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(4, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableWidget.setItem(4, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setForeground(brush)
+        self.tableWidget.setItem(4, 3, item)
+        self.tableWidget.horizontalHeader().setVisible(True)
+        self.tableWidget.horizontalHeader().setHighlightSections(True)
+        self.tableWidget.verticalHeader().setVisible(False)
+
+        #Data Label
+        self.datelabel = QtWidgets.QLabel(PA_widget)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(PA_widget)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.pa_widget = Line_Chart(self.scrollAreaWidgetContents,
+                                                self.title,
+                                                self.tableWidget,
+                                                self.lineEdit)
+        self.pa_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.pa_widget.setObjectName("pa_widget")
+        self.pa_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        self.retranslateUi(PA_widget)
+        QtCore.QMetaObject.connectSlotsByName(PA_widget)
+
+    def retranslateUi(self, PA_widget):
+        _translate = QtCore.QCoreApplication.translate
+        PA_widget.setWindowTitle(_translate("PA_widget", "WCDMA Pilot Analyzer [MS1]"))
+        item = self.tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("PA_widget", "1"))
+        item = self.tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("PA_widget", "2"))
+        item = self.tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("PA_widget", "3"))
+        item = self.tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("PA_widget", "4"))
+        item = self.tableWidget.verticalHeaderItem(4)
+        item.setText(_translate("PA_widget", "5"))
+        item = self.tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("PA_widget", "Element"))
+        item = self.tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("PA_widget", "Value"))
+        item = self.tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("PA_widget", "Cell Type"))
+        item = self.tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("PA_widget", "Color"))
+        __sortingEnabled = self.tableWidget.isSortingEnabled()
+        self.tableWidget.setSortingEnabled(False)
+        self.tableWidget.setSortingEnabled(__sortingEnabled)
+
+    def moveChart(self, sampledate):
+        self.pa_widget.moveLineChart(sampledate)            
+
 
 # Class For Line Chart
 class Line_Chart(QWidget):
@@ -2092,6 +2277,7 @@ class Line_Chart(QWidget):
         self.stringaxis = pg.AxisItem(orientation='bottom')
         self.canvas.axes = self.canvas.addPlot(axisItems={'bottom': self.stringaxis})         
         self.setLayout(vertical_layout)
+        self.canvas.axes.hideButtons() 
         self.canvas.axes.disableAutoRange()
         self.canvas.axes.showGrid(y=True)
         self.canvas.axes.setMouseEnabled(x=True, y=False)     

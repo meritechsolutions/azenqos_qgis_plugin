@@ -1273,8 +1273,8 @@ class Ui_LTE_LCwidget(QWidget):
         self.lte_tableWidget.setGeometry(QtCore.QRect(20, 395, 451, 171))
         self.lte_tableWidget.setObjectName("lte_tableWidget")
         self.lte_tableWidget.setColumnCount(4)
-        self.lte_tableWidget.setRowCount(5) 
-        self.lte_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch) 
+        self.lte_tableWidget.setRowCount(5)
+        self.lte_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         item = QtWidgets.QTableWidgetItem()
         self.lte_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1495,8 +1495,8 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.wcdma_tableWidget.setObjectName("wcdma_tableWidget")
         self.wcdma_tableWidget.setColumnCount(4)
         self.wcdma_tableWidget.setRowCount(4)
-        self.wcdma_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch) 
-        self.wcdma_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch) 
+        self.wcdma_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.wcdma_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
         item = QtWidgets.QTableWidgetItem()
         self.wcdma_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1693,8 +1693,8 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_data_tableWidget.setObjectName("lte_data_tableWidget")
         self.lte_data_tableWidget.setColumnCount(4)
         self.lte_data_tableWidget.setRowCount(4)
-        self.lte_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch) 
-        self.lte_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch) 
+        self.lte_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.lte_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
         item = QtWidgets.QTableWidgetItem()
         self.lte_data_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1898,7 +1898,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.wcdma_data_tableWidget.setObjectName("wcdma_data_tableWidget")
         self.wcdma_data_tableWidget.setColumnCount(4)
         self.wcdma_data_tableWidget.setRowCount(4)
-        self.wcdma_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch) 
+        self.wcdma_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.wcdma_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
         item = QtWidgets.QTableWidgetItem()
         self.wcdma_data_tableWidget.setVerticalHeaderItem(0, item)
@@ -2257,7 +2257,7 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         self.tableWidget.setSortingEnabled(__sortingEnabled)
 
     def moveChart(self, sampledate):
-        self.pa_widget.moveLineChart(sampledate)            
+        self.pa_widget.moveLineChart(sampledate)
 
 
 # Class For Line Chart
@@ -2280,12 +2280,12 @@ class Line_Chart(QWidget):
 
         #pyqtgraph Defualt Setting---------------------------------------------------------
         self.stringaxis = pg.AxisItem(orientation='bottom')
-        self.canvas.axes = self.canvas.addPlot(axisItems={'bottom': self.stringaxis})         
+        self.canvas.axes = self.canvas.addPlot(axisItems={'bottom': self.stringaxis})
         self.setLayout(vertical_layout)
-        self.canvas.axes.hideButtons() 
+        self.canvas.axes.hideButtons()
         self.canvas.axes.disableAutoRange()
         self.canvas.axes.showGrid(y=True)
-        self.canvas.axes.setMouseEnabled(x=True, y=False)     
+        self.canvas.axes.setMouseEnabled(x=True, y=False)
         self.canvas.axes.scene().sigMouseClicked.connect(self.get_table_data)
         #----------------------------------------------------------------------------------
 
@@ -2318,7 +2318,7 @@ class Line_Chart(QWidget):
     #For pyqtgraph---------------------------------------------------------------------
         for Line in range(len(self.lines)):
             if self.lines[Line] == event:
-                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=4))  
+                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=4))
             else:
                 self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=2))
     #For Matplotlib---------------------------------------------------------------------
@@ -2326,8 +2326,8 @@ class Line_Chart(QWidget):
         #     Line.set_linewidth(1)
         # event.artist.set_linewidth(2.5)
         # self.canvas.draw()
-    #----------------------------------------------------------------------------------- 
-       
+    #-----------------------------------------------------------------------------------
+
     # Show Data In Table
     def get_table_data(self, event):
         Chart_datalist = []
@@ -2336,7 +2336,7 @@ class Line_Chart(QWidget):
         x, y = int(mousePoint.x()), mousePoint.y()
         #For Matplotlib----------------------------------------------
         # x, y = int(event.xdata), event.ydata
-        #------------------------------------------------------------ 
+        #------------------------------------------------------------
 
         for dict_item in self.result.items():
             keyStr = dict_item[0]
@@ -2345,7 +2345,7 @@ class Line_Chart(QWidget):
         for row in range(len(Chart_datalist)):
             Value = round(Chart_datalist[row], 3)
             self.tablewidget.item(row, 1).setText(str(Value))
-        
+
 
     # Create LTE Line Chart
     def LTE(self):
@@ -2390,7 +2390,7 @@ class Line_Chart(QWidget):
             # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
 
             # Call Event Function
-            # pick = self.canvas.mpl_connect('pick_event', self.on_pick) 
+            # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
             # tabledata = self.canvas.mpl_connect('button_press_event',self.get_table_data)
 
             # For pyqtgraph-----------------------------------------------------------------
@@ -2398,7 +2398,7 @@ class Line_Chart(QWidget):
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
-                if data[0] != 'time':   
+                if data[0] != 'time':
                     newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -2406,7 +2406,7 @@ class Line_Chart(QWidget):
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
 
-            # Scale Editing 
+            # Scale Editing
             self.canvas.axes.setYRange(-120,30)
             self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
 
@@ -2471,7 +2471,7 @@ class Line_Chart(QWidget):
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
-                    if data[0] != 'wcm.time':   
+                    if data[0] != 'wcm.time':
                         newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
                         newline.curve.setClickable(True)
                         self.lines.append(newline)
@@ -2479,7 +2479,7 @@ class Line_Chart(QWidget):
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
 
-            # Scale Editing 
+            # Scale Editing
             self.canvas.axes.setYRange(-120,20)
             self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
 
@@ -2544,7 +2544,7 @@ class Line_Chart(QWidget):
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
-                if data[0] != 'dwrs.time':   
+                if data[0] != 'dwrs.time':
                     newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -2552,7 +2552,7 @@ class Line_Chart(QWidget):
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
 
-            # Scale Editing 
+            # Scale Editing
             self.canvas.axes.setYRange(-120,20)
             self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
 
@@ -2613,7 +2613,7 @@ class Line_Chart(QWidget):
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
-                if data[0] != 'lldt.time':   
+                if data[0] != 'lldt.time':
                     newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -2621,7 +2621,7 @@ class Line_Chart(QWidget):
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
 
-            # Scale Editing 
+            # Scale Editing
             self.canvas.axes.setYRange(-5, 35)
             self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
 
@@ -2641,9 +2641,9 @@ class Line_Chart(QWidget):
                         currentTimeindex = self.Time.index(timeItem)
                         self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
                         break
-                    else:          
+                    else:
                         break
-        
+
             #For Matplotlib----------------------------------------------
             # # Shift Part
             # dateString = str(sampledate)
@@ -2656,14 +2656,14 @@ class Line_Chart(QWidget):
             #             self.canvas.axes.set_xlim(self.Time[currentTimeindex],
             #                                     self.Time[currentTimeindex + 4])
             #             break
-            #         else:          
-            #             break    
+            #         else:
+            #             break
             # self.canvas.draw()
             #---------------------------------------------------------------------
 
             # Update table part
-            Chart_datalist = [] 
-            for dict_item in self.result.items(): 
+            Chart_datalist = []
+            for dict_item in self.result.items():
                 keyStr = dict_item[0]
                 if not keyStr.endswith('time'):
                     Chart_datalist.append(dict_item[1][currentTimeindex])
@@ -2671,7 +2671,7 @@ class Line_Chart(QWidget):
                 Value = round(Chart_datalist[row], 3)
                 self.tablewidget.item(row, 1).setText(str(Value))
 
-        
+
 
 
 class LineChartQuery:
@@ -2716,7 +2716,7 @@ class LineChartQuery:
         if not self.result:
             for field in range(len(self.fieldArr)):
                 fieldName = self.fieldArr[field]
-                self.result[fieldName] = ''    
+                self.result[fieldName] = ''
         azenqosDatabase.close()
         return self.result
 
@@ -2985,7 +2985,7 @@ class CellInformation(QDialog):
                                                       '*.cel')
             if fileName != "":
                 baseFileName = os.path.basename(str(fileName))
-                self.FilePath1.setText(fileName)
+                self.FilePath2.setText(fileName)
             return False
         elif buttonNo == 3:
             fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
@@ -2993,7 +2993,7 @@ class CellInformation(QDialog):
                                                       '*.cel')
             if fileName != "":
                 baseFileName = os.path.basename(str(fileName))
-                self.FilePath1.setText(fileName)
+                self.FilePath3.setText(fileName)
             return False
         elif buttonNo == 4:
             fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
@@ -3001,7 +3001,7 @@ class CellInformation(QDialog):
                                                       '*.cel')
             if fileName != "":
                 baseFileName = os.path.basename(str(fileName))
-                self.FilePath1.setText(fileName)
+                self.FilePath4.setText(fileName)
             return False
         return False
 

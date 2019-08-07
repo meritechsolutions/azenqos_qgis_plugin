@@ -97,8 +97,18 @@ class CdmaEvdoQuery:
         return dataList
 
     def openConnection(self):
-      if self.azenqosDatabase is not None:
-          self.azenqosDatabase.open()
+        if self.azenqosDatabase is not None:
+            self.azenqosDatabase.open()
 
     def closeConnection(self):
-      self.azenqosDatabase.close()
+        self.azenqosDatabase.close()
+
+    def defaultData(self, fieldsList):
+        fieldCount = len(fieldsList)
+        if fieldCount > 0:
+            dataList = []
+            for index in range(fieldCount):
+                    columnName = fieldsList[index]
+                    value = ''
+                    dataList.append([columnName, value, '', ''])
+            return dataList

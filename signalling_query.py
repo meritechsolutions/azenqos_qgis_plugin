@@ -67,7 +67,7 @@ class SignalingDataQuery:
         self.closeConnection()
         return dataList
 
-    def getBenchmark(self):  
+    def getBenchmark(self):
         self.openConnection()
         dataList = []
         condition = ""
@@ -99,7 +99,7 @@ class SignalingDataQuery:
         while query.next():
             for field in range(len(lteField)):
                 if query.value(field):
-                    dataList[field+5][1] = query.value(field)   
+                    dataList[field+5][1] = query.value(field)
                     # dataList.append(
                     #     [lteField[field],
                     #      query.value(field), '', '', ''])
@@ -300,7 +300,7 @@ class SignalingDataQuery:
         return dataList
 
     def getDebugAndroidEvent(self): #ยังไม่มีข้อมูลใน database
-    
+
         self.openConnection()
         # query = QSqlQuery()
         # query.exec_("select * from events")
@@ -331,3 +331,13 @@ class SignalingDataQuery:
 
     def closeConnection(self):
         self.azenqosDatabase.close()
+
+    def defaultData(self, fieldsList):
+        fieldCount = len(fieldsList)
+        if fieldCount > 0:
+            dataList = []
+            for index in range(fieldCount):
+                    columnName = fieldsList[index]
+                    value = ''
+                    dataList.append([columnName, value, '', ''])
+            return dataList

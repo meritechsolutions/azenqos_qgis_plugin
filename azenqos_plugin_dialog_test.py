@@ -30,15 +30,17 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray, QThread, pyqtSignal
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.lines import Line2D
+# from matplotlib.figure import Figure
+# import matplotlib.pyplot as plt
+# from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+# from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+# from matplotlib.lines import Line2D
+# from matplotlib.ticker import StrMethodFormatter
+
 import sqlite3
-import matplotlib.pyplot as plt
-from matplotlib.ticker import StrMethodFormatter
 import numpy as np
 import pyqtgraph as pg
+
 from lte_query import LteDataQuery
 from wcdma_query import WcdmaDataQuery
 from cdma_evdo_query import CdmaEvdoQuery
@@ -167,23 +169,21 @@ class Ui_DatabaseDialog(QDialog):
         maxtime = ''
         for row in range(len(dataList)):
             if row > 0:
-                if dataList[row][1] != '':
+                if dataList[row][1]:
                     if dataList[row][1] < mintime:
                         mintime = dataList[row][1]
-                if dataList[row][2] != '':
+                if dataList[row][2]:
                     if dataList[row][2] > maxtime:
                         maxtime = dataList[row][2]
             else:
-                if dataList[row][1] != '':
+                if dataList[row][1]:
                     mintime = dataList[row][1]
-                if dataList[row][2] != '':
+                if dataList[row][2]:
                     maxtime = dataList[row][2]
 
-        minTimeValue = datetime.datetime.strptime(
-            mintime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+        minTimeValue = datetime.datetime.strptime(str(mintime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
 
-        maxTimeValue = datetime.datetime.strptime(
-            maxtime, '%Y-%m-%d %H:%M:%S.%f').timestamp()
+        maxTimeValue = datetime.datetime.strptime(str(maxtime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
 
         currentDateTimeString = '%s' % (
             datetime.datetime.fromtimestamp(minTimeValue))
@@ -209,9 +209,15 @@ class Ui_DatabaseDialog(QDialog):
     #     uri.setDatabase(self.databasePath)
     #     azenqosDatabase.open()
     #     query = QSqlQuery()
-    #     query.exec_("SELECT name FROM sqlite_master WHERE type='table'")
+    #     queryString = "SELECT name FROM sqlite_master WHERE type='table'"
+    #     query.exec_(queryString)
     #     while query.next():
-    #         if query.value(0) not in tableNotUsed:
+    #         tableName = query.value(0)
+    #         queryString = "SELECT name FROM PRAGMA_TABLE_INFO(%s) WHERE name = 'geom'" % (tableName)
+    #         subquery = QSqlQuery()
+    #         subquery.exec_(queryString)
+    #         while subquery.next():
+    #         # if query.value(0) not in tableNotUsed:
     #             uri.setDataSource('', query.value(0), 'geom')
     #             vlayer = QgsVectorLayer(uri.uri(), query.value(0), 'spatialite')
     #             QgsProject.instance().addMapLayer(vlayer)
@@ -225,12 +231,19 @@ class Ui_DatabaseDialog(QDialog):
         if azenqosDatabase is not None:
             azenqosDatabase.open()
         query = QSqlQuery()
-        query.exec_(
-            "SELECT positioning_lat as lat, positioning_lon as lon FROM location limit 1"
-        )
+        queryString = "SELECT name FROM sqlite_master WHERE type='table'"
+        query.exec_(queryString)
         while query.next():
-            lat = float(query.value(0))
-            lon = float(query.value(1))
+            tableName = query.value(0)
+            queryString = "SELECT name FROM PRAGMA_TABLE_INFO('%s') WHERE name = 'geom'" % (tableName)
+            subquery = QSqlQuery()
+            subquery.exec_(queryString)
+            while subquery.next():
+                print(tableName)
+                # if query.value(0) not in tableNotUsed:
+                    # uri.setDataSource('', query.value(0), 'geom')
+                    # vlayer = QgsVectorLayer(uri.uri(), query.value(0), 'spatialite')
+                    # QgsProject.instance().addMapLayer(vlayer)
         azenqosDatabase.close()
         # canvas = iface.mapCanvas()
         # canvas.zoomScale(100000)
@@ -2931,10 +2944,10 @@ class CellInformation(QDialog):
         self.buttonBox.setObjectName("buttonBox")
         self.ButtonLayout.addWidget(self.buttonBox)
 
-        self.BrowseButton1.clicked.connect(self.browseFile(1))
-        self.BrowseButton2.clicked.connect(self.browseFile(2))
-        self.BrowseButton3.clicked.connect(self.browseFile(3))
-        self.BrowseButton4.clicked.connect(self.browseFile(4))
+        self.BrowseButton1.clicked.connect(lambda: self.browseFile('1'))
+        self.BrowseButton2.clicked.connect(lambda: self.browseFile('2'))
+        self.BrowseButton3.clicked.connect(lambda: self.browseFile('3'))
+        self.BrowseButton4.clicked.connect(lambda: self.browseFile('4'))
 
         self.retranslateUi(CellInformation)
         QtCore.QMetaObject.connectSlotsByName(CellInformation)
@@ -2971,7 +2984,7 @@ class CellInformation(QDialog):
         self.BrowseButton4.setText(_translate("CellInformation", "Browse"))
 
     def browseFile(self, buttonNo):
-        if buttonNo == 1:
+        if buttonNo == '1':
             fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
                                                       QtCore.QDir.rootPath(),
                                                       '*.cel')
@@ -2979,7 +2992,7 @@ class CellInformation(QDialog):
                 baseFileName = os.path.basename(str(fileName))
                 self.FilePath1.setText(fileName)
             return False
-        elif buttonNo == 2:
+        elif buttonNo == '2':
             fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
                                                       QtCore.QDir.rootPath(),
                                                       '*.cel')
@@ -2987,7 +3000,7 @@ class CellInformation(QDialog):
                 baseFileName = os.path.basename(str(fileName))
                 self.FilePath2.setText(fileName)
             return False
-        elif buttonNo == 3:
+        elif buttonNo == '3':
             fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
                                                       QtCore.QDir.rootPath(),
                                                       '*.cel')
@@ -2995,7 +3008,7 @@ class CellInformation(QDialog):
                 baseFileName = os.path.basename(str(fileName))
                 self.FilePath3.setText(fileName)
             return False
-        elif buttonNo == 4:
+        elif buttonNo == '4':
             fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
                                                       QtCore.QDir.rootPath(),
                                                       '*.cel')

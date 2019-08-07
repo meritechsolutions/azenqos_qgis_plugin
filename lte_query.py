@@ -65,7 +65,7 @@ class LteDataQuery:
                     value = query.value(index)
                 dataList.append([columnName, value, '', ''])
         if len(dataList) == 0:
-            dataList = self.defaultData()
+            dataList = self.defaultData(fieldsList)
         self.closeConnection()
         return dataList
 
@@ -320,17 +320,18 @@ class LteDataQuery:
         return dataList
 
     def defaultData(self, fieldsList):
-        fieldCount = len(fieldsList.split(","))
-        dataList = []
-        for index in range(fieldCount):
-                columnName = fieldsList[index]
-                value = ''
-                dataList.append([columnName, value, '', ''])
-        return dataList
+        fieldCount = len(fieldsList)
+        if fieldCount > 0:
+            dataList = []
+            for index in range(fieldCount):
+                    columnName = fieldsList[index]
+                    value = ''
+                    dataList.append([columnName, value, '', ''])
+            return dataList
 
     def openConnection(self):
-      if self.azenqosDatabase is not None:
+        if self.azenqosDatabase is not None:
             self.azenqosDatabase.open()
 
     def closeConnection(self):
-      self.azenqosDatabase.close()
+        self.azenqosDatabase.close()

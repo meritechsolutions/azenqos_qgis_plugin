@@ -2420,7 +2420,7 @@ class Line_Chart(QWidget):
                 self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120,30)
+            self.canvas.axes.setYRange(-120,40)
             self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
 
             # Call Event Function
@@ -2734,8 +2734,8 @@ class LineChartQuery:
         return self.result
 
     def valueValidation(self, value):
-        validatedValue = 0
-        if value != '':
+        validatedValue = 0.00
+        if value:
             validatedValue = value
         return validatedValue
 

@@ -21,15 +21,22 @@
  *                                                                        *
  ***************************************************************************/
 """
+import datetime
 import os
 import sys
-import datetime
 import time
-import threading
+
+import pyqtgraph as pg
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray, QThread, pyqtSignal
+from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QThread, pyqtSignal
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+from PyQt5.QtWidgets import *
+
+from cdma_evdo_query import CdmaEvdoQuery
+from lte_query import LteDataQuery
+from signalling_query import SignalingDataQuery
+from wcdma_query import WcdmaDataQuery
+
 # from matplotlib.figure import Figure
 # import matplotlib.pyplot as plt
 # from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -37,14 +44,6 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 # from matplotlib.lines import Line2D
 # from matplotlib.ticker import StrMethodFormatter
 
-import sqlite3
-import numpy as np
-import pyqtgraph as pg
-
-from lte_query import LteDataQuery
-from wcdma_query import WcdmaDataQuery
-from cdma_evdo_query import CdmaEvdoQuery
-from signalling_query import SignalingDataQuery
 # from qgis.core import *
 # from qgis.utils import *
 
@@ -241,9 +240,9 @@ class Ui_DatabaseDialog(QDialog):
             while subquery.next():
                 print(tableName)
                 # if query.value(0) not in tableNotUsed:
-                    # uri.setDataSource('', query.value(0), 'geom')
-                    # vlayer = QgsVectorLayer(uri.uri(), query.value(0), 'spatialite')
-                    # QgsProject.instance().addMapLayer(vlayer)
+                # uri.setDataSource('', query.value(0), 'geom')
+                # vlayer = QgsVectorLayer(uri.uri(), query.value(0), 'spatialite')
+                # QgsProject.instance().addMapLayer(vlayer)
         azenqosDatabase.close()
         # canvas = iface.mapCanvas()
         # canvas.zoomScale(100000)
@@ -251,29 +250,32 @@ class Ui_DatabaseDialog(QDialog):
 
 
 class AzenqosDialog(QDialog):
-    def __init__(self):
+    def __init__(self, parent=None):
         """Constructor."""
-        super(AzenqosDialog, self).__init__(None)
+        super(AzenqosDialog, self).__init__(parent)
         self.timeSliderThread = TimeSliderThread()
+        self.setSizeGripEnabled(True)
         self.setupUi(self)
         self.raise_()
         self.activateWindow()
-
 
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
         self.setupTreeWidget(AzenqosDialog)
+        self.mdi = QMdiArea()
+        # self.setCentralWidget(self.mdi)
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
         timeSlider.setGeometry(QtCore.QRect(300, 56, 150, 22))
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            timeSlider.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(timeSlider.sizePolicy().hasHeightForWidth())
+
         timeSlider.setSizePolicy(sizePolicy)
         timeSlider.setBaseSize(QtCore.QSize(500, 0))
         timeSlider.setPageStep(1)
@@ -456,11 +458,9 @@ class AzenqosDialog(QDialog):
         self.playButton.clicked.connect(self.startPlaytimeThread)
         self.pauseButton.clicked.connect(self.pauseTime)
 
-
     def startPlaytimeThread(self):
         self.playButton.setDisabled(True)
         self.timeSliderThread.start()
-
 
     def pauseTime(self):
         global isSliderPlay
@@ -495,15 +495,14 @@ class AzenqosDialog(QDialog):
         timeSlider.update()
         linechartWindowname = [
             'WCDMA_Line Chart', 'LTE_LTE Line Chart',
-            'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart','WCDMA_Pilot Analyzer'
+            'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart', 'WCDMA_Pilot Analyzer'
         ]
         for window in openedWindows:
             if not window.title in linechartWindowname:
                 window.hilightRow(sampledate)
             else:
                 window.moveChart(sampledate)
-        currentDateTimeString = '%s' % (
-            datetime.datetime.fromtimestamp(currentTimestamp))
+        currentDateTimeString = '%s' % (datetime.datetime.fromtimestamp(currentTimestamp))
 
         self.timeSliderThread.set(value)
 
@@ -512,97 +511,171 @@ class AzenqosDialog(QDialog):
         windowName = parent + "_" + child
         if parent == "WCDMA":
             if child == "Active + Monitored Sets":
-                if hasattr(self, 'wcdma_ams_window'):
-                    self.wcdma_ams_window.show()
-                else:
+                if hasattr(self, 'wcdma_ams_window') is False:
                     self.wcdma_ams_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_ams_window)
-                    self.wcdma_ams_window.show()
+                    self.mdi.addSubWindow(self.wcdma_ams_window)
+                self.wcdma_ams_window.show()
+                self.wcdma_ams_window.activateWindow()
+
             elif child == "Radio Parameters":
-                if hasattr(self, 'wcdma_rp_window'):
-                    self.wcdma_rp_window.show()
-                else:
+                # if hasattr(self, 'wcdma_rp_window'):
+                #     self.wcdma_rp_window.show()
+                # else:
+                #     self.wcdma_rp_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_rp_window)
+                #     self.wcdma_rp_window.show()
+                if hasattr(self, 'wcdma_rp_window') is False:
                     self.wcdma_rp_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_rp_window)
-                    self.wcdma_rp_window.show()
+                    self.mdi.addSubWindow(self.wcdma_rp_window)
+                self.wcdma_rp_window.show()
+                self.wcdma_rp_window.activateWindow()
+
             elif child == "Active Set List":
-                if hasattr(self, 'wcdma_asl_window'):
-                    self.wcdma_asl_window.show()
-                else:
+                # if hasattr(self, 'wcdma_asl_window'):
+                #     self.wcdma_asl_window.show()
+                # else:
+                #     self.wcdma_asl_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_asl_window)
+                #     self.wcdma_asl_window.show()
+                if hasattr(self, 'wcdma_asl_window') is False:
                     self.wcdma_asl_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_asl_window)
-                    self.wcdma_asl_window.show()
+                    self.mdi.addSubWindow(self.wcdma_asl_window)
+                self.wcdma_asl_window.show()
+                self.wcdma_asl_window.activateWindow()
             elif child == "Monitored Set List":
-                if hasattr(self, 'wcdma_msl_window'):
-                    self.wcdma_msl_window.show()
-                else:
+                # if hasattr(self, 'wcdma_msl_window'):
+                #     self.wcdma_msl_window.show()
+                # else:
+                #     self.wcdma_msl_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_msl_window)
+                #     self.wcdma_msl_window.show()
+                if hasattr(self, 'wcdma_msl_window') is False:
                     self.wcdma_msl_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_msl_window)
-                    self.wcdma_msl_window.show()
+                    self.mdi.addSubWindow(self.wcdma_msl_window)
+                self.wcdma_msl_window.show()
+                self.wcdma_msl_window.activateWindow()
             elif child == "BLER Summary":
-                if hasattr(self, 'wcdma_bler_window'):
-                    self.wcdma_bler_window.show()
-                else:
+                # if hasattr(self, 'wcdma_bler_window'):
+                #     self.wcdma_bler_window.show()
+                # else:
+                #     self.wcdma_bler_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_bler_window)
+                #     self.wcdma_bler_window.show()
+                if hasattr(self, 'wcdma_bler_window') is False:
                     self.wcdma_bler_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_bler_window)
-                    self.wcdma_bler_window.show()
+                    self.mdi.addSubWindow(self.wcdma_bler_window)
+                self.wcdma_bler_window.show()
+                self.wcdma_bler_window.activateWindow()
             elif child == "BLER / Transport Channel":
-                if hasattr(self, 'wcdma_blertc_window'):
-                    self.wcdma_blertc_window.show()
-                else:
+                # if hasattr(self, 'wcdma_blertc_window'):
+                #     self.wcdma_blertc_window.show()
+                # else:
+                #     self.wcdma_blertc_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_blertc_window)
+                #     self.wcdma_blertc_window.show()
+                if hasattr(self, 'wcdma_blertc_window') is False:
                     self.wcdma_blertc_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_blertc_window)
-                    self.wcdma_blertc_window.show()
+                    self.mdi.addSubWindow(self.wcdma_blertc_window)
+                self.wcdma_blertc_window.show()
+                self.wcdma_blertc_window.activateWindow()
             elif child == "Line Chart":
-                if hasattr(self, 'wcdma_lc_window'):
-                    self.wcdma_lc_window.show()
-                else:
+                # if hasattr(self, 'wcdma_lc_window'):
+                #     self.wcdma_lc_window.show()
+                # else:
+                #     self.wcdma_lc_window = Ui_WCDMA_LCwidget(windowName)
+                #     openedWindows.append(self.wcdma_lc_window)
+                #     self.wcdma_lc_window.show()
+                if hasattr(self, 'wcdma_lc_window') is False:
                     self.wcdma_lc_window = Ui_WCDMA_LCwidget(windowName)
                     openedWindows.append(self.wcdma_lc_window)
-                    self.wcdma_lc_window.show()
+                    self.mdi.addSubWindow(self.wcdma_lc_window)
+                self.wcdma_lc_window.show()
+                self.wcdma_lc_window.activateWindow()
             elif child == "Bearers":
-                if hasattr(self, 'wcdma_bearer_window'):
-                    self.wcdma_bearer_window.show()
-                else:
+                # if hasattr(self, 'wcdma_bearer_window'):
+                #     self.wcdma_bearer_window.show()
+                # else:
+                #     self.wcdma_bearer_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_bearer_window)
+                #     self.wcdma_bearer_window.show()
+                if hasattr(self, 'wcdma_bearer_window') is False:
                     self.wcdma_bearer_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_bearer_window)
-                    self.wcdma_bearer_window.show()
+                    self.mdi.addSubWindow(self.wcdma_bearer_window)
+                self.wcdma_bearer_window.show()
+                self.wcdma_bearer_window.activateWindow()
             elif child == "Pilot Poluting Cells":
-                if hasattr(self, 'wcdma_ppc_window'):
-                    self.wcdma_ppc_window.show()
-                else:
+                # if hasattr(self, 'wcdma_ppc_window'):
+                #     self.wcdma_ppc_window.show()
+                # else:
+                #     self.wcdma_ppc_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_ppc_window)
+                #     self.wcdma_ppc_window.show()
+                if hasattr(self, 'wcdma_ppc_window') is False:
                     self.wcdma_ppc_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_ppc_window)
-                    self.wcdma_ppc_window.show()
+                    self.mdi.addSubWindow(self.wcdma_ppc_window)
+                self.wcdma_ppc_window.show()
+                self.wcdma_ppc_window.activateWindow()
             elif child == "Active + Monitored Bar":
-                if hasattr(self, 'wcdma_amb_window'):
-                    self.wcdma_amb_window.show()
-                else:
+                # if hasattr(self, 'wcdma_amb_window'):
+                #     self.wcdma_amb_window.show()
+                # else:
+                #     self.wcdma_amb_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_amb_window)
+                #     self.wcdma_amb_window.show()
+                if hasattr(self, 'wcdma_ppc_window') is False:
                     self.wcdma_amb_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_amb_window)
-                    self.wcdma_amb_window.show()
+                    self.mdi.addSubWindow(self.wcdma_amb_window)
+                self.wcdma_amb_window.show()
+                self.wcdma_amb_window.activateWindow()
             elif child == "CM GSM Reports":
-                if hasattr(self, 'wcdma_report_window'):
-                    self.wcdma_report_window.show()
-                else:
+                # if hasattr(self, 'wcdma_report_window'):
+                #     self.wcdma_report_window.show()
+                # else:
+                #     self.wcdma_report_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_report_window)
+                #     self.wcdma_report_window.show()
+                if hasattr(self, 'wcdma_report_window') is False:
                     self.wcdma_report_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_report_window)
-                    self.wcdma_report_window.show()
+                    self.mdi.addSubWindow(self.wcdma_report_window)
+                self.wcdma_report_window.show()
+                self.wcdma_report_window.activateWindow()
             elif child == "CM GSM Cells":
-                if hasattr(self, 'wcdma_cells_window'):
-                    self.wcdma_cells_window.show()
-                else:
+                # if hasattr(self, 'wcdma_cells_window'):
+                #     self.wcdma_cells_window.show()
+                # else:
+                #     self.wcdma_cells_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_cells_window)
+                #     self.wcdma_cells_window.show()
+                if hasattr(self, 'wcdma_cells_window') is False:
                     self.wcdma_cells_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_cells_window)
-                    self.wcdma_cells_window.show()
+                    self.mdi.addSubWindow(self.wcdma_cells_window)
+                self.wcdma_cells_window.show()
+                self.wcdma_cells_window.activateWindow()
             elif child == "Pilot Analyzer":
-                if hasattr(self, 'wcdma_analyzer_window'):
-                    self.wcdma_analyzer_window.show()
-                else:
-                    self.wcdma_analyzer_window = Ui_WCDMA_PA_LCwidget(windowName)
-                    #self.wcdma_analyzer_window = TableWindow(windowName)
+                # if hasattr(self, 'wcdma_analyzer_window'):
+                #     self.wcdma_analyzer_window.show()
+                # else:
+                #     self.wcdma_analyzer_window = Ui_WCDMA_PA_LCwidget(windowName)
+                #     # self.wcdma_analyzer_window = TableWindow(windowName)
+                #     openedWindows.append(self.wcdma_analyzer_window)
+                #     self.wcdma_analyzer_window.show()
+                if hasattr(self, 'wcdma_analyzer_window') is False:
+                    self.wcdma_analyzer_window = TableWindow(windowName)
                     openedWindows.append(self.wcdma_analyzer_window)
-                    self.wcdma_analyzer_window.show()
+                    self.mdi.addSubWindow(self.wcdma_analyzer_window)
+                self.wcdma_analyzer_window.show()
+                self.wcdma_analyzer_window.activateWindow()
         elif parent == "LTE":
             if child == "Radio Parameters":
                 if hasattr(self, 'lte_param_window'):
@@ -807,6 +880,8 @@ class AzenqosDialog(QDialog):
         # elif parent == "NB-IoT":
         #     if child == "NB-IoT Radio Parameters Window":
         #         print("1")
+        self.mdi.show()
+        self.mdi.tileSubWindows()
 
     def selectConfiguration(self):
         getSelected = self.configurationTreeWidget.selectedItems()
@@ -867,7 +942,8 @@ class TimeSlider(QSlider):
 
 class TableWindow(QDialog):
     def __init__(self, windowName):
-        super(TableWindow, self).__init__()
+        parent = None
+        super(TableWindow, self).__init__(parent)
         self.title = windowName
         self.tableHeader = None
         self.left = 10
@@ -1097,7 +1173,6 @@ class TableWindow(QDialog):
     def reject(self):
         global openedWindows
         openedWindows.remove(self)
-        self.hide()
         del self
 
 
@@ -1420,7 +1495,7 @@ class Ui_LTE_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents, self.title,
+        self.lte_widget = LineChart(self.scrollAreaWidgetContents, self.title,
                                      self.lte_tableWidget, self.lineEdit)
         self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_widget.setObjectName("lte_widget")
@@ -1509,7 +1584,7 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.wcdma_tableWidget.setColumnCount(4)
         self.wcdma_tableWidget.setRowCount(4)
         self.wcdma_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.wcdma_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
+        self.wcdma_tableWidget.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         item = QtWidgets.QTableWidgetItem()
         self.wcdma_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1623,7 +1698,7 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.wcdma_widget = Line_Chart(self.scrollAreaWidgetContents,
+        self.wcdma_widget = LineChart(self.scrollAreaWidgetContents,
                                        self.title, self.wcdma_tableWidget,
                                        self.lineEdit)
         self.wcdma_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
@@ -1707,7 +1782,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_data_tableWidget.setColumnCount(4)
         self.lte_data_tableWidget.setRowCount(4)
         self.lte_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.lte_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
+        self.lte_data_tableWidget.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         item = QtWidgets.QTableWidgetItem()
         self.lte_data_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1821,7 +1896,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.lte_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+        self.lte_data_widget = LineChart(self.scrollAreaWidgetContents,
                                           self.title,
                                           self.lte_data_tableWidget,
                                           self.lineEdit)
@@ -1912,7 +1987,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.wcdma_data_tableWidget.setColumnCount(4)
         self.wcdma_data_tableWidget.setRowCount(4)
         self.wcdma_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.wcdma_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
+        self.wcdma_data_tableWidget.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         item = QtWidgets.QTableWidgetItem()
         self.wcdma_data_tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -2027,7 +2102,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.wcdma_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+        self.wcdma_data_widget = LineChart(self.scrollAreaWidgetContents,
                                             self.title,
                                             self.wcdma_data_tableWidget,
                                             self.lineEdit)
@@ -2088,6 +2163,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
     def moveChart(self, sampledate):
         self.wcdma_data_widget.moveLineChart(sampledate)
 
+
 # WCDMA Pilot Analyzer Line Chart
 class Ui_WCDMA_PA_LCwidget(QWidget):
     def __init__(self, windowName):
@@ -2096,22 +2172,21 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         self.setupUi(self)
 
     def setupUi(self, PA_widget):
-
         PA_widget.setObjectName("PA_widget")
         PA_widget.resize(841, 586)
 
-        #Graph Area
+        # Graph Area
         self.pa_GArea = QtWidgets.QScrollArea(PA_widget)
         self.pa_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
         self.pa_GArea.setWidgetResizable(True)
         self.pa_GArea.setObjectName("pa_GArea")
 
-        #Scroll Area
+        # Scroll Area
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
         self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
 
-        #Data Table
+        # Data Table
         self.tableWidget = QtWidgets.QTableWidget(PA_widget)
         self.tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 171))
         self.tableWidget.setObjectName("tableWidget")
@@ -2213,7 +2288,7 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         self.tableWidget.horizontalHeader().setHighlightSections(True)
         self.tableWidget.verticalHeader().setVisible(False)
 
-        #Data Label
+        # Data Label
         self.datelabel = QtWidgets.QLabel(PA_widget)
         self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
         font = QtGui.QFont()
@@ -2233,10 +2308,10 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         self.lineEdit.setObjectName("lineEdit")
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.pa_widget = Line_Chart(self.scrollAreaWidgetContents,
-                                                self.title,
-                                                self.tableWidget,
-                                                self.lineEdit)
+        self.pa_widget = LineChart(self.scrollAreaWidgetContents,
+                                    self.title,
+                                    self.tableWidget,
+                                    self.lineEdit)
         self.pa_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.pa_widget.setObjectName("pa_widget")
         self.pa_GArea.setWidget(self.scrollAreaWidgetContents)
@@ -2274,24 +2349,24 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
 
 
 # Class For Line Chart
-class Line_Chart(QWidget):
+class LineChart(QWidget):
     def __init__(self, parent, windowName, tablewidget, datelabel):
         super().__init__(parent)
 
-        #For Matplotlib--------------------------------------------
-        #self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
-        #self.canvas.axes = self.canvas.figure.add_subplot()
+        # For Matplotlib--------------------------------------------
+        # self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
+        # self.canvas.axes = self.canvas.figure.add_subplot()
 
-        #For pyqtgraph--------------------------------------------
-        pg.setConfigOptions(foreground = '#000000',background = 'w',antialias = True)
+        # For pyqtgraph--------------------------------------------
+        pg.setConfigOptions(foreground='#000000', background='w', antialias=True)
         pg.TickSliderItem(orientation='bottom', allowAdd=True)
         self.canvas = pg.GraphicsWindow()
 
-        #SetLayOut(Both)
+        # SetLayOut(Both)
         vertical_layout = QVBoxLayout()
         vertical_layout.addWidget(self.canvas)
 
-        #pyqtgraph Defualt Setting---------------------------------------------------------
+        # pyqtgraph Defualt Setting---------------------------------------------------------
         self.stringaxis = pg.AxisItem(orientation='bottom')
         self.canvas.axes = self.canvas.addPlot(axisItems={'bottom': self.stringaxis})
         self.setLayout(vertical_layout)
@@ -2300,7 +2375,7 @@ class Line_Chart(QWidget):
         self.canvas.axes.showGrid(y=True)
         self.canvas.axes.setMouseEnabled(x=True, y=False)
         self.canvas.axes.scene().sigMouseClicked.connect(self.get_table_data)
-        #----------------------------------------------------------------------------------
+        # ----------------------------------------------------------------------------------
 
         self.title = windowName
         self.tablewidget = tablewidget
@@ -2313,8 +2388,8 @@ class Line_Chart(QWidget):
         self.ColorArr = []
 
         # Matplotlib Graph Toolbar
-        #toolbar = NavigationToolbar(self.canvas, self)
-        #vertical_layout.addWidget(toolbar)
+        # toolbar = NavigationToolbar(self.canvas, self)
+        # vertical_layout.addWidget(toolbar)
 
         # Choose Line Chart By WindowName
         if self.title == 'LTE_LTE Line Chart':
@@ -2327,29 +2402,30 @@ class Line_Chart(QWidget):
             self.WCDMA_Data()
 
     # Event Function
-    def on_pick(self,event):
-    #For pyqtgraph---------------------------------------------------------------------
+    def on_pick(self, event):
+        # For pyqtgraph---------------------------------------------------------------------
         for Line in range(len(self.lines)):
             if self.lines[Line] == event:
-                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=4))
+                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line], width=4))
             else:
-                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=2))
-    #For Matplotlib---------------------------------------------------------------------
-        # for Line in self.lines:
-        #     Line.set_linewidth(1)
-        # event.artist.set_linewidth(2.5)
-        # self.canvas.draw()
-    #-----------------------------------------------------------------------------------
+                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line], width=2))
+
+    # For Matplotlib---------------------------------------------------------------------
+    # for Line in self.lines:
+    #     Line.set_linewidth(1)
+    # event.artist.set_linewidth(2.5)
+    # self.canvas.draw()
+    # -----------------------------------------------------------------------------------
 
     # Show Data In Table
     def get_table_data(self, event):
         Chart_datalist = []
-        #For pyqtgraph-----------------------------------------------
+        # For pyqtgraph-----------------------------------------------
         mousePoint = self.canvas.axes.vb.mapSceneToView(event.pos())
         x, y = int(mousePoint.x()), mousePoint.y()
-        #For Matplotlib----------------------------------------------
+        # For Matplotlib----------------------------------------------
         # x, y = int(event.xdata), event.ydata
-        #------------------------------------------------------------
+        # ------------------------------------------------------------
 
         for dict_item in self.result.items():
             keyStr = dict_item[0]
@@ -2358,7 +2434,6 @@ class Line_Chart(QWidget):
         for row in range(len(Chart_datalist)):
             Value = round(Chart_datalist[row], 3)
             self.tablewidget.item(row, 1).setText(str(Value))
-
 
     # Create LTE Line Chart
     def LTE(self):
@@ -2395,8 +2470,8 @@ class Line_Chart(QWidget):
             #                                          data[1]
             #                                          )
             #         self.lines.append(newline, )
-            #for colorindex in range(len(self.lines)):
-                #self.lines[colorindex].set_color(self.ColorArr[colorindex])
+            # for colorindex in range(len(self.lines)):
+            # self.lines[colorindex].set_color(self.ColorArr[colorindex])
 
             # Scale Editing
             # self.canvas.axes.set_ylim(-120, 20)
@@ -2412,16 +2487,16 @@ class Line_Chart(QWidget):
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
                 if data[0] != 'time':
-                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
+                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()), y=data[1])
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
 
             for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex], width=2))
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120,40)
-            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+            self.canvas.axes.setYRange(-120, 40)
+            self.canvas.axes.setXRange(list(self.xdict.keys())[0], list(self.xdict.keys())[4])
 
             # Call Event Function
             pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
@@ -2435,8 +2510,9 @@ class Line_Chart(QWidget):
 
         condition = """LEFT JOIN wcdma_rx_power wrp ON wcm.time = wrp.time
                        LEFT JOIN wcdma_bler wb ON wcm.time = wb.time"""
-        ChartQuery = LineChartQuery(['wcm.time','wcm.wcdma_aset_ecio_avg','wcm.wcdma_aset_rscp_avg',
-                    'wrp.wcdma_rssi','wb.wcdma_bler_average_percent_all_channels'],'wcdma_cell_meas wcm',condition)
+        ChartQuery = LineChartQuery(['wcm.time', 'wcm.wcdma_aset_ecio_avg', 'wcm.wcdma_aset_rscp_avg',
+                                     'wrp.wcdma_rssi', 'wb.wcdma_bler_average_percent_all_channels'],
+                                    'wcdma_cell_meas wcm', condition)
         self.result = ChartQuery.getData()
 
         for index in range(len(self.result['wcm.time'])):
@@ -2484,17 +2560,17 @@ class Line_Chart(QWidget):
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
-                    if data[0] != 'wcm.time':
-                        newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
-                        newline.curve.setClickable(True)
-                        self.lines.append(newline)
+                if data[0] != 'wcm.time':
+                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()), y=data[1])
+                    newline.curve.setClickable(True)
+                    self.lines.append(newline)
 
             for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex], width=2))
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120,20)
-            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+            self.canvas.axes.setYRange(-120, 20)
+            self.canvas.axes.setXRange(list(self.xdict.keys())[0], list(self.xdict.keys())[4])
 
             # Call Event Function
             pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
@@ -2508,8 +2584,9 @@ class Line_Chart(QWidget):
 
         condition = """LEFT JOIN data_app_throughput dat ON dwrs.time = dat.time
                        LEFT JOIN wcdma_hsdpa_stats whs ON dwrs.time = whs.time"""
-        ChartQuery = LineChartQuery(['dwrs.time','dwrs.data_wcdma_rlc_dl_throughput','dat.data_app_dl_throughput_1',
-                                    'dat.data_download_session_average','whs.data_hsdpa_thoughput'],'data_wcdma_rlc_stats dwrs',condition)
+        ChartQuery = LineChartQuery(['dwrs.time', 'dwrs.data_wcdma_rlc_dl_throughput', 'dat.data_app_dl_throughput_1',
+                                     'dat.data_download_session_average', 'whs.data_hsdpa_thoughput'],
+                                    'data_wcdma_rlc_stats dwrs', condition)
         self.result = ChartQuery.getData()
 
         for index in range(len(self.result['dwrs.time'])):
@@ -2520,7 +2597,7 @@ class Line_Chart(QWidget):
             # Graph setting
             self.datelabel.setText(self.Date[0])
             # For Matplotlib-----------------------------------------
-            #self.canvas.axes.set_title('WCDMA Data Line Chart')
+            # self.canvas.axes.set_title('WCDMA Data Line Chart')
             # self.canvas.axes.set_facecolor('#fef8e7')
             # self.canvas.axes.autoscale(False)
             # self.canvas.axes.xaxis.grid(True)
@@ -2558,16 +2635,16 @@ class Line_Chart(QWidget):
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
                 if data[0] != 'dwrs.time':
-                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
+                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()), y=data[1])
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
 
             for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex], width=2))
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120,20)
-            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+            self.canvas.axes.setYRange(-120, 20)
+            self.canvas.axes.setXRange(list(self.xdict.keys())[0], list(self.xdict.keys())[4])
 
             # Call Event Function
             pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
@@ -2577,8 +2654,9 @@ class Line_Chart(QWidget):
 
         # Open Database And Query
         condition = """LEFT JOIN data_app_throughput dat ON lldt.time = dat.time"""
-        ChartQuery = LineChartQuery(['lldt.time','dat.data_download_overall','dat.data_upload_overall',
-                        'lldt.lte_l1_throughput_mbps_1','lldt.lte_bler_1'],'lte_l1_dl_tp lldt',condition)
+        ChartQuery = LineChartQuery(['lldt.time', 'dat.data_download_overall', 'dat.data_upload_overall',
+                                     'lldt.lte_l1_throughput_mbps_1', 'lldt.lte_bler_1'], 'lte_l1_dl_tp lldt',
+                                    condition)
         self.result = ChartQuery.getData()
 
         for index in range(len(self.result['lldt.time'])):
@@ -2627,22 +2705,22 @@ class Line_Chart(QWidget):
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
                 if data[0] != 'lldt.time':
-                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
+                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()), y=data[1])
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
 
             for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex], width=2))
 
             # Scale Editing
             self.canvas.axes.setYRange(-5, 35)
-            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+            self.canvas.axes.setXRange(list(self.xdict.keys())[0], list(self.xdict.keys())[4])
 
             # Call Event Function
             pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
 
     def moveLineChart(self, sampledate):
-        #For pyqtgraph-----------------------------------------------
+        # For pyqtgraph-----------------------------------------------
         # Shift Part
         dateString = str(sampledate)
         timeString = dateString.split(' ')[1][:8]
@@ -2650,14 +2728,15 @@ class Line_Chart(QWidget):
         if self.Time:
             for timeItem in self.Time:
                 if timeItem[:8] == timeString:
-                    if self.Time.index(timeItem)+4 < len(self.Time):
+                    if self.Time.index(timeItem) + 4 < len(self.Time):
                         currentTimeindex = self.Time.index(timeItem)
-                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
+                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],
+                                                   list(self.xdict.keys())[currentTimeindex + 4])
                         break
                     else:
                         break
 
-            #For Matplotlib----------------------------------------------
+            # For Matplotlib----------------------------------------------
             # # Shift Part
             # dateString = str(sampledate)
             # timeString = dateString.split(' ')[1][:8]
@@ -2672,7 +2751,7 @@ class Line_Chart(QWidget):
             #         else:
             #             break
             # self.canvas.draw()
-            #---------------------------------------------------------------------
+            # ---------------------------------------------------------------------
 
             # Update table part
             Chart_datalist = []
@@ -2683,8 +2762,6 @@ class Line_Chart(QWidget):
             for row in range(len(Chart_datalist)):
                 Value = round(Chart_datalist[row], 3)
                 self.tablewidget.item(row, 1).setText(str(Value))
-
-
 
 
 class LineChartQuery:
@@ -2707,7 +2784,7 @@ class LineChartQuery:
         return selectField
 
     def getData(self):
-        #result = dict()
+        # result = dict()
         selectField = self.selectFieldToQuery()
         azenqosDatabase.open()
         query = QSqlQuery()
@@ -2767,7 +2844,7 @@ class DataQuery:
         query.exec_(queryString)
         while query.next():
             for field in range(len(self.fieldArr)):
-                fieldName = fieldArr[field]
+                fieldName = self.fieldArr[field]
                 validatedValue = self.valueValidation(query.value(field))
                 if fieldName in result:
                     if isinstance(result[fieldName], list):
@@ -2780,28 +2857,10 @@ class DataQuery:
         return result
 
     def valueValidation(self, value):
-        validatedValue = 0
+        validatedValue = 0.00
         if value is not None:
             validatedValue = value
         return validatedValue
-
-
-class setInterval:
-    def __init__(self, value, interval, action):
-        self.interval = interval
-        self.action = action
-        self.stopEvent = threading.Event()
-        thread = threading.Thread(target=self.__setInterval)
-        thread.start()
-
-    def __setInterval(self):
-        nextTime = time.time() + self.interval
-        while not self.stopEvent.wait(nextTime - time.time()):
-            nextTime += self.interval
-            self.action()
-
-    def cancel(self):
-        self.stopEvent.set()
 
 
 class CellInformation(QDialog):
@@ -2867,70 +2926,70 @@ class CellInformation(QDialog):
         self.CellLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.CellLayout.setContentsMargins(10, 20, 10, 10)
         self.CellLayout.setObjectName("CellLayout")
-        self.CellDifinitionFile = QtWidgets.QGroupBox(
+        self.CellDefinitionFile = QtWidgets.QGroupBox(
             self.verticalLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
                                            QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.CellDifinitionFile.sizePolicy().hasHeightForWidth())
-        self.CellDifinitionFile.setSizePolicy(sizePolicy)
+            self.CellDefinitionFile.sizePolicy().hasHeightForWidth())
+        self.CellDefinitionFile.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setPointSize(13)
-        self.CellDifinitionFile.setFont(font)
-        self.CellDifinitionFile.setObjectName("CellDifinitionFile")
-        self.FilePath4 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.CellDefinitionFile.setFont(font)
+        self.CellDefinitionFile.setObjectName("CellDefinitionFile")
+        self.FilePath4 = QtWidgets.QLineEdit(self.CellDefinitionFile)
         self.FilePath4.setGeometry(QtCore.QRect(110, 270, 341, 21))
         self.FilePath4.setObjectName("FilePath4")
         self.CdmaCellFileCheckbox = QtWidgets.QCheckBox(
-            self.CellDifinitionFile)
+            self.CellDefinitionFile)
         self.CdmaCellFileCheckbox.setGeometry(QtCore.QRect(30, 240, 151, 20))
         self.CdmaCellFileCheckbox.setObjectName("CdmaCellFileCheckbox")
-        self.LteCellFileCheckbox = QtWidgets.QCheckBox(self.CellDifinitionFile)
+        self.LteCellFileCheckbox = QtWidgets.QCheckBox(self.CellDefinitionFile)
         self.LteCellFileCheckbox.setGeometry(QtCore.QRect(30, 170, 131, 20))
         self.LteCellFileCheckbox.setObjectName("LteCellFileCheckbox")
-        self.FilePath2 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath2 = QtWidgets.QLineEdit(self.CellDefinitionFile)
         self.FilePath2.setGeometry(QtCore.QRect(110, 130, 341, 21))
         self.FilePath2.setObjectName("FilePath2")
-        self.FilenameLabel1 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel1 = QtWidgets.QLabel(self.CellDefinitionFile)
         self.FilenameLabel1.setGeometry(QtCore.QRect(40, 60, 59, 16))
         self.FilenameLabel1.setObjectName("FilenameLabel1")
-        self.FilenameLabel4 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel4 = QtWidgets.QLabel(self.CellDefinitionFile)
         self.FilenameLabel4.setGeometry(QtCore.QRect(40, 270, 59, 16))
         self.FilenameLabel4.setObjectName("FilenameLabel4")
         self.WcdmaCellFileCheckbox = QtWidgets.QCheckBox(
-            self.CellDifinitionFile)
+            self.CellDefinitionFile)
         self.WcdmaCellFileCheckbox.setGeometry(QtCore.QRect(30, 100, 161, 20))
         self.WcdmaCellFileCheckbox.setObjectName("WcdmaCellFileCheckbox")
-        self.FilePath1 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath1 = QtWidgets.QLineEdit(self.CellDefinitionFile)
         self.FilePath1.setGeometry(QtCore.QRect(110, 60, 341, 21))
         self.FilePath1.setObjectName("FilePath1")
-        self.FilePath3 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath3 = QtWidgets.QLineEdit(self.CellDefinitionFile)
         self.FilePath3.setGeometry(QtCore.QRect(110, 200, 341, 21))
         self.FilePath3.setObjectName("FilePath3")
-        self.FilenameLabel3 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel3 = QtWidgets.QLabel(self.CellDefinitionFile)
         self.FilenameLabel3.setGeometry(QtCore.QRect(40, 200, 59, 16))
         self.FilenameLabel3.setObjectName("FilenameLabel3")
-        self.GsmCellFileCheckbox = QtWidgets.QCheckBox(self.CellDifinitionFile)
+        self.GsmCellFileCheckbox = QtWidgets.QCheckBox(self.CellDefinitionFile)
         self.GsmCellFileCheckbox.setGeometry(QtCore.QRect(30, 30, 141, 20))
         self.GsmCellFileCheckbox.setObjectName("GsmCellFileCheckbox")
-        self.FilenameLabel2 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel2 = QtWidgets.QLabel(self.CellDefinitionFile)
         self.FilenameLabel2.setGeometry(QtCore.QRect(40, 130, 59, 16))
         self.FilenameLabel2.setObjectName("FilenameLabel2")
-        self.BrowseButton1 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton1 = QtWidgets.QToolButton(self.CellDefinitionFile)
         self.BrowseButton1.setGeometry(QtCore.QRect(460, 60, 51, 22))
         self.BrowseButton1.setObjectName("BrowseButton1")
-        self.BrowseButton2 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton2 = QtWidgets.QToolButton(self.CellDefinitionFile)
         self.BrowseButton2.setGeometry(QtCore.QRect(460, 130, 51, 22))
         self.BrowseButton2.setObjectName("BrowseButton2")
-        self.BrowseButton3 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton3 = QtWidgets.QToolButton(self.CellDefinitionFile)
         self.BrowseButton3.setGeometry(QtCore.QRect(460, 200, 51, 22))
         self.BrowseButton3.setObjectName("BrowseButton3")
-        self.BrowseButton4 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton4 = QtWidgets.QToolButton(self.CellDefinitionFile)
         self.BrowseButton4.setGeometry(QtCore.QRect(460, 270, 51, 22))
         self.BrowseButton4.setObjectName("BrowseButton4")
-        self.CellLayout.addWidget(self.CellDifinitionFile)
+        self.CellLayout.addWidget(self.CellDefinitionFile)
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(CellInformation)
         self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(0, 470, 601, 55))
         self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
@@ -2964,7 +3023,7 @@ class CellInformation(QDialog):
         self.SearchCellDistanceLabel.setText(
             _translate("CellInformation", "Search Cell Distance"))
         self.KilometerLabel.setText(_translate("CellInformation", "Kilometer"))
-        self.CellDifinitionFile.setTitle(
+        self.CellDefinitionFile.setTitle(
             _translate("CellInformation", "Cell definition file"))
         self.CdmaCellFileCheckbox.setText(
             _translate("CellInformation", "Use CDMA cell file"))

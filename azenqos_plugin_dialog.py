@@ -21,32 +21,30 @@
  *                                                                        *
  ***************************************************************************/
 """
-import os
-import sys
 import datetime
-import time
+import os
 import threading
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QByteArray, QThread, pyqtSignal
-from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+
+import pyqtgraph as pg
+from PyQt5.QtWidgets import QFrame
+
+from qgis.utils import *
+from qgis.core import *
+from qgis.PyQt import QtCore, QtGui, QtWidgets
+from qgis.PyQt.QtCore import QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
+from qgis.PyQt.QtSql import QSqlQuery, QSqlDatabase
+from qgis.PyQt.QtWidgets import *
+from .cdma_evdo_query import CdmaEvdoQuery
+from .lte_query import LteDataQuery
+from .signalling_query import SignalingDataQuery
+from .wcdma_query import WcdmaDataQuery
+
 # from matplotlib.figure import Figure
 # import matplotlib.pyplot as plt
 # from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 # from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 # from matplotlib.lines import Line2D
 # from matplotlib.ticker import StrMethodFormatter
-
-import sqlite3
-import numpy as np
-import pyqtgraph as pg
-
-from .lte_query import LteDataQuery
-from .wcdma_query import WcdmaDataQuery
-from .cdma_evdo_query import CdmaEvdoQuery
-from .signalling_query import SignalingDataQuery
-from qgis.core import *
-from qgis.utils import *
 
 azenqosDatabase = None
 minTimeValue = None
@@ -208,7 +206,7 @@ class Ui_DatabaseDialog(QDialog):
             QgsProject.instance().addMapLayer(rlayer)
         else:
             print('invalid layer')
-        uri =QgsDataSourceUri()
+        uri = QgsDataSourceUri()
         uri.setDatabase(self.databasePath)
         azenqosDatabase.open()
         query = QSqlQuery()
@@ -296,12 +294,12 @@ class AzenqosDialog(QDialog):
         self.setupPlayStopButton(AzenqosDialog)
 
         # Import Database Button
-        self.importDatabaseBtn = QPushButton(AzenqosDialog)
+        self.importDatabaseBtn = qgis.utils.QPushButton(AzenqosDialog)
         self.importDatabaseBtn.setGeometry(QtCore.QRect(300, 140, 181, 32))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         # Filter Button
-        self.filterBtn = QPushButton(AzenqosDialog)
+        self.filterBtn = qgis.utils.QPushButton(AzenqosDialog)
         self.filterBtn.setGeometry(QtCore.QRect(300, 190, 181, 32))
         self.filterBtn.setObjectName("filterBtn")
 
@@ -1417,7 +1415,7 @@ class Ui_LTE_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.lte_widget = Line_Chart(self.scrollAreaWidgetContents, self.title,
+        self.lte_widget = LineChart(self.scrollAreaWidgetContents, self.title,
                                      self.lte_tableWidget, self.lineEdit)
         self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_widget.setObjectName("lte_widget")
@@ -1620,7 +1618,7 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.wcdma_widget = Line_Chart(self.scrollAreaWidgetContents,
+        self.wcdma_widget = LineChart(self.scrollAreaWidgetContents,
                                        self.title, self.wcdma_tableWidget,
                                        self.lineEdit)
         self.wcdma_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
@@ -1818,7 +1816,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.lte_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+        self.lte_data_widget = LineChart(self.scrollAreaWidgetContents,
                                           self.title,
                                           self.lte_data_tableWidget,
                                           self.lineEdit)
@@ -2024,7 +2022,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.wcdma_data_widget = Line_Chart(self.scrollAreaWidgetContents,
+        self.wcdma_data_widget = LineChart(self.scrollAreaWidgetContents,
                                             self.title,
                                             self.wcdma_data_tableWidget,
                                             self.lineEdit)
@@ -2230,7 +2228,7 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         self.lineEdit.setObjectName("lineEdit")
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.pa_widget = Line_Chart(self.scrollAreaWidgetContents,
+        self.pa_widget = LineChart(self.scrollAreaWidgetContents,
                                                 self.title,
                                                 self.tableWidget,
                                                 self.lineEdit)
@@ -2271,7 +2269,7 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
 
 
 # Class For Line Chart
-class Line_Chart(QWidget):
+class LineChart(QWidget):
     def __init__(self, parent, windowName, tablewidget, datelabel):
         super().__init__(parent)
 
@@ -3020,7 +3018,7 @@ class TimeSliderThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
 
     def __init__(self):
-        QThread.__init__(self)
+        qgis.utils.QThread.__init__(self)
         self.currentSliderValue = None
 
     def __del__(self):

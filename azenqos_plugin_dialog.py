@@ -34,6 +34,7 @@ from qgis.PyQt import QtCore, QtGui, QtWidgets
 from qgis.PyQt.QtCore import QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from qgis.PyQt.QtSql import QSqlQuery, QSqlDatabase
 from qgis.PyQt.QtWidgets import *
+from qgis.PyQt.QtGui import QColor
 from .cdma_evdo_query import CdmaEvdoQuery
 from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
@@ -63,6 +64,7 @@ sliderLength = None
 openedWindows = []
 timeSlider = None
 isSliderPlay = False
+eventsLayer = None
 
 
 # Database select window
@@ -133,7 +135,6 @@ class Ui_DatabaseDialog(QDialog):
         else:
             self.addLayerToQgis()
             self.getTimeForSlider()
-            self.setCenterMap()
             QMessageBox.about(self, 'Connection result',
                               'Database is Connected, Enter the main menu')
             self.hide()
@@ -214,7 +215,8 @@ class Ui_DatabaseDialog(QDialog):
         queryString = "SELECT table_name FROM layer_statistics"
         query.exec_(queryString)
         while query.next():
-            tableName = query.value(0)
+            tableName = "events"
+            # tableName = query.value(0)
             # queryString = "SELECT name FROM PRAGMA_TABLE_INFO(%s) WHERE name = 'geom'" % (tableName)
             # subquery = QSqlQuery()
             # subquery.exec_(queryString)
@@ -222,27 +224,14 @@ class Ui_DatabaseDialog(QDialog):
             # if query.value(0) not in tableNotUsed:
             uri.setDataSource('', tableName, 'geom')
             vlayer = QgsVectorLayer(uri.uri(), tableName, 'spatialite')
+            global eventsLayer
+            eventsLayer = vlayer
             QgsProject.instance().addMapLayer(vlayer)
         azenqosDatabase.close()
 
     def setIncrementValue(self):
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
-
-    def setCenterMap(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_(
-            "SELECT positioning_lat as lat, positioning_lon as lon FROM location limit 1"
-        )
-        while query.next():
-            lat = float(query.value(0))
-            lon = float(query.value(1))
-        azenqosDatabase.close()
-        # canvas = iface.mapCanvas()
-        # canvas.zoomScale(100000)
-        # canvas.zoomWithCenter(lon, lat, False)
 
 
 class AzenqosDialog(QDialog):
@@ -499,8 +488,34 @@ class AzenqosDialog(QDialog):
                 window.moveChart(sampledate)
         currentDateTimeString = '%s' % (
             datetime.datetime.fromtimestamp(currentTimestamp))
-
+        self.hilightFeature()
         self.timeSliderThread.set(value)
+
+
+    def hilightFeature(self):
+        events_layer = None
+        selected_ids = []
+        if azenqosDatabase is not None:
+            azenqosDatabase.open()
+        query = QSqlQuery()
+        query.exec_(
+            "SELECT posid FROM events WHERE time <= %s ORDER BY time DESC LIMIT 1" % (currentDateTimeString)
+        )
+        while query.next():
+            posid = float(query.value(0))
+
+        for feature in events_layer.getFeatures():
+            featurePosId = feature['posid']
+            if posid == featurePosId:
+                selected_ids.append(feature.id())
+                break
+
+        events_layer.selectByIds(selected_ids)
+        iface.mapCanvas().setSelectionColor( QColor("red") )
+        box = events_layer.boundingBoxOfSelected()
+        iface.mapCanvas().setExtent(box)
+        iface.mapCanvas().refresh()
+        azenqosDatabase.close()
 
     def classifySelectedItems(self, parent, child):
         global openedWindows

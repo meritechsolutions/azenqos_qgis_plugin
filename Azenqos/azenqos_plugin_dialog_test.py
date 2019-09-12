@@ -28,6 +28,7 @@ import time
 import re
 
 import pyqtgraph as pg
+# import pyqtgraph as pg
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt, QThread, pyqtSignal
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
@@ -65,6 +66,7 @@ sliderLength = None
 openedWindows = []
 timeSlider = None
 isSliderPlay = False
+value_by_click = None
 
 
 # Database select window
@@ -241,7 +243,7 @@ class Ui_DatabaseDialog(QDialog):
             subquery = QSqlQuery()
             subquery.exec_(queryString)
             while subquery.next():
-                print(tableName)
+                print('')
                 # if query.value(0) not in tableNotUsed:
                 # uri.setDataSource('', query.value(0), 'geom')
                 # vlayer = QgsVectorLayer(uri.uri(), query.value(0), 'spatialite')
@@ -257,7 +259,7 @@ class AzenqosDialog(QDialog):
         """Constructor."""
         super(AzenqosDialog, self).__init__(parent)
         self.timeSliderThread = TimeSliderThread()
-        self.setSizeGripEnabled(True)
+        # self.setSizeGripEnabled(True)
         self.setupUi(self)
         self.raise_()
         self.activateWindow()
@@ -268,7 +270,6 @@ class AzenqosDialog(QDialog):
         AzenqosDialog.resize(640, 480)
         self.setupTreeWidget(AzenqosDialog)
         self.mdi = QMdiArea()
-        # self.setCentralWidget(self.mdi)
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
@@ -490,24 +491,31 @@ class AzenqosDialog(QDialog):
         global currentTimestamp
         global timeSlider
         global currentDateTimeString
-        value = timeSlider.value()
-        timestampValue = minTimeValue + value
-        sampledate = datetime.datetime.fromtimestamp(timestampValue)
-        self.timeEdit.setDateTime(sampledate)
-        currentTimestamp = timestampValue
-        timeSlider.update()
+        global value_by_click
         linechartWindowname = [
             'WCDMA_Line Chart', 'LTE_LTE Line Chart',
             'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart', 'WCDMA_Pilot Analyzer'
         ]
-        for window in openedWindows:
-            if not window.title in linechartWindowname:
-                window.hilightRow(sampledate)
-            else:
-                window.moveChart(sampledate)
+        if value_by_click:
+            datetimeTxt = datetime.datetime.fromtimestamp(currentTimestamp)
+            self.timeEdit.setDateTime(datetimeTxt)
+            self.timeSliderThread.set(value_by_click)
+            value_by_click = None
+        else:
+            value = timeSlider.value()
+            timestampValue = minTimeValue + value
+            datetimeTxt = datetime.datetime.fromtimestamp(timestampValue)
+            self.timeEdit.setDateTime(datetimeTxt)
+            currentTimestamp = timestampValue
+            self.timeSliderThread.set(value)
+            for window in openedWindows:
+                if not window.title in linechartWindowname:
+                    window.hilightRow(datetimeTxt)
+                else:
+                    window.moveChart(datetimeTxt)
+        timeSlider.update()
         currentDateTimeString = '%s' % (datetime.datetime.fromtimestamp(currentTimestamp))
 
-        self.timeSliderThread.set(value)
 
     def classifySelectedItems(self, parent, child):
         global openedWindows
@@ -520,7 +528,6 @@ class AzenqosDialog(QDialog):
                     self.mdi.addSubWindow(self.wcdma_ams_window)
                 self.wcdma_ams_window.show()
                 self.wcdma_ams_window.activateWindow()
-
             elif child == "Radio Parameters":
                 if hasattr(self, 'wcdma_rp_window') is False:
                     self.wcdma_rp_window = TableWindow(windowName)
@@ -528,7 +535,6 @@ class AzenqosDialog(QDialog):
                     self.mdi.addSubWindow(self.wcdma_rp_window)
                 self.wcdma_rp_window.show()
                 self.wcdma_rp_window.activateWindow()
-
             elif child == "Active Set List":
                 if hasattr(self, 'wcdma_asl_window') is False:
                     self.wcdma_asl_window = TableWindow(windowName)
@@ -608,10 +614,11 @@ class AzenqosDialog(QDialog):
                 self.wcdma_analyzer_window.activateWindow()
         elif parent == "LTE":
             if child == "Radio Parameters":
-                if hasattr(self, 'lte_param_window') is False:
-                    self.lte_param_window = TableWindow(windowName)
-                    openedWindows.append(self.lte_param_window)
-                    self.mdi.addSubWindow(self.lte_param_window)
+                if hasattr(self, 'lte_param_window') is True:
+                    del self.lte_param_window
+                self.lte_param_window = TableWindow(windowName)
+                openedWindows.append(self.lte_param_window)
+                self.mdi.addSubWindow(self.lte_param_window)
                 self.lte_param_window.show()
                 self.lte_param_window.activateWindow()
             elif child == "Serving + Neighbors":
@@ -869,7 +876,7 @@ class TimeSlider(QSlider):
         return (self.value() - self._min_value) / self._value_range
 
 
-class TableWindow(QDialog):
+class TableWindow(QWidget):
     def __init__(self, windowName):
         parent = None
         super(TableWindow, self).__init__(parent)
@@ -1101,18 +1108,20 @@ class TableWindow(QDialog):
                 break
 
     def getValue(self, item):
+        global currentTimestamp
+        global value_by_click
         is_match = None
         value = str(item.data(0))
         if value:
-            global currentTimestamp
             date_pattern = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\b'
             is_match = re.match(date_pattern, value)
             if is_match:
                 currentTimestamp = time.mktime(datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S.%f").timetuple())
-                slidervalue = maxTimeValue - currentTimestamp
+                slidervalue = currentTimestamp - minTimeValue
+                value_by_click = slidervalue
                 timeSlider.setValue(slidervalue)
 
-    def reject(self):
+    def closeEvent(self,event):
         global openedWindows
         openedWindows.remove(self)
         del self

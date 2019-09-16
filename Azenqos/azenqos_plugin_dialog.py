@@ -95,7 +95,7 @@ class Ui_DatabaseDialog(QDialog):
         self.browseButton = QtWidgets.QPushButton(DatabaseDialog)
         self.browseButton.setGeometry(QtCore.QRect(420, 25, 113, 31))
         self.browseButton.setObjectName("browseButton")
-        self.dbPath = QtWidgets.QTextEdit(DatabaseDialog)
+        self.dbPath = QtWidgets.QLineEdit(DatabaseDialog)
         self.dbPath.setGeometry(QtCore.QRect(10, 30, 400, 21))
         self.dbPath.setObjectName("dbPath")
         self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)

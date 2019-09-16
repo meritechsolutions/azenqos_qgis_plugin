@@ -1,4 +1,4 @@
-# freewill-azenqos
+# Azenqos QGIS Plugin
 
 # Require Software:
 
@@ -10,7 +10,7 @@
 # Software Installation (for Windows)
 
 1. Download Python 3.6x and install
-2. Download QGIS and install
+2. Download QGIS in OSGeo4W and install
 3. Open OSGeo4W Shell
 4. Type 'py3_env' and press enter button
 5. Then type 'pip3 install pyqtgraph' and press enter button

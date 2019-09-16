@@ -5,7 +5,7 @@
 1. Python 3.6x (https://www.python.org/downloads/release/python-369/)
 2. PIP3
 3. QGIS 3.4.11 LTR (https://qgis.org/en/site/forusers/download.html)
-4. pyqtgraph
+4. pyqtgraph (by PIP3)
 
 # Software Installation (for Windows)
 
@@ -22,8 +22,3 @@
 3. Open QGIS and open Plugins > Manage and install plugin
 4. Choose Install from ZIP and browse zip file
 5. Click Install Plugin
-
-
-# ภาพตัวอย่าง (ที่ alt ต่างกัน):
-
-![diff_atl_example](diff_atl_example.png)

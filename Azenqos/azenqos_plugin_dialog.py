@@ -24,6 +24,7 @@
 import datetime
 import os
 import threading
+import time
 
 import pyqtgraph as pg
 from PyQt5.QtWidgets import QFrame
@@ -53,19 +54,14 @@ minTimeValue = None
 maxTimeValue = None
 currentTimestamp = None
 currentDateTimeString = None
-tableNotUsed = [
-    'android_metadata', 'sqlite_sequence', 'spatialite_history',
-    'idx_signalling_geom_parent', 'idx_signalling_geom_node',
-    'idx_signalling_geom_rowid', 'idx_signalling_geom',
-    'views_layer_statistics', 'geometry_columns', 'spatial_ref_sys',
-    'layer_statistics'
-]
 clickedLatLon = {"lat": 0, "lon": 0}
 sliderLength = None
 openedWindows = []
 timeSlider = None
 isSliderPlay = False
 eventsLayer = None
+# allLayers = []
+tableList = []
 
 def validateDateTime(date_string):
     date_format = '%Y-%m-%d %H:%M:%S.%f'
@@ -75,6 +71,15 @@ def validateDateTime(date_string):
     except ValueError:
         return False
 
+def clearAllSelectedFeatures():
+    mc = iface.mapCanvas()
+
+    for layer in mc.layers():
+        if layer.type() == layer.VectorLayer:
+            layer.removeSelection()
+
+    mc.refresh()
+    QgsMessageLog.logMessage('[-- Clear selected features --]')
 
 # Database select window
 class Ui_DatabaseDialog(QDialog):
@@ -164,16 +169,15 @@ class Ui_DatabaseDialog(QDialog):
         query.exec_(queryString)
         while query.next():
             tableName = query.value(0)
-            if tableName not in tableNotUsed:
-                subQuery = QSqlQuery()
-                queryString = "SELECT MIN(time), MAX(time) FROM %s" % (
-                    tableName)
-                subQuery.exec_(queryString)
-                while subQuery.next():
-                    dataList.append(
-                        [tableName,
-                         subQuery.value(0),
-                         subQuery.value(1)])
+            subQuery = QSqlQuery()
+            queryString = "SELECT MIN(time), MAX(time) FROM %s" % (
+                tableName)
+            subQuery.exec_(queryString)
+            while subQuery.next():
+                dataList.append(
+                    [tableName,
+                        subQuery.value(0),
+                        subQuery.value(1)])
         mintime = ''
         maxtime = ''
         for row in range(len(dataList)):
@@ -203,12 +207,59 @@ class Ui_DatabaseDialog(QDialog):
         azenqosDatabase.close()
         self.setIncrementValue()
 
+    # def getTimeForSlider(self):
+    #     global minTimeValue
+    #     global maxTimeValue
+    #     global currentDateTimeString
+    #     azenqosDatabase.open()
+    #     dataList = []
+    #     # query = QSqlQuery()
+    #     # queryString = "SELECT name FROM sqlite_master WHERE type='table'"
+    #     for tableName in tableList:
+    #         tableList.append(tableName)
+    #         subQuery = QSqlQuery()
+    #         queryString = "SELECT MIN(time), MAX(time) FROM %s" % (
+    #             tableName)
+    #         subQuery.exec_(queryString)
+    #         while subQuery.next():
+    #             dataList.append(
+    #                 [tableName,
+    #                     subQuery.value(0),
+    #                     subQuery.value(1)])
+    #     mintime = ''
+    #     maxtime = ''
+    #     for row in range(len(dataList)):
+    #         if row > 0:
+    #             if dataList[row][1]:
+    #                 if dataList[row][1] < mintime:
+    #                     mintime = dataList[row][1]
+    #             if dataList[row][2]:
+    #                 if dataList[row][2] > maxtime:
+    #                     maxtime = dataList[row][2]
+    #         else:
+    #             if dataList[row][1]:
+    #                 mintime = dataList[row][1]
+    #             if dataList[row][2]:
+    #                 maxtime = dataList[row][2]
+
+    #     minTimeValue = datetime.datetime.strptime(str(mintime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
+
+    #     maxTimeValue = datetime.datetime.strptime(str(maxtime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
+
+    #     currentDateTimeString = '%s' % (
+    #         datetime.datetime.fromtimestamp(minTimeValue))
+
+    #     azenqosDatabase.close()
+    #     self.setIncrementValue()
+
     def addDatabase(self):
         global azenqosDatabase
         azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
         azenqosDatabase.setDatabaseName(self.databasePath)
 
     def addLayerToQgis(self):
+        # global allLayers
+        global tableList
         QgsProject.removeAllMapLayers(QgsProject.instance())
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
         urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
@@ -225,27 +276,31 @@ class Ui_DatabaseDialog(QDialog):
         queryString = "SELECT table_name FROM layer_statistics"
         query.exec_(queryString)
         while query.next():
-            # tableName = "events"
             tableName = query.value(0)
-            queryString = "SELECT name FROM PRAGMA_TABLE_INFO(%s) WHERE name = 'geom'" % (tableName)
-            subquery = QSqlQuery()
-            subquery.exec_(queryString)
-            while subquery.next():
-            # if query.value(0) not in tableNotUsed:
-                uri.setDataSource('', tableName, 'geom')
-                vlayer = QgsVectorLayer(uri.uri(), tableName, 'spatialite')
-                symbol_renderer = eventsLayer.renderer()
-                symbol = symbol_renderer.symbol()
-                if tableName == 'events':
-                    global eventsLayer
-                    eventsLayer = vlayer
-                    symbol.setColor(QColor(125,139,142))
-                symbol.setSize(2.4)
-                symbol.symbolLayer(0).setStrokeColor(QColor(0,0,0))
-                eventsLayer.triggerRepaint()
-                iface.layerTreeView().refreshLayerSymbology(vlayer.id())
-                QgsProject.instance().addMapLayer(eventsLayer)
+            tableList.append(tableName)
+            uri.setDataSource('', tableName, 'geom')
+            vlayer = QgsVectorLayer(uri.uri(), tableName, 'spatialite')
+            symbol_renderer = vlayer.renderer()
+            symbol = symbol_renderer.symbol()
+            symbol.setColor(QColor(125,139,142))
+            symbol.symbolLayer(0).setStrokeColor(QColor(0,0,0))
+            symbol.setSize(2.4)
+            iface.layerTreeView().refreshLayerSymbology(vlayer.id())
+            vlayer.triggerRepaint()
+            QgsProject.instance().addMapLayer(vlayer)
+            iface.mapCanvas().setSelectionColor(QColor("red"))
+            # allLayers.append(vlayer)
+        self.orderLayer()
         azenqosDatabase.close()
+
+    def orderLayer(self):
+        vlayer = QgsProject.instance().mapLayersByName("events")[0]
+        iface.setActiveLayer(vlayer)
+        root = QgsProject.instance().layerTreeRoot()
+        root.setHasCustomLayerOrder(True)
+        order = root.customLayerOrder()
+        order.insert(0, order.pop( order.index( vlayer ) ) ) # vlayer to the top
+        root.setCustomLayerOrder( order )
 
     def setIncrementValue(self):
         global sliderLength
@@ -307,9 +362,9 @@ class AzenqosDialog(QDialog):
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         # Filter Button
-        self.filterBtn = QPushButton(AzenqosDialog)
-        self.filterBtn.setGeometry(QtCore.QRect(300, 190, 181, 32))
-        self.filterBtn.setObjectName("filterBtn")
+        # self.filterBtn = QPushButton(AzenqosDialog)
+        # self.filterBtn.setGeometry(QtCore.QRect(300, 190, 181, 32))
+        # self.filterBtn.setObjectName("filterBtn")
 
         self.retranslateUi(AzenqosDialog)
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
@@ -332,7 +387,7 @@ class AzenqosDialog(QDialog):
         self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(
             _translate("AzenqosDialog", "Import Database"))
-        self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
+        # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
 
     def setupTreeWidget(self, AzenqosDialog):
@@ -500,38 +555,72 @@ class AzenqosDialog(QDialog):
             'WCDMA_Line Chart', 'LTE_LTE Line Chart',
             'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart','WCDMA_Pilot Analyzer'
         ]
-        for window in openedWindows:
-            if not window.title in linechartWindowname:
-                window.hilightRow(sampledate)
-            else:
-                window.moveChart(sampledate)
+        if len(openedWindows) > 0:
+            for window in openedWindows:
+                if not window.title in linechartWindowname:
+                    window.hilightRow(sampledate)
+                else:
+                    window.moveChart(sampledate)
         currentDateTimeString = '%s' % (
             datetime.datetime.fromtimestamp(currentTimestamp))
+        clearAllSelectedFeatures()
         self.hilightFeature()
         self.timeSliderThread.set(value)
 
 
     def hilightFeature(self):
+        QgsMessageLog.logMessage('[-- Start hilight features --]')
+        posObjs = []
+        posIds = []
         selected_ids = []
+        layerName = None
+        start_time = time.time()
         if azenqosDatabase is not None:
             azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "SELECT posid FROM events WHERE time <= '%s' ORDER BY time DESC LIMIT 1" % (currentDateTimeString)
-        query.exec_(queryString)
-        while query.next():
-            posid = query.value(0)
-        for feature in eventsLayer.getFeatures():
-            featurePosId = feature['posid']
-            if posid == featurePosId:
+        for tableName in tableList:
+            # tableName = 'events'
+            query = QSqlQuery()
+            queryString = "SELECT posid FROM %s WHERE time <= '%s' ORDER BY time DESC LIMIT 1" % (tableName, currentDateTimeString)
+            query.exec_(queryString)
+            while query.next():
+                posid = query.value(0)
+                posdict = {"posid": posid, "table": tableName}
+                posObjs.append(posdict)
+                posIds.append(posid)
+
+        if posIds:
+            posIdAppoarchToTime = max(posIds)
+            for obj in posObjs:
+                if obj.get("posid") == posIdAppoarchToTime:
+                    layerName = obj.get("table")
+                    break
+        QgsMessageLog.logMessage('posIdAppoarchToTime: ' + str(posIdAppoarchToTime))
+
+        layer = QgsProject.instance().mapLayersByName(layerName)[0]
+        root = QgsProject.instance().layerTreeRoot()
+        root.setHasCustomLayerOrder (True)
+        order = root.customLayerOrder()
+        order.insert(0, order.pop(order.index(layer))) # vlayer to the top
+        root.setCustomLayerOrder( order )
+        iface.setActiveLayer(layer)
+        QgsMessageLog.logMessage('layer name: ' + str(layerName))
+
+        for feature in layer.getFeatures():
+            posid = feature['posid']
+            if posIdAppoarchToTime == posid:
                 selected_ids.append(feature.id())
+
         if selected_ids != []:
-            eventsLayer.selectByIds(selected_ids)
-            iface.mapCanvas().setSelectionColor(QColor("red"))
-            iface.mapCanvas().setExtent(eventsLayer.extent())
-            iface.mapCanvas().zoomToSelected()
-            # iface.mapCanvas().zoomScale(100000.0)
-            iface.mapCanvas().refresh()
-        azenqosDatabase.close()
+            layer.selectByIds(selected_ids)
+        QgsMessageLog.logMessage('selected_ids: ' +str(selected_ids))
+
+        # iface.mapCanvas().setExtent(eventsLayer.extent())
+        iface.mapCanvas().zoomToSelected()
+        iface.mapCanvas().zoomScale(500.0)
+        iface.mapCanvas().refresh()
+        elapsed_time = time.time() - start_time
+        QgsMessageLog.logMessage('Elapsed time: ' + str(elapsed_time))
+        QgsMessageLog.logMessage('[-- End hilight features --]')
 
     def classifySelectedItems(self, parent, child):
         global openedWindows

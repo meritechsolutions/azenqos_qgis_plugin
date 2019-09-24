@@ -13,7 +13,7 @@
 2. Download QGIS in OSGeo4W and install
 3. Open OSGeo4W Shell
 4. Type 'py3_env' and press enter button
-5. Then type 'pip3 install pyqtgraph' and press enter button
+5. Then type 'python3 -m pip install pyqtgraph' and press enter button
 
 # Azenqos plugin Installation
 

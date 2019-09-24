@@ -25,8 +25,10 @@ import datetime
 import os
 import threading
 import time
+import zipfile
 
 import pyqtgraph as pg
+
 from PyQt5.QtWidgets import QFrame
 
 from qgis.utils import *
@@ -62,9 +64,13 @@ isSliderPlay = False
 eventsLayer = None
 # allLayers = []
 tableList = []
+linechartWindowname = [
+            'WCDMA_Line Chart', 'LTE_LTE Line Chart',
+            'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart','WCDMA_Pilot Analyzer'
+        ]
 
 def validateDateTime(date_string):
-    date_format = '%Y-%m-%d %H:%M:%S.%f'
+    date_format = "%Y-%m-%d %H:%M:%S.%f"
     try:
         date_obj = datetime.datetime.strptime(date_string, date_format)
         return True
@@ -126,8 +132,9 @@ class Ui_DatabaseDialog(QDialog):
     def getfiles(self):
         fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
                                                   QtCore.QDir.rootPath(),
-                                                  '*.db *.sqlite')
+                                                  '*.db *.sqlite *.azm')
         if fileName != "":
+            archive = zipfile.ZipFile
             baseFileName = os.path.basename(str(fileName))
             self.dbPath.setText(fileName)
             self.databasePath = fileName
@@ -147,160 +154,135 @@ class Ui_DatabaseDialog(QDialog):
                 "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
             return False
         else:
+            self.uri = QgsDataSourceUri()
+            self.uri.setDatabase(self.databasePath)
             self.addLayerToQgis()
+            # self.createTableLayer()
+            self.layerTask = LayerTask(u'Waste cpu 1', self.uri)
+            QgsApplication.taskManager().addTask(self.layerTask)
             self.getTimeForSlider()
-            QMessageBox.about(self, 'Connection result',
-                              'Database is Connected, Enter the main menu')
             self.hide()
             self.azenqosMainMenu = AzenqosDialog()
             self.azenqosMainMenu.show()
             self.azenqosMainMenu.raise_()
             self.azenqosMainMenu.activateWindow()
 
-    def getTimeForSlider(self):
-        global minTimeValue
-        global maxTimeValue
-        global currentDateTimeString
+    def addLayerToQgis(self):
+        start_time = time.time()
+        QgsProject.removeAllMapLayers(QgsProject.instance())
+        urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
+        # urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
+        rlayer = QgsRasterLayer(urlWithParams, 'Street map', 'wms')
+        if rlayer.isValid():
+            QgsProject.instance().addMapLayer(rlayer)
+        else:
+            print('invalid layer')
         azenqosDatabase.open()
-        dataList = []
         query = QSqlQuery()
-        # queryString = "SELECT name FROM sqlite_master WHERE type='table'"
         queryString = "SELECT table_name FROM layer_statistics"
         query.exec_(queryString)
         while query.next():
             tableName = query.value(0)
+            tableList.append(tableName)
+        azenqosDatabase.close()
+
+    def getTimeForSlider(self):
+        global minTimeValue
+        global maxTimeValue
+        global currentDateTimeString
+        dataList = []
+        azenqosDatabase.open()
+        for tableName in tableList:
             subQuery = QSqlQuery()
             queryString = "SELECT MIN(time), MAX(time) FROM %s" % (
                 tableName)
             subQuery.exec_(queryString)
             while subQuery.next():
-                dataList.append(
-                    [tableName,
-                        subQuery.value(0),
-                        subQuery.value(1)])
-        mintime = ''
-        maxtime = ''
-        for row in range(len(dataList)):
-            if row > 0:
-                if dataList[row][1]:
-                    if dataList[row][1] < mintime:
-                        mintime = dataList[row][1]
-                if dataList[row][2]:
-                    if dataList[row][2] > maxtime:
-                        maxtime = dataList[row][2]
-            else:
-                if dataList[row][1]:
-                    mintime = dataList[row][1]
-                if dataList[row][2]:
-                    maxtime = dataList[row][2]
-
-        QgsMessageLog.logMessage(str(mintime))
-        QgsMessageLog.logMessage(str(maxtime))
-
-        minTimeValue = datetime.datetime.strptime(str(mintime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
-
-        maxTimeValue = datetime.datetime.strptime(str(maxtime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
-
-        currentDateTimeString = '%s' % (
-            datetime.datetime.fromtimestamp(minTimeValue))
-
+                if subQuery.value(0).strip() and subQuery.value(1).strip():
+                    dataList.append([tableName, subQuery.value(0), subQuery.value(1)])
         azenqosDatabase.close()
+
+        try:
+            mintime = ''
+            maxtime = ''
+            for row in range(len(dataList)):
+                if row > 0:
+                    if dataList[row][1]:
+                        if dataList[row][1] < mintime:
+                            mintime = dataList[row][1]
+                    if dataList[row][2]:
+                        if dataList[row][2] > maxtime:
+                            maxtime = dataList[row][2]
+                else:
+                    if dataList[row][1]:
+                        mintime = dataList[row][1]
+                    if dataList[row][2]:
+                        maxtime = dataList[row][2]
+
+            QgsMessageLog.logMessage(str(mintime))
+            QgsMessageLog.logMessage(str(maxtime))
+
+            minTimeValue = datetime.datetime.strptime(str(mintime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
+
+            maxTimeValue = datetime.datetime.strptime(str(maxtime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
+
+            currentDateTimeString = '%s' % (
+                datetime.datetime.fromtimestamp(minTimeValue))
+        except:
+            QtWidgets.QMessageBox.critical(
+                None, "Cannot open database",
+                "Unable to establish a database connection.\n"
+                "This example needs SQLite support. Please read "
+                "the Qt SQL driver documentation for information how "
+                "to build it.\n\n"
+                "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
+            return False
         self.setIncrementValue()
-
-    # def getTimeForSlider(self):
-    #     global minTimeValue
-    #     global maxTimeValue
-    #     global currentDateTimeString
-    #     azenqosDatabase.open()
-    #     dataList = []
-    #     # query = QSqlQuery()
-    #     # queryString = "SELECT name FROM sqlite_master WHERE type='table'"
-    #     for tableName in tableList:
-    #         tableList.append(tableName)
-    #         subQuery = QSqlQuery()
-    #         queryString = "SELECT MIN(time), MAX(time) FROM %s" % (
-    #             tableName)
-    #         subQuery.exec_(queryString)
-    #         while subQuery.next():
-    #             dataList.append(
-    #                 [tableName,
-    #                     subQuery.value(0),
-    #                     subQuery.value(1)])
-    #     mintime = ''
-    #     maxtime = ''
-    #     for row in range(len(dataList)):
-    #         if row > 0:
-    #             if dataList[row][1]:
-    #                 if dataList[row][1] < mintime:
-    #                     mintime = dataList[row][1]
-    #             if dataList[row][2]:
-    #                 if dataList[row][2] > maxtime:
-    #                     maxtime = dataList[row][2]
-    #         else:
-    #             if dataList[row][1]:
-    #                 mintime = dataList[row][1]
-    #             if dataList[row][2]:
-    #                 maxtime = dataList[row][2]
-
-    #     minTimeValue = datetime.datetime.strptime(str(mintime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
-
-    #     maxTimeValue = datetime.datetime.strptime(str(maxtime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
-
-    #     currentDateTimeString = '%s' % (
-    #         datetime.datetime.fromtimestamp(minTimeValue))
-
-    #     azenqosDatabase.close()
-    #     self.setIncrementValue()
 
     def addDatabase(self):
         global azenqosDatabase
         azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
         azenqosDatabase.setDatabaseName(self.databasePath)
 
-    def addLayerToQgis(self):
-        # global allLayers
-        global tableList
-        QgsProject.removeAllMapLayers(QgsProject.instance())
-        # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
-        urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
-        rlayer = QgsRasterLayer(urlWithParams, 'Longdo Map Icons', 'wms')
-        if rlayer.isValid():
-            QgsProject.instance().addMapLayer(rlayer)
-        else:
-            print('invalid layer')
-        uri = QgsDataSourceUri()
-        uri.setDatabase(self.databasePath)
-        azenqosDatabase.open()
-        query = QSqlQuery()
-        # queryString = "SELECT name FROM sqlite_master WHERE type='table'"'
-        queryString = "SELECT table_name FROM layer_statistics"
-        query.exec_(queryString)
-        while query.next():
-            tableName = query.value(0)
-            tableList.append(tableName)
-            uri.setDataSource('', tableName, 'geom')
-            vlayer = QgsVectorLayer(uri.uri(), tableName, 'spatialite')
-            symbol_renderer = vlayer.renderer()
-            symbol = symbol_renderer.symbol()
-            symbol.setColor(QColor(125,139,142))
-            symbol.symbolLayer(0).setStrokeColor(QColor(0,0,0))
-            symbol.setSize(2.4)
-            iface.layerTreeView().refreshLayerSymbology(vlayer.id())
-            vlayer.triggerRepaint()
-            QgsProject.instance().addMapLayer(vlayer)
-            iface.mapCanvas().setSelectionColor(QColor("red"))
-            # allLayers.append(vlayer)
-        self.orderLayer()
-        azenqosDatabase.close()
-
-    def orderLayer(self):
-        vlayer = QgsProject.instance().mapLayersByName("events")[0]
-        iface.setActiveLayer(vlayer)
-        root = QgsProject.instance().layerTreeRoot()
-        root.setHasCustomLayerOrder(True)
-        order = root.customLayerOrder()
-        order.insert(0, order.pop( order.index( vlayer ) ) ) # vlayer to the top
-        root.setCustomLayerOrder( order )
+    # def addLayerToQgis(self):
+    #     # global tableList
+    #     QgsMessageLog.logMessage('[-- Start add layers --]')
+    #     start_time = time.time()
+    #     QgsProject.removeAllMapLayers(QgsProject.instance())
+    #     urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
+    #     # urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
+    #     rlayer = QgsRasterLayer(urlWithParams, 'Street map', 'wms')
+    #     if rlayer.isValid():
+    #         QgsProject.instance().addMapLayer(rlayer)
+    #     else:
+    #         print('invalid layer')
+    #     uri = QgsDataSourceUri()
+    #     uri.setDatabase(self.databasePath)
+    #     azenqosDatabase.open()
+    #     query = QSqlQuery()
+    #     # queryString = "SELECT name FROM sqlite_master WHERE type='table'"'
+    #     queryString = "SELECT table_name FROM layer_statistics"
+    #     query.exec_(queryString)
+    #     while query.next():
+    #         tableName = query.value(0)
+    #         # tableList.append(tableName)
+    #         uri.setDataSource('', tableName, 'geom')
+    #         vlayer = QgsVectorLayer(uri.uri(), tableName, 'spatialite')
+    #         if vlayer:
+    #             symbol_renderer = vlayer.renderer()
+    #             if symbol_renderer:
+    #                 symbol = symbol_renderer.symbol()
+    #                 symbol.setColor(QColor(125,139,142))
+    #                 symbol.symbolLayer(0).setStrokeColor(QColor(0,0,0))
+    #                 symbol.setSize(2.4)
+    #             iface.layerTreeView().refreshLayerSymbology(vlayer.id())
+    #             vlayer.triggerRepaint()
+    #             QgsProject.instance().addMapLayer(vlayer)
+    #         iface.mapCanvas().setSelectionColor(QColor("red"))
+    #     azenqosDatabase.close()
+    #     elapsed_time = time.time() - start_time
+    #     QgsMessageLog.logMessage('Elapsed time: ' + str(elapsed_time) + ' s.')
+    #     QgsMessageLog.logMessage('[-- End add layers --]')
 
     def setIncrementValue(self):
         global sliderLength
@@ -514,11 +496,9 @@ class AzenqosDialog(QDialog):
         self.playButton.clicked.connect(self.startPlaytimeThread)
         self.pauseButton.clicked.connect(self.pauseTime)
 
-
     def startPlaytimeThread(self):
         self.playButton.setDisabled(True)
         self.timeSliderThread.start()
-
 
     def pauseTime(self):
         global isSliderPlay
@@ -549,21 +529,17 @@ class AzenqosDialog(QDialog):
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
-        currentTimestamp = timestampValue
-        timeSlider.update()
-        linechartWindowname = [
-            'WCDMA_Line Chart', 'LTE_LTE Line Chart',
-            'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart','WCDMA_Pilot Analyzer'
-        ]
         if len(openedWindows) > 0:
             for window in openedWindows:
                 if not window.title in linechartWindowname:
-                    window.hilightRow(sampledate)
+                    window.hilightRow(self.sampledate)
                 else:
-                    window.moveChart(sampledate)
-        currentDateTimeString = '%s' % (
-            datetime.datetime.fromtimestamp(currentTimestamp))
-        clearAllSelectedFeatures()
+                    window.moveChart(self.sampledate)
+        currentTimestamp = timestampValue
+        timeSlider.update()
+        currentDateTimeString = '%s' % (datetime.datetime.fromtimestamp(currentTimestamp))
+        # self.tableWindowTask = TableWindowTask('Table window task', sampledate)
+        # QgsApplication.taskManager().addTask(self.tableWindowTask)
         self.hilightFeature()
         self.timeSliderThread.set(value)
 
@@ -577,6 +553,7 @@ class AzenqosDialog(QDialog):
         start_time = time.time()
         if azenqosDatabase is not None:
             azenqosDatabase.open()
+        # tableLists = ['events']
         for tableName in tableList:
             # tableName = 'events'
             query = QSqlQuery()
@@ -587,14 +564,14 @@ class AzenqosDialog(QDialog):
                 posdict = {"posid": posid, "table": tableName}
                 posObjs.append(posdict)
                 posIds.append(posid)
-
+        azenqosDatabase.close()
         if posIds:
             posIdAppoarchToTime = max(posIds)
             for obj in posObjs:
                 if obj.get("posid") == posIdAppoarchToTime:
                     layerName = obj.get("table")
                     break
-        QgsMessageLog.logMessage('posIdAppoarchToTime: ' + str(posIdAppoarchToTime))
+            QgsMessageLog.logMessage('posIdAppoarchToTime: ' + str(posIdAppoarchToTime))
 
         layer = QgsProject.instance().mapLayersByName(layerName)[0]
         root = QgsProject.instance().layerTreeRoot()
@@ -609,17 +586,24 @@ class AzenqosDialog(QDialog):
             posid = feature['posid']
             if posIdAppoarchToTime == posid:
                 selected_ids.append(feature.id())
-
+        ext = layer.extent()
+        xmin = ext.xMinimum()
+        xmax = ext.xMaximum()
+        ymin = ext.yMinimum()
+        ymax = ext.yMaximum()
+        zoomRectangle = QgsRectangle(xmin,ymin,xmax,ymax)
         if len(selected_ids) > 0:
+            clearAllSelectedFeatures()
             layer.selectByIds(selected_ids)
-            # iface.mapCanvas().setExtent(eventsLayer.extent())
-            iface.mapCanvas().zoomToSelected()
-            iface.mapCanvas().zoomScale(500.0)
+            # box = layer.boundingBoxOfSelected()
+            iface.mapCanvas().setExtent(zoomRectangle)
+            iface.mapCanvas().zoomScale(2000.0)
+            iface.mapCanvas().zoomToSelected(layer)
             iface.mapCanvas().refresh()
         QgsMessageLog.logMessage('selected_ids: ' +str(selected_ids))
 
         elapsed_time = time.time() - start_time
-        QgsMessageLog.logMessage('Elapsed time: ' + str(elapsed_time))
+        QgsMessageLog.logMessage('Elapsed time: ' + str(elapsed_time) + ' s.')
         QgsMessageLog.logMessage('[-- End hilight features --]')
 
     def classifySelectedItems(self, parent, child):
@@ -1016,6 +1000,7 @@ class TableWindow(QDialog):
         self.tableView.resizeColumnsToContents()
 
     def specifyTablesHeader(self):
+        # TODO: Add table when open table window
         if self.title is not None:
             # WCDMA
             if self.title == 'WCDMA_Active + Monitored Sets':
@@ -1166,6 +1151,7 @@ class TableWindow(QDialog):
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
                 self.dataList = SignalingDataQuery(
                     azenqosDatabase, currentDateTimeString).getEvents()
+
             elif self.title == 'Signaling_Layer 1 Messages':
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
                 self.dataList = SignalingDataQuery(
@@ -2903,24 +2889,6 @@ class DataQuery:
         return validatedValue
 
 
-class setInterval:
-    def __init__(self, value, interval, action):
-        self.interval = interval
-        self.action = action
-        self.stopEvent = threading.Event()
-        thread = threading.Thread(target=self.__setInterval)
-        thread.start()
-
-    def __setInterval(self):
-        nextTime = time.time() + self.interval
-        while not self.stopEvent.wait(nextTime - time.time()):
-            nextTime += self.interval
-            self.action()
-
-    def cancel(self):
-        self.stopEvent.set()
-
-
 class CellInformation(QDialog):
     def __init__(self, parent=None):
         super(CellInformation, self).__init__(parent)
@@ -2984,70 +2952,70 @@ class CellInformation(QDialog):
         self.CellLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.CellLayout.setContentsMargins(10, 20, 10, 10)
         self.CellLayout.setObjectName("CellLayout")
-        self.CellDifinitionFile = QtWidgets.QGroupBox(
+        self.CellDefinitionFile = QtWidgets.QGroupBox(
             self.verticalLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
                                            QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.CellDifinitionFile.sizePolicy().hasHeightForWidth())
-        self.CellDifinitionFile.setSizePolicy(sizePolicy)
+            self.CellDefinitionFile.sizePolicy().hasHeightForWidth())
+        self.CellDefinitionFile.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setPointSize(13)
-        self.CellDifinitionFile.setFont(font)
-        self.CellDifinitionFile.setObjectName("CellDifinitionFile")
-        self.FilePath4 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.CellDefinitionFile.setFont(font)
+        self.CellDefinitionFile.setObjectName("CellDefinitionFile")
+        self.FilePath4 = QtWidgets.QLineEdit(self.CellDefinitionFile)
         self.FilePath4.setGeometry(QtCore.QRect(110, 270, 341, 21))
         self.FilePath4.setObjectName("FilePath4")
         self.CdmaCellFileCheckbox = QtWidgets.QCheckBox(
-            self.CellDifinitionFile)
+            self.CellDefinitionFile)
         self.CdmaCellFileCheckbox.setGeometry(QtCore.QRect(30, 240, 151, 20))
         self.CdmaCellFileCheckbox.setObjectName("CdmaCellFileCheckbox")
-        self.LteCellFileCheckbox = QtWidgets.QCheckBox(self.CellDifinitionFile)
+        self.LteCellFileCheckbox = QtWidgets.QCheckBox(self.CellDefinitionFile)
         self.LteCellFileCheckbox.setGeometry(QtCore.QRect(30, 170, 131, 20))
         self.LteCellFileCheckbox.setObjectName("LteCellFileCheckbox")
-        self.FilePath2 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath2 = QtWidgets.QLineEdit(self.CellDefinitionFile)
         self.FilePath2.setGeometry(QtCore.QRect(110, 130, 341, 21))
         self.FilePath2.setObjectName("FilePath2")
-        self.FilenameLabel1 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel1 = QtWidgets.QLabel(self.CellDefinitionFile)
         self.FilenameLabel1.setGeometry(QtCore.QRect(40, 60, 59, 16))
         self.FilenameLabel1.setObjectName("FilenameLabel1")
-        self.FilenameLabel4 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel4 = QtWidgets.QLabel(self.CellDefinitionFile)
         self.FilenameLabel4.setGeometry(QtCore.QRect(40, 270, 59, 16))
         self.FilenameLabel4.setObjectName("FilenameLabel4")
         self.WcdmaCellFileCheckbox = QtWidgets.QCheckBox(
-            self.CellDifinitionFile)
+            self.CellDefinitionFile)
         self.WcdmaCellFileCheckbox.setGeometry(QtCore.QRect(30, 100, 161, 20))
         self.WcdmaCellFileCheckbox.setObjectName("WcdmaCellFileCheckbox")
-        self.FilePath1 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath1 = QtWidgets.QLineEdit(self.CellDefinitionFile)
         self.FilePath1.setGeometry(QtCore.QRect(110, 60, 341, 21))
         self.FilePath1.setObjectName("FilePath1")
-        self.FilePath3 = QtWidgets.QLineEdit(self.CellDifinitionFile)
+        self.FilePath3 = QtWidgets.QLineEdit(self.CellDefinitionFile)
         self.FilePath3.setGeometry(QtCore.QRect(110, 200, 341, 21))
         self.FilePath3.setObjectName("FilePath3")
-        self.FilenameLabel3 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel3 = QtWidgets.QLabel(self.CellDefinitionFile)
         self.FilenameLabel3.setGeometry(QtCore.QRect(40, 200, 59, 16))
         self.FilenameLabel3.setObjectName("FilenameLabel3")
-        self.GsmCellFileCheckbox = QtWidgets.QCheckBox(self.CellDifinitionFile)
+        self.GsmCellFileCheckbox = QtWidgets.QCheckBox(self.CellDefinitionFile)
         self.GsmCellFileCheckbox.setGeometry(QtCore.QRect(30, 30, 141, 20))
         self.GsmCellFileCheckbox.setObjectName("GsmCellFileCheckbox")
-        self.FilenameLabel2 = QtWidgets.QLabel(self.CellDifinitionFile)
+        self.FilenameLabel2 = QtWidgets.QLabel(self.CellDefinitionFile)
         self.FilenameLabel2.setGeometry(QtCore.QRect(40, 130, 59, 16))
         self.FilenameLabel2.setObjectName("FilenameLabel2")
-        self.BrowseButton1 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton1 = QtWidgets.QToolButton(self.CellDefinitionFile)
         self.BrowseButton1.setGeometry(QtCore.QRect(460, 60, 51, 22))
         self.BrowseButton1.setObjectName("BrowseButton1")
-        self.BrowseButton2 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton2 = QtWidgets.QToolButton(self.CellDefinitionFile)
         self.BrowseButton2.setGeometry(QtCore.QRect(460, 130, 51, 22))
         self.BrowseButton2.setObjectName("BrowseButton2")
-        self.BrowseButton3 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton3 = QtWidgets.QToolButton(self.CellDefinitionFile)
         self.BrowseButton3.setGeometry(QtCore.QRect(460, 200, 51, 22))
         self.BrowseButton3.setObjectName("BrowseButton3")
-        self.BrowseButton4 = QtWidgets.QToolButton(self.CellDifinitionFile)
+        self.BrowseButton4 = QtWidgets.QToolButton(self.CellDefinitionFile)
         self.BrowseButton4.setGeometry(QtCore.QRect(460, 270, 51, 22))
         self.BrowseButton4.setObjectName("BrowseButton4")
-        self.CellLayout.addWidget(self.CellDifinitionFile)
+        self.CellLayout.addWidget(self.CellDefinitionFile)
         self.verticalLayoutWidget_3 = QtWidgets.QWidget(CellInformation)
         self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(0, 470, 601, 55))
         self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
@@ -3081,7 +3049,7 @@ class CellInformation(QDialog):
         self.SearchCellDistanceLabel.setText(
             _translate("CellInformation", "Search Cell Distance"))
         self.KilometerLabel.setText(_translate("CellInformation", "Kilometer"))
-        self.CellDifinitionFile.setTitle(
+        self.CellDefinitionFile.setTitle(
             _translate("CellInformation", "Cell definition file"))
         self.CdmaCellFileCheckbox.setText(
             _translate("CellInformation", "Use CDMA cell file"))
@@ -3159,7 +3127,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(1)
+                        time.sleep(0.8)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
 
@@ -3171,7 +3139,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(1)
+                        time.sleep(0.8)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
 
@@ -3182,6 +3150,90 @@ class TimeSliderThread(QThread):
 
     def set(self, value):
         self.currentSliderValue = value
+
+class LayerTask(QgsTask):
+    def __init__(self, desc, uri):
+        QgsTask.__init__(self, desc)
+        self.uri = uri
+        self.vlayers = []
+        self.start_time = None
+        self.desc = desc
+        self.exception = None
+
+    def run(self):
+        QgsMessageLog.logMessage('[-- Start add layers --]', tag="Processing")
+        self.start_time = time.time()
+        for tableName in tableList:
+            self.uri.setDataSource('', tableName, 'geom')
+            vlayer = QgsVectorLayer(self.uri.uri(), tableName, 'spatialite')
+            if vlayer:
+                symbol_renderer = vlayer.renderer()
+                if symbol_renderer:
+                    symbol = symbol_renderer.symbol()
+                    symbol.setColor(QColor(125,139,142))
+                    symbol.symbolLayer(0).setStrokeColor(QColor(0,0,0))
+                    symbol.setSize(2.4)
+                iface.layerTreeView().refreshLayerSymbology(vlayer.id())
+                vlayer.triggerRepaint()
+                self.vlayers.append(vlayer)
+        return True
+
+    def finished(self, result):
+        if result:
+            for vlayer in self.vlayers:
+                QgsProject.instance().addMapLayer(vlayer)
+            iface.mapCanvas().setSelectionColor(QColor("red"))
+            elapsed_time = time.time() - self.start_time
+            QgsMessageLog.logMessage('Elapsed time: ' + str(elapsed_time) + ' s.', tag="Processing")
+            QgsMessageLog.logMessage('[-- End add layers --]', tag="Processing")
+        else:
+            if self.exception is None:
+                QgsMessageLog.logMessage(
+                    'Task "{name}" not successful but without '\
+                    'exception (probably the task was manually '\
+                    'canceled by the user)'.format(
+                    name=self.desc), tag="Exception")
+            else:
+                QgsMessageLog.logMessage(
+                    'Task "{name}" Exception: {exception}'.format(
+                    name=self.desc),
+                    exception=self.exception,
+                    tag="Exception")
+                raise self.exception
+
+class TableWindowTask(QgsTask):
+    def __init__(self, desc, sampledate):
+        QgsTask.__init__(self, desc)
+        self.desc = desc
+        self.exception = None
+        self.sampledate = sampledate
+
+    def run(self):
+        if len(openedWindows) > 0:
+            for window in openedWindows:
+                if not window.title in linechartWindowname:
+                    window.hilightRow(self.sampledate)
+                else:
+                    window.moveChart(self.sampledate)
+        return True
+
+    # def finished(self, result):
+    #     if result:
+    #         QgsMessageLog.logMessage('Task "{name}" completed'.format(name= self.desc), tag="Processing")
+    #         del self
+    #     else:
+    #         if self.exception is None:
+    #             QgsMessageLog.logMessage('Task "{name}" not successful but without '\
+    #                 'exception (probably the task was manually '\
+    #                 'canceled by the user)'.format(name=self.desc), tag="Exception")
+
+    #         else:
+    #             QgsMessageLog.logMessage(
+    #                 'Task "{name}" Exception: {exception}'.format(
+    #                 name=self.desc,
+    #                 exception=self.exception),
+    #                 tag="Exception")
+    #             raise self.exception
 
 
 # if __name__ == '__main__':

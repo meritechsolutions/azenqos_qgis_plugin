@@ -61,8 +61,7 @@ sliderLength = None
 openedWindows = []
 timeSlider = None
 isSliderPlay = False
-eventsLayer = None
-# allLayers = []
+allLayers = []
 tableList = []
 linechartWindowname = [
             'WCDMA_Line Chart', 'LTE_LTE Line Chart',
@@ -183,7 +182,7 @@ class Ui_DatabaseDialog(QDialog):
         query.exec_(queryString)
         while query.next():
             tableName = query.value(0)
-            tableList.append(tableName)
+            allLayers.append(tableName)
         azenqosDatabase.close()
 
     def getTimeForSlider(self):
@@ -192,14 +191,14 @@ class Ui_DatabaseDialog(QDialog):
         global currentDateTimeString
         dataList = []
         azenqosDatabase.open()
-        for tableName in tableList:
+        for layerName in allLayers:
             subQuery = QSqlQuery()
             queryString = "SELECT MIN(time), MAX(time) FROM %s" % (
-                tableName)
+                layerName)
             subQuery.exec_(queryString)
             while subQuery.next():
                 if subQuery.value(0).strip() and subQuery.value(1).strip():
-                    dataList.append([tableName, subQuery.value(0), subQuery.value(1)])
+                    dataList.append([layerName, subQuery.value(0), subQuery.value(1)])
         azenqosDatabase.close()
 
         try:
@@ -383,53 +382,53 @@ class AzenqosDialog(QDialog):
             self.loadAllMessages)
 
         # WCDMA Section
-        wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
-        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
-                                                   ['Active + Monitored Sets'])
-        wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
-        wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
-        wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
-        wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
-        wcdmaTransportChannel = QTreeWidgetItem(wcdma,
-                                                ['BLER / Transport Channel'])
-        wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
-        wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
-        wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
-        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
-                                                  ['Active + Monitored Bar'])
-        wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
-        wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
-        wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
+        # wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
+        # wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
+        #                                            ['Active + Monitored Sets'])
+        # wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
+        # wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
+        # wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
+        # wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
+        # wcdmaTransportChannel = QTreeWidgetItem(wcdma,
+        #                                         ['BLER / Transport Channel'])
+        # wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
+        # wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
+        # wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
+        # wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
+        #                                           ['Active + Monitored Bar'])
+        # wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
+        # wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
+        # wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
 
         # LTE Section
-        lte = QTreeWidgetItem(self.presentationTreeWidget, ['LTE'])
-        lteRadioParams = QTreeWidgetItem(lte, ['Radio Parameters'])
-        lteServingNeighbors = QTreeWidgetItem(lte, ['Serving + Neighbors'])
-        ltePPParams = QTreeWidgetItem(lte, ['PUCCH/PDSCH Parameters'])
-        lteLineChart = QTreeWidgetItem(lte, ['LTE Line Chart'])
-        lteRlc = QTreeWidgetItem(lte, ['LTE RLC'])
-        lteVo = QTreeWidgetItem(lte, ['LTE VoLTE'])
+        # lte = QTreeWidgetItem(self.presentationTreeWidget, ['LTE'])
+        # lteRadioParams = QTreeWidgetItem(lte, ['Radio Parameters'])
+        # lteServingNeighbors = QTreeWidgetItem(lte, ['Serving + Neighbors'])
+        # ltePPParams = QTreeWidgetItem(lte, ['PUCCH/PDSCH Parameters'])
+        # lteLineChart = QTreeWidgetItem(lte, ['LTE Line Chart'])
+        # lteRlc = QTreeWidgetItem(lte, ['LTE RLC'])
+        # lteVo = QTreeWidgetItem(lte, ['LTE VoLTE'])
 
         # CDMA/EVDO Section
-        cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
-        cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
-        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
-                                                   ['Serving + Neighbors'])
-        cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
+        # cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
+        # cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
+        # cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
+        #                                            ['Serving + Neighbors'])
+        # cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
 
         # Data Section
-        data = QTreeWidgetItem(self.presentationTreeWidget, ['Data'])
+        # data = QTreeWidgetItem(self.presentationTreeWidget, ['Data'])
         # dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
-        dataWcdmaLineChart = QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
-        dataEdgeInfo = QTreeWidgetItem(data, ['GPRS/EDGE Information'])
-        dataWebBrowser = QTreeWidgetItem(data, ['Web Browser'])
-        dataStats = QTreeWidgetItem(data, ['HSDPA/HSPA + Statistics'])
-        dataHsupaStats = QTreeWidgetItem(data, ['HSUPA Statistics'])
-        dataLteStats = QTreeWidgetItem(data, ['LTE Data Statistics'])
-        dataLteLineChart = QTreeWidgetItem(data, ['LTE Data Line Chart'])
-        dataWifiConnectedAp = QTreeWidgetItem(data, ['Wifi Connected AP'])
-        dataWifiScannedAp = QTreeWidgetItem(data, ['Wifi Scanned APs'])
-        dataWifiGraph = QTreeWidgetItem(data, ['Wifi Graph'])
+        # dataWcdmaLineChart = QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
+        # dataEdgeInfo = QTreeWidgetItem(data, ['GPRS/EDGE Information'])
+        # dataWebBrowser = QTreeWidgetItem(data, ['Web Browser'])
+        # dataStats = QTreeWidgetItem(data, ['HSDPA/HSPA + Statistics'])
+        # dataHsupaStats = QTreeWidgetItem(data, ['HSUPA Statistics'])
+        # dataLteStats = QTreeWidgetItem(data, ['LTE Data Statistics'])
+        # dataLteLineChart = QTreeWidgetItem(data, ['LTE Data Line Chart'])
+        # dataWifiConnectedAp = QTreeWidgetItem(data, ['Wifi Connected AP'])
+        # dataWifiScannedAp = QTreeWidgetItem(data, ['Wifi Scanned APs'])
+        # dataWifiGraph = QTreeWidgetItem(data, ['Wifi Graph'])
 
         # Signaling Section
         signaling = QTreeWidgetItem(self.presentationTreeWidget, ['Signaling'])
@@ -440,29 +439,29 @@ class AzenqosDialog(QDialog):
         signalingMM = QTreeWidgetItem(signaling, ['MM Reg States'])
         signalingSystemInfo = QTreeWidgetItem(signaling,
                                               ['Serving System Info'])
-        signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
+        # signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
-        positioning = QTreeWidgetItem(self.presentationTreeWidget,
-                                      ['Positioning'])
-        positioningGps = QTreeWidgetItem(positioning, ['GPS'])
-        positioningMap = QTreeWidgetItem(positioning, ['Map'])
-        positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
+        # positioning = QTreeWidgetItem(self.presentationTreeWidget,
+        #                               ['Positioning'])
+        # positioningGps = QTreeWidgetItem(positioning, ['GPS'])
+        # positioningMap = QTreeWidgetItem(positioning, ['Map'])
+        # positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
         # Customized Window Section
-        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
-                                           ['Customized Window'])
-        customizedWindowStatus = QTreeWidgetItem(customizedWindow,
-                                                 ['Status Window'])
-        customizedWindowMessage = QTreeWidgetItem(customizedWindow,
-                                                  ['Message Window'])
-        customizedWindowChart = QTreeWidgetItem(customizedWindow,
-                                                ['Line Chart'])
+        # customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
+        #                                    ['Customized Window'])
+        # customizedWindowStatus = QTreeWidgetItem(customizedWindow,
+        #                                          ['Status Window'])
+        # customizedWindowMessage = QTreeWidgetItem(customizedWindow,
+        #                                           ['Message Window'])
+        # customizedWindowChart = QTreeWidgetItem(customizedWindow,
+        #                                         ['Line Chart'])
         #
         # # NB-IoT Section
-        nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
-        nBIoTParams = QTreeWidgetItem(nBIoT,
-                                      ['NB-IoT Radio Parameters Window'])
+        # nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
+        # nBIoTParams = QTreeWidgetItem(nBIoT,
+        #                               ['NB-IoT Radio Parameters Window'])
 
         self.presentationTreeWidget.header().setCascadingSectionResizes(True)
         self.presentationTreeWidget.header().setHighlightSections(True)
@@ -551,11 +550,9 @@ class AzenqosDialog(QDialog):
         selected_ids = []
         layerName = None
         start_time = time.time()
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        # tableLists = ['events']
-        for tableName in tableList:
+        for tableName in allLayers:
             # tableName = 'events'
+            azenqosDatabase.open()
             query = QSqlQuery()
             queryString = "SELECT posid FROM %s WHERE time <= '%s' ORDER BY time DESC LIMIT 1" % (tableName, currentDateTimeString)
             query.exec_(queryString)
@@ -564,7 +561,7 @@ class AzenqosDialog(QDialog):
                 posdict = {"posid": posid, "table": tableName}
                 posObjs.append(posdict)
                 posIds.append(posid)
-        azenqosDatabase.close()
+            azenqosDatabase.close()
         if posIds:
             posIdAppoarchToTime = max(posIds)
             for obj in posObjs:
@@ -578,7 +575,7 @@ class AzenqosDialog(QDialog):
         root.setHasCustomLayerOrder (True)
         order = root.customLayerOrder()
         order.insert(0, order.pop(order.index(layer))) # vlayer to the top
-        root.setCustomLayerOrder( order )
+        root.setCustomLayerOrder(order)
         iface.setActiveLayer(layer)
         QgsMessageLog.logMessage('layer name: ' + str(layerName))
 
@@ -586,20 +583,22 @@ class AzenqosDialog(QDialog):
             posid = feature['posid']
             if posIdAppoarchToTime == posid:
                 selected_ids.append(feature.id())
-        ext = layer.extent()
-        xmin = ext.xMinimum()
-        xmax = ext.xMaximum()
-        ymin = ext.yMinimum()
-        ymax = ext.yMaximum()
-        zoomRectangle = QgsRectangle(xmin,ymin,xmax,ymax)
-        if len(selected_ids) > 0:
-            clearAllSelectedFeatures()
-            layer.selectByIds(selected_ids)
-            # box = layer.boundingBoxOfSelected()
-            iface.mapCanvas().setExtent(zoomRectangle)
-            iface.mapCanvas().zoomScale(2000.0)
-            iface.mapCanvas().zoomToSelected(layer)
-            iface.mapCanvas().refresh()
+
+        if layer:
+            if len(selected_ids) > 0:
+                clearAllSelectedFeatures()
+                layer.selectByIds(selected_ids)
+                # box = layer.boundingBoxOfSelected()
+                ext = layer.extent()
+                xmin = ext.xMinimum()
+                xmax = ext.xMaximum()
+                ymin = ext.yMinimum()
+                ymax = ext.yMaximum()
+                zoomRectangle = QgsRectangle(xmin,ymin,xmax,ymax)
+                iface.mapCanvas().setExtent(zoomRectangle)
+                iface.mapCanvas().zoomScale(2000.0)
+                iface.mapCanvas().zoomToSelected(layer)
+                iface.mapCanvas().refresh()
         QgsMessageLog.logMessage('selected_ids: ' +str(selected_ids))
 
         elapsed_time = time.time() - start_time
@@ -3163,7 +3162,7 @@ class LayerTask(QgsTask):
     def run(self):
         QgsMessageLog.logMessage('[-- Start add layers --]', tag="Processing")
         self.start_time = time.time()
-        for tableName in tableList:
+        for tableName in allLayers:
             self.uri.setDataSource('', tableName, 'geom')
             vlayer = QgsVectorLayer(self.uri.uri(), tableName, 'spatialite')
             if vlayer:

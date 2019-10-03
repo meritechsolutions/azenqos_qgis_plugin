@@ -194,8 +194,8 @@ class Ui_DatabaseDialog(QDialog):
             self.dbPath.setText(fileName)
             self.databasePath = fileName
         else:
-            if self.dbPath.toPlainText() != "":
-                self.databasePath = self.dbPath.toPlainText()
+            if self.dbPath.text() != "":
+                self.databasePath = self.dbPath.text()
 
     def checkDatabase(self):
         self.addDatabase()
@@ -554,12 +554,12 @@ class AzenqosDialog(QDialog):
         layout.addWidget(self.pauseButton)
         self.playButton.clicked.connect(self.startPlaytimeThread)
         self.pauseButton.clicked.connect(self.pauseTime)
-        # self.timeSliderThread.start()
 
     def startPlaytimeThread(self):
         global isSliderPlay
         isSliderPlay = True
         self.playButton.setDisabled(True)
+        self.timeSliderThread.changeValue.connect(self.setTimeValue)
         self.timeSliderThread.start()
 
     def pauseTime(self):
@@ -568,6 +568,11 @@ class AzenqosDialog(QDialog):
         timeSlider.setEnabled(True)
         self.playButton.setEnabled(True)
         self.timeSliderThread.quit()
+        threading.Event()
+
+    def setTimeValue(self, value):
+        timeSlider.setValue(value)
+        timeSlider.update()
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -595,16 +600,16 @@ class AzenqosDialog(QDialog):
         if len(openedWindows) > 0:
             for window in openedWindows:
                 if not window.title in linechartWindowname:
-                    worker = Worker(window.hilightRow(sampledate))
-                    threadpool.start(worker)
+                    window.hilightRow(sampledate)
                 else:
                     window.moveChart(sampledate)
+        if len(tableList) > 0:
+            worker = Worker(self.hilightFeature())
+            threadpool.start(worker)
+            # self.hilightFeature()
+        self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
         currentDateTimeString = '%s' % (datetime.datetime.fromtimestamp(currentTimestamp))
-        # self.tableWindowTask = TableWindowTask('Table window task', sampledate)
-        # QgsApplication.taskManager().addTask(self.tableWindowTask)
-        self.hilightFeature()
-        self.timeSliderThread.set(value)
 
     def threadComplete(self):
         QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
@@ -614,32 +619,29 @@ class AzenqosDialog(QDialog):
         QgsMessageLog.logMessage('[-- Start hilight features --]')
         start_time = time.time()
         self.getPosIdsByTable()
-        # hilightFeatureWorker = Worker(self.usePosIdsSelectedFeatures())
-        # hilightFeatureWorker.signals.finished.connect(self.threadComplete)
-        # threadpool.start(hilightFeatureWorker)
-        self.usePosIdsSelectedFeatures()
-
+        if len(self.posIds) > 0 and len(self.posObjs) > 0:
+            self.usePosIdsSelectedFeatures()
         QgsMessageLog.logMessage('[-- End hilight features --]')
 
     def getPosIdsByTable(self):
-        start_time = time.time()
         azenqosDatabase.open()
-        if len(tableList) > 0:
-            QgsMessageLog.logMessage('tables: ' + str(tableList))
-            for tableName in tableList:
-                self.posObjs = []
-                self.posIds = []
-                query = QSqlQuery()
-                queryString = "SELECT posid FROM %s WHERE time <= '%s' ORDER BY time DESC LIMIT 1" % (tableName, currentDateTimeString)
-                query.exec_(queryString)
-                while query.next():
-                    posid = query.value(0)
-                    posdict = {"posid": posid, "table": tableName}
-                    self.posObjs.append(posdict)
-                    self.posIds.append(posid)
-        azenqosDatabase.close()
+        start_time = time.time()
+        QgsMessageLog.logMessage('tables: ' + str(tableList))
+        for tableName in tableList:
+            self.posObjs = []
+            self.posIds = []
+            query = QSqlQuery()
+            queryString = "SELECT posid FROM %s WHERE time <= '%s' ORDER BY time DESC LIMIT 1" % (tableName, currentDateTimeString)
+            query.exec_(queryString)
+            while query.next():
+                posid = query.value(0)
+                posdict = {"posid": posid, "table": tableName}
+                self.posObjs.append(posdict)
+                self.posIds.append(posid)
         elapsed_time = time.time() - start_time
         QgsMessageLog.logMessage('Query Elapsed time: ' + str(elapsed_time) + ' s.')
+        azenqosDatabase.close()
+
 
     def usePosIdsSelectedFeatures(self):
         if self.posIds:
@@ -1015,6 +1017,13 @@ class AzenqosDialog(QDialog):
     def closeEvents(self):
         self.timeSliderThread.exit()
 
+    def reject(self):
+        QgsMessageLog.logMessage('Close App')
+        clearAllSelectedFeatures()
+        QgsProject.removeAllMapLayers(QgsProject.instance())
+        super().reject()
+        del self
+
 
 class TimeSlider(QSlider):
     def __init__(self, parent=None):
@@ -1264,19 +1273,23 @@ class TableWindow(QDialog):
                     currentDateTimeString).getLayerThreeMessages()
             elif self.title == 'Signaling_Benchmark':
                 self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
+                # self.tablename = 'signalling'
                 self.dataList = SignalingDataQuery(
                     azenqosDatabase, currentDateTimeString).getBenchmark()
             elif self.title == 'Signaling_MM Reg States':
                 self.tableHeader = ["Element", "Value"]
+                self.tablename = 'mm_state'
                 self.dataList = SignalingDataQuery(
                     azenqosDatabase, currentDateTimeString).getMmRegStates()
             elif self.title == 'Signaling_Serving System Info':
                 self.tableHeader = ["Element", "Value"]
+                self.tablename = 'serving_system'
                 self.dataList = SignalingDataQuery(
                     azenqosDatabase,
                     currentDateTimeString).getServingSystemInfo()
             elif self.title == 'Signaling_Debug Android/Event':
                 self.tableHeader = ["Element", "Value"]
+                # self.tablename = 'serving_system'
                 self.dataList = SignalingDataQuery(
                     azenqosDatabase,
                     currentDateTimeString).getDebugAndroidEvent()
@@ -1291,20 +1304,29 @@ class TableWindow(QDialog):
                     tableList.append(self.tablename)
 
     def hilightRow(self, sampledate):
+        QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
+        start_time = time.time()
         self.dateString = str(sampledate)
-        self.specifyTablesHeader()
+        # self.findCurrentRow()
+        worker = Worker(self.hilightRowProcesses())
+        threadpool.start(worker)
+        elapse_time = time.time() - start_time
+        del worker
+        QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
+        QgsMessageLog.logMessage('[-- End hilight row --]', tag="Processing")
+
+    def hilightRowProcesses(self):
+        if not self.dataList or self.title not in ['Signaling_Events', 'Signaling_Layer 1 Messages', 'Signaling_Layer 3 Messages']:
+            self.specifyTablesHeader()
         self.findCurrentRow()
 
-
     def findCurrentRow(self):
-        QgsMessageLog.logMessage('previous row: ' + str(self.currentRow), tag="Processing")
         for row in range(self.currentRow , self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
             if value and index:
                 if value >= self.dateString:
                     self.currentRow = row - 1
-                    QgsMessageLog.logMessage('current row: ' + str(self.currentRow), tag="Processing")
                     self.tableView.selectRow(self.currentRow)
                     break
 
@@ -1313,6 +1335,7 @@ class TableWindow(QDialog):
 
     def reject(self):
         global openedWindows
+        global tableList
         openedWindows.remove(self)
         tableList.remove(self.tablename)
         self.hide()
@@ -3217,7 +3240,7 @@ class CellInformation(QDialog):
         return False
 
 
-class TimeSliderThread(QThread):
+class OldTimeSliderThread(QThread):
     signal = pyqtSignal('PyQt_PyObject')
 
     def __init__(self):
@@ -3240,7 +3263,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(0.8)
+                        self.sleep(1)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
                         timeSlider.update()
@@ -3253,7 +3276,7 @@ class TimeSliderThread(QThread):
                     if not isSliderPlay:
                         break
                     else:
-                        time.sleep(0.8)
+                        self.sleep(1)
                         value = timeSlider.value() + 1
                         timeSlider.setValue(value)
                         timeSlider.update()
@@ -3269,6 +3292,57 @@ class TimeSliderThread(QThread):
     def set(self, value):
         self.currentSliderValue = value
 
+class TimeSliderThread(QThread):
+    changeValue = pyqtSignal(float)
+
+    def __init__(self):
+        QThread.__init__(self)
+        self.currentSliderValue = None
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        self.playTime()
+
+    def playTime(self):
+        timeSlider.setDisabled(True)
+        global isSliderPlay
+        # isSliderPlay = True
+        if isSliderPlay:
+            if self.currentSliderValue:
+                for x in range(int(self.currentSliderValue), int(sliderLength)):
+                    if not isSliderPlay:
+                        break
+                    else:
+                        self.sleep(1)
+                        value = timeSlider.value() + 1
+                        self.changeValue.emit(value)
+                        # timeSlider.setValue(value)
+                        # timeSlider.update()
+
+                    if x >= int(sliderLength):
+                        isSliderPlay = False
+                        break
+            else:
+                for x in range(int(sliderLength)):
+                    if not isSliderPlay:
+                        break
+                    else:
+                        self.sleep(1)
+                        value = timeSlider.value() + 1
+                        self.changeValue.emit(value)
+                        # timeSlider.setValue(value)
+                        # timeSlider.update()
+
+                    if x >= int(sliderLength):
+                        isSliderPlay = False
+                        break
+        else:
+            self.quit()
+
+    def set(self, value):
+        self.currentSliderValue = value
 
 class LayerTask(QgsTask):
     def __init__(self, desc, uri):

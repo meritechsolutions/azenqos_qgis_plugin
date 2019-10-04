@@ -571,8 +571,11 @@ class AzenqosDialog(QDialog):
         threading.Event()
 
     def setTimeValue(self, value):
+        global isSliderPlay
         timeSlider.setValue(value)
         timeSlider.update()
+        if value == maxTimeValue:
+            self.pauseTime()
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -649,52 +652,52 @@ class AzenqosDialog(QDialog):
             layerName = None
             start_time = time.time()
             self.currentMaxPosId = max(self.posIds)
-            if self.currentMaxPosId > self.maxPosId:
-                for obj in self.posObjs:
-                    if obj.get("posid") == self.currentMaxPosId:
-                        layerName = obj.get("table")
-                        break
+            # if self.currentMaxPosId > self.maxPosId:
+            for obj in self.posObjs:
+                if obj.get("posid") == self.currentMaxPosId:
+                    layerName = obj.get("table")
+                    break
+            elapsed_time = time.time() - start_time
+            QgsMessageLog.logMessage('Get layer name and Max PosId Elapsed time: ' + str(elapsed_time) + ' s.')
+            QgsMessageLog.logMessage('posIdAppoarchToTime: ' + str(self.currentMaxPosId))
+
+            layer = QgsProject.instance().mapLayersByName(layerName)[0]
+            layerFeatures = layer.getFeatures()
+            root = QgsProject.instance().layerTreeRoot()
+            root.setHasCustomLayerOrder(True)
+            order = root.customLayerOrder()
+            order.insert(0, order.pop(order.index(layer))) # vlayer to the top
+            root.setCustomLayerOrder(order)
+            iface.setActiveLayer(layer)
+            QgsMessageLog.logMessage('layer name: ' + str(layerName))
+
+            for feature in layerFeatures:
+                posid = feature['posid']
+                if self.currentMaxPosId == posid:
+                    selected_ids.append(feature.id())
+
+            if layer:
+                start_time = time.time()
+                if len(selected_ids) > 0:
+                    # clearAllSelectedFeatures()
+                    layer.selectByIds(selected_ids)
+                    ext = layer.extent()
+                    xmin = ext.xMinimum()
+                    xmax = ext.xMaximum()
+                    ymin = ext.yMinimum()
+                    ymax = ext.yMaximum()
+                    zoomRectangle = QgsRectangle(xmin,ymin,xmax,ymax)
+                    iface.mapCanvas().setExtent(zoomRectangle)
+
+                    # box = layer.boundingBoxOfSelected()
+                    # iface.mapCanvas().setExtent(box)
+                    iface.mapCanvas().zoomToSelected(layer)
+                    iface.mapCanvas().zoomScale(2000.0)
+                    iface.mapCanvas().refresh()
+                    QgsMessageLog.logMessage('selected_ids: ' +str(selected_ids))
                 elapsed_time = time.time() - start_time
-                QgsMessageLog.logMessage('Get layer name and Max PosId Elapsed time: ' + str(elapsed_time) + ' s.')
-                QgsMessageLog.logMessage('posIdAppoarchToTime: ' + str(self.currentMaxPosId))
-
-                layer = QgsProject.instance().mapLayersByName(layerName)[0]
-                layerFeatures = layer.getFeatures()
-                root = QgsProject.instance().layerTreeRoot()
-                root.setHasCustomLayerOrder(True)
-                order = root.customLayerOrder()
-                order.insert(0, order.pop(order.index(layer))) # vlayer to the top
-                root.setCustomLayerOrder(order)
-                iface.setActiveLayer(layer)
-                QgsMessageLog.logMessage('layer name: ' + str(layerName))
-
-                for feature in layerFeatures:
-                    posid = feature['posid']
-                    if self.currentMaxPosId == posid:
-                        selected_ids.append(feature.id())
-
-                if layer:
-                    start_time = time.time()
-                    if len(selected_ids) > 0:
-                        # clearAllSelectedFeatures()
-                        layer.selectByIds(selected_ids)
-                        ext = layer.extent()
-                        xmin = ext.xMinimum()
-                        xmax = ext.xMaximum()
-                        ymin = ext.yMinimum()
-                        ymax = ext.yMaximum()
-                        zoomRectangle = QgsRectangle(xmin,ymin,xmax,ymax)
-                        iface.mapCanvas().setExtent(zoomRectangle)
-
-                        # box = layer.boundingBoxOfSelected()
-                        # iface.mapCanvas().setExtent(box)
-                        iface.mapCanvas().zoomToSelected(layer)
-                        iface.mapCanvas().zoomScale(2000.0)
-                        iface.mapCanvas().refresh()
-                        QgsMessageLog.logMessage('selected_ids: ' +str(selected_ids))
-                    elapsed_time = time.time() - start_time
-                    QgsMessageLog.logMessage('Select Features Elapsed time: ' + str(elapsed_time) + ' s.')
-                    self.maxPosId = self.currentMaxPosId
+                QgsMessageLog.logMessage('Select Features Elapsed time: ' + str(elapsed_time) + ' s.')
+                # self.maxPosId = self.currentMaxPosId
 
 
     def classifySelectedItems(self, parent, child):
@@ -1021,6 +1024,9 @@ class AzenqosDialog(QDialog):
         QgsMessageLog.logMessage('Close App')
         clearAllSelectedFeatures()
         QgsProject.removeAllMapLayers(QgsProject.instance())
+        if len(openedWindows) > 0:
+            for window in openedWindows:
+                window.reject()
         super().reject()
         del self
 

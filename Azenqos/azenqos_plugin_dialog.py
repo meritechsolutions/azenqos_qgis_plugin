@@ -454,7 +454,7 @@ class AzenqosDialog(QDialog):
         # Signaling Section
         signaling = QTreeWidgetItem(self.presentationTreeWidget, ['Signaling'])
         signalingEvents = QTreeWidgetItem(signaling, ['Events'])
-        signalingLayerOne = QTreeWidgetItem(signaling, ['Layer 1 Messages'])
+        # signalingLayerOne = QTreeWidgetItem(signaling, ['Layer 1 Messages'])
         signalingLayerThree = QTreeWidgetItem(signaling, ['Layer 3 Messages'])
         signalingBenchmark = QTreeWidgetItem(signaling, ['Benchmark'])
         signalingMM = QTreeWidgetItem(signaling, ['MM Reg States'])
@@ -988,8 +988,9 @@ class AzenqosDialog(QDialog):
         QgsProject.removeAllMapLayers(QgsProject.instance())
         if len(openedWindows) > 0:
             for window in openedWindows:
-                window.reject()
                 window.hide()
+                window.reject()
+                window.close
         super().reject()
         del self.databaseUi
         del self

@@ -212,6 +212,7 @@ class Ui_DatabaseDialog(QDialog):
             self.azenqosMainMenu.activateWindow()
 
     def addLayerToQgis(self):
+        global allLayers
         # start_time = time.time()
         # QgsProject.removeAllMapLayers(QgsProject.instance())
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
@@ -224,6 +225,7 @@ class Ui_DatabaseDialog(QDialog):
         azenqosDatabase.open()
         query = QSqlQuery()
         queryString = "SELECT table_name FROM layer_statistics"
+        # queryString = "SELECT name FROM sqlite_master WHERE TYPE='table'"
         query.exec_(queryString)
         while query.next():
             tableName = query.value(0)
@@ -512,11 +514,11 @@ class AzenqosDialog(QDialog):
 
     def pauseTime(self):
         global isSliderPlay
-        isSliderPlay = False
         timeSlider.setEnabled(True)
         self.playButton.setEnabled(True)
         self.timeSliderThread.quit()
         threading.Event()
+        isSliderPlay = False
 
     def setTimeValue(self, value):
         global isSliderPlay
@@ -886,20 +888,21 @@ class AzenqosDialog(QDialog):
                 self.wifi_graph.activateWindow()
         elif parent == "Signaling":
             if child == "Events":
+                events_widget = None
                 if hasattr(self, 'events_window') is True:
                     tableWindow = self.events_window.findChild(QWidget, windowName)
                     if not tableWindow:
                         events_widget = TableWindow(self.events_window, windowName)
                         openedWindows.append(events_widget)
                     else:
-                        print(tableWindow)
                         events_widget = tableWindow
 
                     if self.events_window not in subwindowList:
                         self.events_window = QMdiSubWindow(self.mdi)
                         self.mdi.addSubWindow(self.events_window)
 
-                    self.events_window.setWidget(events_widget)
+                    if events_widget:
+                        self.events_window.setWidget(events_widget)
                     self.events_window.show()
 
                 else:
@@ -919,7 +922,6 @@ class AzenqosDialog(QDialog):
                         layer_one_widget = TableWindow(self.layer_one_messages, windowName)
                         openedWindows.append(layer_one_widget)
                     else:
-                        print(tableWindow)
                         layer_one_widget = tableWindow
 
                     if self.layer_one_messages not in subwindowList:
@@ -952,7 +954,6 @@ class AzenqosDialog(QDialog):
                         layer_three_widget = TableWindow(self.layer_three_messages, windowName)
                         openedWindows.append(layer_three_widget)
                     else:
-                        print(tableWindow)
                         layer_three_widget = tableWindow
 
                     if self.layer_three_messages not in subwindowList:
@@ -985,7 +986,6 @@ class AzenqosDialog(QDialog):
                         benchmark_widget = TableWindow(self.benchmark, windowName)
                         openedWindows.append(benchmark_widget)
                     else:
-                        print(tableWindow)
                         benchmark_widget = tableWindow
 
                     if self.benchmark not in subwindowList:
@@ -1018,7 +1018,6 @@ class AzenqosDialog(QDialog):
                         mm_widget = TableWindow(self.mm_reg_states, windowName)
                         openedWindows.append(mm_widget)
                     else:
-                        print(tableWindow)
                         mm_widget = tableWindow
 
                     if self.mm_reg_states not in subwindowList:
@@ -1051,7 +1050,6 @@ class AzenqosDialog(QDialog):
                         serving_system_widget = TableWindow(self.serving_system_info, windowName)
                         openedWindows.append(serving_system_widget)
                     else:
-                        print(tableWindow)
                         serving_system_widget = tableWindow
 
                     if self.serving_system_info not in subwindowList:
@@ -1084,7 +1082,6 @@ class AzenqosDialog(QDialog):
                         debug_event_widget = TableWindow(self.debug_event, windowName)
                         openedWindows.append(debug_event_widget)
                     else:
-                        print(tableWindow)
                         debug_event_widget = tableWindow
 
                     if self.debug_event not in subwindowList:
@@ -1130,8 +1127,6 @@ class AzenqosDialog(QDialog):
         #         print("1")
         if self.mdi:
             self.mdi.show()
-
-        print(openedWindows)
 
     def selectConfiguration(self):
         getSelected = self.configurationTreeWidget.selectedItems()
@@ -1447,11 +1442,12 @@ class TableWindow(QWidget):
         self.dateString = str(sampledate)
         # self.findCurrentRow()
         if not self.dataList or self.title not in ['Signaling_Events', 'Signaling_Layer 1 Messages', 'Signaling_Layer 3 Messages']:
-            self.specifyTablesHeader()
+            worker = Worker(self.specifyTablesHeader())
+            threadpool.start(worker)
+            # self.specifyTablesHeader()
         else:
-            # worker = Worker(self.findCurrentRow())
-            # threadpool.start(worker)
             self.findCurrentRow()
+            # self.findCurrentRow()
         # elapse_time = time.time() - start_time
         # del worker
         # QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
@@ -1475,7 +1471,7 @@ class TableWindow(QWidget):
                 index = self.tableView.model().index(row, 0)
                 value = self.tableView.model().data(index)
                 if value >= self.dateString:
-                    self.tableView.selectRow(row)
+                    self.tableView.selectRow(row - 1)
                     self.currentRow = row - 1
                     break
 
@@ -3487,8 +3483,6 @@ class TimeSliderThread(QThread):
                         self.sleep(1)
                         value = timeSlider.value() + 1
                         self.changeValue.emit(value)
-                        # timeSlider.setValue(value)
-                        # timeSlider.update()
 
                     if x >= int(sliderLength):
                         isSliderPlay = False
@@ -3501,8 +3495,6 @@ class TimeSliderThread(QThread):
                         self.sleep(1)
                         value = timeSlider.value() + 1
                         self.changeValue.emit(value)
-                        # timeSlider.setValue(value)
-                        # timeSlider.update()
 
                     if x >= int(sliderLength):
                         isSliderPlay = False

@@ -223,6 +223,7 @@ class Ui_DatabaseDialog(QDialog):
             self.azenqosMainMenu.activateWindow()
 
     def addLayerToQgis(self):
+        global allLayers
         start_time = time.time()
         QgsProject.removeAllMapLayers(QgsProject.instance())
         urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
@@ -234,7 +235,8 @@ class Ui_DatabaseDialog(QDialog):
             print('invalid layer')
         azenqosDatabase.open()
         query = QSqlQuery()
-        queryString = "SELECT table_name FROM layer_statistics"
+        # queryString = "SELECT table_name FROM layer_statistics"
+        queryString = "select tbl_name from sqlite_master where sql LIKE '%\"geom\"%' and type = 'table'"
         query.exec_(queryString)
         while query.next():
             tableName = query.value(0)

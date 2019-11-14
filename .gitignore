@@ -1,3 +1,5 @@
 .vscode/launch.json
 Untitled-1.py
 .idea/*
+.vscode/settings.json
+.__pycache__/*

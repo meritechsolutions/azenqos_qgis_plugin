@@ -6,53 +6,75 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+import sys
 
 
-class HeaderContent(QtWidgets.QWidget):
-    def __init__(self, parent=None, flags=Qt.WindowFlags()):
-        super().__init__(parent=parent, flags=flags)
+class HeaderContent(QWidget):
+    def __init__(self, item=None):
+        super().__init__(None)
+        self.treeItem = item
         self.setupUi()
 
     def setupUi(self):
         self.setObjectName("HeaderContent")
         self.resize(420, 360)
-        self.tabWidget = QtWidgets.QTabWidget(self)
-        self.tabWidget.setGeometry(QtCore.QRect(20, 20, 381, 291))
+        
+        self.tabWidget = QTabWidget(self)
+        self.tabWidget.setGeometry(QRect(20, 20, 381, 291))
         self.tabWidget.setObjectName("tabWidget")
-        self.headerTab = QtWidgets.QWidget()
+        
+        self.headerTab = QWidget()
         self.headerTab.setObjectName("HeaderTab")
-        self.formLayoutWidget = QtWidgets.QWidget(self.headerTab)
-        self.formLayoutWidget.setGeometry(QtCore.QRect(10, 30, 361, 31))
+        
+        self.formLayoutWidget = QWidget(self.headerTab)
+        self.formLayoutWidget.setGeometry(QRect(10, 30, 361, 31))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
-        self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget)
+        self.formLayout = QFormLayout(self.formLayoutWidget)
         self.formLayout.setContentsMargins(0, 0, 0, 0)
         self.formLayout.setObjectName("formLayout")
-        self.lblName = QtWidgets.QLabel(self.formLayoutWidget)
+        
+        self.lblName = QLabel(self.formLayoutWidget)
         self.lblName.setObjectName("lblName")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.lblName)
-        self.leName = QtWidgets.QLineEdit(self.formLayoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.lblName)
+        
+        self.leName = QLineEdit(self.formLayoutWidget)
+        self.leName.text
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.leName.sizePolicy().hasHeightForWidth())
         self.leName.setSizePolicy(sizePolicy)
         self.leName.setObjectName("leName")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.leName)
+        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.leName)
         self.tabWidget.addTab(self.headerTab, "")
-        self.buttonBox = QtWidgets.QDialogButtonBox(self)
-        self.buttonBox.setGeometry(QtCore.QRect(250, 320, 164, 32))
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        
+        self.buttonBox = QDialogButtonBox(self)
+        self.buttonBox.setGeometry(QRect(250, 320, 164, 32))
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
+        self.buttonBox.accepted.connect(self.changeHeaderName)
 
         self.retranslateUi()
         self.tabWidget.setCurrentIndex(0)
-        QtCore.QMetaObject.connectSlotsByName(self)
+        QMetaObject.connectSlotsByName(self)
+        
+    def changeHeaderName(self):
+        self.treeItem.setText(0, self.leName.text())
+        self.close()
 
     def retranslateUi(self):
-        _translate = QtCore.QCoreApplication.translate
+        _translate = QCoreApplication.translate
         self.setWindowTitle(_translate("HeaderContent", "Form"))
         self.lblName.setText(_translate("HeaderContent", "Name"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.HeaderTab), _translate("HeaderContent", "Header"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.headerTab), _translate("HeaderContent", "Header"))
 
+
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
+#     ex = HeaderContent()
+#     ex.show()
+#     sys.exit(app.exec_())
 

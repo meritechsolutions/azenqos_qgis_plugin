@@ -29,7 +29,7 @@ class PropertiesWindow(QWidget):
                         {""}
                     ]
         self.setupUi()
-        self.setupComboBox()   
+        self.setupComboBox()
 
     def setupUi(self):
         self.setObjectName("Properties")

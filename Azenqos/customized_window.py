@@ -7,11 +7,13 @@ from PyQt5.QtGui import *
 from customize_properties import PropertiesWindow
 import sys
 
+HELLO = 'HELLO'
+
 class MainWidget(QWidget):
-    def __init__(self, parent = None, windowName = None):
+    def __init__(self, parent = None, windowName = None, database = None):
         super().__init__(parent=parent)
         self.window_name = windowName
-        self.properties_window = PropertiesWindow(self)
+        self.properties_window = PropertiesWindow(self, database)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.generateMenu)
         self.layout = QVBoxLayout()

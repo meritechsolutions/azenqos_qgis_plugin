@@ -11,23 +11,21 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import sys
 from cell_content_header import HeaderContent
+from customize_window_editor import CellSetting
 
 MAX_COLUMNS = 10
 MAX_ROWS = 100
 
 class PropertiesWindow(QWidget):
-    def __init__(self, main_window = None):
+    def __init__(self, main_window = None, database = None):
         super().__init__(None)
         
         self.main_window = main_window
+        self.db = database
         
         self.currentColumn = 1
         self.currentRow = 1
         self.currentSelect = None
-        self.data = [
-                        {"header": []},
-                        {""}
-                    ]
         self.setupUi()
         self.setupComboBox()
 
@@ -109,6 +107,7 @@ class PropertiesWindow(QWidget):
         sizePolicy.setHeightForWidth(self.ledtTitle.sizePolicy().hasHeightForWidth())
         self.ledtTitle.setSizePolicy(sizePolicy)
         self.ledtTitle.setObjectName("ledtTitle")
+        self.ledtTitle.setText("Status window")
         self.formLayout.setWidget(3, QFormLayout.FieldRole, self.ledtTitle)
         
         self.lblRow = QLabel(self.formLayoutWidget)
@@ -171,37 +170,46 @@ class PropertiesWindow(QWidget):
     def setupComboBox(self):
         self.cbColumns.clear()
         for column in range(MAX_COLUMNS):
-            self.cbColumns.addItem(str(column+1))
+            if column == 0:
+                self.cbColumns.addItem("")
+            else:
+                self.cbColumns.addItem(str(column))
             
         self.cbRows.clear()
         for row in range(MAX_ROWS):
-            self.cbRows.addItem(str(row+1))
+            if row == 0:
+                self.cbRows.addItem("")
+            else:
+                self.cbRows.addItem(str(row))
             
         self.cbColumns.currentTextChanged.connect(self.onChangeColumns)
         self.cbRows.currentTextChanged.connect(self.onChangeRows)
         
     def onChangeColumns(self, value):
         self.treeWidget.clear()
-        self.currentColumn = int(value)
-        self.changeTreeWidget()
+        if value:
+            self.currentColumn = int(value)
+            self.changeTreeWidget()
     
     def onChangeRows(self, value):
         self.treeWidget.clear()
-        self.currentRow = int(value)
-        self.changeTreeWidget()
+        if value:
+            self.currentRow = int(value)
+            self.changeTreeWidget()
         
     def onClickTreeItem(self, current, previous):
-        self.currentSelect = current
-        parent_element = current.parent() 
-        if parent_element:
-            self.editBtn.setDisabled(False)
-            parentName = parent_element.text(0)
-            if parentName == 'Header':
-                self.parentName = 'Header'
+        if current:
+            self.currentSelect = current
+            parent_element = current.parent() 
+            if parent_element:
+                self.editBtn.setDisabled(False)
+                parentName = parent_element.text(0)
+                if parentName == 'Header':
+                    self.parentName = 'Header'
+                else:
+                    self.parentName = 'Row'
             else:
-                self.parentName = 'Row'
-        else:
-            self.editBtn.setDisabled(True)
+                self.editBtn.setDisabled(True)
             
     def editBtnEvent(self):
         if self.parentName:
@@ -215,7 +223,8 @@ class PropertiesWindow(QWidget):
         self.header_editor.show()
     
     def editRow(self):
-        return False
+        self.cell_setting = CellSetting(self.currentSelect, self.db)
+        self.cell_setting.show()
     
     def changeTreeWidget(self):
         header = QTreeWidgetItem(self.treeWidget, ['Header'])

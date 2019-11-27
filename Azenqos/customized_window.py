@@ -11,18 +11,9 @@ class MainWidget(QWidget):
     def __init__(self, parent = None, windowName = None):
         super().__init__(parent=parent)
         self.window_name = windowName
-        self.properties_window = PropertiesWindow()
+        self.properties_window = PropertiesWindow(self)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.generateMenu)
-
-        ### This property holds how the widget shows a context menu
-        # self.tableWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)     # +++
-        ### This signal is emitted when the widget's contextMenuPolicy is Qt::CustomContextMenu,
-        ### and the user has requested a context menu on the widget.
-        # self.tableWidget.customContextMenuRequested.connect(self.generateMenu) # +++
-
-        # self.tableWidget.viewport().installEventFilter(self)
-
         self.layout = QVBoxLayout()
 
     def createCustomizeTable(self, row, column):

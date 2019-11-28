@@ -10,6 +10,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from PyQt5.QtSql import *
 
 
 class CellSetting(QWidget):
@@ -19,6 +20,7 @@ class CellSetting(QWidget):
         self.selected_item = selectitem
         self.system_types = ['WCDMA', 'General', 'Positioning', 'Data', 'Non-Access-Stratum', 'Wifi', 'LTE', 'CDMA', 'Android', 'NB-IoT', 'Unlisted']
         self.system_data_obj = None
+        self.db = database
         self.setupUi()
         
     
@@ -109,6 +111,10 @@ class CellSetting(QWidget):
         self.rbEventCounter.toggled.connect(self.rbEventCounterSelected)
         self.rbText.toggled.connect(self.rbTextSelected)
         self.rbText.setChecked(True)
+        self.cbSystem.currentTextChanged.connect(self.cbSystemOnChanged)
+        
+        #Prepare combo boxes
+        self.prepareSystemTypes()
         
 
     def retranslateUi(self):
@@ -148,4 +154,24 @@ class CellSetting(QWidget):
         self.leText.setDisabled(True)
         
     def prepareSystemTypes(self):
-        return False
+        self.cbSystem.clear()
+        self.cbSystem.addItems(self.system_types)
+        
+    def cbSystemOnChanged(self, value):
+        print('Cb System changed')
+        if value == 'WCDMA':
+            if self.db:
+                self.db.open()
+            query = QSqlQuery()
+            query.exec_("SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'wcdma%'")
+            timeField = query.record().indexOf("time")
+            nameField = query.record().indexOf("name")
+            detailField = query.record().indexOf("info")
+            dataList = []
+            while query.next():
+                timeValue = query.value(timeField)
+                nameValue = query.value(nameField)
+                detailStrValue = query.value(detailField)
+                dataList.append([timeValue, '', nameValue, detailStrValue])
+            self.close()
+            return dataList

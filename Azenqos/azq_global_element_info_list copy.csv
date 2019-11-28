@@ -1,5 +1,3 @@
-//SQLite data types: https://www.sqlite.org/datatype3.html,,,,,,,,,,,
-//wget -O azq_global_element_info_list.csv https://docs.google.com/spreadsheets/d/1ddl-g_qyoMYLF8PMkjrYPrpXusdinTZxsWLQOzJ6xu8/export?format=csv,,,,,,,,,,,
 id,var_name,csharp_oldname,db_table,var_type,db_type,val_min,val_max,n_arg_max,name,expiry (millis),definition
 1,general_time,,null,DateTime,,0,0,1,Time,,
 2,mos_score,,mos_score,Double,double,0,5,1,legacy MOS Score,,

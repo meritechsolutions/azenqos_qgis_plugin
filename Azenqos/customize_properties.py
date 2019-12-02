@@ -19,10 +19,10 @@ MAX_ROWS = 100
 class PropertiesWindow(QWidget):
     def __init__(self, main_window = None, database = None):
         super().__init__(None)
-        
+
         self.main_window = main_window
         self.db = database
-        
+
         self.currentColumn = 1
         self.currentRow = 1
         self.currentSelect = None
@@ -87,7 +87,7 @@ class PropertiesWindow(QWidget):
         self.Table = QWidget()
         self.Table.setEnabled(True)
         self.Table.setObjectName("Table")
-        
+
         self.formLayoutWidget = QWidget(self.Table)
         self.formLayoutWidget.setGeometry(QRect(0, 0, 331, 301))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
@@ -95,11 +95,11 @@ class PropertiesWindow(QWidget):
         self.formLayout.setContentsMargins(30, 20, 10, 10)
         self.formLayout.setSpacing(10)
         self.formLayout.setObjectName("formLayout")
-        
+
         self.lblTitle = QLabel(self.formLayoutWidget)
         self.lblTitle.setObjectName("lblTitle")
         self.formLayout.setWidget(3, QFormLayout.LabelRole, self.lblTitle)
-        
+
         self.ledtTitle = QLineEdit(self.formLayoutWidget)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -109,11 +109,11 @@ class PropertiesWindow(QWidget):
         self.ledtTitle.setObjectName("ledtTitle")
         self.ledtTitle.setText("Status window")
         self.formLayout.setWidget(3, QFormLayout.FieldRole, self.ledtTitle)
-        
+
         self.lblRow = QLabel(self.formLayoutWidget)
         self.lblRow.setObjectName("lblRow")
         self.formLayout.setWidget(4, QFormLayout.LabelRole, self.lblRow)
-        
+
         self.cbRows = QComboBox(self.formLayoutWidget)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -122,11 +122,11 @@ class PropertiesWindow(QWidget):
         self.cbRows.setSizePolicy(sizePolicy)
         self.cbRows.setObjectName("cbRows")
         self.formLayout.setWidget(4, QFormLayout.FieldRole, self.cbRows)
-        
+
         self.lblColumns = QLabel(self.formLayoutWidget)
         self.lblColumns.setObjectName("lblColumns")
         self.formLayout.setWidget(5, QFormLayout.LabelRole, self.lblColumns)
-        
+
         self.cbColumns = QComboBox(self.formLayoutWidget)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -141,27 +141,27 @@ class PropertiesWindow(QWidget):
     def setupContentTab(self):
         self.CellContent = QWidget()
         self.CellContent.setObjectName("CellContent")
-        
+
         self.treeWidget = QTreeWidget(self.CellContent)
         self.treeWidget.setGeometry(QRect(10, 20, 251, 182))
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.setHeaderHidden(True)
         self.treeWidget.currentItemChanged.connect(self.onClickTreeItem)
-        
+
         self.editBtn = QPushButton(self.CellContent)
         self.editBtn.setGeometry(QRect(262, 20, 71, 31))
         self.editBtn.setObjectName("editBtn")
         self.editBtn.setDisabled(True)
         self.editBtn.clicked.connect(self.editBtnEvent)
-        
+
         self.mobileLbl = QLabel(self.CellContent)
         self.mobileLbl.setGeometry(QRect(10, 210, 61, 31))
         self.mobileLbl.setObjectName("mobileLbl")
-        
+
         self.mobileCb = QComboBox(self.CellContent)
         self.mobileCb.setGeometry(QRect(60, 210, 71, 31))
         self.mobileCb.setObjectName("mobileCb")
-        
+
         self.setAllBtn = QPushButton(self.CellContent)
         self.setAllBtn.setGeometry(QRect(130, 210, 91, 32))
         self.setAllBtn.setObjectName("setAllBtn")
@@ -174,33 +174,33 @@ class PropertiesWindow(QWidget):
                 self.cbColumns.addItem("")
             else:
                 self.cbColumns.addItem(str(column))
-            
+
         self.cbRows.clear()
         for row in range(MAX_ROWS):
             if row == 0:
                 self.cbRows.addItem("")
             else:
                 self.cbRows.addItem(str(row))
-            
+
         self.cbColumns.currentTextChanged.connect(self.onChangeColumns)
         self.cbRows.currentTextChanged.connect(self.onChangeRows)
-        
+
     def onChangeColumns(self, value):
         self.treeWidget.clear()
         if value:
             self.currentColumn = int(value)
             self.changeTreeWidget()
-    
+
     def onChangeRows(self, value):
         self.treeWidget.clear()
         if value:
             self.currentRow = int(value)
             self.changeTreeWidget()
-        
+
     def onClickTreeItem(self, current, previous):
         if current:
             self.currentSelect = current
-            parent_element = current.parent() 
+            parent_element = current.parent()
             if parent_element:
                 self.editBtn.setDisabled(False)
                 parentName = parent_element.text(0)
@@ -210,22 +210,22 @@ class PropertiesWindow(QWidget):
                     self.parentName = 'Row'
             else:
                 self.editBtn.setDisabled(True)
-            
+
     def editBtnEvent(self):
         if self.parentName:
             if self.parentName == 'Header':
                 self.editHeader()
             else:
                 self.editRow()
-    
+
     def editHeader(self):
         self.header_editor = HeaderContent(self.currentSelect)
         self.header_editor.show()
-    
+
     def editRow(self):
         self.cell_setting = CellSetting(self.currentSelect, self.db)
         self.cell_setting.show()
-    
+
     def changeTreeWidget(self):
         header = QTreeWidgetItem(self.treeWidget, ['Header'])
         for column in range(self.currentColumn):
@@ -234,16 +234,16 @@ class PropertiesWindow(QWidget):
             rowItem = QTreeWidgetItem(self.treeWidget, [str('Row %i') % (row + 1)])
             for column in range(self.currentColumn):
                 item = QTreeWidgetItem(rowItem, [str('Column %i') % (column + 1)])
-        
-        
+
+
 class CustomizeTable(QTableWidget):
     def __init__(self):
         super().__init__(None)
-    
+
     def setStructure(self, row, column, data):
         self.setRowCount(row)
         self.setColumnCount(column)
-        
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

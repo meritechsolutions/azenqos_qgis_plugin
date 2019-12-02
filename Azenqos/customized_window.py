@@ -7,7 +7,6 @@ from PyQt5.QtGui import *
 from customize_properties import PropertiesWindow
 import sys
 
-HELLO = 'HELLO'
 
 class MainWidget(QWidget):
     def __init__(self, parent = None, windowName = None, database = None):

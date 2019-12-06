@@ -187,7 +187,7 @@ class Ui_DatabaseDialog(QDialog):
     def getfiles(self):
         fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
                                                   QtCore.QDir.rootPath(),
-                                                  '*.db *.sqlite *.azm')
+                                                  '*.db')
         if fileName != "":
             archive = zipfile.ZipFile
             baseFileName = os.path.basename(str(fileName))

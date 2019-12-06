@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtSql import *
+import json
 
 
 class CellSetting(QWidget):
@@ -22,7 +23,8 @@ class CellSetting(QWidget):
         self.system_data_obj = None
         self.db = None
         self.unused_columns = "'log_hash','time','modem_time','posid','seqid','netid','geom'"
-        self.addDatabase()
+        if self.db is None:
+            self.addDatabase()
         self.setupUi()
 
 
@@ -115,6 +117,8 @@ class CellSetting(QWidget):
         self.bbCellContent.setOrientation(Qt.Horizontal)
         self.bbCellContent.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
         self.bbCellContent.setObjectName("bbCellContent")
+        self.bbCellContent.accepted.connect(self.submit)
+        self.bbCellContent.rejected.connect(self.close)
 
         self.retranslateUi()
         self.tabWidget.setCurrentIndex(0)
@@ -146,9 +150,8 @@ class CellSetting(QWidget):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CellContent), _translate("cellSetting", "Cell Content"))
 
     def addDatabase(self):
-        if self.db is None:
-            self.db = QSqlDatabase.addDatabase("QSQLITE")
-            self.db.setDatabaseName(self.databasePath)
+        self.db = QSqlDatabase.addDatabase("QSQLITE")
+        self.db.setDatabaseName(self.databasePath)
 
     def rbTextSelected(self):
         self.leText.setEnabled(True)
@@ -262,3 +265,24 @@ class CellSetting(QWidget):
 
     def fcbEventCounterOnChanged(self, value):
         return value
+
+    def submit(self):
+        # use object { "table": '', "value": '' }
+        customElements = []
+        if self.rbInformationElement.isChecked():
+            customElements.append(self.fcbElement.currentText())
+            customElements.append(self.fcbValue.currentText())
+
+        elif self.rbEventCounter.isChecked():
+            customElements.append('')
+            customElements.append('')
+
+        elif self.rbText.isChecked():
+            customElements.append(self.leText.text())
+
+        if len(customElements) > 0:
+            self.selected_item.setText(0, str(customElements))
+
+        self.close()
+
+

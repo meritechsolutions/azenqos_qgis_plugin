@@ -1044,10 +1044,10 @@ id,var_name,csharp_oldname,db_table,var_type,db_type,val_min,val_max,n_arg_max,n
 7572,lte_nb1_gmtx_report_prach_collision_7680ms,,nb1_ml1_gm_tx_report,Integer,int,,,16,,4000,
 7573,lte_nb1_gmtx_report_scrambling_mask,,nb1_ml1_gm_tx_report,Integer,int,,,16,,4000,
 7574,lte_nb1_msg3_tx_power,,nb1_ml1_gm_tx_report,Integer,int,,,1,,4000,
-7575,lte_nb1_ul_rep_number_max,,nb1_ml1_gm_tx_report,Integer,smallint,,,1,NB1 UL Repetition Number,4000,NPUSCH Repeat Times 
+7575,lte_nb1_ul_rep_number_max,,nb1_ml1_gm_tx_report,Integer,smallint,,,1,NB1 UL Repetition Number,4000,NPUSCH Repeat Times
 7576,lte_nb1_ul_rep_number_avg,,nb1_ml1_gm_tx_report,Double,double,,,1,,4000,
 7577,lte_nb1_tx_power_avg,,nb1_ml1_gm_tx_report,Double,double,,,1,NB1 Tx Power,4000,
-7578,lte_nb1_ul_ru_avg,,nb1_ml1_gm_tx_report,Double,double,,,1,NB1 UL RU,4000,N-ru，Up NPUSCH Distribute RU Number 
+7578,lte_nb1_ul_ru_avg,,nb1_ml1_gm_tx_report,Double,double,,,1,NB1 UL RU,4000,N-ru，Up NPUSCH Distribute RU Number
 7579,lte_nb1_ul_tbs_avg,,nb1_ml1_gm_tx_report,Double,double,,,1,NB1 UL TBS,4000,
 7580,lte_nb1_dciinfo_n_record,,nb1_ml1_gm_dci_info,Integer,smallint,,,1,,4000,
 7581,lte_nb1_dciinfo_npdcch_timiing_hsfn,,nb1_ml1_gm_dci_info,Integer,int,,,16,,4000,

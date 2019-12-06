@@ -59,7 +59,7 @@ class PropertiesWindow(QWidget):
         self.buttonBox.setStandardButtons(QDialogButtonBox.Ok|QDialogButtonBox.Close)
         self.buttonBox.setCenterButtons(False)
         self.buttonBox.setObjectName("buttonBox")
-        self.buttonBox.accepted.connect(self.close)
+        self.buttonBox.accepted.connect(self.submit)
         self.buttonBox.rejected.connect(self.close)
 
         self.verticalLayout.addWidget(self.tabWidget)
@@ -227,13 +227,31 @@ class PropertiesWindow(QWidget):
         self.cell_setting.show()
 
     def changeTreeWidget(self):
-        header = QTreeWidgetItem(self.treeWidget, ['Header'])
+        self.header = QTreeWidgetItem(self.treeWidget, ['Header'])
         for column in range(self.currentColumn):
-            QTreeWidgetItem(header, ['\"\"'])
+            QTreeWidgetItem(self.header, ['\"\"'])
         for row in range(self.currentRow):
             rowItem = QTreeWidgetItem(self.treeWidget, [str('Row %i') % (row + 1)])
             for column in range(self.currentColumn):
                 item = QTreeWidgetItem(rowItem, [str('Column %i') % (column + 1)])
+
+    def getHeaders(self):
+        headerTable = []
+        headerCount = self.header.childCount()
+        for header in range(0,headerCount):
+            headerTable.append(self.header.child(header).text(0))
+        return headerTable
+
+    def submit(self):
+        if self.cbRows.currentText() != '':
+            rows = int(self.cbRows.currentText())
+
+        if self.cbColumns.currentText() != '':
+            columns = int(self.cbColumns.currentText())
+        # self.main_window.createCustomizeTable(rows, columns)
+        headerLabels = self.getHeaders()
+        self.main_window.setHeader(headerLabels)
+        self.close()
 
 
 class CustomizeTable(QTableWidget):

@@ -9,23 +9,32 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from PyQt5.QtSql import QSqlQuery
 import sys
 from cell_content_header import HeaderContent
 from customize_window_editor import CellSetting
+from worker import Worker
+import globalutils
 
 MAX_COLUMNS = 10
 MAX_ROWS = 100
 
 class PropertiesWindow(QWidget):
-    def __init__(self, main_window = None, database = None):
+    def __init__(self, main_window = None, database = None, data_set = None):
         super().__init__(None)
 
         self.main_window = main_window
-        self.db = database
+        self.db = None
+        self.data_set = data_set
 
-        self.currentColumn = 1
-        self.currentRow = 1
+        self.previousColumnLength = 1
+        self.previousRowLength = 1
+        self.currentColumnLength = 1
+        self.currentRowLength = 1
+        self.currentColumnSelect = 0
+        self.currentRowSelect = 0
         self.currentSelect = None
+        self.parentCurrentSelect = None
         self.setupUi()
         self.setupComboBox()
 
@@ -39,6 +48,7 @@ class PropertiesWindow(QWidget):
         self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(10, 20, 10, 10)
         self.verticalLayout.setObjectName("verticalLayout")
+        self.verticalLayout
 
         self.tabWidget = QTabWidget(self.verticalLayoutWidget)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -147,6 +157,11 @@ class PropertiesWindow(QWidget):
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.setHeaderHidden(True)
         self.treeWidget.currentItemChanged.connect(self.onClickTreeItem)
+        self.treeWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.treeWidget.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        header = self.treeWidget.header()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setStretchLastSection(False)
 
         self.editBtn = QPushButton(self.CellContent)
         self.editBtn.setGeometry(QRect(262, 20, 71, 31))
@@ -188,26 +203,29 @@ class PropertiesWindow(QWidget):
     def onChangeColumns(self, value):
         self.treeWidget.clear()
         if value:
-            self.currentColumn = int(value)
+            self.currentColumnLength = int(value)
             self.changeTreeWidget()
 
     def onChangeRows(self, value):
         self.treeWidget.clear()
         if value:
-            self.currentRow = int(value)
+            self.currentRowLength = int(value)
             self.changeTreeWidget()
 
     def onClickTreeItem(self, current, previous):
         if current:
             self.currentSelect = current
-            parent_element = current.parent()
-            if parent_element:
+            self.parentCurrentSelect = current.parent()
+            if self.parentCurrentSelect:
                 self.editBtn.setDisabled(False)
-                parentName = parent_element.text(0)
+                parentName = self.parentCurrentSelect.text(0)
                 if parentName == 'Header':
                     self.parentName = 'Header'
                 else:
                     self.parentName = 'Row'
+                    if self.parentCurrentSelect.text(0).startswith('Row'):
+                        self.currentRowSelect = int(self.parentCurrentSelect.text(0).replace('Row ',''))
+                        self.currentColumnSelect = self.parentCurrentSelect.indexOfChild(current) + 1
             else:
                 self.editBtn.setDisabled(True)
 
@@ -223,17 +241,27 @@ class PropertiesWindow(QWidget):
         self.header_editor.show()
 
     def editRow(self):
-        self.cell_setting = CellSetting(self.currentSelect, self.db)
+        self.cell_setting = CellSetting(self, self.currentSelect, self.db, self.currentRowSelect, self.currentColumnSelect)
         self.cell_setting.show()
 
     def changeTreeWidget(self):
+        headers = []
+
         self.header = QTreeWidgetItem(self.treeWidget, ['Header'])
-        for column in range(self.currentColumn):
-            QTreeWidgetItem(self.header, ['\"\"'])
-        for row in range(self.currentRow):
+        for column in range(self.currentColumnLength):
+            header_name = '\"\"'
+            QTreeWidgetItem(self.header, [header_name])
+            headers.append(header_name)
+
+        rows = []
+        for row in range(self.currentRowLength):
+            columnlist = []
             rowItem = QTreeWidgetItem(self.treeWidget, [str('Row %i') % (row + 1)])
-            for column in range(self.currentColumn):
+            for column in range(self.currentColumnLength):
+                column_name = 'Column %i' % (column + 1)
                 item = QTreeWidgetItem(rowItem, [str('Column %i') % (column + 1)])
+                columnlist.append(column_name)
+            rows.append(columnlist)
 
     def getHeaders(self):
         headerTable = []
@@ -242,17 +270,61 @@ class PropertiesWindow(QWidget):
             headerTable.append(self.header.child(header).text(0))
         return headerTable
 
-    def submit(self):
-        if self.cbRows.currentText() != '':
-            rows = int(self.cbRows.currentText())
+    def getDataSet(self):
+        data = []
+        toplevel_count = self.treeWidget.topLevelItemCount()
+        for toplevel_index in range(1,toplevel_count):
+            row = toplevel_index
+            row_item = self.treeWidget.topLevelItem(toplevel_index)
+            children_count = row_item.childCount()
+            for child_index in range(0,children_count):
+                sub_data = []
+                column = child_index + 1
+                text = row_item.child(child_index).text(0)
+                sub_data = text.split(',')
+                sub_data.append(row)
+                sub_data.append(column)
+                data.append(sub_data)
+                # print(data)
+                # ['table','value']
+        return data
 
-        if self.cbColumns.currentText() != '':
-            columns = int(self.cbColumns.currentText())
-        # self.main_window.createCustomizeTable(rows, columns)
-        headerLabels = self.getHeaders()
-        self.main_window.setHeader(headerLabels)
+    def setDatabase(self, database):
+        self.db = database
+
+    def submit(self):
+        headers = self.getHeaders()
+        if headers:
+            self.main_window.setHeader(headers)
+        data_set = self.getDataSet()
+        if data_set:
+            self.main_window.setDataSet(data_set)
         self.close()
 
+class CustomizeQuery:
+    def __init__(self, database, table, column, rowNo, columnNo, globalTime, dataList):
+        self.db = database
+        self.table = table
+        self.column = column
+        self.columnNo = columnNo
+        self.rowNo = rowNo
+        self.globalTime = globalTime
+        self.dataList = dataList
+
+    def query(self):
+        condition = ''
+        if self.globalTime:
+            condition = 'where time >= \'%s\'' % (self.globalTime)
+        if not self.db.isOpen():
+            self.db.open()
+        query = QSqlQuery()
+        queryString = 'select %s from %s %s LIMIT 1' % (self.column, self.table, condition)
+        query.exec_(queryString)
+        while query.next():
+            result = [query.value(0), self.rowNo, self.columnNo]
+            self.dataList.append(result)
+        self.db.close()
+        return self.dataList
 
 class CustomizeTable(QTableWidget):
     def __init__(self):

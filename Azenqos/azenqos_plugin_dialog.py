@@ -1079,7 +1079,6 @@ class TableWindow(QDialog):
         self.tableView.resizeColumnsToContents()
 
     def specifyTablesHeader(self):
-        # TODO: Add table when open table window
         if self.title is not None:
             # WCDMA
             if self.title == 'WCDMA_Active + Monitored Sets':

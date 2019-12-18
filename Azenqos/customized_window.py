@@ -9,15 +9,17 @@ import sys
 
 
 class CustomizedWindowWidget(QWidget):
+    dataSet = []
     def __init__(self, parent = None, windowName = None, database = None, currentTime = None):
         super().__init__(parent=parent)
         self.window_name = windowName
-        self.properties_window = PropertiesWindow(self, database)
+        self.properties_window = PropertiesWindow(self, database, self.dataSet)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.generateMenu)
         self.layout = QVBoxLayout()
         self.currentTime = currentTime
         self.header = []
+        self.dataDict = None
 
     def createCustomizeTable(self, row, column, data = None):
         if hasattr(self, 'tableView'):
@@ -37,27 +39,19 @@ class CustomizedWindowWidget(QWidget):
 
     def setHeader(self, headers):
         self.header = headers
+        print(self.header)
 
-class CustomeizeQuery:
-    def __init__(self, database, table, column, columnNo, rowNo, globalTime, dataList):
-        self.db = database
-        self.table = table
-        self.column = column
-        self.columnNo = columnNo
-        self.rowNo = rowNo
-        self.globalTime = globalTime
-        self.dataList = dataList
+    def setCurrentTime(self, value):
+        if self.currentTime != value:
+            self.currentTime = value
 
-    def query(self):
-        self.db.open()
-        query = QSqlQuery()
-        queryString = 'select %s from %s where time >= \'%s\' LIMIT 1' % (self.column, self.table, self.globalTime)
-        query.exec_(queryString)
-        while query.next():
-            result = [query.value(0), self.columnNo, self.rowNo]
-            self.dataList.append(result)
-        azenqosDatabase.close()
-        return self.dataList
+    def setDataSet(self, data_set):
+        self.dataSet = data_set
+        print(self.dataSet)
+
+class CustomizeTable(QTableView):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
 
 
 

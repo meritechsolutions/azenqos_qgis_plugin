@@ -12,17 +12,21 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtSql import *
 import json
+import globalutils
 
 
 class CellSetting(QWidget):
-    def __init__(self, selectitem, database = None):
+    databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
+    system_types = ['WCDMA', 'General', 'Positioning', 'Data', 'Non-Access-Stratum', 'Wifi', 'LTE', 'CDMA', 'Android', 'NB-IoT', 'Unlisted']
+    unused_columns = "'log_hash','time','modem_time','posid','seqid','netid','geom'"
+    def __init__(self, previous_window, selectitem, database = None, row = 0, column = 0):
         super().__init__(None)
-        self.databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
         self.selected_item = selectitem
-        self.system_types = ['WCDMA', 'General', 'Positioning', 'Data', 'Non-Access-Stratum', 'Wifi', 'LTE', 'CDMA', 'Android', 'NB-IoT', 'Unlisted']
         self.system_data_obj = None
         self.db = None
-        self.unused_columns = "'log_hash','time','modem_time','posid','seqid','netid','geom'"
+        self.column = column
+        self.row = row
+        self.previous_window = previous_window
         if self.db is None:
             self.addDatabase()
         self.setupUi()
@@ -222,7 +226,7 @@ class CellSetting(QWidget):
 
         if queryString:
             dataList = []
-            if self.db:
+            if not self.db.isOpen():
                 self.db.open()
 
             query = QSqlQuery()
@@ -269,9 +273,12 @@ class CellSetting(QWidget):
     def submit(self):
         # use object { "table": '', "value": '' }
         customElements = []
+        rowColumn = []
         if self.rbInformationElement.isChecked():
             customElements.append(self.fcbElement.currentText())
             customElements.append(self.fcbValue.currentText())
+            rowColumn.append(self.row)
+            rowColumn.append(self.column)
 
         elif self.rbEventCounter.isChecked():
             customElements.append('')
@@ -281,8 +288,8 @@ class CellSetting(QWidget):
             customElements.append(self.leText.text())
 
         if len(customElements) > 0:
-            self.selected_item.setText(0, str(customElements))
-
+            result = ','.join(customElements)
+            self.selected_item.setText(0, result)
         self.close()
 
 

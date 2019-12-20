@@ -1,4 +1,4 @@
 .vscode/launch.json
 .idea/*
 .vscode/settings.json
-Azenqos/__pycache__/*
+Azenqos/__pycache__/

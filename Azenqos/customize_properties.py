@@ -24,7 +24,7 @@ class PropertiesWindow(QWidget):
         super().__init__(None)
 
         self.main_window = main_window
-        self.db = None
+        self.db = database
         self.data_set = data_set
 
         self.previousColumnLength = 1

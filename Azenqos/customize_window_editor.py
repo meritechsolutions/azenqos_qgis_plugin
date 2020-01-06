@@ -16,19 +16,19 @@ import globalutils
 
 
 class CellSetting(QWidget):
-    databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
+    # databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
     system_types = ['WCDMA', 'General', 'Positioning', 'Data', 'Non-Access-Stratum', 'Wifi', 'LTE', 'CDMA', 'Android', 'NB-IoT', 'Unlisted']
     unused_columns = "'log_hash','time','modem_time','posid','seqid','netid','geom'"
     def __init__(self, previous_window, selectitem, database = None, row = 0, column = 0):
         super().__init__(None)
         self.selected_item = selectitem
         self.system_data_obj = None
-        self.db = None
+        self.db = database
         self.column = column
         self.row = row
         self.previous_window = previous_window
-        if self.db is None:
-            self.addDatabase()
+        # if self.db is None:
+        #     self.addDatabase()
         self.setupUi()
 
 

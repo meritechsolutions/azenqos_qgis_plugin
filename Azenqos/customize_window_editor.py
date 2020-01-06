@@ -195,7 +195,7 @@ class CellSetting(QWidget):
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'wcdma%'"
 
         elif value == 'General':
-            queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'wcdma%'"
+            queryString = ""
 
         elif value == 'Positioning':
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'location%'"
@@ -224,7 +224,7 @@ class CellSetting(QWidget):
         elif value == 'Unlisted':
             queryString = ""
 
-        if queryString:
+        if value and queryString:
             dataList = []
             if not self.db.isOpen():
                 self.db.open()
@@ -273,12 +273,9 @@ class CellSetting(QWidget):
     def submit(self):
         # use object { "table": '', "value": '' }
         customElements = []
-        rowColumn = []
         if self.rbInformationElement.isChecked():
             customElements.append(self.fcbElement.currentText())
             customElements.append(self.fcbValue.currentText())
-            rowColumn.append(self.row)
-            rowColumn.append(self.column)
 
         elif self.rbEventCounter.isChecked():
             customElements.append('')
@@ -290,6 +287,7 @@ class CellSetting(QWidget):
         if len(customElements) > 0:
             result = ','.join(customElements)
             self.selected_item.setText(0, result)
+
         self.close()
 
 

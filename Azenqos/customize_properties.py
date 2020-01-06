@@ -17,7 +17,7 @@ from worker import Worker
 import globalutils
 
 MAX_COLUMNS = 10
-MAX_ROWS = 100
+MAX_ROWS = 10
 
 class PropertiesWindow(QWidget):
     def __init__(self, main_window = None, database = None, data_set = None):
@@ -293,46 +293,23 @@ class PropertiesWindow(QWidget):
         self.db = database
 
     def submit(self):
+        title = self.ledtTitle.text()
+        if title:
+            self.main_window.setWindowTitle(title)
+
         headers = self.getHeaders()
         if headers:
             self.main_window.setHeader(headers)
+
         data_set = self.getDataSet()
         if data_set:
             self.main_window.setDataSet(data_set)
+
+        if self.cbRows.currentText() and self.cbColumns.currentText():
+            tableSize = [int(self.cbRows.currentText()), int(self.cbColumns.currentText())]
+            self.main_window.setTableSize(tableSize)
+
         self.close()
-
-class CustomizeQuery:
-    def __init__(self, database, table, column, rowNo, columnNo, globalTime, dataList):
-        self.db = database
-        self.table = table
-        self.column = column
-        self.columnNo = columnNo
-        self.rowNo = rowNo
-        self.globalTime = globalTime
-        self.dataList = dataList
-
-    def query(self):
-        condition = ''
-        if self.globalTime:
-            condition = 'where time >= \'%s\'' % (self.globalTime)
-        if not self.db.isOpen():
-            self.db.open()
-        query = QSqlQuery()
-        queryString = 'select %s from %s %s LIMIT 1' % (self.column, self.table, condition)
-        query.exec_(queryString)
-        while query.next():
-            result = [query.value(0), self.rowNo, self.columnNo]
-            self.dataList.append(result)
-        self.db.close()
-        return self.dataList
-
-class CustomizeTable(QTableWidget):
-    def __init__(self):
-        super().__init__(None)
-
-    def setStructure(self, row, column, data):
-        self.setRowCount(row)
-        self.setColumnCount(column)
 
 
 if __name__ == "__main__":

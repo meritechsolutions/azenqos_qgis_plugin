@@ -55,17 +55,15 @@ class CustomizedWindowWidget(QWidget):
         if sizelist:
             self.rowCount = sizelist[0]
             self.columnCount = sizelist[1]
-            self.updateTable()
 
     def updateTable(self):
-        if self.rowCount > 0:
-            if len(self.tableData) == 0:
-                for x in range(0,self.rowCount):
-                    if self.columnCount > 0:
-                        dataPerRow = []
-                        for y in range(0,self.columnCount):
-                            dataPerRow.append('')
-                    self.tableData.append(dataPerRow)
+        if self.rowCount > 0 and self.columnCount > 0:
+            self.tableData = []
+            for x in range(0,self.rowCount):
+                dataPerRow = []
+                for y in range(0,self.columnCount):
+                    dataPerRow.append('')
+                self.tableData.append(dataPerRow)
             if len(self.tableData) > 0:
                 if self.dataSet:
                     for data in self.dataSet:
@@ -74,7 +72,7 @@ class CustomizedWindowWidget(QWidget):
                         row = result[1] - 1
                         column = result[2] - 1
                         self.tableData[row][column] = result[0]
-                    self.customizeTable.setTableModel(self.tableData,self.header)
+                    self.cusvtomizeTable.setTableModel(self.tableData,self.header)
 
     # def structuerDatalist(self, )
 

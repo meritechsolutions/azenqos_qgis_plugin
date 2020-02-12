@@ -308,6 +308,7 @@ class PropertiesWindow(QWidget):
         if self.cbRows.currentText() and self.cbColumns.currentText():
             tableSize = [int(self.cbRows.currentText()), int(self.cbColumns.currentText())]
             self.main_window.setTableSize(tableSize)
+            self.main_window.updateTable()
 
         self.close()
 

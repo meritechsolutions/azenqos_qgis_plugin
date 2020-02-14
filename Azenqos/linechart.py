@@ -5,6 +5,7 @@ from PyQt5.QtSql import * #QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import pyqtgraph as pg
+import globalutils
 
 class Ui_LTE_LCwidget(QWidget):
     def __init__(self, parent, windowName, azenqosDB):
@@ -174,7 +175,8 @@ class Ui_LTE_LCwidget(QWidget):
 
         # Graph's Widget
         self.lte_widget = LineChart(self.lte_GArea, self.title,
-                                     self.lte_tableWidget, None,self.database)
+                                     self.lte_tableWidget, None,
+                                     self.database)
         # self.lte_widget.setGeometry(QtCore.QRect(10, 9, 581, 351))
         # self.lte_widget.resize(self.lte_widget.sizeHint())
         self.lte_widget.setObjectName("lte_widget")
@@ -247,26 +249,31 @@ class Ui_WCDMA_LCwidget(QWidget):
         super().__init__(parent)
         self.title = windowName
         self.database = azenqosDB
-        self.setupUi(self)
+        self.width = 640
+        self.height = 480
+        self.maximumHeight = 480
+        self.maximumWidth = 640
+        self.setupUi()
 
-    def setupUi(self, WCDMA_LCwidget):
-        WCDMA_LCwidget.setObjectName("WCDMA_LCwidget")
-        WCDMA_LCwidget.resize(841, 586)
+    def setupUi(self):
+        self.setObjectName("WCDMA_LCwidget")
+        layout = QVBoxLayout(self)
+        # self.resize(841, 586)
 
         # Graph Area
-        self.wcdma_GArea = QScrollArea(WCDMA_LCwidget)
+        self.wcdma_GArea = QScrollArea(self)
         self.wcdma_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
         self.wcdma_GArea.setWidgetResizable(True)
         self.wcdma_GArea.setObjectName("wcdma_GArea")
 
         # Scroll Area
-        self.scrollAreaWidgetContents = QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.wcdma_GArea.setWidget(self.scrollAreaWidgetContents)
+        # self.scrollAreaWidgetContents = QWidget()
+        # self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        # self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        # self.wcdma_GArea.setWidget(self.scrollAreaWidgetContents)
 
         # DataTable
-        self.wcdma_tableWidget = QTableWidget(WCDMA_LCwidget)
+        self.wcdma_tableWidget = QTableWidget(self)
         self.wcdma_tableWidget.setGeometry(QtCore.QRect(20, 395, 451, 161))
         self.wcdma_tableWidget.setObjectName("wcdma_tableWidget")
         self.wcdma_tableWidget.setColumnCount(4)
@@ -366,7 +373,7 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.wcdma_tableWidget.verticalHeader().setVisible(False)
 
         # DateLabel
-        self.datelabel = QLabel(WCDMA_LCwidget)
+        self.datelabel = QLabel(self)
         self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -374,7 +381,7 @@ class Ui_WCDMA_LCwidget(QWidget):
         font.setWeight(75)
         self.datelabel.setFont(font)
         self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QLineEdit(WCDMA_LCwidget)
+        self.lineEdit = QLineEdit(self)
         self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -386,18 +393,35 @@ class Ui_WCDMA_LCwidget(QWidget):
         self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
-        self.wcdma_widget = LineChart(self.scrollAreaWidgetContents,
+        self.wcdma_widget = LineChart(self.wcdma_GArea,
                                        self.title, self.wcdma_tableWidget,
-                                       self.lineEdit, self.database)
-        self.wcdma_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+                                       None, self.database)
+        self.wcdma_widget.setGeometry(QtCore.QRect(10, 9, 581, 351))
+        self.wcdma_widget.resize(self.wcdma_widget.sizeHint())
         self.wcdma_widget.setObjectName("wcdma_widget")
+        self.wcdma_GArea.setWidget(self.wcdma_widget)
 
-        self.retranslateUi(WCDMA_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(WCDMA_LCwidget)
 
-    def retranslateUi(self, WCDMA_LCwidget):
+        # Graph's Widget
+        # self.lte_widget = LineChart(self.lte_GArea, self.title,
+        #                              self.lte_tableWidget, None,self.database)
+        # self.lte_widget.setGeometry(QtCore.QRect(10, 9, 581, 351))
+        # self.lte_widget.resize(self.lte_widget.sizeHint())
+        # self.lte_widget.setObjectName("lte_widget")
+        # self.lte_GArea.setWidget(self.lte_widget)
+
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
+
+        layout.addWidget(self.wcdma_GArea)
+        layout.addWidget(self.wcdma_tableWidget)
+
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
+
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        WCDMA_LCwidget.setWindowTitle(
+        self.setWindowTitle(
             _translate("WCDMA_LCwidget", "WCDMA Line Chart [MS1]"))
         item = self.wcdma_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("WCDMA_LCwidget", "1"))
@@ -446,14 +470,18 @@ class Ui_LTE_Data_LCwidget(QWidget):
         super().__init__(parent)
         self.title = windowName
         self.database = azenqosDB
-        self.setupUi(self)
+        self.width = 640
+        self.height = 480
+        self.maximumHeight = 480
+        self.maximumWidth = 640
+        self.setupUi()
 
-    def setupUi(self, LTE_Data_LCwidget):
-        LTE_Data_LCwidget.setObjectName("LTE_Data_LCwidget")
-        LTE_Data_LCwidget.resize(841, 586)
+    def setupUi(self):
+        self.setObjectName("LTE_Data_LCwidget")
+        self.resize(841, 586)
 
         # Graph Area
-        self.lte_datalc_GArea = QScrollArea(LTE_Data_LCwidget)
+        self.lte_datalc_GArea = QScrollArea(self)
         self.lte_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
         self.lte_datalc_GArea.setWidgetResizable(True)
         self.lte_datalc_GArea.setObjectName("lte_datalc_GArea")
@@ -465,7 +493,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
 
         # DataTable
-        self.lte_data_tableWidget = QTableWidget(LTE_Data_LCwidget)
+        self.lte_data_tableWidget = QTableWidget(self)
         self.lte_data_tableWidget.setGeometry(QtCore.QRect(20, 395, 530, 161))
         self.lte_data_tableWidget.setObjectName("lte_data_tableWidget")
         self.lte_data_tableWidget.setColumnCount(4)
@@ -565,7 +593,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_data_tableWidget.verticalHeader().setVisible(False)
 
         # DateLabel
-        self.datelabel = QLabel(LTE_Data_LCwidget)
+        self.datelabel = QLabel(self)
         self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -573,7 +601,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
         font.setWeight(75)
         self.datelabel.setFont(font)
         self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QLineEdit(LTE_Data_LCwidget)
+        self.lineEdit = QLineEdit(self)
         self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -593,12 +621,12 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.lte_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_data_widget.setObjectName("lte_data_widget")
 
-        self.retranslateUi(LTE_Data_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(LTE_Data_LCwidget)
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
 
-    def retranslateUi(self, LTE_Data_LCwidget):
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        LTE_Data_LCwidget.setWindowTitle(
+        self.setWindowTitle(
             _translate("LTE_Data_LCwidget", "LTE Data Line Chart [MS1]"))
         item = self.lte_data_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("LTE_Data_LCwidget", "1"))
@@ -651,14 +679,18 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         super().__init__(parent)
         self.title = windowName
         self.database = azenqosDB
-        self.setupUi(self)
+        self.width = 640
+        self.height = 480
+        self.maximumHeight = 480
+        self.maximumWidth = 640
+        self.setupUi()
 
-    def setupUi(self, WCDMA_Data_LCwidget):
-        WCDMA_Data_LCwidget.setObjectName("WCDMA_Data_LCwidget")
-        WCDMA_Data_LCwidget.resize(841, 586)
+    def setupUi(self):
+        self.setObjectName("WCDMA_Data_LCwidget")
+        layout = QVBoxLayout(self)
 
         # Graph Area
-        self.wcdma_datalc_GArea = QScrollArea(WCDMA_Data_LCwidget)
+        self.wcdma_datalc_GArea = QScrollArea(self)
         self.wcdma_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
         self.wcdma_datalc_GArea.setWidgetResizable(True)
         self.wcdma_datalc_GArea.setObjectName("wcdma_datalc_GArea")
@@ -671,7 +703,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
 
         # DataTable
         self.wcdma_data_tableWidget = QTableWidget(
-            WCDMA_Data_LCwidget)
+            self)
         self.wcdma_data_tableWidget.setGeometry(QtCore.QRect(
             20, 395, 515, 171))
         self.wcdma_data_tableWidget.setObjectName("wcdma_data_tableWidget")
@@ -801,12 +833,12 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.wcdma_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.wcdma_data_widget.setObjectName("wcdma_data_widget")
 
-        self.retranslateUi(WCDMA_Data_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(WCDMA_Data_LCwidget)
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
 
-    def retranslateUi(self, WCDMA_Data_LCwidget):
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        WCDMA_Data_LCwidget.setWindowTitle(
+        self.setWindowTitle(
             _translate("WCDMA_Data_LCwidget", "WCDMA Data Line Chart [MS1]"))
         item = self.wcdma_data_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("WCDMA_Data_LCwidget", "1"))
@@ -861,15 +893,19 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         super().__init__(parent)
         self.title = windowName
         self.database = azenqosDB
-        self.setupUi(self)
+        self.width = 640
+        self.height = 480
+        self.maximumHeight = 480
+        self.maximumWidth = 640
+        self.setupUi()
 
-    def setupUi(self, PA_widget):
+    def setupUi(self):
 
-        PA_widget.setObjectName("PA_widget")
-        PA_widget.resize(841, 586)
+        self.setObjectName("PA_widget")
+        self.resize(841, 586)
 
         #Graph Area
-        self.pa_GArea = QScrollArea(PA_widget)
+        self.pa_GArea = QScrollArea(self)
         self.pa_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
         self.pa_GArea.setWidgetResizable(True)
         self.pa_GArea.setObjectName("pa_GArea")
@@ -880,7 +916,7 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
 
         #Data Table
-        self.tableWidget = QTableWidget(PA_widget)
+        self.tableWidget = QTableWidget(self)
         self.tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 171))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(4)
@@ -982,7 +1018,7 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         self.tableWidget.verticalHeader().setVisible(False)
 
         #Data Label
-        self.datelabel = QLabel(PA_widget)
+        self.datelabel = QLabel(self)
         self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -990,7 +1026,7 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         font.setWeight(75)
         self.datelabel.setFont(font)
         self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QLineEdit(PA_widget)
+        self.lineEdit = QLineEdit(self)
         self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -1010,12 +1046,12 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
         self.pa_widget.setObjectName("pa_widget")
         self.pa_GArea.setWidget(self.scrollAreaWidgetContents)
 
-        self.retranslateUi(PA_widget)
-        QtCore.QMetaObject.connectSlotsByName(PA_widget)
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
 
-    def retranslateUi(self, PA_widget):
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        PA_widget.setWindowTitle(_translate("PA_widget", "WCDMA Pilot Analyzer [MS1]"))
+        self.setWindowTitle(_translate("PA_widget", "WCDMA Pilot Analyzer [MS1]"))
         item = self.tableWidget.verticalHeaderItem(0)
         item.setText(_translate("PA_widget", "1"))
         item = self.tableWidget.verticalHeaderItem(1)
@@ -1090,10 +1126,6 @@ class LineChart(QWidget):
         self.datelabel.setObjectName("lineEdit")
         self.datelabel.setAlignment(QtCore.Qt.AlignCenter)
 
-        # Matplotlib Graph Toolbar
-        #toolbar = NavigationToolbar(self.canvas, self)
-        #vertical_layout.addWidget(toolbar)
-
         # Choose Line Chart By WindowName
         if self.title == 'LTE_LTE Line Chart':
             self.LTE()
@@ -1112,12 +1144,6 @@ class LineChart(QWidget):
                 self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=4))
             else:
                 self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=2))
-    #For Matplotlib---------------------------------------------------------------------
-        # for Line in self.lines:
-        #     Line.set_linewidth(1)
-        # event.artist.set_linewidth(2.5)
-        # self.canvas.draw()
-    #-----------------------------------------------------------------------------------
 
     # Show Data In Table
     def get_table_data(self, event):
@@ -1420,21 +1446,34 @@ class LineChart(QWidget):
             pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
 
     def moveLineChart(self, sampledate):
-        print('move line chart')
         #For pyqtgraph-----------------------------------------------
         # Shift Part
         dateString = str(sampledate)
-        print(dateString)
         timeString = dateString.split(' ')[1][:8]
-        currentTimeindex = 0
-        if self.Time:
+        # timeString = '00:19:18'
+        if len(self.Time) > 0:
+            currentTimeindex = 0
+            recentTimeindex = 0
             for timeItem in self.Time:
-                if timeItem[:8] == timeString:
+                time_without_ms = timeItem[:8]
+                # if time_without_ms == timeString:
+                if time_without_ms == timeString:
+                    print(time_without_ms, timeString)
+                    # if self.Time.index(timeItem) + 4 < len(self.Time):
+                    currentTimeindex = self.Time.index(timeItem)
+                    #     self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
+                    #     break
+                else:
+                    if time_without_ms > timeString:
+                        index = self.Time.index(timeItem) - 1
+                        print(self.Time[index], timeString)
+                        if self.Time[index] <= timeString:
+                            currentTimeindex = index
+                    # else:
+                    #     currentTimeindex = self.Time.index(timeItem) - 1
+                if currentTimeindex > 0:
                     if self.Time.index(timeItem) + 4 < len(self.Time):
-                        currentTimeindex = self.Time.index(timeItem)
                         self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
-                        break
-                    else:
                         break
 
             #For Matplotlib----------------------------------------------
@@ -1470,8 +1509,8 @@ class LineChart(QWidget):
         height = size.height()
         datalabelX = int((width * 0.94) - 110)
         datalabelY = int((height * 0.11) - 20)
-        print(datalabelX)
-        print(datalabelY)
+        # print(datalabelX)
+        # print(datalabelY)
         self.datelabel.move(QPoint(datalabelX, datalabelY))
 
 class LineChartQuery:
@@ -1519,7 +1558,7 @@ class LineChartQuery:
                 fieldName = self.fieldArr[field]
                 self.result[fieldName] = ''
         self.database.close()
-        print(self.result)
+        # print(self.result, lineno())
         return self.result
 
     def valueValidation(self, value):

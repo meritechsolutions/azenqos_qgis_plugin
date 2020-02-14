@@ -503,7 +503,7 @@ class AzenqosDialog(QDialog):
                 if not window.title in linechartWindowname:
                     window.hilightRow(sampledate)
                 else:
-                    print('It\'s linechart.', globalutils.lineno())
+                    print('It\'s linechart.', globalutils.lineno(), getattr(window, "title"))
                     window.moveChart(sampledate)
         # if len(tableList) > 0:
         #     worker = Worker(self.hilightFeature())
@@ -994,10 +994,13 @@ class AzenqosDialog(QDialog):
             elif child == "LTE Line Chart":
                 widget = None
                 if hasattr(self, 'lte_lc_window') is True:
-                    widget = self.lte_lc_window.findChild(QWidget, windowName)
-                    if not widget:
+                    linechartWindow = self.lte_lc_window.widget()
+                    if not linechartWindow:
                         widget = Ui_LTE_LCwidget(self.lte_lc_window, windowName, azenqosDatabase)
                         openedWindows.append(widget)
+                    else:
+                        widget = linechartWindow
+                        widget.show()
 
                     if self.lte_lc_window not in subwindowList:
                         self.lte_lc_window = QMdiSubWindow(self.mdi)

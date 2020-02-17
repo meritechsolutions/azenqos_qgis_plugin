@@ -25,6 +25,8 @@ import datetime, os, threading, time, zipfile, traceback, sys
 
 import pyqtgraph as pg
 
+# from qgis.utils import *
+# from qgis.core import *
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import * #QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread

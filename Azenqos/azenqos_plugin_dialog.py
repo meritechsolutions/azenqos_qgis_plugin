@@ -25,27 +25,22 @@ import datetime, os, threading, time, zipfile, traceback, sys
 
 import pyqtgraph as pg
 
-from PyQt5.QtWidgets import QFrame
-
 from qgis.utils import *
 from qgis.core import *
-from qgis.PyQt import QtCore, QtGui, QtWidgets
-from qgis.PyQt.QtCore import * #QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from qgis.PyQt.QtSql import * #QSqlQuery, QSqlDatabase
-from qgis.PyQt.QtWidgets import *
-from qgis.PyQt.QtGui import QColor
+from PyQt5.QtWidgets import *
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import * #QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
+from PyQt5.QtSql import * #QSqlQuery, QSqlDatabase
+from PyQt5.QtGui import QColor
+
+from .linechart import *
 
 from .cdma_evdo_query import CdmaEvdoQuery
 from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 
-# from matplotlib.figure import Figure
-# import matplotlib.pyplot as plt
-# from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-# from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
-# from matplotlib.lines import Line2D
-# from matplotlib.ticker import StrMethodFormatter
+from .worker import Worker
 
 azenqosDatabase = None
 minTimeValue = None
@@ -54,7 +49,7 @@ currentTimestamp = None
 currentDateTimeString = None
 recentDateTimeString = ''
 clickedLatLon = {"lat": 0, "lon": 0}
-sliderLength = None
+sliderLength = 0
 openedWindows = []
 timeSlider = None
 isSliderPlay = False
@@ -84,63 +79,6 @@ def clearAllSelectedFeatures():
     mc.refresh()
     QgsMessageLog.logMessage('[-- Clear selected features --]')
 
-class WorkerSignals(QObject):
-    '''
-    Defines the signals available from a running worker thread.
-
-    Supported signals are:
-
-    finished:
-        No data
-    error:
-        `tuple` (exctype, value, traceback.format_exc() )
-    result:
-        `object` data returned from processing, anything
-
-    '''
-    finished = pyqtSignal()
-    error = pyqtSignal(tuple)
-    result = pyqtSignal(object)
-
-class Worker(QRunnable):
-    '''
-    Worker thread
-
-    Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
-
-    :param callback: The function callback to run on this worker thread. Supplied args and
-                     kwargs will be passed through to the runner.
-    :type callback: function
-    :param args: Arguments to pass to the callback function
-    :param kwargs: Keywords to pass to the callback function
-
-    '''
-
-    def __init__(self, fn, *args, **kwargs):
-        super(Worker, self).__init__()
-        # Store constructor arguments (re-used for processing)
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-        self.signals = WorkerSignals()
-
-    @pyqtSlot()
-    def run(self):
-        '''
-        Initialise the runner function with passed args, kwargs.
-        '''
-
-        # Retrieve args/kwargs here; and fire processing using them
-        try:
-            result = self.fn(*self.args, **self.kwargs)
-        except:
-            traceback.print_exc()
-            exctype, value = sys.exc_info()[:2]
-            self.signals.error.emit((exctype, value, traceback.format_exc()))
-        else:
-            self.signals.result.emit(result)  # Return the result of the processing
-        finally:
-            self.signals.finished.emit()  # Done
 
 # Database select window
 class Ui_DatabaseDialog(QDialog):
@@ -182,7 +120,7 @@ class Ui_DatabaseDialog(QDialog):
         DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos"))
         self.browseButton.setText(_translate("DatabaseDialog", "Browse.."))
         self.dbPathLabel.setText(
-            _translate("DatabaseDialog", "Database path: ( .db, .sqlite )"))
+            _translate("DatabaseDialog", "Database path: ( .db )"))
 
     def getfiles(self):
         fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
@@ -212,7 +150,6 @@ class Ui_DatabaseDialog(QDialog):
             self.uri = QgsDataSourceUri()
             self.uri.setDatabase(self.databasePath)
             self.addLayerToQgis()
-            # self.createTableLayer()
             self.layerTask = LayerTask(u'Waste cpu 1', self.uri)
             QgsApplication.taskManager().addTask(self.layerTask)
             self.getTimeForSlider()
@@ -235,7 +172,6 @@ class Ui_DatabaseDialog(QDialog):
             print('invalid layer')
         azenqosDatabase.open()
         query = QSqlQuery()
-        # queryString = "SELECT table_name FROM layer_statistics"
         queryString = "select tbl_name from sqlite_master where sql LIKE '%\"geom\"%' and type = 'table'"
         query.exec_(queryString)
         while query.next():
@@ -255,7 +191,7 @@ class Ui_DatabaseDialog(QDialog):
                 layerName)
             subQuery.exec_(queryString)
             while subQuery.next():
-                if subQuery.value(0).strip() and subQuery.value(1).strip():
+                if str(subQuery.value(0)).strip() and str(subQuery.value(1)).strip():
                     dataList.append([layerName, subQuery.value(0), subQuery.value(1)])
         azenqosDatabase.close()
 
@@ -275,9 +211,6 @@ class Ui_DatabaseDialog(QDialog):
                         mintime = dataList[row][1]
                     if dataList[row][2]:
                         maxtime = dataList[row][2]
-
-            QgsMessageLog.logMessage(str(mintime))
-            QgsMessageLog.logMessage(str(maxtime))
 
             minTimeValue = datetime.datetime.strptime(str(mintime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
 
@@ -326,7 +259,8 @@ class AzenqosDialog(QDialog):
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
         self.setupTreeWidget(AzenqosDialog)
-        #self.mdi = QMdiArea()
+        self.mdi = QMdiArea()
+        self.mdi.show()
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
@@ -352,6 +286,7 @@ class AzenqosDialog(QDialog):
         self.timeEdit.setDisplayFormat("hh:mm:ss")
         self.timeEdit.setDateTime(
             datetime.datetime.fromtimestamp(minTimeValue))
+        self.timeEdit.setReadOnly(True)
 
         # Time label
         self.timeSliderLabel = QLabel(AzenqosDialog)
@@ -385,10 +320,10 @@ class AzenqosDialog(QDialog):
         __sortingEnabled = self.presentationTreeWidget.isSortingEnabled()
         self.presentationTreeWidget.setSortingEnabled(False)
         self.presentationTreeWidget.setSortingEnabled(__sortingEnabled)
-        self.configurationTreeWidget.headerItem().setText(
-            0, _translate("AzenqosDialog", "Configuration"))
-        self.configurationTreeWidget.setSortingEnabled(False)
-        self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
+        # self.configurationTreeWidget.headerItem().setText(
+        #     0, _translate("AzenqosDialog", "Configuration"))
+        # self.configurationTreeWidget.setSortingEnabled(False)
+        # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(
             _translate("AzenqosDialog", "Import Database"))
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
@@ -405,53 +340,53 @@ class AzenqosDialog(QDialog):
             self.loadAllMessages)
 
         # WCDMA Section
-        # wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
-        # wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
-        #                                            ['Active + Monitored Sets'])
-        # wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
-        # wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
-        # wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
-        # wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
-        # wcdmaTransportChannel = QTreeWidgetItem(wcdma,
-        #                                         ['BLER / Transport Channel'])
-        # wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
-        # wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
-        # wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
-        # wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
-        #                                           ['Active + Monitored Bar'])
-        # wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
-        # wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
-        # wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
+        wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
+        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
+                                                   ['Active + Monitored Sets'])
+        wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
+        wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
+        wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
+        wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
+        wcdmaTransportChannel = QTreeWidgetItem(wcdma,
+                                                ['BLER / Transport Channel'])
+        wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
+        wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
+        wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
+        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
+                                                  ['Active + Monitored Bar'])
+        wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
+        wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
+        wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
 
         # LTE Section
-        # lte = QTreeWidgetItem(self.presentationTreeWidget, ['LTE'])
-        # lteRadioParams = QTreeWidgetItem(lte, ['Radio Parameters'])
-        # lteServingNeighbors = QTreeWidgetItem(lte, ['Serving + Neighbors'])
-        # ltePPParams = QTreeWidgetItem(lte, ['PUCCH/PDSCH Parameters'])
-        # lteLineChart = QTreeWidgetItem(lte, ['LTE Line Chart'])
-        # lteRlc = QTreeWidgetItem(lte, ['LTE RLC'])
-        # lteVo = QTreeWidgetItem(lte, ['LTE VoLTE'])
+        lte = QTreeWidgetItem(self.presentationTreeWidget, ['LTE'])
+        lteRadioParams = QTreeWidgetItem(lte, ['Radio Parameters'])
+        lteServingNeighbors = QTreeWidgetItem(lte, ['Serving + Neighbors'])
+        ltePPParams = QTreeWidgetItem(lte, ['PUCCH/PDSCH Parameters'])
+        lteLineChart = QTreeWidgetItem(lte, ['LTE Line Chart'])
+        lteRlc = QTreeWidgetItem(lte, ['LTE RLC'])
+        lteVo = QTreeWidgetItem(lte, ['LTE VoLTE'])
 
         # CDMA/EVDO Section
-        # cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
-        # cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
-        # cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
-        #                                            ['Serving + Neighbors'])
-        # cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
+        cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
+        cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
+        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
+                                                   ['Serving + Neighbors'])
+        cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
 
         # Data Section
-        # data = QTreeWidgetItem(self.presentationTreeWidget, ['Data'])
-        # dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
-        # dataWcdmaLineChart = QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
-        # dataEdgeInfo = QTreeWidgetItem(data, ['GPRS/EDGE Information'])
-        # dataWebBrowser = QTreeWidgetItem(data, ['Web Browser'])
-        # dataStats = QTreeWidgetItem(data, ['HSDPA/HSPA + Statistics'])
-        # dataHsupaStats = QTreeWidgetItem(data, ['HSUPA Statistics'])
-        # dataLteStats = QTreeWidgetItem(data, ['LTE Data Statistics'])
-        # dataLteLineChart = QTreeWidgetItem(data, ['LTE Data Line Chart'])
-        # dataWifiConnectedAp = QTreeWidgetItem(data, ['Wifi Connected AP'])
-        # dataWifiScannedAp = QTreeWidgetItem(data, ['Wifi Scanned APs'])
-        # dataWifiGraph = QTreeWidgetItem(data, ['Wifi Graph'])
+        data = QTreeWidgetItem(self.presentationTreeWidget, ['Data'])
+        dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
+        dataWcdmaLineChart = QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
+        dataEdgeInfo = QTreeWidgetItem(data, ['GPRS/EDGE Information'])
+        dataWebBrowser = QTreeWidgetItem(data, ['Web Browser'])
+        dataStats = QTreeWidgetItem(data, ['HSDPA/HSPA + Statistics'])
+        dataHsupaStats = QTreeWidgetItem(data, ['HSUPA Statistics'])
+        dataLteStats = QTreeWidgetItem(data, ['LTE Data Statistics'])
+        dataLteLineChart = QTreeWidgetItem(data, ['LTE Data Line Chart'])
+        dataWifiConnectedAp = QTreeWidgetItem(data, ['Wifi Connected AP'])
+        dataWifiScannedAp = QTreeWidgetItem(data, ['Wifi Scanned APs'])
+        dataWifiGraph = QTreeWidgetItem(data, ['Wifi Graph'])
 
         # Signaling Section
         signaling = QTreeWidgetItem(self.presentationTreeWidget, ['Signaling'])
@@ -465,43 +400,43 @@ class AzenqosDialog(QDialog):
         # signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
-        # positioning = QTreeWidgetItem(self.presentationTreeWidget,
-        #                               ['Positioning'])
-        # positioningGps = QTreeWidgetItem(positioning, ['GPS'])
-        # positioningMap = QTreeWidgetItem(positioning, ['Map'])
-        # positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
+        positioning = QTreeWidgetItem(self.presentationTreeWidget,
+                                      ['Positioning'])
+        positioningGps = QTreeWidgetItem(positioning, ['GPS'])
+        positioningMap = QTreeWidgetItem(positioning, ['Map'])
+        positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
         # Customized Window Section
-        # customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
-        #                                    ['Customized Window'])
-        # customizedWindowStatus = QTreeWidgetItem(customizedWindow,
-        #                                          ['Status Window'])
-        # customizedWindowMessage = QTreeWidgetItem(customizedWindow,
-        #                                           ['Message Window'])
-        # customizedWindowChart = QTreeWidgetItem(customizedWindow,
-        #                                         ['Line Chart'])
-        #
-        # # NB-IoT Section
-        # nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
-        # nBIoTParams = QTreeWidgetItem(nBIoT,
-        #                               ['NB-IoT Radio Parameters Window'])
+        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
+                                           ['Customized Window'])
+        customizedWindowStatus = QTreeWidgetItem(customizedWindow,
+                                                 ['Status Window'])
+        customizedWindowMessage = QTreeWidgetItem(customizedWindow,
+                                                  ['Message Window'])
+        customizedWindowChart = QTreeWidgetItem(customizedWindow,
+                                                ['Line Chart'])
+
+        # NB-IoT Section
+        nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
+        nBIoTParams = QTreeWidgetItem(nBIoT,
+                                      ['NB-IoT Radio Parameters Window'])
 
         self.presentationTreeWidget.header().setCascadingSectionResizes(True)
         self.presentationTreeWidget.header().setHighlightSections(True)
 
         # Configuration
-        self.configurationTreeWidget = QTreeWidget(AzenqosDialog)
-        self.configurationTreeWidget.setGeometry(
-            QtCore.QRect(20, 320, 260, 100))
-        self.configurationTreeWidget.setFrameShape(QFrame.StyledPanel)
-        self.configurationTreeWidget.setAllColumnsShowFocus(True)
-        self.configurationTreeWidget.setObjectName("configurationTreeWidget")
-        cellInformation = QTreeWidgetItem(self.configurationTreeWidget,
-                                          ['Cell Information'])
-        equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget,
-                                                 ['Equipment Configuration'])
-        self.configurationTreeWidget.itemDoubleClicked.connect(
-            self.selectConfiguration)
+        # self.configurationTreeWidget = QTreeWidget(AzenqosDialog)
+        # self.configurationTreeWidget.setGeometry(
+        #     QtCore.QRect(20, 320, 260, 100))
+        # self.configurationTreeWidget.setFrameShape(QFrame.StyledPanel)
+        # self.configurationTreeWidget.setAllColumnsShowFocus(True)
+        # self.configurationTreeWidget.setObjectName("configurationTreeWidget")
+        # cellInformation = QTreeWidgetItem(self.configurationTreeWidget,
+        #                                   ['Cell Information'])
+        # equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget,
+        #                                          ['Equipment Configuration'])
+        # self.configurationTreeWidget.itemDoubleClicked.connect(
+        #     self.selectConfiguration)
 
     def setupPlayStopButton(self, AzenqosDialog):
         self.horizontalLayout = QWidget(AzenqosDialog)
@@ -527,11 +462,11 @@ class AzenqosDialog(QDialog):
 
     def pauseTime(self):
         global isSliderPlay
-        isSliderPlay = False
         timeSlider.setEnabled(True)
         self.playButton.setEnabled(True)
         self.timeSliderThread.quit()
         threading.Event()
+        isSliderPlay = False
 
     def setTimeValue(self, value):
         global isSliderPlay
@@ -562,7 +497,6 @@ class AzenqosDialog(QDialog):
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
-        # timeSlider.update()
         if len(openedWindows) > 0:
             for window in openedWindows:
                 if not window.title in linechartWindowname:
@@ -572,14 +506,14 @@ class AzenqosDialog(QDialog):
         if len(tableList) > 0:
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
-            # self.hilightFeature()
+            self.hilightFeature()
         self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
         currentDateTimeString = '%s' % (datetime.datetime.fromtimestamp(currentTimestamp))
 
-    def threadComplete(self):
-        QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
-        iface.mapCanvas().refresh()
+    # def threadComplete(self):
+    #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
+    #     iface.mapCanvas().refresh()
 
     def hilightFeature(self):
         QgsMessageLog.logMessage('[-- Start hilight features --]')
@@ -668,286 +602,1003 @@ class AzenqosDialog(QDialog):
         global openedWindows
         global tableList
         windowName = parent + "_" + child
+        subwindowList = self.mdi.subWindowList()
         if parent == "WCDMA":
             if child == "Active + Monitored Sets":
-                if hasattr(self, 'wcdma_ams_window') is False:
-                    self.wcdma_ams_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_ams_window)
-                    #self.mdi.addSubWindow(self.wcdma_ams_window)
-                self.wcdma_ams_window.show()
-                self.wcdma_ams_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_ams_window') is True:
+                    tableWindow = self.wcdma_ams_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_ams_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_ams_window not in subwindowList:
+                        self.wcdma_ams_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_ams_window)
+
+                    if tableWidget:
+                        self.wcdma_ams_window.setWidget(tableWidget)
+                    self.wcdma_ams_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_ams_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_ams_window, windowName)
+                    self.wcdma_ams_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_ams_window)
+                    self.wcdma_ams_window.show()
+                    openedWindows.append(tableWidget)
 
             elif child == "Radio Parameters":
-                if hasattr(self, 'wcdma_rp_window') is False:
-                    self.wcdma_rp_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_rp_window)
-                    #self.mdi.addSubWindow(self.wcdma_rp_window)
-                self.wcdma_rp_window.show()
-                self.wcdma_rp_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_rp_window') is True:
+                    tableWindow = self.wcdma_rp_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_rp_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_rp_window not in subwindowList:
+                        self.wcdma_rp_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_rp_window)
+
+                    if tableWidget:
+                        self.wcdma_rp_window.setWidget(tableWidget)
+                    self.wcdma_rp_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_rp_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_rp_window, windowName)
+                    self.wcdma_rp_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_rp_window)
+                    self.wcdma_rp_window.show()
+                    openedWindows.append(tableWidget)
 
             elif child == "Active Set List":
-                if hasattr(self, 'wcdma_asl_window') is False:
-                    self.wcdma_asl_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_asl_window)
-                    #self.mdi.addSubWindow(self.wcdma_asl_window)
-                self.wcdma_asl_window.show()
-                self.wcdma_asl_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_asl_window') is True:
+                    tableWindow = self.wcdma_asl_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_asl_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_asl_window not in subwindowList:
+                        self.wcdma_asl_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_asl_window)
+
+                    if tableWidget:
+                        self.wcdma_asl_window.setWidget(tableWidget)
+                    self.wcdma_asl_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_asl_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_asl_window, windowName)
+                    self.wcdma_asl_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_asl_window)
+                    self.wcdma_asl_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Monitored Set List":
-                if hasattr(self, 'wcdma_msl_window') is False:
-                    self.wcdma_msl_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_msl_window)
-                    #self.mdi.addSubWindow(self.wcdma_msl_window)
-                self.wcdma_msl_window.show()
-                self.wcdma_msl_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_msl_window') is True:
+                    tableWindow = self.wcdma_msl_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_msl_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_msl_window not in subwindowList:
+                        self.wcdma_msl_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_msl_window)
+
+                    if tableWidget:
+                        self.wcdma_msl_window.setWidget(tableWidget)
+                    self.wcdma_msl_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_msl_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_msl_window, windowName)
+                    self.wcdma_msl_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_msl_window)
+                    self.wcdma_msl_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "BLER Summary":
-                if hasattr(self, 'wcdma_bler_window') is False:
-                    self.wcdma_bler_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_bler_window)
-                    #self.mdi.addSubWindow(self.wcdma_bler_window)
-                self.wcdma_bler_window.show()
-                self.wcdma_bler_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_bler_window') is True:
+                    tableWindow = self.wcdma_msl_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_bler_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_bler_window not in subwindowList:
+                        self.wcdma_bler_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_bler_window)
+
+                    if tableWidget:
+                        self.wcdma_bler_window.setWidget(tableWidget)
+                    self.wcdma_bler_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_bler_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_bler_window, windowName)
+                    self.wcdma_bler_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_bler_window)
+                    self.wcdma_bler_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "BLER / Transport Channel":
-                if hasattr(self, 'wcdma_blertc_window') is False:
-                    self.wcdma_blertc_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_blertc_window)
-                    #self.mdi.addSubWindow(self.wcdma_blertc_window)
-                self.wcdma_blertc_window.show()
-                self.wcdma_blertc_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_blertc_window') is True:
+                    tableWindow = self.wcdma_blertc_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_blertc_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_blertc_window not in subwindowList:
+                        self.wcdma_blertc_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_blertc_window)
+
+                    if tableWidget:
+                        self.wcdma_blertc_window.setWidget(tableWidget)
+                    self.wcdma_blertc_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_blertc_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_blertc_window, windowName)
+                    self.wcdma_blertc_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_blertc_window)
+                    self.wcdma_blertc_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Line Chart":
-                if hasattr(self, 'wcdma_lc_window') is False:
-                    self.wcdma_lc_window = Ui_WCDMA_LCwidget(self, windowName)
-                openedWindows.append(self.wcdma_lc_window)
-                    #self.mdi.addSubWindow(self.wcdma_lc_window)
-                self.wcdma_lc_window.show()
-                self.wcdma_lc_window.activateWindow()
+                linechartWidget = None
+                if hasattr(self, 'wcdma_lc_window') is True:
+                    linechartWindow = self.wcdma_lc_window.widget()
+                    if not linechartWindow:
+                        linechartWidget = Ui_WCDMA_LCwidget(self, windowName, azenqosDatabase)
+                        openedWindows.append(linechartWidget)
+
+                    if self.wcdma_lc_window not in subwindowList:
+                        self.wcdma_lc_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_lc_window)
+
+                    if linechartWidget:
+                        self.wcdma_lc_window.setWidget(linechartWidget)
+                    self.wcdma_lc_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_lc_window = QMdiSubWindow(self.mdi)
+                    linechartWidget = Ui_WCDMA_LCwidget(self, windowName, azenqosDatabase)
+                    self.wcdma_lc_window.setWidget(linechartWidget)
+                    self.mdi.addSubWindow(self.wcdma_lc_window)
+                    self.wcdma_lc_window.show()
+                    openedWindows.append(linechartWidget)
+
             elif child == "Bearers":
-                if hasattr(self, 'wcdma_bearer_window') is False:
-                    self.wcdma_bearer_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_bearer_window)
-                    #self.mdi.addSubWindow(self.wcdma_bearer_window)
-                self.wcdma_bearer_window.show()
-                self.wcdma_bearer_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_bearer_window') is True:
+                    tableWindow = self.wcdma_bearer_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_bearer_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_bearer_window not in subwindowList:
+                        self.wcdma_bearer_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_bearer_window)
+
+                    if tableWidget:
+                        self.wcdma_bearer_window.setWidget(tableWidget)
+                    self.wcdma_bearer_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_bearer_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_bearer_window, windowName)
+                    self.wcdma_bearer_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_bearer_window)
+                    self.wcdma_bearer_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Pilot Poluting Cells":
-                if hasattr(self, 'wcdma_ppc_window') is False:
-                    self.wcdma_ppc_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_ppc_window)
-                    #self.mdi.addSubWindow(self.wcdma_ppc_window)
-                self.wcdma_ppc_window.show()
-                self.wcdma_ppc_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_ppc_window') is True:
+                    tableWindow = self.wcdma_ppc_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_ppc_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_ppc_window not in subwindowList:
+                        self.wcdma_ppc_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_ppc_window)
+
+                    if tableWidget:
+                        self.wcdma_ppc_window.setWidget(tableWidget)
+                    self.wcdma_ppc_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_ppc_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_ppc_window, windowName)
+                    self.wcdma_ppc_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_ppc_window)
+                    self.wcdma_ppc_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Active + Monitored Bar":
-                if hasattr(self, 'wcdma_ppc_window') is False:
-                    self.wcdma_amb_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_amb_window)
-                    #self.mdi.addSubWindow(self.wcdma_amb_window)
-                self.wcdma_amb_window.show()
-                self.wcdma_amb_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_amb_window') is True:
+                    tableWindow = self.wcdma_amb_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_amb_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_amb_window not in subwindowList:
+                        self.wcdma_amb_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_amb_window)
+
+                    if tableWidget:
+                        self.wcdma_amb_window.setWidget(tableWidget)
+                    self.wcdma_amb_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_amb_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_amb_window, windowName)
+                    self.wcdma_amb_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_amb_window)
+                    self.wcdma_amb_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "CM GSM Reports":
-                if hasattr(self, 'wcdma_report_window') is False:
-                    self.wcdma_report_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_report_window)
-                    #self.mdi.addSubWindow(self.wcdma_report_window)
-                self.wcdma_report_window.show()
-                self.wcdma_report_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_report_window') is True:
+                    tableWindow = self.wcdma_report_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_report_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_report_window not in subwindowList:
+                        self.wcdma_report_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_report_window)
+
+                    if tableWidget:
+                        self.wcdma_report_window.setWidget(tableWidget)
+                    self.wcdma_report_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_report_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_report_window, windowName)
+                    self.wcdma_report_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_report_window)
+                    self.wcdma_report_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "CM GSM Cells":
-                if hasattr(self, 'wcdma_cells_window') is False:
-                    self.wcdma_cells_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_cells_window)
-                    #self.mdi.addSubWindow(self.wcdma_cells_window)
-                self.wcdma_cells_window.show()
-                self.wcdma_cells_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_cells_window') is True:
+                    tableWindow = self.wcdma_cells_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_cells_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_cells_window not in subwindowList:
+                        self.wcdma_cells_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_cells_window)
+
+                    if tableWidget:
+                        self.wcdma_cells_window.setWidget(tableWidget)
+                    self.wcdma_cells_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_cells_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_cells_window, windowName)
+                    self.wcdma_cells_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_cells_window)
+                    self.wcdma_cells_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Pilot Analyzer":
-                if hasattr(self, 'wcdma_analyzer_window') is False:
-                    self.wcdma_analyzer_window = TableWindow(self, windowName)
-                openedWindows.append(self.wcdma_analyzer_window)
-                    #self.mdi.addSubWindow(self.wcdma_analyzer_window)
-                self.wcdma_analyzer_window.show()
-                self.wcdma_analyzer_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wcdma_analyzer_window') is True:
+                    tableWindow = self.wcdma_analyzer_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wcdma_analyzer_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wcdma_analyzer_window not in subwindowList:
+                        self.wcdma_analyzer_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_analyzer_window)
+
+                    if tableWidget:
+                        self.wcdma_analyzer_window.setWidget(tableWidget)
+                    self.wcdma_analyzer_window.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_analyzer_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wcdma_analyzer_window, windowName)
+                    self.wcdma_analyzer_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wcdma_analyzer_window)
+                    self.wcdma_analyzer_window.show()
+                    openedWindows.append(tableWidget)
+
         elif parent == "LTE":
             if child == "Radio Parameters":
-                if hasattr(self, 'lte_param_window') is False:
-                    self.lte_param_window = TableWindow(self, windowName)
-                openedWindows.append(self.lte_param_window)
-                    #self.mdi.addSubWindow(self.lte_param_window)
-                self.lte_param_window.show()
-                self.lte_param_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'lte_param_window') is True:
+                    tableWindow = self.lte_param_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.lte_param_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.lte_param_window not in subwindowList:
+                        self.lte_param_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.lte_param_window)
+
+                    if tableWidget:
+                        self.lte_param_window.setWidget(tableWidget)
+                    self.lte_param_window.show()
+                else:
+                    # create new subwindow
+                    self.lte_param_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.lte_param_window, windowName)
+                    self.lte_param_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.lte_param_window)
+                    self.lte_param_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Serving + Neighbors":
-                if hasattr(self, 'lte_sn_window') is False:
-                    self.lte_sn_window = TableWindow(self, windowName)
-                openedWindows.append(self.lte_sn_window)
-                    #self.mdi.addSubWindow(self.lte_sn_window)
-                self.lte_sn_window.show()
-                self.lte_sn_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'lte_sn_window') is True:
+                    tableWindow = self.lte_sn_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.lte_sn_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.lte_sn_window not in subwindowList:
+                        self.lte_sn_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.lte_sn_window)
+
+                    if tableWidget:
+                        self.lte_sn_window.setWidget(tableWidget)
+                    self.lte_sn_window.show()
+                else:
+                    # create new subwindow
+                    self.lte_sn_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.lte_sn_window, windowName)
+                    self.lte_sn_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.lte_sn_window)
+                    self.lte_sn_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "PUCCH/PDSCH Parameters":
-                if hasattr(self, 'lte_ppparam_window') is False:
-                    self.lte_ppparam_window = TableWindow(self, windowName)
-                openedWindows.append(self.lte_ppparam_window)
-                    #self.mdi.addSubWindow(self.lte_ppparam_window)
-                self.lte_ppparam_window.show()
-                self.lte_ppparam_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'lte_ppparam_window') is True:
+                    tableWindow = self.lte_ppparam_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.lte_ppparam_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.lte_ppparam_window not in subwindowList:
+                        self.lte_ppparam_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.lte_ppparam_window)
+
+                    if tableWidget:
+                        self.lte_ppparam_window.setWidget(tableWidget)
+                    self.lte_ppparam_window.show()
+                else:
+                    # create new subwindow
+                    self.lte_ppparam_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.lte_ppparam_window, windowName)
+                    self.lte_ppparam_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.lte_ppparam_window)
+                    self.lte_ppparam_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "LTE Line Chart":
-                if hasattr(self, 'lte_lc_window') is False:
-                    self.lte_lc_window = Ui_LTE_LCwidget(self, windowName)
-                openedWindows.append(self.lte_lc_window)
-                    #self.mdi.addSubWindow(self.lte_lc_window)
-                self.lte_lc_window.show()
-                self.lte_lc_window.activateWindow()
+                widget = None
+                if hasattr(self, 'lte_lc_window') is True:
+                    linechartWindow = self.lte_lc_window.widget()
+                    if not linechartWindow:
+                        widget = Ui_LTE_LCwidget(self.lte_lc_window, windowName, azenqosDatabase)
+                        openedWindows.append(widget)
+                    else:
+                        widget = linechartWindow
+                        widget.show()
+
+                    if self.lte_lc_window not in subwindowList:
+                        self.lte_lc_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.lte_lc_window)
+
+                    if widget:
+                        self.lte_lc_window.setWidget(widget)
+                    self.lte_lc_window.show()
+                else:
+                    # create new subwindow
+                    self.lte_lc_window = QMdiSubWindow(self.mdi)
+                    widget = Ui_LTE_LCwidget(self.lte_lc_window, windowName, azenqosDatabase)
+                    self.lte_lc_window.setWidget(widget)
+                    self.mdi.addSubWindow(self.lte_lc_window)
+                    self.lte_lc_window.show()
+                    openedWindows.append(widget)
+
             elif child == "LTE RLC":
-                if hasattr(self, 'lte_rlc_window') is False:
-                    self.lte_rlc_window = TableWindow(self, windowName)
-                openedWindows.append(self.lte_rlc_window)
-                    #self.mdi.addSubWindow(self.lte_rlc_window)
-                self.lte_rlc_window.show()
-                self.lte_rlc_window.activateWindow()
+                widget = None
+                if hasattr(self, 'lte_rlc_window') is True:
+                    tableWindow = self.lte_rlc_window.widget()
+                    if not tableWindow:
+                        widget = TableWindow(self.lte_rlc_window, windowName)
+                        openedWindows.append(widget)
+
+                    if self.lte_rlc_window not in subwindowList:
+                        self.lte_rlc_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.lte_rlc_window)
+
+                    if widget:
+                        self.lte_rlc_window.setWidget(widget)
+                    self.lte_rlc_window.show()
+                else:
+                    # create new subwindow
+                    self.lte_rlc_window = QMdiSubWindow(self.mdi)
+                    widget = TableWindow(self.lte_rlc_window, windowName)
+                    self.lte_rlc_window.setWidget(widget)
+                    self.mdi.addSubWindow(self.lte_rlc_window)
+                    self.lte_rlc_window.show()
+                    openedWindows.append(widget)
+
             elif child == "LTE VoLTE":
-                if hasattr(self, 'lte_volte_window') is False:
-                    self.lte_volte_window = TableWindow(self, windowName)
-                openedWindows.append(self.lte_volte_window)
-                    #self.mdi.addSubWindow(self.lte_volte_window)
-                self.lte_volte_window.show()
-                self.lte_volte_window.activateWindow()
+                widget = None
+                if hasattr(self, 'lte_volte_window') is True:
+                    widget = self.lte_volte_window.widget()
+                    if not widget:
+                        widget = TableWindow(self.lte_volte_window, windowName)
+                        openedWindows.append(widget)
+
+                    if self.lte_volte_window not in subwindowList:
+                        self.lte_volte_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.lte_volte_window)
+
+                    if widget:
+                        self.lte_volte_window.setWidget(widget)
+                    self.lte_volte_window.show()
+                else:
+                    # create new subwindow
+                    self.lte_volte_window = QMdiSubWindow(self.mdi)
+                    widget = TableWindow(self.lte_volte_window, windowName)
+                    self.lte_volte_window.setWidget(widget)
+                    self.mdi.addSubWindow(self.lte_volte_window)
+                    self.lte_volte_window.show()
+                    openedWindows.append(widget)
+
         elif parent == "CDMA/EVDO":
             if child == "Radio Parameters":
-                if hasattr(self, 'cdma_rp_window') is False:
-                    self.cdma_rp_window = TableWindow(self, windowName)
-                openedWindows.append(self.cdma_rp_window)
-                    #self.mdi.addSubWindow(self.cdma_rp_window)
-                self.cdma_rp_window.show()
-                self.cdma_rp_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'cdma_rp_window') is True:
+                    tableWindow = self.cdma_rp_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.cdma_rp_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.cdma_rp_window not in subwindowList:
+                        self.cdma_rp_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.cdma_rp_window)
+
+                    if tableWidget:
+                        self.cdma_rp_window.setWidget(tableWidget)
+                    self.cdma_rp_window.show()
+                else:
+                    # create new subwindow
+                    self.cdma_rp_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.cdma_rp_window, windowName)
+                    self.cdma_rp_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.cdma_rp_window)
+                    self.cdma_rp_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Serving + Neighbors":
-                if hasattr(self, 'cdma_sn_window') is False:
-                    self.cdma_sn_window = TableWindow(self, windowName)
-                openedWindows.append(self.cdma_sn_window)
-                    #self.mdi.addSubWindow(self.cdma_sn_window)
-                self.cdma_sn_window.show()
-                self.cdma_sn_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'cdma_sn_window') is True:
+                    tableWindow = self.cdma_sn_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.cdma_sn_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.cdma_sn_window not in subwindowList:
+                        self.cdma_sn_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.cdma_sn_window)
+
+                    if tableWidget:
+                        self.cdma_sn_window.setWidget(tableWidget)
+                    self.cdma_sn_window.show()
+                else:
+                    # create new subwindow
+                    self.cdma_sn_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.cdma_sn_window, windowName)
+                    self.cdma_sn_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.cdma_sn_window)
+                    self.cdma_sn_window.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "EVDO Parameters":
-                if hasattr(self, 'cdma_evdo_window') is False:
-                    self.cdma_evdo_window = TableWindow(self, windowName)
-                openedWindows.append(self.cdma_evdo_window)
-                    #self.mdi.addSubWindow(self.cdma_evdo_window)
-                self.cdma_evdo_window.show()
-                self.cdma_evdo_window.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'cdma_evdo_window') is True:
+                    tableWindow = self.cdma_evdo_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.cdma_evdo_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.cdma_evdo_window not in subwindowList:
+                        self.cdma_evdo_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.cdma_evdo_window)
+
+                    if tableWidget:
+                        self.cdma_evdo_window.setWidget(tableWidget)
+                    self.cdma_evdo_window.show()
+                else:
+                    # create new subwindow
+                    self.cdma_evdo_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.cdma_evdo_window, windowName)
+                    self.cdma_evdo_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.cdma_evdo_window)
+                    self.cdma_evdo_window.show()
+                    openedWindows.append(tableWidget)
+
         elif parent == "Data":
             if child == "WCDMA Data Line Chart":
-                if hasattr(self, 'wcdma_data_lc') is False:
-                    self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(self, windowName)
-                openedWindows.append(self.wcdma_data_lc)
-                #self.mdi.addSubWindow(self.wcdma_data_lc)
-                self.wcdma_data_lc.show()
-                self.wcdma_data_lc.activateWindow()
+                # if hasattr(self, 'wcdma_data_lc') is False:
+                #     self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
+                # openedWindows.append(self.wcdma_data_lc)
+                # #self.mdi.addSubWindow(self.wcdma_data_lc)
+                # self.wcdma_data_lc.show()
+                # self.wcdma_data_lc.activateWindow()
+                linechartWidget = None
+                if hasattr(self, 'wcdma_data_lc') is True:
+                    linechartWindow = self.wcdma_data_lc.widget()
+                    if not linechartWindow:
+                        linechartWidget = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
+                        openedWindows.append(linechartWidget)
+
+                    if self.wcdma_data_lc not in subwindowList:
+                        self.wcdma_data_lc = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wcdma_data_lc)
+
+                    if linechartWidget:
+                        self.wcdma_data_lc.setWidget(linechartWidget)
+                    self.wcdma_data_lc.show()
+                else:
+                    # create new subwindow
+                    self.wcdma_data_lc = QMdiSubWindow(self.mdi)
+                    linechartWidget = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
+                    self.wcdma_data_lc.setWidget(linechartWidget)
+                    self.mdi.addSubWindow(self.wcdma_data_lc)
+                    self.wcdma_data_lc.show()
+                    openedWindows.append(linechartWidget)
+
             elif child == "GPRS/EDGE Information":
-                if hasattr(self, 'wcdma_data_lc') is False:
-                    self.gprs_info = TableWindow(self, windowName)
-                openedWindows.append(self.gprs_info)
-                #self.mdi.addSubWindow(self.gprs_info)
-                self.gprs_info.show()
-                self.gprs_info.activateWindow()
-            elif child == "Web Browser":
-                if hasattr(self, 'web_browser') is False:
-                    self.gprs_info = TableWindow(self, windowName)
-                openedWindows.append(self.gprs_info)
-                #self.mdi.addSubWindow(self.gprs_info)
-                self.gprs_info.show()
-                self.gprs_info.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'gprs_info') is True:
+                    tableWindow = self.gprs_info.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.gprs_info, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.gprs_info not in subwindowList:
+                        self.gprs_info = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.gprs_info)
+
+                    if tableWidget:
+                        self.gprs_info.setWidget(tableWidget)
+                    self.gprs_info.show()
+                else:
+                    # create new subwindow
+                    self.gprs_info = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.gprs_info, windowName)
+                    self.gprs_info.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.gprs_info)
+                    self.gprs_info.show()
+                    openedWindows.append(tableWidget)
+
+            # elif child == "Web Browser":
+            #     if hasattr(self, 'web_browser') is False:
+            #         self.gprs_info = TableWindow(self, windowName)
+            #     openedWindows.append(self.gprs_info)
+            #     #self.mdi.addSubWindow(self.gprs_info)
+            #     self.gprs_info.show()
+            #     self.gprs_info.activateWindow()
+
+
+
             elif child == "HSDPA/HSPA + Statistics":
-                if hasattr(self, 'hsdpa_stat') is False:
-                    self.hsdpa_stat = TableWindow(self, windowName)
-                openedWindows.append(self.hsdpa_stat)
-                #self.mdi.addSubWindow(self.hsdpa_stat)
-                self.hsdpa_stat.show()
-                self.hsdpa_stat.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'hsdpa_stat') is True:
+                    tableWindow = self.hsdpa_stat.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.hsdpa_stat, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.hsdpa_stat not in subwindowList:
+                        self.hsdpa_stat = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.hsdpa_stat)
+
+                    if tableWidget:
+                        self.hsdpa_stat.setWidget(tableWidget)
+                    self.hsdpa_stat.show()
+                else:
+                    # create new subwindow
+                    self.hsdpa_stat = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.hsdpa_stat, windowName)
+                    self.hsdpa_stat.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.hsdpa_stat)
+                    self.hsdpa_stat.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "HSUPA Statistics":
-                if hasattr(self, 'hsupa_stat') is False:
-                    self.hsupa_stat = TableWindow(self, windowName)
-                openedWindows.append(self.hsupa_stat)
-                #self.mdi.addSubWindow(self.hsupa_stat)
-                self.hsupa_stat.show()
-                self.hsupa_stat.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'hsupa_stat') is True:
+                    tableWindow = self.hsupa_stat.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.hsupa_stat, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.hsupa_stat not in subwindowList:
+                        self.hsupa_stat = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.hsupa_stat)
+
+                    if tableWidget:
+                        self.hsupa_stat.setWidget(tableWidget)
+                    self.hsupa_stat.show()
+                else:
+                    # create new subwindow
+                    self.hsupa_stat = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.hsupa_stat, windowName)
+                    self.hsupa_stat.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.hsupa_stat)
+                    self.hsupa_stat.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "LTE Data Statistics":
-                if hasattr(self, 'lte_data_stat') is False:
-                    self.lte_data_stat = TableWindow(self, windowName)
-                openedWindows.append(self.lte_data_stat)
-                #self.mdi.addSubWindow(self.lte_data_stat)
-                self.lte_data_stat.show()
-                self.lte_data_stat.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'lte_data_stat') is True:
+                    tableWindow = self.lte_data_stat.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.lte_data_stat, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.lte_data_stat not in subwindowList:
+                        self.lte_data_stat = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.lte_data_stat)
+
+                    if tableWidget:
+                        self.lte_data_stat.setWidget(tableWidget)
+                    self.lte_data_stat.show()
+                else:
+                    # create new subwindow
+                    self.lte_data_stat = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.lte_data_stat, windowName)
+                    self.lte_data_stat.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.lte_data_stat)
+                    self.lte_data_stat.show()
+                    openedWindows.append(tableWidget)
+
+
             elif child == "LTE Data Line Chart":
-                if hasattr(self, 'lte_data_lc') is False:
-                    self.lte_data_lc = Ui_LTE_Data_LCwidget(self, windowName)
-                openedWindows.append(self.lte_data_lc)
-                #self.mdi.addSubWindow(self.lte_data_lc)
-                self.lte_data_lc.show()
-                self.lte_data_lc.activateWindow()
+                # if hasattr(self, 'lte_data_lc') is False:
+                #     self.lte_data_lc = Ui_LTE_Data_LCwidget(self, windowName, azenqosDatabase)
+                # openedWindows.append(self.lte_data_lc)
+                # #self.mdi.addSubWindow(self.lte_data_lc)
+                # self.lte_data_lc.show()
+                # self.lte_data_lc.activateWindow()
+                linechartWidget = None
+                if hasattr(self, 'lte_data_lc') is True:
+                    linechartWindow = self.lte_data_lc.widget()
+                    if not linechartWindow:
+                        linechartWidget = Ui_LTE_Data_LCwidget(self, windowName, azenqosDatabase)
+                        openedWindows.append(linechartWidget)
+
+                    if self.lte_data_lc not in subwindowList:
+                        self.lte_data_lc = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.lte_data_lc)
+
+                    if linechartWidget:
+                        self.lte_data_lc.setWidget(linechartWidget)
+                    self.lte_data_lc.show()
+                else:
+                    # create new subwindow
+                    self.lte_data_lc = QMdiSubWindow(self.mdi)
+                    linechartWidget = Ui_LTE_Data_LCwidget(self, windowName, azenqosDatabase)
+                    self.lte_data_lc.setWidget(linechartWidget)
+                    self.mdi.addSubWindow(self.lte_data_lc)
+                    self.lte_data_lc.show()
+                    openedWindows.append(linechartWidget)
+
             elif child == "Wifi Connected AP":
-                if hasattr(self, 'wifi_connected_ap') is False:
-                    self.wifi_connected_ap = TableWindow(self, windowName)
-                openedWindows.append(self.wifi_connected_ap)
-                #self.mdi.addSubWindow(self.wifi_connected_ap)
-                self.wifi_connected_ap.show()
-                self.wifi_connected_ap.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wifi_connected_ap') is True:
+                    tableWindow = self.wifi_connected_ap.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wifi_connected_ap, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wifi_connected_ap not in subwindowList:
+                        self.wifi_connected_ap = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wifi_connected_ap)
+
+                    if tableWidget:
+                        self.wifi_connected_ap.setWidget(tableWidget)
+                    self.wifi_connected_ap.show()
+                else:
+                    # create new subwindow
+                    self.wifi_connected_ap = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wifi_connected_ap, windowName)
+                    self.wifi_connected_ap.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wifi_connected_ap)
+                    self.wifi_connected_ap.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Wifi Scanned APs":
-                if hasattr(self, 'wifi_scanned_ap') is False:
-                    self.wifi_scanned_ap = TableWindow(self, windowName)
-                openedWindows.append(self.wifi_scanned_ap)
-                #self.mdi.addSubWindow(self.wifi_scanned_ap)
-                self.wifi_scanned_ap.show()
-                self.wifi_scanned_ap.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wifi_scanned_ap') is True:
+                    tableWindow = self.wifi_scanned_ap.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wifi_scanned_ap, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wifi_scanned_ap not in subwindowList:
+                        self.wifi_scanned_ap = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wifi_scanned_ap)
+
+                    if tableWidget:
+                        self.wifi_scanned_ap.setWidget(tableWidget)
+                    self.wifi_scanned_ap.show()
+                else:
+                    # create new subwindow
+                    self.wifi_scanned_ap = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wifi_scanned_ap, windowName)
+                    self.wifi_scanned_ap.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wifi_scanned_ap)
+                    self.wifi_scanned_ap.show()
+                    openedWindows.append(tableWidget)
+
             elif child == "Wifi Graph":
-                if hasattr(self, 'wifi_graph') is False:
-                    self.wifi_graph = TableWindow(self, windowName)
-                openedWindows.append(self.wifi_graph)
-                #self.mdi.addSubWindow(self.wifi_graph)
-                self.wifi_graph.show()
-                self.wifi_graph.activateWindow()
+                tableWidget = None
+                if hasattr(self, 'wifi_graph') is True:
+                    tableWindow = self.wifi_graph.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.wifi_graph, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.wifi_graph not in subwindowList:
+                        self.wifi_graph = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.wifi_graph)
+
+                    if tableWidget:
+                        self.wifi_graph.setWidget(tableWidget)
+                    self.wifi_graph.show()
+                else:
+                    # create new subwindow
+                    self.wifi_graph = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.wifi_graph, windowName)
+                    self.wifi_graph.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.wifi_graph)
+                    self.wifi_graph.show()
+                    openedWindows.append(tableWidget)
+
         elif parent == "Signaling":
             if child == "Events":
-                if hasattr(self, 'events_window') is False:
-                    self.events_window = TableWindow(self, windowName)
-                #self.mdi.addSubWindow(self.events_window)
-                openedWindows.append(self.events_window)
-                self.events_window.show()
-                self.events_window.activateWindow()
+                events_widget = None
+                if hasattr(self, 'events_window') is True:
+                    tableWindow = self.events_window.widget()
+                    if not tableWindow:
+                        events_widget = TableWindow(self.events_window, windowName)
+                        openedWindows.append(events_widget)
+
+                    if self.events_window not in subwindowList:
+                        self.events_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.events_window)
+
+                    if events_widget:
+                        self.events_window.setWidget(events_widget)
+                    self.events_window.show()
+
+                else:
+                    # create new subwindow
+                    self.events_window = QMdiSubWindow(self.mdi)
+                    events_widget = TableWindow(self.events_window, windowName)
+                    self.events_window.setWidget(events_widget)
+                    self.mdi.addSubWindow(self.events_window)
+                    self.events_window.show()
+                    openedWindows.append(events_widget)
+
+
             elif child == "Layer 1 Messages":
-                if hasattr(self, 'layer_one_messages') is False:
-                    self.layer_one_messages = TableWindow(self, windowName)
-                #self.mdi.addSubWindow(self.layer_one_messages)
-                openedWindows.append(self.layer_one_messages)
-                self.layer_one_messages.show()
-                self.layer_one_messages.activateWindow()
+                layer_one_widget = None
+                if hasattr(self, 'layer_one_messages') is True:
+                    tableWindow = self.layer_one_messages.widget()
+                    if not tableWindow:
+                        layer_one_widget = TableWindow(self.layer_one_messages, windowName)
+                        openedWindows.append(layer_one_widget)
+
+                    if self.layer_one_messages not in subwindowList:
+                        self.layer_one_messages = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.layer_one_messages)
+
+                    if layer_one_widget:
+                        self.layer_one_messages.setWidget(layer_one_widget)
+                    self.layer_one_messages.show()
+
+                else:
+                    # create new subwindow
+                    self.layer_one_messages = QMdiSubWindow(self.mdi)
+                    layer_one_widget = TableWindow(self.layer_one_messages, windowName)
+                    self.layer_one_messages.setWidget(layer_one_widget)
+                    self.mdi.addSubWindow(self.layer_one_messages)
+                    self.layer_one_messages.show()
+                    openedWindows.append(layer_one_widget)
+
+                # if hasattr(self, 'layer_one_messages') is False:
+                #     # self.layer_one_messages = TableWindow(self, windowName)
+                #     self.layer_one_messages = TableWindow(self, windowName)
+                # self.mdi.addSubWindow(self.layer_one_messages)
+                # openedWindows.append(self.layer_one_messages)
+                # self.layer_one_messages.show()
+                # self.layer_one_messages.activateWindow()
             elif child == "Layer 3 Messages":
-                if hasattr(self, 'layer_three_messages') is False:
-                    self.layer_three_messages = TableWindow(self, windowName)
-                openedWindows.append(self.layer_three_messages)
-                #self.mdi.addSubWindow(self.layer_three_messages)
-                self.layer_three_messages.show()
-                self.layer_three_messages.activateWindow()
+                layer_three_widget = None
+                if hasattr(self, 'layer_three_messages') is True:
+                    tableWindow = self.layer_three_messages.widget()
+                    if not tableWindow:
+                        layer_three_widget = TableWindow(self.layer_three_messages, windowName)
+                        openedWindows.append(layer_three_widget)
+
+                    if self.layer_three_messages not in subwindowList:
+                        self.layer_three_messages = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.layer_three_messages)
+
+                    if layer_three_widget:
+                        self.layer_three_messages.setWidget(layer_three_widget)
+                    self.layer_three_messages.show()
+
+                else:
+                    # create new subwindow
+                    self.layer_three_messages = QMdiSubWindow(self.mdi)
+                    layer_three_widget = TableWindow(self.layer_three_messages, windowName)
+                    self.layer_three_messages.setWidget(layer_three_widget)
+                    self.mdi.addSubWindow(self.layer_three_messages)
+                    self.layer_three_messages.show()
+                    openedWindows.append(layer_three_widget)
+
+                # if hasattr(self, 'layer_three_messages') is False:
+                #     # self.layer_three_messages = TableWindow(self, windowName)
+                #     self.layer_three_messages = TableWindow(self.mdi, windowName)
+                # openedWindows.append(self.layer_three_messages)
+                # self.mdi.addSubWindow(self.layer_three_messages)
+                # self.layer_three_messages.show()
+                # self.layer_three_messages.activateWindow()
             elif child == "Benchmark":
-                if hasattr(self, 'benchmark') is False:
-                    self.benchmark = TableWindow(self, windowName)
-                openedWindows.append(self.benchmark)
-                #self.mdi.addSubWindow(self.benchmark)
-                self.benchmark.show()
-                self.benchmark.activateWindow()
+                benchmark_widget = None
+                if hasattr(self, 'benchmark') is True:
+                    tableWindow = self.benchmark.widget()
+                    if not tableWindow:
+                        benchmark_widget = TableWindow(self.benchmark, windowName)
+                        openedWindows.append(benchmark_widget)
+
+                    if self.benchmark not in subwindowList:
+                        self.benchmark = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.benchmark)
+
+                    if benchmark_widget:
+                        self.benchmark.setWidget(benchmark_widget)
+
+                    self.benchmark.show()
+
+                else:
+                    # create new subwindow
+                    self.benchmark = QMdiSubWindow(self.mdi)
+                    benchmark_widget = TableWindow(self.benchmark, windowName)
+                    self.benchmark.setWidget(benchmark_widget)
+                    self.mdi.addSubWindow(self.benchmark)
+                    self.benchmark.show()
+                    openedWindows.append(benchmark_widget)
+
+                # if hasattr(self, 'benchmark') is False:
+                #     # self.benchmark = TableWindow(self, windowName)
+                #     self.benchmark = TableWindow(self.mdi, windowName)
+                # openedWindows.append(self.benchmark)
+                # self.mdi.addSubWindow(self.benchmark)
+                # self.benchmark.show()
+                # self.benchmark.activateWindow()
             elif child == "MM Reg States":
-                if hasattr(self, 'mm_reg_states') is False:
-                    self.mm_reg_states = TableWindow(self, windowName)
-                openedWindows.append(self.mm_reg_states)
-                #self.mdi.addSubWindow(self.mm_reg_states)
-                self.mm_reg_states.show()
-                self.mm_reg_states.activateWindow()
+                mm_widget = None
+                if hasattr(self, 'mm_reg_states') is True:
+                    tableWindow = self.mm_reg_states.widget()
+                    if not tableWindow:
+                        mm_widget = TableWindow(self.mm_reg_states, windowName)
+                        openedWindows.append(mm_widget)
+
+                    if self.mm_reg_states not in subwindowList:
+                        self.mm_reg_states = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.mm_reg_states)
+
+                    if mm_widget:
+                        self.mm_reg_states.setWidget(mm_widget)
+
+                    self.mm_reg_states.show()
+
+                else:
+                    # create new subwindow
+                    self.mm_reg_states = QMdiSubWindow(self.mdi)
+                    mm_widget = TableWindow(self.mm_reg_states, windowName)
+                    self.mm_reg_states.setWidget(mm_widget)
+                    self.mdi.addSubWindow(self.mm_reg_states)
+                    self.mm_reg_states.show()
+                    openedWindows.append(mm_widget)
+
+                # if hasattr(self, 'mm_reg_states') is False:
+                #     # self.mm_reg_states = TableWindow(self, windowName)
+                #     self.mm_reg_states = TableWindow(self.mdi, windowName)
+                # openedWindows.append(self.mm_reg_states)
+                # self.mdi.addSubWindow(self.mm_reg_states)
+                # self.mm_reg_states.show()
+                # self.mm_reg_states.activateWindow()
             elif child == "Serving System Info":
-                if hasattr(self, 'serving_system_info') is False:
-                    self.serving_system_info = TableWindow(self, windowName)
-                openedWindows.append(self.serving_system_info)
-                #self.mdi.addSubWindow(self.serving_system_info)
-                self.serving_system_info.show()
-                self.serving_system_info.activateWindow()
+                serving_system_widget = None
+                if hasattr(self, 'serving_system_info') is True:
+                    tableWindow = self.serving_system_info.widget()
+                    if not tableWindow:
+                        serving_system_widget = TableWindow(self.serving_system_info, windowName)
+                        openedWindows.append(serving_system_widget)
+
+                    if self.serving_system_info not in subwindowList:
+                        self.serving_system_info = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.serving_system_info)
+
+                    if serving_system_widget:
+                        self.serving_system_info.setWidget(serving_system_widget)
+
+                    self.serving_system_info.show()
+
+                else:
+                    # create new subwindow
+                    self.serving_system_info = QMdiSubWindow(self.mdi)
+                    serving_system_widget = TableWindow(self.serving_system_info, windowName)
+                    self.serving_system_info.setWidget(serving_system_widget)
+                    self.mdi.addSubWindow(self.serving_system_info)
+                    self.serving_system_info.show()
+                    openedWindows.append(serving_system_widget)
+
+                # if hasattr(self, 'serving_system_info') is False:
+                #     # self.serving_system_info = TableWindow(self, windowName)
+                #     self.serving_system_info = TableWindow(self.mdi, windowName)
+                # openedWindows.append(self.serving_system_info)
+                # self.mdi.addSubWindow(self.serving_system_info)
+                # self.serving_system_info.show()
+                # self.serving_system_info.activateWindow()
             elif child == "Debug Android/Event":
-                if hasattr(self, 'debug_event') is False:
-                    self.debug_event = TableWindow(self, windowName)
-                openedWindows.append(self.debug_event)
-                #self.mdi.addSubWindow(self.debug_event)
-                self.debug_event.show()
-                self.debug_event.activateWindow()
+                debug_event_widget = None
+                if hasattr(self, 'debug_event') is True:
+                    tableWindow = self.debug_event.widget()
+                    if not tableWindow:
+                        debug_event_widget = TableWindow(self.debug_event, windowName)
+                        openedWindows.append(debug_event_widget)
+
+                    if self.debug_event not in subwindowList:
+                        self.debug_event = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.debug_event)
+                    if debug_event_widget:
+                        self.debug_event.setWidget(debug_event_widget)
+
+                    self.debug_event.show()
+
+                else:
+                    # create new subwindow
+                    self.debug_event = QMdiSubWindow(self.mdi)
+                    debug_event_widget = TableWindow(self.debug_event, windowName)
+                    self.debug_event.setWidget(debug_event_widget)
+                    self.mdi.addSubWindow(self.debug_event)
+                    self.debug_event.show()
+                    openedWindows.append(debug_event_widget)
+
+                # if hasattr(self, 'debug_event') is False:
+                #     # self.debug_event = TableWindow(self, windowName)
+                #     self.debug_event = TableWindow(self.mdi, windowName)
+                # openedWindows.append(self.debug_event)
+                # self.mdi.addSubWindow(self.debug_event)
+                # self.debug_event.show()
+                # self.debug_event.activateWindow()
         # if parent == ''
         # elif parent == "Positioning":
         #     if child == "GPS":
@@ -966,13 +1617,13 @@ class AzenqosDialog(QDialog):
         # elif parent == "NB-IoT":
         #     if child == "NB-IoT Radio Parameters Window":
         #         print("1")
-        #self.mdi.show()
+        if self.mdi:
+            self.mdi.show()
 
     def selectConfiguration(self):
         getSelected = self.configurationTreeWidget.selectedItems()
         if getSelected:
             baseNode = getSelected[0]
-            print(baseNode)
             if baseNode.text(0) is not None:
                 getChildNode = baseNode.text(0)
                 if getChildNode == 'Cell Information':
@@ -985,14 +1636,13 @@ class AzenqosDialog(QDialog):
         self.timeSliderThread.exit()
 
     def reject(self):
-        QgsMessageLog.logMessage('Close App')
-        clearAllSelectedFeatures()
-        QgsProject.removeAllMapLayers(QgsProject.instance())
+        # QgsMessageLog.logMessage('Close App')
+        # clearAllSelectedFeatures()
+        # QgsProject.removeAllMapLayers(QgsProject.instance())
+        self.mdi.close()
         if len(openedWindows) > 0:
             for window in openedWindows:
-                window.hide()
-                window.reject()
-                window.close
+                window.close()
         super().reject()
         del self.databaseUi
         del self
@@ -1041,7 +1691,7 @@ class TimeSlider(QSlider):
         return (self.value() - self._min_value) / self._value_range
 
 
-class TableWindow(QDialog):
+class TableWindow(QWidget):
     def __init__(self, parent, windowName):
         super().__init__(parent)
         self.title = windowName
@@ -1060,15 +1710,16 @@ class TableWindow(QDialog):
     def setupUi(self):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.tableView = QTableView(self)
         self.tableView.horizontalHeader().setSortIndicator(
             -1, Qt.AscendingOrder)
         self.specifyTablesHeader()
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
+        # self.setFixedWidth(layout.sizeHint())
         self.setLayout(layout)
-        self.raise_()
-        self.activateWindow()
+        self.show()
 
     def setTableModel(self, dataList):
         self.tableModel = TableModel(dataList, self.tableHeader, self)
@@ -1276,44 +1927,51 @@ class TableWindow(QDialog):
                     tableList.append(self.tablename)
 
     def hilightRow(self, sampledate):
-        QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
-        start_time = time.time()
+        # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
+        # start_time = time.time()
         self.dateString = str(sampledate)
         # self.findCurrentRow()
-        worker = Worker(self.hilightRowProcesses())
-        threadpool.start(worker)
-        elapse_time = time.time() - start_time
-        del worker
-        QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
-        QgsMessageLog.logMessage('[-- End hilight row --]', tag="Processing")
-
-    def hilightRowProcesses(self):
         if not self.dataList or self.title not in ['Signaling_Events', 'Signaling_Layer 1 Messages', 'Signaling_Layer 3 Messages']:
-            self.specifyTablesHeader()
-        self.findCurrentRow()
+            worker = Worker(self.specifyTablesHeader())
+            threadpool.start(worker)
+            # self.specifyTablesHeader()
+        else:
+            self.findCurrentRow()
+            # self.findCurrentRow()
+        # elapse_time = time.time() - start_time
+        # del worker
+        # QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
+        # QgsMessageLog.logMessage('[-- End hilight row --]', tag="Processing")
+
+    # def hilightRowProcesses(self):
+
 
     def findCurrentRow(self):
-        for row in range(self.currentRow , self.tableViewCount):
+        startRange = 0
+
+        if self.currentRow and isSliderPlay == True:
+            startRange = self.currentRow
+
+        for row in range(startRange , self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
             if value and index:
                 if value >= self.dateString:
+                    if isSliderPlay == True:
+                        self.tableView.selectRow(self.currentRow)
+                    else:
+                        self.tableView.selectRow(row - 1)
                     self.currentRow = row - 1
-                    self.tableView.selectRow(self.currentRow)
                     break
 
-    def sleepThread(self):
-        self.objThread.sleep(0.1)
-
-    def reject(self):
+    def closeEvent(self, QCloseEvent):
         global openedWindows
         global tableList
         if self in openedWindows:
             openedWindows.remove(self)
         if self.tablename and self.tablename in tableList:
             tableList.remove(self.tablename)
-        self.hide()
-        super().reject()
+        self.close()
         del self
 
 
@@ -1475,1484 +2133,6 @@ class DataQuery:
 
 
 # LTE Line Chart UI
-class Ui_LTE_LCwidget(QWidget):
-    def __init__(self, parent, windowName):
-        super().__init__(parent)
-        self.title = windowName
-        self.setupUi(self)
-
-    def setupUi(self, LTE_LCwidget):
-        LTE_LCwidget.setObjectName("LTE_LCwidget")
-        LTE_LCwidget.resize(841, 586)
-
-        # Graph Area
-        self.lte_GArea = QtWidgets.QScrollArea(LTE_LCwidget)
-        self.lte_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
-        self.lte_GArea.setWidgetResizable(True)
-        self.lte_GArea.setObjectName("lte_GArea")
-
-        # Scroll Area
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.lte_GArea.setWidget(self.scrollAreaWidgetContents)
-
-        # DataTable
-        self.lte_tableWidget = QtWidgets.QTableWidget(LTE_LCwidget)
-        self.lte_tableWidget.setGeometry(QtCore.QRect(20, 395, 451, 171))
-        self.lte_tableWidget.setObjectName("lte_tableWidget")
-        self.lte_tableWidget.setColumnCount(4)
-        self.lte_tableWidget.setRowCount(5)
-        self.lte_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_tableWidget.setVerticalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_tableWidget.setVerticalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_tableWidget.setVerticalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_tableWidget.setVerticalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_tableWidget.setVerticalHeaderItem(4, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.lte_tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.lte_tableWidget.setHorizontalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.lte_tableWidget.setHorizontalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.lte_tableWidget.setHorizontalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(0, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(0, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(0, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.lte_tableWidget.setItem(0, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(1, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(1, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(1, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.lte_tableWidget.setItem(1, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(2, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(2, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(2, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.lte_tableWidget.setItem(2, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(3, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(3, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(3, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.lte_tableWidget.setItem(3, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(4, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(4, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_tableWidget.setItem(4, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        # brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        # brush.setStyle(QtCore.Qt.SolidPattern)
-        # item.setForeground(brush)
-        self.lte_tableWidget.setItem(4, 3, item)
-        self.lte_tableWidget.horizontalHeader().setVisible(True)
-        self.lte_tableWidget.horizontalHeader().setHighlightSections(True)
-        self.lte_tableWidget.verticalHeader().setVisible(False)
-
-        # DateLabel
-        self.datelabel = QtWidgets.QLabel(LTE_LCwidget)
-        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.datelabel.setFont(font)
-        self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QtWidgets.QLineEdit(LTE_LCwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lineEdit.setFont(font)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
-
-        # Graph's Widget
-        self.lte_widget = LineChart(self.scrollAreaWidgetContents, self.title,
-                                     self.lte_tableWidget, self.lineEdit)
-        self.lte_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
-        self.lte_widget.setObjectName("lte_widget")
-
-        self.retranslateUi(LTE_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(LTE_LCwidget)
-
-    def retranslateUi(self, LTE_LCwidget):
-        _translate = QtCore.QCoreApplication.translate
-        LTE_LCwidget.setWindowTitle(
-            _translate("LTE_LCwidget", "LTE Line Chart [MS1]"))
-        item = self.lte_tableWidget.verticalHeaderItem(0)
-        item.setText(_translate("LTE_LCwidget", "1"))
-        item = self.lte_tableWidget.verticalHeaderItem(1)
-        item.setText(_translate("LTE_LCwidget", "2"))
-        item = self.lte_tableWidget.verticalHeaderItem(2)
-        item.setText(_translate("LTE_LCwidget", "3"))
-        item = self.lte_tableWidget.verticalHeaderItxem(3)
-        item.setText(_translate("LTE_LCwidget", "4"))
-        item = self.lte_tableWidget.verticalHeaderItem(4)
-        item.setText(_translate("LTE_LCwidget", "5"))
-        item = self.lte_tableWidget.horizontalHeaderItem(0)
-        item.setText(_translate("LTE_LCwidget", "Element"))
-        item = self.lte_tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("LTE_LCwidget", "Value"))
-        item = self.lte_tableWidget.horizontalHeaderItem(2)
-        item.setText(_translate("LTE_LCwidget", "MS"))
-        item = self.lte_tableWidget.horizontalHeaderItem(3)
-        item.setText(_translate("LTE_LCwidget", "Color"))
-        __sortingEnabled = self.lte_tableWidget.isSortingEnabled()
-        self.lte_tableWidget.setSortingEnabled(False)
-        item = self.lte_tableWidget.item(0, 0)
-        item.setText(_translate("LTE_LCwidget", "SINR Rx[0][1]"))
-        item = self.lte_tableWidget.item(0, 2)
-        item.setText(_translate("LTE_LCwidget", "MS1"))
-        item = self.lte_tableWidget.item(1, 0)
-        item.setText(_translate("LTE_LCwidget", "SINR Rx[1][1]"))
-        item = self.lte_tableWidget.item(1, 2)
-        item.setText(_translate("LTE_LCwidget", "MS1"))
-        item = self.lte_tableWidget.item(2, 0)
-        item.setText(_translate("LTE_LCwidget", "Inst RSRP[1]"))
-        item = self.lte_tableWidget.item(2, 2)
-        item.setText(_translate("LTE_LCwidget", "MS1"))
-        item = self.lte_tableWidget.item(3, 0)
-        item.setText(_translate("LTE_LCwidget", "Inst RSRQ[1]"))
-        item = self.lte_tableWidget.item(3, 2)
-        item.setText(_translate("LTE_LCwidget", "MS1"))
-        item = self.lte_tableWidget.item(4, 0)
-        item.setText(_translate("LTE_LCwidget", "Inst RSSI[1]"))
-        item = self.lte_tableWidget.item(4, 2)
-        item.setText(_translate("LTE_LCwidget", "MS1"))
-        self.lte_tableWidget.setSortingEnabled(__sortingEnabled)
-        self.datelabel.setText(_translate("LTE_LCwidget", "Date :"))
-
-    def moveChart(self, sampledate):
-        self.lte_widget.moveLineChart(sampledate)
-
-
-# WCDMA Line Chart UI
-class Ui_WCDMA_LCwidget(QWidget):
-    def __init__(self, parent, windowName):
-        super().__init__(parent)
-        self.title = windowName
-        self.setupUi(self)
-
-    def setupUi(self, WCDMA_LCwidget):
-        WCDMA_LCwidget.setObjectName("WCDMA_LCwidget")
-        WCDMA_LCwidget.resize(841, 586)
-
-        # Graph Area
-        self.wcdma_GArea = QtWidgets.QScrollArea(WCDMA_LCwidget)
-        self.wcdma_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
-        self.wcdma_GArea.setWidgetResizable(True)
-        self.wcdma_GArea.setObjectName("wcdma_GArea")
-
-        # Scroll Area
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.wcdma_GArea.setWidget(self.scrollAreaWidgetContents)
-
-        # DataTable
-        self.wcdma_tableWidget = QtWidgets.QTableWidget(WCDMA_LCwidget)
-        self.wcdma_tableWidget.setGeometry(QtCore.QRect(20, 395, 451, 161))
-        self.wcdma_tableWidget.setObjectName("wcdma_tableWidget")
-        self.wcdma_tableWidget.setColumnCount(4)
-        self.wcdma_tableWidget.setRowCount(4)
-        self.wcdma_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.wcdma_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_tableWidget.setVerticalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_tableWidget.setVerticalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_tableWidget.setVerticalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_tableWidget.setVerticalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.wcdma_tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.wcdma_tableWidget.setHorizontalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.wcdma_tableWidget.setHorizontalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.wcdma_tableWidget.setHorizontalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(0, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(0, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(0, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.wcdma_tableWidget.setItem(0, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(1, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(1, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(1, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.wcdma_tableWidget.setItem(1, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(2, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(2, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(2, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.wcdma_tableWidget.setItem(2, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(3, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(3, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_tableWidget.setItem(3, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.wcdma_tableWidget.setItem(3, 3, item)
-        self.wcdma_tableWidget.horizontalHeader().setVisible(True)
-        self.wcdma_tableWidget.horizontalHeader().setHighlightSections(True)
-        self.wcdma_tableWidget.verticalHeader().setVisible(False)
-
-        # DateLabel
-        self.datelabel = QtWidgets.QLabel(WCDMA_LCwidget)
-        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.datelabel.setFont(font)
-        self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QtWidgets.QLineEdit(WCDMA_LCwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lineEdit.setFont(font)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
-
-        # Graph's Widget
-        self.wcdma_widget = LineChart(self.scrollAreaWidgetContents,
-                                       self.title, self.wcdma_tableWidget,
-                                       self.lineEdit)
-        self.wcdma_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
-        self.wcdma_widget.setObjectName("wcdma_widget")
-
-        self.retranslateUi(WCDMA_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(WCDMA_LCwidget)
-
-    def retranslateUi(self, WCDMA_LCwidget):
-        _translate = QtCore.QCoreApplication.translate
-        WCDMA_LCwidget.setWindowTitle(
-            _translate("WCDMA_LCwidget", "WCDMA Line Chart [MS1]"))
-        item = self.wcdma_tableWidget.verticalHeaderItem(0)
-        item.setText(_translate("WCDMA_LCwidget", "1"))
-        item = self.wcdma_tableWidget.verticalHeaderItem(1)
-        item.setText(_translate("WCDMA_LCwidget", "2"))
-        item = self.wcdma_tableWidget.verticalHeaderItem(2)
-        item.setText(_translate("WCDMA_LCwidget", "3"))
-        item = self.wcdma_tableWidget.verticalHeaderItem(3)
-        item.setText(_translate("WCDMA_LCwidget", "4"))
-        item = self.wcdma_tableWidget.horizontalHeaderItem(0)
-        item.setText(_translate("WCDMA_LCwidget", "Element"))
-        item = self.wcdma_tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("WCDMA_LCwidget", "Value"))
-        item = self.wcdma_tableWidget.horizontalHeaderItem(2)
-        item.setText(_translate("WCDMA_LCwidget", "MS"))
-        item = self.wcdma_tableWidget.horizontalHeaderItem(3)
-        item.setText(_translate("WCDMA_LCwidget", "Color"))
-        __sortingEnabled = self.wcdma_tableWidget.isSortingEnabled()
-        self.wcdma_tableWidget.setSortingEnabled(False)
-        item = self.wcdma_tableWidget.item(0, 0)
-        item.setText(_translate("WCDMA_LCwidget", "ASET Ec/Io Avg."))
-        item = self.wcdma_tableWidget.item(0, 2)
-        item.setText(_translate("WCDMA_LCwidget", "MS1"))
-        item = self.wcdma_tableWidget.item(1, 0)
-        item.setText(_translate("WCDMA_LCwidget", "WCDMA RSSI"))
-        item = self.wcdma_tableWidget.item(1, 2)
-        item.setText(_translate("WCDMA_LCwidget", "MS1"))
-        item = self.wcdma_tableWidget.item(2, 0)
-        item.setText(_translate("WCDMA_LCwidget", "BLER Average Percent"))
-        item = self.wcdma_tableWidget.item(2, 2)
-        item.setText(_translate("WCDMA_LCwidget", "MS1"))
-        item = self.wcdma_tableWidget.item(3, 0)
-        item.setText(_translate("WCDMA_LCwidget", "ASET RSCP Avg."))
-        item = self.wcdma_tableWidget.item(3, 2)
-        item.setText(_translate("WCDMA_LCwidget", "MS1"))
-        self.wcdma_tableWidget.setSortingEnabled(__sortingEnabled)
-        self.datelabel.setText(_translate("WCDMA_LCwidget", "Date :"))
-
-    def moveChart(self, sampledate):
-        self.wcdma_widget.moveLineChart(sampledate)
-
-
-# LTE Data Line Chart UI
-class Ui_LTE_Data_LCwidget(QWidget):
-    def __init__(self, parent, windowName):
-        super().__init__(parent)
-        self.title = windowName
-        self.setupUi(self)
-
-    def setupUi(self, LTE_Data_LCwidget):
-        LTE_Data_LCwidget.setObjectName("LTE_Data_LCwidget")
-        LTE_Data_LCwidget.resize(841, 586)
-
-        # Graph Area
-        self.lte_datalc_GArea = QtWidgets.QScrollArea(LTE_Data_LCwidget)
-        self.lte_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
-        self.lte_datalc_GArea.setWidgetResizable(True)
-        self.lte_datalc_GArea.setObjectName("lte_datalc_GArea")
-
-        # Scroll Area
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.lte_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
-
-        # DataTable
-        self.lte_data_tableWidget = QtWidgets.QTableWidget(LTE_Data_LCwidget)
-        self.lte_data_tableWidget.setGeometry(QtCore.QRect(20, 395, 530, 161))
-        self.lte_data_tableWidget.setObjectName("lte_data_tableWidget")
-        self.lte_data_tableWidget.setColumnCount(4)
-        self.lte_data_tableWidget.setRowCount(4)
-        self.lte_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.lte_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_data_tableWidget.setVerticalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_data_tableWidget.setVerticalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_data_tableWidget.setVerticalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.lte_data_tableWidget.setVerticalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.lte_data_tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.lte_data_tableWidget.setHorizontalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.lte_data_tableWidget.setHorizontalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.lte_data_tableWidget.setHorizontalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(0, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(0, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(0, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.lte_data_tableWidget.setItem(0, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(1, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(1, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(1, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.lte_data_tableWidget.setItem(1, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(2, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(2, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(2, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.lte_data_tableWidget.setItem(2, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(3, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(3, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.lte_data_tableWidget.setItem(3, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.lte_data_tableWidget.setItem(3, 3, item)
-        self.lte_data_tableWidget.horizontalHeader().setVisible(True)
-        self.lte_data_tableWidget.horizontalHeader().setHighlightSections(True)
-        self.lte_data_tableWidget.verticalHeader().setVisible(False)
-
-        # DateLabel
-        self.datelabel = QtWidgets.QLabel(LTE_Data_LCwidget)
-        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.datelabel.setFont(font)
-        self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QtWidgets.QLineEdit(LTE_Data_LCwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lineEdit.setFont(font)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
-
-        # Graph's Widget
-        self.lte_data_widget = LineChart(self.scrollAreaWidgetContents,
-                                          self.title,
-                                          self.lte_data_tableWidget,
-                                          self.lineEdit)
-        self.lte_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
-        self.lte_data_widget.setObjectName("lte_data_widget")
-
-        self.retranslateUi(LTE_Data_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(LTE_Data_LCwidget)
-
-    def retranslateUi(self, LTE_Data_LCwidget):
-        _translate = QtCore.QCoreApplication.translate
-        LTE_Data_LCwidget.setWindowTitle(
-            _translate("LTE_Data_LCwidget", "LTE Data Line Chart [MS1]"))
-        item = self.lte_data_tableWidget.verticalHeaderItem(0)
-        item.setText(_translate("LTE_Data_LCwidget", "1"))
-        item = self.lte_data_tableWidget.verticalHeaderItem(1)
-        item.setText(_translate("LTE_Data_LCwidget", "2"))
-        item = self.lte_data_tableWidget.verticalHeaderItem(2)
-        item.setText(_translate("LTE_Data_LCwidget", "3"))
-        item = self.lte_data_tableWidget.verticalHeaderItem(3)
-        item.setText(_translate("LTE_Data_LCwidget", "4"))
-        item = self.lte_data_tableWidget.horizontalHeaderItem(0)
-        item.setText(_translate("LTE_Data_LCwidget", "Element"))
-        item = self.lte_data_tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("LTE_Data_LCwidget", "Value"))
-        item = self.lte_data_tableWidget.horizontalHeaderItem(2)
-        item.setText(_translate("LTE_Data_LCwidget", "MS"))
-        item = self.lte_data_tableWidget.horizontalHeaderItem(3)
-        item.setText(_translate("LTE_Data_LCwidget", "Color"))
-        __sortingEnabled = self.lte_data_tableWidget.isSortingEnabled()
-        self.lte_data_tableWidget.setSortingEnabled(False)
-        item = self.lte_data_tableWidget.item(0, 0)
-        item.setText(
-            _translate("LTE_Data_LCwidget",
-                       "Download Overall Throughput(kbps)"))
-        item = self.lte_data_tableWidget.item(0, 2)
-        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
-        item = self.lte_data_tableWidget.item(1, 0)
-        item.setText(
-            _translate("LTE_Data_LCwidget", "Upload Overall Throughput(kbps)"))
-        item = self.lte_data_tableWidget.item(1, 2)
-        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
-        item = self.lte_data_tableWidget.item(2, 0)
-        item.setText(
-            _translate("LTE_Data_LCwidget", "LTE L1 Throughput Mbps[1]"))
-        item = self.lte_data_tableWidget.item(2, 2)
-        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
-        item = self.lte_data_tableWidget.item(3, 0)
-        item.setText(_translate("LTE_Data_LCwidget", "LTE BLER[1]"))
-        item = self.lte_data_tableWidget.item(3, 2)
-        item.setText(_translate("LTE_Data_LCwidget", "MS1"))
-        self.lte_data_tableWidget.setSortingEnabled(__sortingEnabled)
-        self.datelabel.setText(_translate("LTE_Data_LCwidget", "Date :"))
-
-    def moveChart(self, sampledate):
-        self.lte_data_widget.moveLineChart(sampledate)
-
-
-# WCDMA Data Line Chart UI
-class Ui_WCDMA_Data_LCwidget(QWidget):
-    def __init__(self, parent, windowName):
-        super().__init__(parent)
-        self.title = windowName
-        self.setupUi(self)
-
-    def setupUi(self, WCDMA_Data_LCwidget):
-        WCDMA_Data_LCwidget.setObjectName("WCDMA_Data_LCwidget")
-        WCDMA_Data_LCwidget.resize(841, 586)
-
-        # Graph Area
-        self.wcdma_datalc_GArea = QtWidgets.QScrollArea(WCDMA_Data_LCwidget)
-        self.wcdma_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
-        self.wcdma_datalc_GArea.setWidgetResizable(True)
-        self.wcdma_datalc_GArea.setObjectName("wcdma_datalc_GArea")
-
-        # Scroll Area
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.wcdma_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
-
-        # DataTable
-        self.wcdma_data_tableWidget = QtWidgets.QTableWidget(
-            WCDMA_Data_LCwidget)
-        self.wcdma_data_tableWidget.setGeometry(QtCore.QRect(
-            20, 395, 515, 171))
-        self.wcdma_data_tableWidget.setObjectName("wcdma_data_tableWidget")
-        self.wcdma_data_tableWidget.setColumnCount(4)
-        self.wcdma_data_tableWidget.setRowCount(4)
-        self.wcdma_data_tableWidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.wcdma_data_tableWidget.horizontalHeader().setSectionResizeMode(0,QtWidgets.QHeaderView.Stretch)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_data_tableWidget.setVerticalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_data_tableWidget.setVerticalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_data_tableWidget.setVerticalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.wcdma_data_tableWidget.setVerticalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.wcdma_data_tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.wcdma_data_tableWidget.setHorizontalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.wcdma_data_tableWidget.setHorizontalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.wcdma_data_tableWidget.setHorizontalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(0, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(0, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(0, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.wcdma_data_tableWidget.setItem(0, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(1, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(1, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(1, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.wcdma_data_tableWidget.setItem(1, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(2, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(2, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(2, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.wcdma_data_tableWidget.setItem(2, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(3, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(3, 1, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.wcdma_data_tableWidget.setItem(3, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.wcdma_data_tableWidget.setItem(3, 3, item)
-        self.wcdma_data_tableWidget.horizontalHeader().setVisible(True)
-        self.wcdma_data_tableWidget.horizontalHeader().setHighlightSections(
-            True)
-        self.wcdma_data_tableWidget.verticalHeader().setVisible(False)
-
-        # DateLabel
-        self.datelabel = QtWidgets.QLabel(WCDMA_Data_LCwidget)
-        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.datelabel.setFont(font)
-        self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QtWidgets.QLineEdit(WCDMA_Data_LCwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lineEdit.setFont(font)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
-
-        # Graph's Widget
-        self.wcdma_data_widget = LineChart(self.scrollAreaWidgetContents,
-                                            self.title,
-                                            self.wcdma_data_tableWidget,
-                                            self.lineEdit)
-        self.wcdma_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
-        self.wcdma_data_widget.setObjectName("wcdma_data_widget")
-
-        self.retranslateUi(WCDMA_Data_LCwidget)
-        QtCore.QMetaObject.connectSlotsByName(WCDMA_Data_LCwidget)
-
-    def retranslateUi(self, WCDMA_Data_LCwidget):
-        _translate = QtCore.QCoreApplication.translate
-        WCDMA_Data_LCwidget.setWindowTitle(
-            _translate("WCDMA_Data_LCwidget", "WCDMA Data Line Chart [MS1]"))
-        item = self.wcdma_data_tableWidget.verticalHeaderItem(0)
-        item.setText(_translate("WCDMA_Data_LCwidget", "1"))
-        item = self.wcdma_data_tableWidget.verticalHeaderItem(1)
-        item.setText(_translate("WCDMA_Data_LCwidget", "2"))
-        item = self.wcdma_data_tableWidget.verticalHeaderItem(2)
-        item.setText(_translate("WCDMA_Data_LCwidget", "3"))
-        item = self.wcdma_data_tableWidget.verticalHeaderItem(3)
-        item.setText(_translate("WCDMA_Data_LCwidget", "4"))
-        item = self.wcdma_data_tableWidget.horizontalHeaderItem(0)
-        item.setText(_translate("WCDMA_Data_LCwidget", "Element"))
-        item = self.wcdma_data_tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("WCDMA_Data_LCwidget", "Value"))
-        item = self.wcdma_data_tableWidget.horizontalHeaderItem(2)
-        item.setText(_translate("WCDMA_Data_LCwidget", "MS"))
-        item = self.wcdma_data_tableWidget.horizontalHeaderItem(3)
-        item.setText(_translate("WCDMA_Data_LCwidget", "Color"))
-        __sortingEnabled = self.wcdma_data_tableWidget.isSortingEnabled()
-        self.wcdma_data_tableWidget.setSortingEnabled(False)
-        item = self.wcdma_data_tableWidget.item(0, 0)
-        item.setText(
-            _translate("WCDMA_Data_LCwidget",
-                       "WCDMA RLC DL Throughput (kbit/s)"))
-        item = self.wcdma_data_tableWidget.item(0, 2)
-        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
-        item = self.wcdma_data_tableWidget.item(1, 0)
-        item.setText(
-            _translate("WCDMA_Data_LCwidget",
-                       "Application DL Throughput(kbps)[1]"))
-        item = self.wcdma_data_tableWidget.item(1, 2)
-        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
-        item = self.wcdma_data_tableWidget.item(2, 0)
-        item.setText(
-            _translate("WCDMA_Data_LCwidget",
-                       "Download Session Average Throughput(kbps)"))
-        item = self.wcdma_data_tableWidget.item(2, 2)
-        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
-        item = self.wcdma_data_tableWidget.item(3, 0)
-        item.setText(_translate("WCDMA_Data_LCwidget",
-                                "Data HSDPA Throughput"))
-        item = self.wcdma_data_tableWidget.item(3, 2)
-        item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
-        self.wcdma_data_tableWidget.setSortingEnabled(__sortingEnabled)
-        self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
-
-    def moveChart(self, sampledate):
-        self.wcdma_data_widget.moveLineChart(sampledate)
-
-# WCDMA Pilot Analyzer Line Chart
-class Ui_WCDMA_PA_LCwidget(QWidget):
-    def __init__(self, parent, windowName):
-        super().__init__(parent)
-        self.title = windowName
-        self.setupUi(self)
-
-    def setupUi(self, PA_widget):
-
-        PA_widget.setObjectName("PA_widget")
-        PA_widget.resize(841, 586)
-
-        #Graph Area
-        self.pa_GArea = QtWidgets.QScrollArea(PA_widget)
-        self.pa_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
-        self.pa_GArea.setWidgetResizable(True)
-        self.pa_GArea.setObjectName("pa_GArea")
-
-        #Scroll Area
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-
-        #Data Table
-        self.tableWidget = QtWidgets.QTableWidget(PA_widget)
-        self.tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 171))
-        self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setColumnCount(4)
-        self.tableWidget.setRowCount(5)
-        item = QtWidgets.QTableWidgetItem()
-        self.tableWidget.setVerticalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.tableWidget.setVerticalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.tableWidget.setVerticalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.tableWidget.setVerticalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.tableWidget.setVerticalHeaderItem(4, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.tableWidget.setHorizontalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.tableWidget.setHorizontalHeaderItem(2, item)
-        item = QtWidgets.QTableWidgetItem()
-        font = QtGui.QFont()
-        font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.tableWidget.setHorizontalHeaderItem(3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(0, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(0, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.tableWidget.setItem(0, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(1, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(1, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.tableWidget.setItem(1, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(2, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(2, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 124, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.tableWidget.setItem(2, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(3, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(3, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(255, 119, 171))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        self.tableWidget.setItem(3, 3, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(4, 0, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tableWidget.setItem(4, 2, item)
-        item = QtWidgets.QTableWidgetItem()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setBackground(brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        item.setForeground(brush)
-        self.tableWidget.setItem(4, 3, item)
-        self.tableWidget.horizontalHeader().setVisible(True)
-        self.tableWidget.horizontalHeader().setHighlightSections(True)
-        self.tableWidget.verticalHeader().setVisible(False)
-
-        #Data Label
-        self.datelabel = QtWidgets.QLabel(PA_widget)
-        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.datelabel.setFont(font)
-        self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QtWidgets.QLineEdit(PA_widget)
-        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lineEdit.setFont(font)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
-
-        self.pa_widget = LineChart(self.scrollAreaWidgetContents,
-                                                self.title,
-                                                self.tableWidget,
-                                                self.lineEdit)
-        self.pa_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
-        self.pa_widget.setObjectName("pa_widget")
-        self.pa_GArea.setWidget(self.scrollAreaWidgetContents)
-
-        self.retranslateUi(PA_widget)
-        QtCore.QMetaObject.connectSlotsByName(PA_widget)
-
-    def retranslateUi(self, PA_widget):
-        _translate = QtCore.QCoreApplication.translate
-        PA_widget.setWindowTitle(_translate("PA_widget", "WCDMA Pilot Analyzer [MS1]"))
-        item = self.tableWidget.verticalHeaderItem(0)
-        item.setText(_translate("PA_widget", "1"))
-        item = self.tableWidget.verticalHeaderItem(1)
-        item.setText(_translate("PA_widget", "2"))
-        item = self.tableWidget.verticalHeaderItem(2)
-        item.setText(_translate("PA_widget", "3"))
-        item = self.tableWidget.verticalHeaderItem(3)
-        item.setText(_translate("PA_widget", "4"))
-        item = self.tableWidget.verticalHeaderItem(4)
-        item.setText(_translate("PA_widget", "5"))
-        item = self.tableWidget.horizontalHeaderItem(0)
-        item.setText(_translate("PA_widget", "Element"))
-        item = self.tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("PA_widget", "Value"))
-        item = self.tableWidget.horizontalHeaderItem(2)
-        item.setText(_translate("PA_widget", "Cell Type"))
-        item = self.tableWidget.horizontalHeaderItem(3)
-        item.setText(_translate("PA_widget", "Color"))
-        __sortingEnabled = self.tableWidget.isSortingEnabled()
-        self.tableWidget.setSortingEnabled(False)
-        self.tableWidget.setSortingEnabled(__sortingEnabled)
-
-    def moveChart(self, sampledate):
-        self.pa_widget.moveLineChart(sampledate)
-
-
-# Class For Line Chart
-class LineChart(QWidget):
-    def __init__(self, parent, windowName, tablewidget, datelabel):
-        super().__init__(parent)
-
-        #For Matplotlib--------------------------------------------
-        #self.canvas = FigureCanvas(Figure(figsize=(4, 4)))
-        #self.canvas.axes = self.canvas.figure.add_subplot()
-
-        #For pyqtgraph--------------------------------------------
-        pg.setConfigOptions(foreground = '#000000',background = 'w',antialias = True)
-        pg.TickSliderItem(orientation='bottom', allowAdd=True)
-        self.canvas = pg.GraphicsWindow()
-
-        #SetLayOut(Both)
-        vertical_layout = QVBoxLayout()
-        vertical_layout.addWidget(self.canvas)
-
-        #pyqtgraph Defualt Setting---------------------------------------------------------
-        self.stringaxis = pg.AxisItem(orientation='bottom')
-        self.canvas.axes = self.canvas.addPlot(axisItems={'bottom': self.stringaxis})
-        self.setLayout(vertical_layout)
-        self.canvas.axes.hideButtons()
-        self.canvas.axes.disableAutoRange()
-        self.canvas.axes.showGrid(y=True)
-        self.canvas.axes.setMouseEnabled(x=True, y=False)
-        self.canvas.axes.scene().sigMouseClicked.connect(self.get_table_data)
-        #----------------------------------------------------------------------------------
-
-        self.title = windowName
-        self.tablewidget = tablewidget
-        self.datelabel = datelabel
-        self.Date = []
-        self.Time = []
-        self.lines = []
-        self.result = {}
-        self.xdict = {}
-        self.ColorArr = []
-
-        # Matplotlib Graph Toolbar
-        #toolbar = NavigationToolbar(self.canvas, self)
-        #vertical_layout.addWidget(toolbar)
-
-        # Choose Line Chart By WindowName
-        if self.title == 'LTE_LTE Line Chart':
-            self.LTE()
-        elif self.title == 'WCDMA_Line Chart':
-            self.WCDMA()
-        elif self.title == 'Data_LTE Data Line Chart':
-            self.LTE_Data()
-        elif self.title == 'Data_WCDMA Data Line Chart':
-            self.WCDMA_Data()
-
-    # Event Function
-    def on_pick(self,event):
-    #For pyqtgraph---------------------------------------------------------------------
-        for Line in range(len(self.lines)):
-            if self.lines[Line] == event:
-                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=4))
-            else:
-                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line],width=2))
-    #For Matplotlib---------------------------------------------------------------------
-        # for Line in self.lines:
-        #     Line.set_linewidth(1)
-        # event.artist.set_linewidth(2.5)
-        # self.canvas.draw()
-    #-----------------------------------------------------------------------------------
-
-    # Show Data In Table
-    def get_table_data(self, event):
-        Chart_datalist = []
-        #For pyqtgraph-----------------------------------------------
-        mousePoint = self.canvas.axes.vb.mapSceneToView(event.pos())
-        x, y = int(mousePoint.x()), mousePoint.y()
-        #For Matplotlib----------------------------------------------
-        # x, y = int(event.xdata), event.ydata
-        #------------------------------------------------------------
-
-        for dict_item in self.result.items():
-            keyStr = dict_item[0]
-            if not keyStr.endswith('time'):
-                Chart_datalist.append(dict_item[1][x])
-        for row in range(len(Chart_datalist)):
-            Value = round(Chart_datalist[row], 3)
-            self.tablewidget.item(row, 1).setText(str(Value))
-
-
-    # Create LTE Line Chart
-    def LTE(self):
-        # Open Database And Query
-        ChartQuery = LineChartQuery([
-            'time', 'lte_sinr_rx0_1', 'lte_sinr_rx1_1', 'lte_inst_rsrp_1',
-            'lte_inst_rsrq_1', 'lte_inst_rssi_1'
-        ], 'lte_cell_meas', '')
-        self.result = ChartQuery.getData()
-        for index in range(len(self.result['time'])):
-            self.Date.append(self.result['time'][index].split(' ')[0])
-            self.Time.append(self.result['time'][index].split(' ')[1])
-
-        if self.result['time'] != '':
-            # Graph setting
-            self.datelabel.setText(self.Date[0])
-            # For Matplotlib-----------------------------------------
-            # self.canvas.axes.set_title('LTE Line Chart')
-            # self.canvas.axes.set_facecolor('#fef8e7')
-            # self.canvas.axes.autoscale(False)
-            # self.canvas.axes.xaxis.grid(True)
-            # self.canvas.axes.yaxis.grid(True)
-            # self.canvas.axes.set_xticklabels(self.Time)
-            # self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-            # self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
-
-            # Ploting Graph
-            self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-
-            # For Matplotlib-----------------------------------------
-            # for data in self.result.items():
-            #     if data[0] != 'time':
-            #         newline, = self.canvas.axes.plot(self.Time,
-            #                                          data[1]
-            #                                          )
-            #         self.lines.append(newline, )
-            #for colorindex in range(len(self.lines)):
-                #self.lines[colorindex].set_color(self.ColorArr[colorindex])
-
-            # Scale Editing
-            # self.canvas.axes.set_ylim(-120, 20)
-            # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
-
-            # Call Event Function
-            # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
-            # tabledata = self.canvas.mpl_connect('button_press_event',self.get_table_data)
-
-            # For pyqtgraph-----------------------------------------------------------------
-            x = self.Time
-            self.xdict = dict(enumerate(x))
-            self.stringaxis.setTicks([self.xdict.items()])
-            for data in self.result.items():
-                if data[0] != 'time':
-                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
-                    newline.curve.setClickable(True)
-                    self.lines.append(newline)
-
-            for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
-
-            # Scale Editing
-            self.canvas.axes.setYRange(-120,30)
-            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
-
-            # Call Event Function
-            pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
-
-    # Create WCDMA Line Chart
-    def WCDMA(self):
-
-        # ยังไม่เสร็จ -- No data in Database
-
-        # Open Database And Query
-
-        condition = """LEFT JOIN wcdma_rx_power wrp ON wcm.time = wrp.time
-                       LEFT JOIN wcdma_bler wb ON wcm.time = wb.time"""
-        ChartQuery = LineChartQuery(['wcm.time','wcm.wcdma_aset_ecio_avg','wcm.wcdma_aset_rscp_avg',
-                    'wrp.wcdma_rssi','wb.wcdma_bler_average_percent_all_channels'],'wcdma_cell_meas wcm',condition)
-        self.result = ChartQuery.getData()
-
-        for index in range(len(self.result['wcm.time'])):
-            self.Date.append(self.result['wcm.time'][index].split(' ')[0])
-            self.Time.append(self.result['wcm.time'][index].split(' ')[1])
-
-        if self.result['wcm.time'] != '':
-            # Graph setting
-            self.datelabel.setText(self.Date[0])
-            # For Matplotlib-----------------------------------------
-            # self.canvas.axes.set_title('WCDMA Line Chart')
-            # self.canvas.axes.set_facecolor('#fef8e7')
-            # self.canvas.axes.autoscale(False)
-            # self.canvas.axes.xaxis.grid(True)
-            # self.canvas.axes.yaxis.grid(True)
-            # self.canvas.axes.set_xticklabels(self.Time)
-            # self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-            # self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
-
-            # Ploting Graph
-            self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-            # For Matplotlib-----------------------------------------
-            # for data in self.result.items():
-            #     if data[0] != 'wcm.time':
-            #         newline, = self.canvas.axes.plot(self.Time,
-            #                                          data[1],
-            #                                          picker=5,
-            #                                          linewidth=1)
-            #         self.lines.append(newline, )
-
-            # for colorindex in range(len(self.lines)):
-            #     self.lines[colorindex].set_color(ColorArr[colorindex])
-
-            # Scale Editing
-            # self.canvas.axes.set_ylim(-120, 20)
-            # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
-
-            # Call Event Function
-            # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
-            # tabledata = self.canvas.mpl_connect('button_press_event',
-            #                                     self.get_table_data)
-
-            # For pyqtgraph-----------------------------------------------------------------
-            x = self.Time
-            self.xdict = dict(enumerate(x))
-            self.stringaxis.setTicks([self.xdict.items()])
-            for data in self.result.items():
-                    if data[0] != 'wcm.time':
-                        newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
-                        newline.curve.setClickable(True)
-                        self.lines.append(newline)
-
-            for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
-
-            # Scale Editing
-            self.canvas.axes.setYRange(-120,20)
-            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
-
-            # Call Event Function
-            pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
-
-    # Create WCDMA Data Line Chart
-    def WCDMA_Data(self):
-
-        # ยังไม่เสร็จ -- No data in Database
-
-        # Open Database And Query
-
-        condition = """LEFT JOIN data_app_throughput dat ON dwrs.time = dat.time
-                       LEFT JOIN wcdma_hsdpa_stats whs ON dwrs.time = whs.time"""
-        ChartQuery = LineChartQuery(['dwrs.time','dwrs.data_wcdma_rlc_dl_throughput','dat.data_app_dl_throughput_1',
-                                    'dat.data_download_session_average','whs.data_hsdpa_thoughput'],'data_wcdma_rlc_stats dwrs',condition)
-        self.result = ChartQuery.getData()
-
-        for index in range(len(self.result['dwrs.time'])):
-            self.Date.append(self.result['dwrs.time'][index].split(' ')[0])
-            self.Time.append(self.result['dwrs.time'][index].split(' ')[1])
-
-        if self.result['dwrs.time'] != '':
-            # Graph setting
-            self.datelabel.setText(self.Date[0])
-            # For Matplotlib-----------------------------------------
-            #self.canvas.axes.set_title('WCDMA Data Line Chart')
-            # self.canvas.axes.set_facecolor('#fef8e7')
-            # self.canvas.axes.autoscale(False)
-            # self.canvas.axes.xaxis.grid(True)
-            # self.canvas.axes.yaxis.grid(True)
-            # self.canvas.axes.set_xticklabels(self.Time)
-            # self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(10))
-            # self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
-
-            # Ploting Graph
-            self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-            # For Matplotlib-----------------------------------------
-            # for data in self.result.items():
-            #     if data[0] != 'dwrs.time':
-            #         newline, = self.canvas.axes.plot(self.Time,
-            #                                          data[1],
-            #                                          picker=5,
-            #                                          linewidth=1)
-            #         self.lines.append(newline, )
-
-            # for colorindex in range(len(self.lines)):
-            #     self.lines[colorindex].set_color(ColorArr[colorindex])
-
-            # Scale Editing
-            # self.canvas.axes.set_ylim(-120, 20)
-            # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
-
-            # Call Event Function
-            # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
-            # tabledata = self.canvas.mpl_connect('button_press_event',
-            #                                     self.get_table_data)
-
-            # For pyqtgraph-----------------------------------------------------------------
-            x = self.Time
-            self.xdict = dict(enumerate(x))
-            self.stringaxis.setTicks([self.xdict.items()])
-            for data in self.result.items():
-                if data[0] != 'dwrs.time':
-                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
-                    newline.curve.setClickable(True)
-                    self.lines.append(newline)
-
-            for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
-
-            # Scale Editing
-            self.canvas.axes.setYRange(-120,20)
-            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
-
-            # Call Event Function
-            pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
-
-    # Create LTE Data Line Chart
-    def LTE_Data(self):
-
-        # Open Database And Query
-        condition = """LEFT JOIN data_app_throughput dat ON lldt.time = dat.time"""
-        ChartQuery = LineChartQuery(['lldt.time','dat.data_download_overall','dat.data_upload_overall',
-                        'lldt.lte_l1_throughput_mbps_1','lldt.lte_bler_1'],'lte_l1_dl_tp lldt',condition)
-        self.result = ChartQuery.getData()
-
-        for index in range(len(self.result['lldt.time'])):
-            self.Date.append(self.result['lldt.time'][index].split(' ')[0])
-            self.Time.append(self.result['lldt.time'][index].split(' ')[1])
-
-        if self.result['lldt.time'] != '':
-            # Graph setting
-            self.datelabel.setText(self.Date[0])
-            # For Matplotlib-----------------------------------------
-            # self.canvas.axes.set_title('LTE Data Line Chart')
-            # self.canvas.axes.set_facecolor('#fef8e7')
-            # self.canvas.axes.autoscale(False)
-            # self.canvas.axes.xaxis.grid(True)
-            # self.canvas.axes.yaxis.grid(True)
-            # self.canvas.axes.set_xticklabels(self.Time)
-            # self.canvas.axes.yaxis.set_major_locator(plt.MaxNLocator(5))
-            # self.canvas.axes.yaxis.set_major_formatter(plt.ScalarFormatter())
-
-            # Ploting Graph
-            self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
-            # For Matplotlib-----------------------------------------
-            # for data in self.result.items():
-            #     if data[0] != 'lldt.time':
-            #         newline, = self.canvas.axes.plot(self.Time,
-            #                                          data[1],
-            #                                          picker=5,
-            #                                          linewidth=1)
-            #         self.lines.append(newline, )
-
-            # for colorindex in range(len(self.lines)):
-            #     self.lines[colorindex].set_color(ColorArr[colorindex])
-
-            # Scale Editing
-            # self.canvas.axes.set_ylim(-5, 35)
-            # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
-
-            # Call Event Function
-            # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
-            # tabledata = self.canvas.mpl_connect('button_press_event',
-            #                                     self.get_table_data)
-
-            # For pyqtgraph-----------------------------------------------------------------
-            x = self.Time
-            self.xdict = dict(enumerate(x))
-            self.stringaxis.setTicks([self.xdict.items()])
-            for data in self.result.items():
-                if data[0] != 'lldt.time':
-                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
-                    newline.curve.setClickable(True)
-                    self.lines.append(newline)
-
-            for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
-
-            # Scale Editing
-            self.canvas.axes.setYRange(-5, 35)
-            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
-
-            # Call Event Function
-            pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
-
-    def moveLineChart(self, sampledate):
-        #For pyqtgraph-----------------------------------------------
-        # Shift Part
-        dateString = str(sampledate)
-        timeString = dateString.split(' ')[1][:8]
-        currentTimeindex = 0
-        if self.Time:
-            for timeItem in self.Time:
-                if timeItem[:8] == timeString:
-                    if self.Time.index(timeItem)+4 < len(self.Time):
-                        currentTimeindex = self.Time.index(timeItem)
-                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
-                        break
-                    else:
-                        break
-
-            #For Matplotlib----------------------------------------------
-            # # Shift Part
-            # dateString = str(sampledate)
-            # timeString = dateString.split(' ')[1][:8]
-            # currentTimeindex = 0
-            # for timeItem in self.Time:
-            #     if timeItem[:8] == timeString:
-            #         if self.Time.index(timeItem)+4 < len(self.Time):
-            #             currentTimeindex = self.Time.index(timeItem)
-            #             self.canvas.axes.set_xlim(self.Time[currentTimeindex],
-            #                                     self.Time[currentTimeindex + 4])
-            #             break
-            #         else:
-            #             break
-            # self.canvas.draw()
-            #---------------------------------------------------------------------
-
-            # Update table part
-            Chart_datalist = []
-            for dict_item in self.result.items():
-                keyStr = dict_item[0]
-                if not keyStr.endswith('time'):
-                    Chart_datalist.append(dict_item[1][currentTimeindex])
-            for row in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[row], 3)
-                self.tablewidget.item(row, 1).setText(str(Value))
-
-
-class LineChartQuery:
-    def __init__(self, fieldArr, tableName, conditionStr):
-        self.fieldArr = fieldArr
-        self.tableName = tableName
-        self.condition = conditionStr
-        self.result = dict()
-
-    def countField(self):
-        fieldCount = 0
-        if self.fieldArr is not None:
-            fieldCount = len(self.fieldArr)
-        return fieldCount
-
-    def selectFieldToQuery(self):
-        selectField = '*'
-        if self.fieldArr is not None:
-            selectField = ",".join(self.fieldArr)
-        return selectField
-
-    def getData(self):
-        #result = dict()
-        selectField = self.selectFieldToQuery()
-        azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = 'select %s from %s %s' % (selectField, self.tableName,
-                                                self.condition)
-        query.exec_(queryString)
-        while query.next():
-            for field in range(len(self.fieldArr)):
-                fieldName = self.fieldArr[field]
-                validatedValue = self.valueValidation(query.value(field))
-                if fieldName in self.result:
-                    if isinstance(self.result[fieldName], list):
-                        self.result[fieldName].append(validatedValue)
-                    else:
-                        self.result[fieldName] = [validatedValue]
-                else:
-                    self.result[fieldName] = [validatedValue]
-
-        if not self.result:
-            for field in range(len(self.fieldArr)):
-                fieldName = self.fieldArr[field]
-                self.result[fieldName] = ''
-        azenqosDatabase.close()
-        return self.result
-
-    def valueValidation(self, value):
-        validatedValue = 0.00
-        if value:
-            validatedValue = value
-        return validatedValue
-
 
 class DataQuery:
     def __inti__(self, fieldArr, tableName, conditionStr):
@@ -3000,272 +2180,8 @@ class DataQuery:
         return validatedValue
 
 
-class CellInformation(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setupUi(self)
-
-    def setupUi(self, CellInformation):
-        CellInformation.setObjectName("Cell Information")
-        CellInformation.resize(640, 522)
-        CellInformation.setGeometry(QtCore.QRect(0, 0, 640, 522))
-        CellInformation.setMinimumSize(640, 522)
-        self.verticalLayoutWidget = QtWidgets.QWidget(CellInformation)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 320, 601, 151))
-        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
-        self.SettingLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
-        self.SettingLayout.setContentsMargins(10, 10, 10, 10)
-        self.SettingLayout.setObjectName("SettingLayout")
-        self.Setting = QtWidgets.QGroupBox(self.verticalLayoutWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
-                                           QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.Setting.sizePolicy().hasHeightForWidth())
-        self.Setting.setSizePolicy(sizePolicy)
-        self.Setting.setMinimumSize(QtCore.QSize(0, 0))
-        font = QtGui.QFont()
-        font.setPointSize(13)
-        self.Setting.setFont(font)
-        self.Setting.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft
-                                  | QtCore.Qt.AlignTop)
-        self.Setting.setObjectName("Setting")
-        self.OpacityCheckbox = QtWidgets.QCheckBox(self.Setting)
-        self.OpacityCheckbox.setGeometry(QtCore.QRect(30, 30, 86, 31))
-        self.OpacityCheckbox.setObjectName("OpacityCheckbox")
-        self.PercentageCombobox = QtWidgets.QComboBox(self.Setting)
-        self.PercentageCombobox.setGeometry(QtCore.QRect(100, 30, 71, 31))
-        self.PercentageCombobox.setObjectName("PercentageCombobox")
-        self.PercentageLabel = QtWidgets.QLabel(self.Setting)
-        self.PercentageLabel.setGeometry(QtCore.QRect(170, 30, 21, 31))
-        self.PercentageLabel.setObjectName("PercentageLabel")
-        self.CellDefinitionLabel = QtWidgets.QLabel(self.Setting)
-        self.CellDefinitionLabel.setGeometry(QtCore.QRect(30, 70, 121, 16))
-        self.CellDefinitionLabel.setObjectName("CellDefinitionLabel")
-        self.CellDefinitionCombobox = QtWidgets.QComboBox(self.Setting)
-        self.CellDefinitionCombobox.setGeometry(QtCore.QRect(160, 60, 121, 41))
-        self.CellDefinitionCombobox.setObjectName("CellDefinitionCombobox")
-        self.SearchCellDistanceLabel = QtWidgets.QLabel(self.Setting)
-        self.SearchCellDistanceLabel.setGeometry(QtCore.QRect(
-            30, 100, 131, 16))
-        self.SearchCellDistanceLabel.setObjectName("SearchCellDistanceLabel")
-        self.KiloAmount = QtWidgets.QLineEdit(self.Setting)
-        self.KiloAmount.setGeometry(QtCore.QRect(180, 100, 61, 21))
-        self.KiloAmount.setObjectName("KiloAmount")
-        self.KilometerLabel = QtWidgets.QLabel(self.Setting)
-        self.KilometerLabel.setGeometry(QtCore.QRect(260, 100, 59, 16))
-        self.KilometerLabel.setObjectName("KilometerLabel")
-        self.SettingLayout.addWidget(self.Setting)
-        self.verticalLayoutWidget_2 = QtWidgets.QWidget(CellInformation)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 601, 321))
-        self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
-        self.CellLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
-        self.CellLayout.setContentsMargins(10, 20, 10, 10)
-        self.CellLayout.setObjectName("CellLayout")
-        self.CellDefinitionFile = QtWidgets.QGroupBox(
-            self.verticalLayoutWidget_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
-                                           QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.CellDefinitionFile.sizePolicy().hasHeightForWidth())
-        self.CellDefinitionFile.setSizePolicy(sizePolicy)
-        font = QtGui.QFont()
-        font.setPointSize(13)
-        self.CellDefinitionFile.setFont(font)
-        self.CellDefinitionFile.setObjectName("CellDefinitionFile")
-        self.FilePath4 = QtWidgets.QLineEdit(self.CellDefinitionFile)
-        self.FilePath4.setGeometry(QtCore.QRect(110, 270, 341, 21))
-        self.FilePath4.setObjectName("FilePath4")
-        self.CdmaCellFileCheckbox = QtWidgets.QCheckBox(
-            self.CellDefinitionFile)
-        self.CdmaCellFileCheckbox.setGeometry(QtCore.QRect(30, 240, 151, 20))
-        self.CdmaCellFileCheckbox.setObjectName("CdmaCellFileCheckbox")
-        self.LteCellFileCheckbox = QtWidgets.QCheckBox(self.CellDefinitionFile)
-        self.LteCellFileCheckbox.setGeometry(QtCore.QRect(30, 170, 131, 20))
-        self.LteCellFileCheckbox.setObjectName("LteCellFileCheckbox")
-        self.FilePath2 = QtWidgets.QLineEdit(self.CellDefinitionFile)
-        self.FilePath2.setGeometry(QtCore.QRect(110, 130, 341, 21))
-        self.FilePath2.setObjectName("FilePath2")
-        self.FilenameLabel1 = QtWidgets.QLabel(self.CellDefinitionFile)
-        self.FilenameLabel1.setGeometry(QtCore.QRect(40, 60, 59, 16))
-        self.FilenameLabel1.setObjectName("FilenameLabel1")
-        self.FilenameLabel4 = QtWidgets.QLabel(self.CellDefinitionFile)
-        self.FilenameLabel4.setGeometry(QtCore.QRect(40, 270, 59, 16))
-        self.FilenameLabel4.setObjectName("FilenameLabel4")
-        self.WcdmaCellFileCheckbox = QtWidgets.QCheckBox(
-            self.CellDefinitionFile)
-        self.WcdmaCellFileCheckbox.setGeometry(QtCore.QRect(30, 100, 161, 20))
-        self.WcdmaCellFileCheckbox.setObjectName("WcdmaCellFileCheckbox")
-        self.FilePath1 = QtWidgets.QLineEdit(self.CellDefinitionFile)
-        self.FilePath1.setGeometry(QtCore.QRect(110, 60, 341, 21))
-        self.FilePath1.setObjectName("FilePath1")
-        self.FilePath3 = QtWidgets.QLineEdit(self.CellDefinitionFile)
-        self.FilePath3.setGeometry(QtCore.QRect(110, 200, 341, 21))
-        self.FilePath3.setObjectName("FilePath3")
-        self.FilenameLabel3 = QtWidgets.QLabel(self.CellDefinitionFile)
-        self.FilenameLabel3.setGeometry(QtCore.QRect(40, 200, 59, 16))
-        self.FilenameLabel3.setObjectName("FilenameLabel3")
-        self.GsmCellFileCheckbox = QtWidgets.QCheckBox(self.CellDefinitionFile)
-        self.GsmCellFileCheckbox.setGeometry(QtCore.QRect(30, 30, 141, 20))
-        self.GsmCellFileCheckbox.setObjectName("GsmCellFileCheckbox")
-        self.FilenameLabel2 = QtWidgets.QLabel(self.CellDefinitionFile)
-        self.FilenameLabel2.setGeometry(QtCore.QRect(40, 130, 59, 16))
-        self.FilenameLabel2.setObjectName("FilenameLabel2")
-        self.BrowseButton1 = QtWidgets.QToolButton(self.CellDefinitionFile)
-        self.BrowseButton1.setGeometry(QtCore.QRect(460, 60, 51, 22))
-        self.BrowseButton1.setObjectName("BrowseButton1")
-        self.BrowseButton2 = QtWidgets.QToolButton(self.CellDefinitionFile)
-        self.BrowseButton2.setGeometry(QtCore.QRect(460, 130, 51, 22))
-        self.BrowseButton2.setObjectName("BrowseButton2")
-        self.BrowseButton3 = QtWidgets.QToolButton(self.CellDefinitionFile)
-        self.BrowseButton3.setGeometry(QtCore.QRect(460, 200, 51, 22))
-        self.BrowseButton3.setObjectName("BrowseButton3")
-        self.BrowseButton4 = QtWidgets.QToolButton(self.CellDefinitionFile)
-        self.BrowseButton4.setGeometry(QtCore.QRect(460, 270, 51, 22))
-        self.BrowseButton4.setObjectName("BrowseButton4")
-        self.CellLayout.addWidget(self.CellDefinitionFile)
-        self.verticalLayoutWidget_3 = QtWidgets.QWidget(CellInformation)
-        self.verticalLayoutWidget_3.setGeometry(QtCore.QRect(0, 470, 601, 55))
-        self.verticalLayoutWidget_3.setObjectName("verticalLayoutWidget_3")
-        self.ButtonLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_3)
-        self.ButtonLayout.setContentsMargins(10, 10, 10, 10)
-        self.ButtonLayout.setObjectName("ButtonLayout")
-        self.buttonBox = QtWidgets.QDialogButtonBox(
-            self.verticalLayoutWidget_3)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Ok
-                                          | QtWidgets.QDialogButtonBox.Cancel)
-        self.buttonBox.setObjectName("buttonBox")
-        self.ButtonLayout.addWidget(self.buttonBox)
-
-        self.BrowseButton1.clicked.connect(lambda: self.browseFile('1'))
-        self.BrowseButton2.clicked.connect(lambda: self.browseFile('2'))
-        self.BrowseButton3.clicked.connect(lambda: self.browseFile('3'))
-        self.BrowseButton4.clicked.connect(lambda: self.browseFile('4'))
-
-        self.retranslateUi(CellInformation)
-        QtCore.QMetaObject.connectSlotsByName(CellInformation)
-
-    def retranslateUi(self, CellInformation):
-        _translate = QtCore.QCoreApplication.translate
-        CellInformation.setWindowTitle(
-            _translate("CellInformation", "Cell Information"))
-        self.Setting.setTitle(_translate("CellInformation", "Setting"))
-        self.OpacityCheckbox.setText(_translate("CellInformation", "Opacity"))
-        self.PercentageLabel.setText(_translate("CellInformation", "%"))
-        self.CellDefinitionLabel.setText(
-            _translate("CellInformation", "Cell Definition Text"))
-        self.SearchCellDistanceLabel.setText(
-            _translate("CellInformation", "Search Cell Distance"))
-        self.KilometerLabel.setText(_translate("CellInformation", "Kilometer"))
-        self.CellDefinitionFile.setTitle(
-            _translate("CellInformation", "Cell definition file"))
-        self.CdmaCellFileCheckbox.setText(
-            _translate("CellInformation", "Use CDMA cell file"))
-        self.LteCellFileCheckbox.setText(
-            _translate("CellInformation", "Use LTE cell file"))
-        self.FilenameLabel1.setText(_translate("CellInformation", "Filename"))
-        self.FilenameLabel4.setText(_translate("CellInformation", "Filename"))
-        self.WcdmaCellFileCheckbox.setText(
-            _translate("CellInformation", "Use WCDMA cell file"))
-        self.FilenameLabel3.setText(_translate("CellInformation", "Filename"))
-        self.GsmCellFileCheckbox.setText(
-            _translate("CellInformation", "Use GSM cell file"))
-        self.FilenameLabel2.setText(_translate("CellInformation", "Filename"))
-        self.BrowseButton1.setText(_translate("CellInformation", "Browse"))
-        self.BrowseButton2.setText(_translate("CellInformation", "Browse"))
-        self.BrowseButton3.setText(_translate("CellInformation", "Browse"))
-        self.BrowseButton4.setText(_translate("CellInformation", "Browse"))
-
-    def browseFile(self, buttonNo):
-        if buttonNo == '1':
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                      QtCore.QDir.rootPath(),
-                                                      '*.cel')
-            if fileName != "":
-                baseFileName = os.path.basename(str(fileName))
-                self.FilePath1.setText(fileName)
-            return False
-        elif buttonNo == '2':
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                      QtCore.QDir.rootPath(),
-                                                      '*.cel')
-            if fileName != "":
-                baseFileName = os.path.basename(str(fileName))
-                self.FilePath2.setText(fileName)
-            return False
-        elif buttonNo == '3':
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                      QtCore.QDir.rootPath(),
-                                                      '*.cel')
-            if fileName != "":
-                baseFileName = os.path.basename(str(fileName))
-                self.FilePath3.setText(fileName)
-            return False
-        elif buttonNo == '4':
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                      QtCore.QDir.rootPath(),
-                                                      '*.cel')
-            if fileName != "":
-                baseFileName = os.path.basename(str(fileName))
-                self.FilePath4.setText(fileName)
-            return False
-        return False
 
 
-class OldTimeSliderThread(QThread):
-    signal = pyqtSignal('PyQt_PyObject')
-
-    def __init__(self):
-        QThread.__init__(self)
-        self.currentSliderValue = None
-
-    def __del__(self):
-        self.wait()
-
-    def run(self):
-        self.playTime()
-
-    def playTime(self):
-        timeSlider.setDisabled(True)
-        global isSliderPlay
-        # isSliderPlay = True
-        if isSliderPlay:
-            if self.currentSliderValue:
-                for x in range(int(self.currentSliderValue), int(sliderLength)):
-                    if not isSliderPlay:
-                        break
-                    else:
-                        self.sleep(1)
-                        value = timeSlider.value() + 1
-                        timeSlider.setValue(value)
-                        timeSlider.update()
-
-                    if x >= int(sliderLength):
-                        isSliderPlay = False
-                        break
-            else:
-                for x in range(int(sliderLength)):
-                    if not isSliderPlay:
-                        break
-                    else:
-                        self.sleep(1)
-                        value = timeSlider.value() + 1
-                        timeSlider.setValue(value)
-                        timeSlider.update()
-
-                    if x >= int(sliderLength):
-                        isSliderPlay = False
-                        break
-        else:
-            self.quit()
-        timeSlider.update()
-        # isSliderPlay = False
-
-    def set(self, value):
-        self.currentSliderValue = value
 
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)
@@ -3293,8 +2209,6 @@ class TimeSliderThread(QThread):
                         self.sleep(1)
                         value = timeSlider.value() + 1
                         self.changeValue.emit(value)
-                        # timeSlider.setValue(value)
-                        # timeSlider.update()
 
                     if x >= int(sliderLength):
                         isSliderPlay = False
@@ -3307,8 +2221,6 @@ class TimeSliderThread(QThread):
                         self.sleep(1)
                         value = timeSlider.value() + 1
                         self.changeValue.emit(value)
-                        # timeSlider.setValue(value)
-                        # timeSlider.update()
 
                     if x >= int(sliderLength):
                         isSliderPlay = False

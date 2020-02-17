@@ -3370,8 +3370,8 @@ class LayerTask(QgsTask):
                 raise self.exception
 
 
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     dialog = Ui_DatabaseDialog()
-#     dialog.show()
-#     sys.exit(app.exec_())
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    dialog = Ui_DatabaseDialog()
+    dialog.show()
+    sys.exit(app.exec_())

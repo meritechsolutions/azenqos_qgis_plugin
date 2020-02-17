@@ -609,7 +609,7 @@ class AzenqosDialog(QDialog):
             if child == "Active + Monitored Sets":
                 tableWidget = None
                 if hasattr(self, 'wcdma_ams_window') is True:
-                    tableWindow = self.wcdma_ams_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_ams_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_ams_window, windowName)
                         openedWindows.append(tableWidget)
@@ -633,7 +633,7 @@ class AzenqosDialog(QDialog):
             elif child == "Radio Parameters":
                 tableWidget = None
                 if hasattr(self, 'wcdma_rp_window') is True:
-                    tableWindow = self.wcdma_rp_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_rp_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_rp_window, windowName)
                         openedWindows.append(tableWidget)
@@ -657,7 +657,7 @@ class AzenqosDialog(QDialog):
             elif child == "Active Set List":
                 tableWidget = None
                 if hasattr(self, 'wcdma_asl_window') is True:
-                    tableWindow = self.wcdma_asl_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_asl_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_asl_window, windowName)
                         openedWindows.append(tableWidget)
@@ -681,7 +681,7 @@ class AzenqosDialog(QDialog):
             elif child == "Monitored Set List":
                 tableWidget = None
                 if hasattr(self, 'wcdma_msl_window') is True:
-                    tableWindow = self.wcdma_msl_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_msl_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_msl_window, windowName)
                         openedWindows.append(tableWidget)
@@ -705,7 +705,7 @@ class AzenqosDialog(QDialog):
             elif child == "BLER Summary":
                 tableWidget = None
                 if hasattr(self, 'wcdma_bler_window') is True:
-                    tableWindow = self.wcdma_msl_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_msl_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_bler_window, windowName)
                         openedWindows.append(tableWidget)
@@ -729,7 +729,7 @@ class AzenqosDialog(QDialog):
             elif child == "BLER / Transport Channel":
                 tableWidget = None
                 if hasattr(self, 'wcdma_blertc_window') is True:
-                    tableWindow = self.wcdma_blertc_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_blertc_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_blertc_window, windowName)
                         openedWindows.append(tableWidget)
@@ -753,7 +753,7 @@ class AzenqosDialog(QDialog):
             elif child == "Line Chart":
                 linechartWidget = None
                 if hasattr(self, 'wcdma_lc_window') is True:
-                    linechartWindow = self.wcdma_lc_window.findChild(QWidget, windowName)
+                    linechartWindow = self.wcdma_lc_window.widget()
                     if not linechartWindow:
                         linechartWidget = Ui_WCDMA_LCwidget(self, windowName, azenqosDatabase)
                         openedWindows.append(linechartWidget)
@@ -777,7 +777,7 @@ class AzenqosDialog(QDialog):
             elif child == "Bearers":
                 tableWidget = None
                 if hasattr(self, 'wcdma_bearer_window') is True:
-                    tableWindow = self.wcdma_bearer_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_bearer_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_bearer_window, windowName)
                         openedWindows.append(tableWidget)
@@ -801,7 +801,7 @@ class AzenqosDialog(QDialog):
             elif child == "Pilot Poluting Cells":
                 tableWidget = None
                 if hasattr(self, 'wcdma_ppc_window') is True:
-                    tableWindow = self.wcdma_ppc_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_ppc_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_ppc_window, windowName)
                         openedWindows.append(tableWidget)
@@ -825,7 +825,7 @@ class AzenqosDialog(QDialog):
             elif child == "Active + Monitored Bar":
                 tableWidget = None
                 if hasattr(self, 'wcdma_amb_window') is True:
-                    tableWindow = self.wcdma_amb_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_amb_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_amb_window, windowName)
                         openedWindows.append(tableWidget)
@@ -849,7 +849,7 @@ class AzenqosDialog(QDialog):
             elif child == "CM GSM Reports":
                 tableWidget = None
                 if hasattr(self, 'wcdma_report_window') is True:
-                    tableWindow = self.wcdma_report_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_report_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_report_window, windowName)
                         openedWindows.append(tableWidget)
@@ -873,7 +873,7 @@ class AzenqosDialog(QDialog):
             elif child == "CM GSM Cells":
                 tableWidget = None
                 if hasattr(self, 'wcdma_cells_window') is True:
-                    tableWindow = self.wcdma_cells_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_cells_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_cells_window, windowName)
                         openedWindows.append(tableWidget)
@@ -897,7 +897,7 @@ class AzenqosDialog(QDialog):
             elif child == "Pilot Analyzer":
                 tableWidget = None
                 if hasattr(self, 'wcdma_analyzer_window') is True:
-                    tableWindow = self.wcdma_analyzer_window.findChild(QWidget, windowName)
+                    tableWindow = self.wcdma_analyzer_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_analyzer_window, windowName)
                         openedWindows.append(tableWidget)
@@ -922,7 +922,7 @@ class AzenqosDialog(QDialog):
             if child == "Radio Parameters":
                 tableWidget = None
                 if hasattr(self, 'lte_param_window') is True:
-                    tableWindow = self.lte_param_window.findChild(QWidget, windowName)
+                    tableWindow = self.lte_param_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.lte_param_window, windowName)
                         openedWindows.append(tableWidget)
@@ -946,7 +946,7 @@ class AzenqosDialog(QDialog):
             elif child == "Serving + Neighbors":
                 tableWidget = None
                 if hasattr(self, 'lte_sn_window') is True:
-                    tableWindow = self.lte_sn_window.findChild(QWidget, windowName)
+                    tableWindow = self.lte_sn_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.lte_sn_window, windowName)
                         openedWindows.append(tableWidget)
@@ -970,7 +970,7 @@ class AzenqosDialog(QDialog):
             elif child == "PUCCH/PDSCH Parameters":
                 tableWidget = None
                 if hasattr(self, 'lte_ppparam_window') is True:
-                    tableWindow = self.lte_ppparam_window.findChild(QWidget, windowName)
+                    tableWindow = self.lte_ppparam_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.lte_ppparam_window, windowName)
                         openedWindows.append(tableWidget)
@@ -1021,7 +1021,7 @@ class AzenqosDialog(QDialog):
             elif child == "LTE RLC":
                 widget = None
                 if hasattr(self, 'lte_rlc_window') is True:
-                    tableWindow = self.lte_rlc_window.findChild(QWidget, windowName)
+                    tableWindow = self.lte_rlc_window.widget()
                     if not tableWindow:
                         widget = TableWindow(self.lte_rlc_window, windowName)
                         openedWindows.append(widget)
@@ -1045,7 +1045,7 @@ class AzenqosDialog(QDialog):
             elif child == "LTE VoLTE":
                 widget = None
                 if hasattr(self, 'lte_volte_window') is True:
-                    widget = self.lte_volte_window.findChild(QWidget, windowName)
+                    widget = self.lte_volte_window.widget()
                     if not widget:
                         widget = TableWindow(self.lte_volte_window, windowName)
                         openedWindows.append(widget)
@@ -1070,7 +1070,7 @@ class AzenqosDialog(QDialog):
             if child == "Radio Parameters":
                 tableWidget = None
                 if hasattr(self, 'cdma_rp_window') is True:
-                    tableWindow = self.cdma_rp_window.findChild(QWidget, windowName)
+                    tableWindow = self.cdma_rp_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.cdma_rp_window, windowName)
                         openedWindows.append(tableWidget)
@@ -1094,7 +1094,7 @@ class AzenqosDialog(QDialog):
             elif child == "Serving + Neighbors":
                 tableWidget = None
                 if hasattr(self, 'cdma_sn_window') is True:
-                    tableWindow = self.cdma_sn_window.findChild(QWidget, windowName)
+                    tableWindow = self.cdma_sn_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.cdma_sn_window, windowName)
                         openedWindows.append(tableWidget)
@@ -1118,7 +1118,7 @@ class AzenqosDialog(QDialog):
             elif child == "EVDO Parameters":
                 tableWidget = None
                 if hasattr(self, 'cdma_evdo_window') is True:
-                    tableWindow = self.cdma_evdo_window.findChild(QWidget, windowName)
+                    tableWindow = self.cdma_evdo_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.cdma_evdo_window, windowName)
                         openedWindows.append(tableWidget)
@@ -1149,7 +1149,7 @@ class AzenqosDialog(QDialog):
                 # self.wcdma_data_lc.activateWindow()
                 linechartWidget = None
                 if hasattr(self, 'wcdma_data_lc') is True:
-                    linechartWindow = self.wcdma_data_lc.findChild(QWidget, windowName)
+                    linechartWindow = self.wcdma_data_lc.widget()
                     if not linechartWindow:
                         linechartWidget = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
                         openedWindows.append(linechartWidget)
@@ -1173,7 +1173,7 @@ class AzenqosDialog(QDialog):
             elif child == "GPRS/EDGE Information":
                 tableWidget = None
                 if hasattr(self, 'gprs_info') is True:
-                    tableWindow = self.gprs_info.findChild(QWidget, windowName)
+                    tableWindow = self.gprs_info.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.gprs_info, windowName)
                         openedWindows.append(tableWidget)
@@ -1207,7 +1207,7 @@ class AzenqosDialog(QDialog):
             elif child == "HSDPA/HSPA + Statistics":
                 tableWidget = None
                 if hasattr(self, 'hsdpa_stat') is True:
-                    tableWindow = self.hsdpa_stat.findChild(QWidget, windowName)
+                    tableWindow = self.hsdpa_stat.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.hsdpa_stat, windowName)
                         openedWindows.append(tableWidget)
@@ -1231,7 +1231,7 @@ class AzenqosDialog(QDialog):
             elif child == "HSUPA Statistics":
                 tableWidget = None
                 if hasattr(self, 'hsupa_stat') is True:
-                    tableWindow = self.hsupa_stat.findChild(QWidget, windowName)
+                    tableWindow = self.hsupa_stat.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.hsupa_stat, windowName)
                         openedWindows.append(tableWidget)
@@ -1255,7 +1255,7 @@ class AzenqosDialog(QDialog):
             elif child == "LTE Data Statistics":
                 tableWidget = None
                 if hasattr(self, 'lte_data_stat') is True:
-                    tableWindow = self.lte_data_stat.findChild(QWidget, windowName)
+                    tableWindow = self.lte_data_stat.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.lte_data_stat, windowName)
                         openedWindows.append(tableWidget)
@@ -1286,7 +1286,7 @@ class AzenqosDialog(QDialog):
                 # self.lte_data_lc.activateWindow()
                 linechartWidget = None
                 if hasattr(self, 'lte_data_lc') is True:
-                    linechartWindow = self.lte_data_lc.findChild(QWidget, windowName)
+                    linechartWindow = self.lte_data_lc.widget()
                     if not linechartWindow:
                         linechartWidget = Ui_LTE_Data_LCwidget(self, windowName, azenqosDatabase)
                         openedWindows.append(linechartWidget)
@@ -1310,7 +1310,7 @@ class AzenqosDialog(QDialog):
             elif child == "Wifi Connected AP":
                 tableWidget = None
                 if hasattr(self, 'wifi_connected_ap') is True:
-                    tableWindow = self.wifi_connected_ap.findChild(QWidget, windowName)
+                    tableWindow = self.wifi_connected_ap.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wifi_connected_ap, windowName)
                         openedWindows.append(tableWidget)
@@ -1334,7 +1334,7 @@ class AzenqosDialog(QDialog):
             elif child == "Wifi Scanned APs":
                 tableWidget = None
                 if hasattr(self, 'wifi_scanned_ap') is True:
-                    tableWindow = self.wifi_scanned_ap.findChild(QWidget, windowName)
+                    tableWindow = self.wifi_scanned_ap.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wifi_scanned_ap, windowName)
                         openedWindows.append(tableWidget)
@@ -1358,7 +1358,7 @@ class AzenqosDialog(QDialog):
             elif child == "Wifi Graph":
                 tableWidget = None
                 if hasattr(self, 'wifi_graph') is True:
-                    tableWindow = self.wifi_graph.findChild(QWidget, windowName)
+                    tableWindow = self.wifi_graph.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wifi_graph, windowName)
                         openedWindows.append(tableWidget)
@@ -1383,7 +1383,7 @@ class AzenqosDialog(QDialog):
             if child == "Events":
                 events_widget = None
                 if hasattr(self, 'events_window') is True:
-                    tableWindow = self.events_window.findChild(QWidget, windowName)
+                    tableWindow = self.events_window.widget()
                     if not tableWindow:
                         events_widget = TableWindow(self.events_window, windowName)
                         openedWindows.append(events_widget)
@@ -1409,7 +1409,7 @@ class AzenqosDialog(QDialog):
             elif child == "Layer 1 Messages":
                 layer_one_widget = None
                 if hasattr(self, 'layer_one_messages') is True:
-                    tableWindow = self.layer_one_messages.findChild(QWidget, windowName)
+                    tableWindow = self.layer_one_messages.widget()
                     if not tableWindow:
                         layer_one_widget = TableWindow(self.layer_one_messages, windowName)
                         openedWindows.append(layer_one_widget)
@@ -1441,7 +1441,7 @@ class AzenqosDialog(QDialog):
             elif child == "Layer 3 Messages":
                 layer_three_widget = None
                 if hasattr(self, 'layer_three_messages') is True:
-                    tableWindow = self.layer_three_messages.findChild(QWidget, windowName)
+                    tableWindow = self.layer_three_messages.widget()
                     if not tableWindow:
                         layer_three_widget = TableWindow(self.layer_three_messages, windowName)
                         openedWindows.append(layer_three_widget)
@@ -1473,7 +1473,7 @@ class AzenqosDialog(QDialog):
             elif child == "Benchmark":
                 benchmark_widget = None
                 if hasattr(self, 'benchmark') is True:
-                    tableWindow = self.benchmark.findChild(QWidget, windowName)
+                    tableWindow = self.benchmark.widget()
                     if not tableWindow:
                         benchmark_widget = TableWindow(self.benchmark, windowName)
                         openedWindows.append(benchmark_widget)
@@ -1506,7 +1506,7 @@ class AzenqosDialog(QDialog):
             elif child == "MM Reg States":
                 mm_widget = None
                 if hasattr(self, 'mm_reg_states') is True:
-                    tableWindow = self.mm_reg_states.findChild(QWidget, windowName)
+                    tableWindow = self.mm_reg_states.widget()
                     if not tableWindow:
                         mm_widget = TableWindow(self.mm_reg_states, windowName)
                         openedWindows.append(mm_widget)
@@ -1539,7 +1539,7 @@ class AzenqosDialog(QDialog):
             elif child == "Serving System Info":
                 serving_system_widget = None
                 if hasattr(self, 'serving_system_info') is True:
-                    tableWindow = self.serving_system_info.findChild(QWidget, windowName)
+                    tableWindow = self.serving_system_info.widget()
                     if not tableWindow:
                         serving_system_widget = TableWindow(self.serving_system_info, windowName)
                         openedWindows.append(serving_system_widget)
@@ -1572,7 +1572,7 @@ class AzenqosDialog(QDialog):
             elif child == "Debug Android/Event":
                 debug_event_widget = None
                 if hasattr(self, 'debug_event') is True:
-                    tableWindow = self.debug_event.findChild(QWidget, windowName)
+                    tableWindow = self.debug_event.widget()
                     if not tableWindow:
                         debug_event_widget = TableWindow(self.debug_event, windowName)
                         openedWindows.append(debug_event_widget)

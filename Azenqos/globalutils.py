@@ -28,12 +28,14 @@ class ElementInfo:
                 table.row.setSource(source)
                 table.row.setDatarow(query)
                 table.printdata()
-                break
 
     def checkCsv(self):
-        print(len(elementData))
-        print(elementData.__sizeof__())
-        print(elementData[0])
+        print(elementData)
+
+    def searchName(self, name: str, obj_list: list):
+        for obj in obj_list:
+            if name in obj['name']:
+                return obj
 
 
 def addDatabase():
@@ -84,7 +86,12 @@ class Query:
 
 
 
+
+
 if __name__ == '__main__':
     addDatabase()
     element = ElementInfo()
     element.checkCsv()
+    print(element.searchName('SINR\tRx[0]', elementData))
+    element.getTableAttr('SINR\tRx[0]')
+    # element.getTableAttr()

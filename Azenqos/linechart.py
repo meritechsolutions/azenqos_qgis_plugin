@@ -1458,23 +1458,21 @@ class LineChart(QWidget):
                 time_without_ms = timeItem[:8]
                 # if time_without_ms == timeString:
                 if time_without_ms == timeString:
-                    print(time_without_ms, timeString)
-                    # if self.Time.index(timeItem) + 4 < len(self.Time):
-                    currentTimeindex = self.Time.index(timeItem)
-                    #     self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
-                    #     break
-                else:
-                    if time_without_ms > timeString:
-                        index = self.Time.index(timeItem) - 1
-                        print(self.Time[index], timeString)
-                        if self.Time[index] <= timeString:
-                            currentTimeindex = index
+                    if self.Time.index(timeItem) + 3 < len(self.Time):
+                        currentTimeindex = self.Time.index(timeItem)
+                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+3])
+                        break
+                if time_without_ms > timeString:
+                    index = self.Time.index(timeItem) - 1
+                    if self.Time.index(timeItem) + 3 < len(self.Time):
+                        currentTimeindex = self.Time.index(timeItem) - 1
+                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+3])
+                        break
                     # else:
                     #     currentTimeindex = self.Time.index(timeItem) - 1
-                if currentTimeindex > 0:
-                    if self.Time.index(timeItem) + 4 < len(self.Time):
-                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
-                        break
+                # if self.Time.index(timeItem) + 4 < len(self.Time):
+                #     self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
+                #     break
 
             #For Matplotlib----------------------------------------------
             # # Shift Part

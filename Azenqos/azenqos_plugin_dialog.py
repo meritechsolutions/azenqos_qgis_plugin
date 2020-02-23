@@ -112,8 +112,7 @@ class Ui_DatabaseDialog(QDialog):
         self.browseButton.clicked.connect(self.getfiles)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
             self.checkDatabase)
-        self.buttonBox.button(
-            QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.close)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.reject)
 
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -238,6 +237,17 @@ class Ui_DatabaseDialog(QDialog):
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
 
+    def reject(self):
+        global openedWindows
+        if len(openedWindows) > 0:
+            for window in openedWindows:
+                window.close()
+                window.reject()
+                del window
+        super().reject()
+        self.destroy(True)
+        del self
+
 
 class AzenqosDialog(QDialog):
     def __init__(self, databaseUi):
@@ -259,7 +269,7 @@ class AzenqosDialog(QDialog):
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
         self.setupTreeWidget(AzenqosDialog)
-        self.mdi = QMdiArea()
+        self.mdi = GroupArea()
         self.mdi.show()
 
         # Time Slider
@@ -503,10 +513,14 @@ class AzenqosDialog(QDialog):
                     window.hilightRow(sampledate)
                 else:
                     window.moveChart(sampledate)
+        # text = "[--" + str(len(tableList) + "--]"
+        # QgsMessageLog.logMessage(text)
+
         if len(tableList) > 0:
+            QgsMessageLog.logMessage('[-- have tableList --]')
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
-            self.hilightFeature()
+        # self.hilightFeature()
         self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
         currentDateTimeString = '%s' % (datetime.datetime.fromtimestamp(currentTimestamp))
@@ -602,6 +616,8 @@ class AzenqosDialog(QDialog):
         global openedWindows
         global tableList
         windowName = parent + "_" + child
+        if hasattr(self, 'mdi') is False:
+            self.mdi = GroupArea()
         subwindowList = self.mdi.subWindowList()
         if parent == "WCDMA":
             if child == "Active + Monitored Sets":
@@ -1633,19 +1649,36 @@ class AzenqosDialog(QDialog):
                     pass
 
     def closeEvents(self):
+        self.pauseTime()
         self.timeSliderThread.exit()
+        self.close()
+        self.databaseUi.destroy(True,True)
+        self.destroy(True,True)
 
     def reject(self):
+        super().reject()
         # QgsMessageLog.logMessage('Close App')
         # clearAllSelectedFeatures()
         # QgsProject.removeAllMapLayers(QgsProject.instance())
+        for mdiwindow in self.mdi.subWindowList():
+            mdiwindow.close()
         self.mdi.close()
-        if len(openedWindows) > 0:
-            for window in openedWindows:
-                window.close()
-        super().reject()
-        del self.databaseUi
-        del self
+
+        # if len(openedWindows) > 0:
+        #     for window in openedWindows:
+        #         window.close()
+        #         window.reject()
+        #         del window
+
+        # del self.databaseUi
+        # del self
+
+class GroupArea(QMdiArea):
+    def __init__(self):
+        super().__init__()
+
+    def closeEvent(self, QCloseEvent):
+        self.closeAllSubWindows()
 
 
 class TimeSlider(QSlider):

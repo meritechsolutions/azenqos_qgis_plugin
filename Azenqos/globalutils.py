@@ -90,6 +90,8 @@ class Utils:
 
     def unzipToFile(self, currentPath, filePath):
         fileFolderPath = currentPath + '/file'
+        if not os.path.exists(fileFolderPath):
+            os.makedirs(fileFolderPath)
         fileList = os.listdir(fileFolderPath)
         if len(fileList) > 0:
             for f in fileList:

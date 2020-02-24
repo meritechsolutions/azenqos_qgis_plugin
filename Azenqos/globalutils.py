@@ -1,6 +1,6 @@
 from PyQt5.QtSql import QSql,QSqlDatabase,QSqlQuery
-import csv
-import inspect
+import csv,inspect,os
+from zipfile import ZipFile
 
 db = None
 elementData = []
@@ -84,14 +84,29 @@ class Query:
         db.close()
         return result
 
+class Utils:
+    def __init__(self):
+        super().__init__()
+
+    def unzipToFile(self, currentPath, filePath):
+        fileFolderPath = currentPath + '/file'
+        fileList = os.listdir(fileFolderPath)
+        for f in fileList:
+            os.remove(fileFolderPath + '/' + f)
+        if len(os.listdir(fileFolderPath)) == 0:
+            with ZipFile(filePath, 'r') as zipObj:
+                zipObj.extractall(fileFolderPath)
+            dbFilePath = fileFolderPath + '/azqdata.db'
+            return dbFilePath
 
 
 
 
-if __name__ == '__main__':
-    addDatabase()
-    element = ElementInfo()
-    element.checkCsv()
-    print(element.searchName('SINR\tRx[0]', elementData))
-    element.getTableAttr('SINR\tRx[0]')
+
+# if __name__ == '__main__':
+#     addDatabase()
+#     element = ElementInfo()
+#     element.checkCsv()
+#     print(element.searchName('SINR\tRx[0]', elementData))
+#     element.getTableAttr('SINR\tRx[0]')
     # element.getTableAttr()

@@ -5,7 +5,7 @@ from PyQt5.QtSql import * #QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import pyqtgraph as pg
-import globalutils
+from .globalutils import Utils
 
 class Ui_LTE_LCwidget(QWidget):
     def __init__(self, parent, windowName, azenqosDB):
@@ -1077,6 +1077,169 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
     def moveChart(self, sampledate):
         self.pa_widget.moveLineChart(sampledate)
 
+# GSM Line Chart UI
+class Ui_GSM_LCwidget(QWidget):
+    def __init__(self, parent, windowName, azenqosDB):
+        super().__init__(parent)
+        self.title = windowName
+        self.database = azenqosDB
+        self.width = 640
+        self.height = 480
+        self.maximumHeight = 480
+        self.maximumWidth = 640
+        self.setupUi()
+
+    def setupUi(self):
+        self.setObjectName("GSM_LCwidget")
+        self.resize(841, 586)
+
+        layout = QVBoxLayout(self)
+        # self.resize(841, 586)
+
+        # Graph Area
+        self.gsm_GArea = QtWidgets.QScrollArea(self)
+        self.gsm_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.gsm_GArea.setWidgetResizable(True)
+        self.gsm_GArea.setObjectName("gsm_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.gsm_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        # DataTable
+        self.gsm_tableWidget = QTableWidget(self)
+        self.gsm_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 81))
+        self.gsm_tableWidget.setObjectName("gsm_tableWidget")
+        self.gsm_tableWidget.setColumnCount(4)
+        self.gsm_tableWidget.setRowCount(2)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_tableWidget.setVerticalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_tableWidget.setVerticalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.gsm_tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_tableWidget.setHorizontalHeaderItem(0, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_tableWidget.setHorizontalHeaderItem(1, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.gsm_tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(0, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(0, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(255, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_tableWidget.setItem(0, 3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(1, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(1, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_tableWidget.setItem(1, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_tableWidget.setItem(1, 3, item)
+        self.gsm_tableWidget.horizontalHeader().setVisible(True)
+        self.gsm_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.gsm_tableWidget.verticalHeader().setVisible(False)
+
+        # DateLabel
+        self.datelabel = QtWidgets.QLabel(self)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QtWidgets.QLineEdit(self)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.gsm_widget = LineChart(self.gsm_GArea, self.title,
+                                     self.gsm_tableWidget, None,
+                                     self.database)
+        self.gsm_widget.setObjectName("gsm_widget")
+        self.gsm_GArea.setWidget(self.gsm_widget)
+
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
+
+        layout.addWidget(self.gsm_GArea)
+        layout.addWidget(self.gsm_tableWidget)
+
+    def retranslateUi(self):
+        _translate = QtCore.QCoreApplication.translate
+        self.setWindowTitle(
+            _translate("GSM_LCwidget", "GSM Line Chart [MS1]"))
+        item = self.gsm_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("GSM_LCwidget", "1"))
+        item = self.gsm_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("GSM_LCwidget", "2"))
+        item = self.gsm_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("GSM_LCwidget", "Element"))
+        item = self.gsm_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("GSM_LCwidget", "Value"))
+        item = self.gsm_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("GSM_LCwidget", "MS"))
+        item = self.gsm_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("GSM_LCwidget", "Color"))
+        __sortingEnabled = self.gsm_tableWidget.isSortingEnabled()
+        self.gsm_tableWidget.setSortingEnabled(False)
+        item = self.gsm_tableWidget.item(0, 0)
+        item.setText(_translate("GSM_LCwidget", "RxLev Sub (dBm)"))
+        item = self.gsm_tableWidget.item(0, 2)
+        item.setText(_translate("GSM_LCwidget", "MS1"))
+        item = self.gsm_tableWidget.item(1, 0)
+        item.setText(_translate("GSM_LCwidget", "RxQual Sub"))
+        item = self.gsm_tableWidget.item(1, 2)
+        item.setText(_translate("GSM_LCwidget", "MS1"))
+        self.gsm_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("GSM_LCwidget", "Date :"))
+
+    def moveChart(self, sampledate):
+        self.gsm_widget.moveLineChart(sampledate)
 
 # Class For Line Chart
 class LineChart(QWidget):
@@ -1129,6 +1292,8 @@ class LineChart(QWidget):
         # Choose Line Chart By WindowName
         if self.title == 'LTE_LTE Line Chart':
             self.LTE()
+        elif self.title == 'GSM_GSM Line Chart':
+            self.GSM()
         elif self.title == 'WCDMA_Line Chart':
             self.WCDMA()
         elif self.title == 'Data_LTE Data Line Chart':
@@ -1162,6 +1327,62 @@ class LineChart(QWidget):
         for row in range(len(Chart_datalist)):
             Value = round(Chart_datalist[row], 3)
             self.tablewidget.item(row, 1).setText(str(Value))
+
+    # Create GSM Line Chart
+    def GSM(self):
+        # Open Database And Query
+        ChartQuery = LineChartQuery(
+            ['time', 'gsm_rxlev_sub_dbm', 'gsm_rxqual_sub'], 'gsm_cell_meas',
+            '', self.database)
+        self.result = ChartQuery.getData()
+        for index in range(len(self.result['time'])):
+            self.Date.append(self.result['time'][index].split(' ')[0])
+            self.Time.append(self.result['time'][index].split(' ')[1])
+
+        if self.result['time'] != '':
+            # Graph setting
+            self.datelabel.setText("Date: " + self.Date[0])
+
+            # Ploting Graph
+            self.ColorArr = ['#ff0000', '#0000ff', '#007c00', '#ff77ab', '#000000']
+
+            # For Matplotlib-----------------------------------------
+            # for data in self.result.items():
+            #     if data[0] != 'time':
+            #         newline, = self.canvas.axes.plot(self.Time,
+            #                                          data[1]
+            #                                          )
+            #         self.lines.append(newline, )
+            #for colorindex in range(len(self.lines)):
+                #self.lines[colorindex].set_color(self.ColorArr[colorindex])
+
+            # Scale Editing
+            # self.canvas.axes.set_ylim(-120, 20)
+            # self.canvas.axes.set_xlim(self.Time[0], self.Time[4])
+
+            # Call Event Function
+            # pick = self.canvas.mpl_connect('pick_event', self.on_pick)
+            # tabledata = self.canvas.mpl_connect('button_press_event',self.get_table_data)
+
+            # For pyqtgraph-----------------------------------------------------------------
+            x = self.Time
+            self.xdict = dict(enumerate(x))
+            self.stringaxis.setTicks([self.xdict.items()])
+            for data in self.result.items():
+                if data[0] != 'time':
+                    newline = self.canvas.axes.plot(x=list(self.xdict.keys()),y=data[1])
+                    newline.curve.setClickable(True)
+                    self.lines.append(newline)
+
+            for colorindex in range(len(self.lines)):
+                self.lines[colorindex].setPen(pg.mkPen(self.ColorArr[colorindex],width=2))
+
+            # Scale Editing
+            self.canvas.axes.setYRange(-120,30)
+            self.canvas.axes.setXRange(list(self.xdict.keys())[0],list(self.xdict.keys())[4])
+
+            # Call Event Function
+            pick = [self.lines[i].sigClicked.connect(self.on_pick) for i in range(len(self.lines))]
 
 
     # Create LTE Line Chart
@@ -1458,16 +1679,16 @@ class LineChart(QWidget):
                 time_without_ms = timeItem[:8]
                 # if time_without_ms == timeString:
                 if time_without_ms == timeString:
-                    if self.Time.index(timeItem) + 3 < len(self.Time):
+                    if self.Time.index(timeItem) + 4 < len(self.Time):
                         currentTimeindex = self.Time.index(timeItem)
-                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+3])
+                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
                         break
-                if time_without_ms > timeString:
-                    index = self.Time.index(timeItem) - 1
-                    if self.Time.index(timeItem) + 3 < len(self.Time):
-                        currentTimeindex = self.Time.index(timeItem) - 1
-                        self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+3])
-                        break
+                # if time_without_ms > timeString:
+                #     index = self.Time.index(timeItem) - 1
+                #     if self.Time.index(timeItem) + 4 < len(self.Time):
+                #         currentTimeindex = self.Time.index(timeItem) - 1
+                #         self.canvas.axes.setXRange(list(self.xdict.keys())[currentTimeindex],list(self.xdict.keys())[currentTimeindex+4])
+                        # break
                     # else:
                     #     currentTimeindex = self.Time.index(timeItem) - 1
                 # if self.Time.index(timeItem) + 4 < len(self.Time):

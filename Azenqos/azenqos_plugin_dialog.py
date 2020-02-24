@@ -42,6 +42,8 @@ from .wcdma_query import WcdmaDataQuery
 
 from .worker import Worker
 
+from .globalutils import Utils
+
 azenqosDatabase = None
 minTimeValue = None
 maxTimeValue = None
@@ -60,6 +62,7 @@ linechartWindowname = [
             'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart','WCDMA_Pilot Analyzer'
         ]
 threadpool = QThreadPool()
+CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 def validateDateTime(date_string):
     date_format = "%Y-%m-%d %H:%M:%S.%f"
@@ -119,17 +122,16 @@ class Ui_DatabaseDialog(QDialog):
         DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos"))
         self.browseButton.setText(_translate("DatabaseDialog", "Browse.."))
         self.dbPathLabel.setText(
-            _translate("DatabaseDialog", "Database path: ( .db )"))
+            _translate("DatabaseDialog", "Database path: ( .azm )"))
 
     def getfiles(self):
         fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
                                                   QtCore.QDir.rootPath(),
-                                                  '*.db')
+                                                  '*.azm')
         if fileName != "":
-            archive = zipfile.ZipFile
-            baseFileName = os.path.basename(str(fileName))
             self.dbPath.setText(fileName)
-            self.databasePath = fileName
+            databasePath = Utils().unzipToFile(CURRENT_PATH, fileName)
+            self.databasePath = databasePath
         else:
             if self.dbPath.text() != "":
                 self.databasePath = self.dbPath.text()
@@ -162,8 +164,8 @@ class Ui_DatabaseDialog(QDialog):
         global allLayers
         start_time = time.time()
         QgsProject.removeAllMapLayers(QgsProject.instance())
-        urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
-        # urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
+        # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
+        urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
         rlayer = QgsRasterLayer(urlWithParams, 'Street map', 'wms')
         if rlayer.isValid():
             QgsProject.instance().addMapLayer(rlayer)
@@ -184,37 +186,18 @@ class Ui_DatabaseDialog(QDialog):
         global currentDateTimeString
         dataList = []
         azenqosDatabase.open()
-        for layerName in allLayers:
-            subQuery = QSqlQuery()
-            queryString = "SELECT MIN(time), MAX(time) FROM %s" % (
-                layerName)
-            subQuery.exec_(queryString)
-            while subQuery.next():
-                if str(subQuery.value(0)).strip() and str(subQuery.value(1)).strip():
-                    dataList.append([layerName, subQuery.value(0), subQuery.value(1)])
+        subQuery = QSqlQuery()
+        queryString = "SELECT log_start_time, log_end_time FROM logs"
+        subQuery.exec_(queryString)
+        while subQuery.next():
+            if subQuery.value(0).strip() and subQuery.value(1).strip():
+                startTime = subQuery.value(0)
+                endTime = subQuery.value(1)
         azenqosDatabase.close()
 
         try:
-            mintime = ''
-            maxtime = ''
-            for row in range(len(dataList)):
-                if row > 0:
-                    if dataList[row][1]:
-                        if dataList[row][1] < mintime:
-                            mintime = dataList[row][1]
-                    if dataList[row][2]:
-                        if dataList[row][2] > maxtime:
-                            maxtime = dataList[row][2]
-                else:
-                    if dataList[row][1]:
-                        mintime = dataList[row][1]
-                    if dataList[row][2]:
-                        maxtime = dataList[row][2]
-
-            minTimeValue = datetime.datetime.strptime(str(mintime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
-
-            maxTimeValue = datetime.datetime.strptime(str(maxtime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
-
+            minTimeValue = datetime.datetime.strptime(str(startTime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
+            maxTimeValue = datetime.datetime.strptime(str(endTime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
             currentDateTimeString = '%s' % (
                 datetime.datetime.fromtimestamp(minTimeValue))
         except:
@@ -349,6 +332,15 @@ class AzenqosDialog(QDialog):
         self.presentationTreeWidget.itemDoubleClicked.connect(
             self.loadAllMessages)
 
+        # GSM Section
+        # gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
+        # gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
+        # gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
+        # gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
+        # gsmCI = QTreeWidgetItem(gsm, ['C/I'])
+        # gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
+        # gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
+
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
         wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
@@ -410,26 +402,26 @@ class AzenqosDialog(QDialog):
         # signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
-        positioning = QTreeWidgetItem(self.presentationTreeWidget,
-                                      ['Positioning'])
-        positioningGps = QTreeWidgetItem(positioning, ['GPS'])
-        positioningMap = QTreeWidgetItem(positioning, ['Map'])
-        positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
+        # positioning = QTreeWidgetItem(self.presentationTreeWidget,
+        #                               ['Positioning'])
+        # positioningGps = QTreeWidgetItem(positioning, ['GPS'])
+        # positioningMap = QTreeWidgetItem(positioning, ['Map'])
+        # positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
         # Customized Window Section
-        customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
-                                           ['Customized Window'])
-        customizedWindowStatus = QTreeWidgetItem(customizedWindow,
-                                                 ['Status Window'])
-        customizedWindowMessage = QTreeWidgetItem(customizedWindow,
-                                                  ['Message Window'])
-        customizedWindowChart = QTreeWidgetItem(customizedWindow,
-                                                ['Line Chart'])
+        # customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
+        #                                    ['Customized Window'])
+        # customizedWindowStatus = QTreeWidgetItem(customizedWindow,
+        #                                          ['Status Window'])
+        # customizedWindowMessage = QTreeWidgetItem(customizedWindow,
+        #                                           ['Message Window'])
+        # customizedWindowChart = QTreeWidgetItem(customizedWindow,
+        #                                         ['Line Chart'])
 
         # NB-IoT Section
-        nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
-        nBIoTParams = QTreeWidgetItem(nBIoT,
-                                      ['NB-IoT Radio Parameters Window'])
+        # nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
+        # nBIoTParams = QTreeWidgetItem(nBIoT,
+        #                               ['NB-IoT Radio Parameters Window'])
 
         self.presentationTreeWidget.header().setCascadingSectionResizes(True)
         self.presentationTreeWidget.header().setHighlightSections(True)
@@ -604,8 +596,9 @@ class AzenqosDialog(QDialog):
 
                     # box = layer.boundingBoxOfSelected()
                     # iface.mapCanvas().setExtent(box)
+                    iface.mapCanvas().setSelectionColor(QColor("red"))
                     iface.mapCanvas().zoomToSelected(layer)
-                    iface.mapCanvas().zoomScale(2000.0)
+                    iface.mapCanvas().zoomScale(25600.0)
                     iface.mapCanvas().refresh()
                 elapsed_time = time.time() - start_time
                 QgsMessageLog.logMessage('Select Features Elapsed time: ' + str(elapsed_time) + ' s.')
@@ -2211,10 +2204,6 @@ class DataQuery:
         if value is not None:
             validatedValue = value
         return validatedValue
-
-
-
-
 
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)

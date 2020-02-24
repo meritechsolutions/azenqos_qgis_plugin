@@ -91,8 +91,9 @@ class Utils:
     def unzipToFile(self, currentPath, filePath):
         fileFolderPath = currentPath + '/file'
         fileList = os.listdir(fileFolderPath)
-        for f in fileList:
-            os.remove(fileFolderPath + '/' + f)
+        if len(fileList) > 0:
+            for f in fileList:
+                os.remove(fileFolderPath + '/' + f)
         if len(os.listdir(fileFolderPath)) == 0:
             with ZipFile(filePath, 'r') as zipObj:
                 zipObj.extractall(fileFolderPath)

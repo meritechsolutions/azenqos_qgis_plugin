@@ -63,14 +63,7 @@ linechartWindowname = [
         ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-
-def validateDateTime(date_string):
-    date_format = "%Y-%m-%d %H:%M:%S.%f"
-    try:
-        date_obj = datetime.datetime.strptime(date_string, date_format)
-        return True
-    except ValueError:
-        return False
+utils = Utils()
 
 # def clearAllSelectedFeatures():
 #     mc = iface.mapCanvas()
@@ -115,8 +108,7 @@ class Ui_DatabaseDialog(QDialog):
         self.browseButton.clicked.connect(self.getfiles)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
             self.checkDatabase)
-        self.buttonBox.button(
-            QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.close)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.reject)
 
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -149,9 +141,9 @@ class Ui_DatabaseDialog(QDialog):
                 "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
             return False
         else:
-            # self.uri = QgsDataSourceUri()
-            # self.uri.setDatabase(self.databasePath)
-            self.addLayerToQgis()
+            self.uri = QgsDataSourceUri()
+            self.uri.setDatabase(self.databasePath)
+            self.getLayersFromDb()
             # self.layerTask = LayerTask(u'Waste cpu 1', self.uri)
             # QgsApplication.taskManager().addTask(self.layerTask)
             self.getTimeForSlider()
@@ -160,27 +152,6 @@ class Ui_DatabaseDialog(QDialog):
             self.azenqosMainMenu.show()
             self.azenqosMainMenu.raise_()
             self.azenqosMainMenu.activateWindow()
-
-    def addLayerToQgis(self):
-        global allLayers
-        # start_time = time.time()
-        # QgsProject.removeAllMapLayers(QgsProject.instance())
-        # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
-        # # urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
-        # rlayer = QgsRasterLayer(urlWithParams, 'Street map', 'wms')
-        # if rlayer.isValid():
-        #     QgsProject.instance().addMapLayer(rlayer)
-        # else:
-        #     print('invalid layer')
-        azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "SELECT table_name FROM layer_statistics"
-        # queryString = "SELECT name FROM sqlite_master WHERE TYPE='table'"
-        query.exec_(queryString)
-        while query.next():
-            tableName = query.value(0)
-            allLayers.append(tableName)
-        azenqosDatabase.close()
 
     def getTimeForSlider(self):
         global minTimeValue
@@ -218,9 +189,37 @@ class Ui_DatabaseDialog(QDialog):
         azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
         azenqosDatabase.setDatabaseName(self.databasePath)
 
+    def getLayersFromDb(self):
+        global allLayers
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = "select tbl_name from sqlite_master where sql LIKE '%\"geom\"%' and type = 'table' order by tbl_name"
+        query.exec_(queryString)
+        while query.next():
+            tableName = query.value(0)
+            subQueryString = "select count(*) from %s" % (tableName)
+            subQuery = QSqlQuery()
+            subQuery.exec_(subQueryString)
+            while subQuery.next():
+                if int(subQuery.value(0)) > 0:
+                    allLayers.append(tableName)
+        azenqosDatabase.close()
+
     def setIncrementValue(self):
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
+
+    def reject(self):
+        global openedWindows
+        if len(openedWindows) > 0:
+            for window in openedWindows:
+                window.close()
+                window.reject()
+                del window
+        super().reject()
+        # QgsProject.removeAllMapLayers(QgsProject.instance())
+        self.destroy(True)
+        del self
 
 
 class AzenqosDialog(QDialog):
@@ -243,7 +242,7 @@ class AzenqosDialog(QDialog):
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
         self.setupTreeWidget(AzenqosDialog)
-        self.mdi = QMdiArea()
+        self.mdi = GroupArea()
         self.mdi.show()
 
         # Time Slider
@@ -324,15 +323,15 @@ class AzenqosDialog(QDialog):
             self.loadAllMessages)
 
         # GSM Section
-        gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
-        gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
-        gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
-        gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
-        gsmCI = QTreeWidgetItem(gsm, ['C/I'])
-        gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
-        gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
+        # gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
+        # gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
+        # gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
+        # gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
+        # gsmCI = QTreeWidgetItem(gsm, ['C/I'])
+        # gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
+        # gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
 
-        # WCDMA Section (3G)
+        # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
         wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
                                                    ['Active + Monitored Sets'])
@@ -392,14 +391,14 @@ class AzenqosDialog(QDialog):
                                               ['Serving System Info'])
         # signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
-        # # Positioning Section
+        # Positioning Section
         # positioning = QTreeWidgetItem(self.presentationTreeWidget,
         #                               ['Positioning'])
         # positioningGps = QTreeWidgetItem(positioning, ['GPS'])
         # positioningMap = QTreeWidgetItem(positioning, ['Map'])
         # positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
 
-        # # Customized Window Section
+        # Customized Window Section
         # customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
         #                                    ['Customized Window'])
         # customizedWindowStatus = QTreeWidgetItem(customizedWindow,
@@ -409,7 +408,7 @@ class AzenqosDialog(QDialog):
         # customizedWindowChart = QTreeWidgetItem(customizedWindow,
         #                                         ['Line Chart'])
 
-        # # NB-IoT Section
+        # NB-IoT Section
         # nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
         # nBIoTParams = QTreeWidgetItem(nBIoT,
         #                               ['NB-IoT Radio Parameters Window'])
@@ -495,12 +494,15 @@ class AzenqosDialog(QDialog):
                 if not window.title in linechartWindowname:
                     window.hilightRow(sampledate)
                 else:
-                    print('It\'s linechart.', globalutils.lineno(), getattr(window, "title"))
                     window.moveChart(sampledate)
-        # if len(tableList) > 0:
-        #     worker = Worker(self.hilightFeature())
-        #     threadpool.start(worker)
-        #     self.hilightFeature()
+        # text = "[--" + str(len(tableList) + "--]"
+        # QgsMessageLog.logMessage(text)
+
+        if len(tableList) > 0:
+            QgsMessageLog.logMessage('[-- have tableList --]')
+            worker = Worker(self.hilightFeature())
+            threadpool.start(worker)
+        # self.hilightFeature()
         self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
         currentDateTimeString = '%s' % (datetime.datetime.fromtimestamp(currentTimestamp))
@@ -509,236 +511,98 @@ class AzenqosDialog(QDialog):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
     #     iface.mapCanvas().refresh()
 
-    # def hilightFeature(self):
-    #     QgsMessageLog.logMessage('[-- Start hilight features --]')
-    #     start_time = time.time()
-    #     self.getPosIdsByTable()
-    #     if len(self.posIds) > 0 and len(self.posObjs) > 0:
-    #         self.usePosIdsSelectedFeatures()
-    #     QgsMessageLog.logMessage('[-- End hilight features --]')
+    def hilightFeature(self):
+        QgsMessageLog.logMessage('[-- Start hilight features --]')
+        start_time = time.time()
+        self.getPosIdsByTable()
+        if len(self.posIds) > 0 and len(self.posObjs) > 0:
+            self.usePosIdsSelectedFeatures()
+        QgsMessageLog.logMessage('[-- End hilight features --]')
 
-    # def getPosIdsByTable(self):
-    #     azenqosDatabase.open()
-    #     # start_time = time.time()
-    #     QgsMessageLog.logMessage('tables: ' + str(tableList))
-    #     for tableName in tableList:
-    #         self.posObjs = []
-    #         self.posIds = []
-    #         query = QSqlQuery()
-    #         queryString = "SELECT posid FROM %s WHERE time <= '%s' AND geom IS NOT NULL ORDER BY time DESC LIMIT 1" % (tableName, currentDateTimeString)
-    #         query.exec_(queryString)
-    #         while query.next():
-    #             posid = query.value(0)
-    #             posdict = {"posid": posid, "table": tableName}
-    #             self.posObjs.append(posdict)
-    #             self.posIds.append(posid)
-    #     # elapsed_time = time.time() - start_time
-    #     # QgsMessageLog.logMessage('Query Elapsed time: ' + str(elapsed_time) + ' s.')
-    #     azenqosDatabase.close()
+    def getPosIdsByTable(self):
+        azenqosDatabase.open()
+        # start_time = time.time()
+        QgsMessageLog.logMessage('tables: ' + str(tableList))
+        for tableName in tableList:
+            self.posObjs = []
+            self.posIds = []
+            query = QSqlQuery()
+            queryString = "SELECT posid FROM %s WHERE time <= '%s' AND geom IS NOT NULL ORDER BY time DESC LIMIT 1" % (tableName, currentDateTimeString)
+            query.exec_(queryString)
+            while query.next():
+                posid = query.value(0)
+                posdict = {"posid": posid, "table": tableName}
+                self.posObjs.append(posdict)
+                self.posIds.append(posid)
+        # elapsed_time = time.time() - start_time
+        # QgsMessageLog.logMessage('Query Elapsed time: ' + str(elapsed_time) + ' s.')
+        azenqosDatabase.close()
 
 
-    # def usePosIdsSelectedFeatures(self):
-    #     if self.posIds:
-    #         selected_ids = []
-    #         layerName = None
-    #         # start_time = time.time()
-    #         self.currentMaxPosId = max(self.posIds)
-    #         # if self.currentMaxPosId > self.maxPosId:
-    #         for obj in self.posObjs:
-    #             if obj.get("posid") == self.currentMaxPosId:
-    #                 layerName = obj.get("table")
-    #                 break
-    #         # elapsed_time = time.time() - start_time
-    #         # QgsMessageLog.logMessage('Get layer name and Max PosId Elapsed time: ' + str(elapsed_time) + ' s.')
-    #         # QgsMessageLog.logMessage('posIdAppoarchToTime: ' + str(self.currentMaxPosId))
+    def usePosIdsSelectedFeatures(self):
+        if self.posIds:
+            selected_ids = []
+            layerName = None
+            # start_time = time.time()
+            self.currentMaxPosId = max(self.posIds)
+            # if self.currentMaxPosId > self.maxPosId:
+            for obj in self.posObjs:
+                if obj.get("posid") == self.currentMaxPosId:
+                    layerName = obj.get("table")
+                    break
+            # elapsed_time = time.time() - start_time
+            # QgsMessageLog.logMessage('Get layer name and Max PosId Elapsed time: ' + str(elapsed_time) + ' s.')
+            # QgsMessageLog.logMessage('posIdAppoarchToTime: ' + str(self.currentMaxPosId))
 
-    #         layer = QgsProject.instance().mapLayersByName(layerName)[0]
-    #         layerFeatures = layer.getFeatures()
-    #         root = QgsProject.instance().layerTreeRoot()
-    #         root.setHasCustomLayerOrder(True)
-    #         order = root.customLayerOrder()
-    #         order.insert(0, order.pop(order.index(layer))) # vlayer to the top
-    #         root.setCustomLayerOrder(order)
-    #         iface.setActiveLayer(layer)
-    #         QgsMessageLog.logMessage('layer name: ' + str(layerName))
+            layer = QgsProject.instance().mapLayersByName(layerName)[0]
+            layerFeatures = layer.getFeatures()
+            root = QgsProject.instance().layerTreeRoot()
+            root.setHasCustomLayerOrder(True)
+            order = root.customLayerOrder()
+            order.insert(0, order.pop(order.index(layer))) # vlayer to the top
+            root.setCustomLayerOrder(order)
+            iface.setActiveLayer(layer)
+            QgsMessageLog.logMessage('layer name: ' + str(layerName))
 
-    #         for feature in layerFeatures:
-    #             posid = feature['posid']
-    #             if self.currentMaxPosId == posid:
-    #                 selected_ids.append(feature.id())
-    #         QgsMessageLog.logMessage('selected_ids: {0}'.format(str(selected_ids)))
+            for feature in layerFeatures:
+                posid = feature['posid']
+                if self.currentMaxPosId == posid:
+                    selected_ids.append(feature.id())
+            QgsMessageLog.logMessage('selected_ids: {0}'.format(str(selected_ids)))
 
-    #         if layer:
-    #             start_time = time.time()
+            if layer:
+                start_time = time.time()
 
-    #             if len(selected_ids) > 0:
-    #                 # clearAllSelectedFeatures()
-    #                 layer.selectByIds(selected_ids)
-    #                 ext = layer.extent()
-    #                 xmin = ext.xMinimum()
-    #                 xmax = ext.xMaximum()
-    #                 ymin = ext.yMinimum()
-    #                 ymax = ext.yMaximum()
-    #                 zoomRectangle = QgsRectangle(xmin,ymin,xmax,ymax)
-    #                 iface.mapCanvas().setExtent(zoomRectangle)
+                if len(selected_ids) > 0:
+                    # clearAllSelectedFeatures()
+                    layer.selectByIds(selected_ids)
+                    ext = layer.extent()
+                    xmin = ext.xMinimum()
+                    xmax = ext.xMaximum()
+                    ymin = ext.yMinimum()
+                    ymax = ext.yMaximum()
+                    zoomRectangle = QgsRectangle(xmin,ymin,xmax,ymax)
+                    iface.mapCanvas().setExtent(zoomRectangle)
 
-    #                 # box = layer.boundingBoxOfSelected()
-    #                 # iface.mapCanvas().setExtent(box)
-    #                 iface.mapCanvas().zoomToSelected(layer)
-    #                 iface.mapCanvas().zoomScale(2000.0)
-    #                 iface.mapCanvas().refresh()
-    #             elapsed_time = time.time() - start_time
-    #             QgsMessageLog.logMessage('Select Features Elapsed time: ' + str(elapsed_time) + ' s.')
-    #             # self.maxPosId = self.currentMaxPosId
+                    # box = layer.boundingBoxOfSelected()
+                    # iface.mapCanvas().setExtent(box)
+                    iface.mapCanvas().setSelectionColor(QColor("red"))
+                    iface.mapCanvas().zoomToSelected(layer)
+                    iface.mapCanvas().zoomScale(25600.0)
+                    iface.mapCanvas().refresh()
+                elapsed_time = time.time() - start_time
+                QgsMessageLog.logMessage('Select Features Elapsed time: ' + str(elapsed_time) + ' s.')
+                # self.maxPosId = self.currentMaxPosId
 
 
     def classifySelectedItems(self, parent, child):
         global openedWindows
         global tableList
         windowName = parent + "_" + child
+        if hasattr(self, 'mdi') is False:
+            self.mdi = GroupArea()
         subwindowList = self.mdi.subWindowList()
-        if parent == "GSM":
-            if child == "Radio Parameters":
-                # if hasattr(self, 'gsm_rdp_window'):
-                #     self.gsm_rdp_window.show()
-                # else:
-                #     self.gsm_rdp_window = TableWindow(windowName)
-                #     openedWindows.append(self.gsm_rdp_window)
-                #     self.gsm_rdp_window.show()
-                tableWidget = None
-                if hasattr(self, 'gsm_rdp_window') is True:
-                    tableWindow = self.gsm_rdp_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.gsm_rdp_window, windowName)
-                        openedWindows.append(tableWidget)
-
-                    if self.gsm_rdp_window not in subwindowList:
-                        self.gsm_rdp_window = QMdiSubWindow(self.mdi)
-                        self.mdi.addSubWindow(self.gsm_rdp_window)
-
-                    if tableWidget:
-                        self.gsm_rdp_window.setWidget(tableWidget)
-                    self.gsm_rdp_window.show()
-
-            elif child == "Serving + Neighbors":
-                # if hasattr(self, 'gsm_sn_window'):
-                #     self.gsm_sn_window.show()
-                # else:
-                #     self.gsm_sn_window = TableWindow(windowName)
-                #     openedWindows.append(self.gsm_sn_window)
-                #     self.gsm_sn_window.show()
-                tableWidget = None
-                if hasattr(self, 'gsm_sn_window') is True:
-                    tableWindow = self.gsm_sn_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.gsm_sn_window, windowName)
-                        openedWindows.append(tableWidget)
-
-                    if self.gsm_sn_window not in subwindowList:
-                        self.gsm_sn_window = QMdiSubWindow(self.mdi)
-                        self.mdi.addSubWindow(self.gsm_sn_window)
-
-                    if tableWidget:
-                        self.gsm_sn_window.setWidget(tableWidget)
-                    self.gsm_sn_window.show()
-
-            elif child == "Current Channel":
-                # if hasattr(self, 'gsm_cc_window'):
-                #     self.gsm_cc_window.show()
-                # else:
-                #     self.gsm_cc_window = TableWindow(windowName)
-                #     openedWindows.append(self.gsm_cc_window)
-                #     self.gsm_cc_window.show()
-                tableWidget = None
-                if hasattr(self, 'gsm_cc_window') is True:
-                    tableWindow = self.gsm_cc_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.gsm_cc_window, windowName)
-                        openedWindows.append(tableWidget)
-
-                    if self.gsm_cc_window not in subwindowList:
-                        self.gsm_cc_window = QMdiSubWindow(self.mdi)
-                        self.mdi.addSubWindow(self.gsm_cc_window)
-
-                    if tableWidget:
-                        self.gsm_cc_window.setWidget(tableWidget)
-                    self.gsm_cc_window.show()
-
-            elif child == "C/I":
-                # if hasattr(self, 'gsm_ci_window'):
-                #     self.gsm_ci_window.show()
-                # else:
-                #     self.gsm_ci_window = TableWindow(windowName)
-                #     openedWindows.append(self.gsm_ci_window)
-                #     self.gsm_ci_window.show()
-                tableWidget = None
-                if hasattr(self, 'gsm_ci_window') is True:
-                    tableWindow = self.gsm_ci_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.gsm_ci_window, windowName)
-                        openedWindows.append(tableWidget)
-
-                    if self.gsm_ci_window not in subwindowList:
-                        self.gsm_ci_window = QMdiSubWindow(self.mdi)
-                        self.mdi.addSubWindow(self.gsm_ci_window)
-
-                    if tableWidget:
-                        self.gsm_ci_window.setWidget(tableWidget)
-                    self.gsm_ci_window.show()
-
-            elif child == "GSM Line Chart":
-                # if hasattr(self, 'gsm_lc_window'):
-                #     self.gsm_lc_window.show()
-                # else:
-                #     self.gsm_lc_window = Ui_GSM_LCwidget(windowName)
-                #     openedWindows.append(self.gsm_lc_window)
-                #     self.gsm_lc_window.show()
-                linechartWidget = None
-                if hasattr(self, 'gsm_lc_window') is True:
-                    linechartWindow = self.gsm_lc_window.widget()
-                    if not linechartWindow:
-                        linechartWidget = Ui_GSM_LCwidget(self, windowName, azenqosDatabase)
-                        openedWindows.append(linechartWidget)
-
-                    if self.gsm_lc_window not in subwindowList:
-                        self.gsm_lc_window = QMdiSubWindow(self.mdi)
-                        self.mdi.addSubWindow(self.gsm_lc_window)
-
-                    if linechartWidget:
-                        self.gsm_lc_window.setWidget(linechartWidget)
-                    self.gsm_lc_window.show()
-                else:
-                    # create new subwindow
-                    self.gsm_lc_window = QMdiSubWindow(self.mdi)
-                    linechartWidget = Ui_GSM_LCwidget(self, windowName, azenqosDatabase)
-                    self.gsm_lc_window.setWidget(linechartWidget)
-                    self.mdi.addSubWindow(self.gsm_lc_window)
-                    self.gsm_lc_window.show()
-                    openedWindows.append(linechartWidget)
-
-            elif child == "Events Counter":
-                # if hasattr(self, 'gsm_ec_window'):
-                #     self.gsm_ec_window.show()
-                # else:
-                #     self.gsm_ec_window = TableWindow(windowName)
-                #     openedWindows.append(self.gsm_ec_window)
-                #     self.gsm_ec_window.show()
-                tableWidget = None
-                if hasattr(self, 'gsm_ec_window') is True:
-                    tableWindow = self.gsm_ec_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.gsm_ec_window, windowName)
-                        openedWindows.append(tableWidget)
-
-                    if self.gsm_ec_window not in subwindowList:
-                        self.gsm_ec_window = QMdiSubWindow(self.mdi)
-                        self.mdi.addSubWindow(self.gsm_ec_window)
-
-                    if tableWidget:
-                        self.gsm_ec_window.setWidget(tableWidget)
-                    self.gsm_ec_window.show()
-
-        elif parent == "WCDMA":
+        if parent == "WCDMA":
             if child == "Active + Monitored Sets":
                 tableWidget = None
                 if hasattr(self, 'wcdma_ams_window') is True:
@@ -1768,19 +1632,27 @@ class AzenqosDialog(QDialog):
                     pass
 
     def closeEvents(self):
+        self.pauseTime()
         self.timeSliderThread.exit()
+        self.close()
+        self.databaseUi.destroy(True,True)
+        self.destroy(True,True)
 
     def reject(self):
+        super().reject()
         # QgsMessageLog.logMessage('Close App')
         # clearAllSelectedFeatures()
         # QgsProject.removeAllMapLayers(QgsProject.instance())
+        for mdiwindow in self.mdi.subWindowList():
+            mdiwindow.close()
         self.mdi.close()
-        if len(openedWindows) > 0:
-            for window in openedWindows:
-                window.close()
-        super().reject()
-        del self.databaseUi
-        del self
+
+class GroupArea(QMdiArea):
+    def __init__(self):
+        super().__init__()
+
+    def closeEvent(self, QCloseEvent):
+        self.closeAllSubWindows()
 
 
 class TimeSlider(QSlider):
@@ -1866,28 +1738,6 @@ class TableWindow(QWidget):
 
     def specifyTablesHeader(self):
         if self.title is not None:
-            # GSM
-            if self.title == 'GSM_Radio Parameters':
-                self.tableHeader = ["Element", "Full", "Sub"]
-                self.dataList = GsmDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getRadioParameters()
-            elif self.title == 'GSM_Serving + Neighbors':
-                self.tableHeader = [
-                    "Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1",
-                    "C2", "C31", "C32"
-                ]
-                self.dataList = GsmDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getServingAndNeighbors()
-            elif self.title == 'GSM_Current Channel':
-                self.tableHeader = ["Element", "Value"]
-            elif self.title == 'GSM_C/I':
-                self.tableHeader = ["Time", "ARFCN", "Value"]
-            elif self.title == 'GSM_Line Chart':
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == 'GSM_Events Counter':
-                self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
             # WCDMA
             if self.title == 'WCDMA_Active + Monitored Sets':
                 self.tableHeader = [
@@ -2164,182 +2014,6 @@ class TableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-class DataQuery:
-    def __init__(self, windowName):
-        self.windowName = windowName
-        self.timeFilter = currentTimestamp
-
-    def getGprsEdgeInformation(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getHsdpaHspaStatistics(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getHsupaStatistics(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getLteDataStatistics(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getWifiConnectedAp(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getWifiScannedAps(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getWifiGraph(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-
-# LTE Line Chart UI
-
-# class DataQuery:
-#     def __inti__(self, fieldArr, tableName, conditionStr):
-#         self.fieldArr = fieldArr
-#         self.tableName = tableName
-#         self.condition = conditionStr
-
-#     def countField(self):
-#         fieldCount = 0
-#         if self.fieldArr is not None:
-#             fieldCount = len(self.fieldArr)
-#         return fieldCount
-
-#     def selectFieldToQuery(self):
-#         selectField = '*'
-#         if self.fieldArr is not None:
-#             selectField = ",".join(self.fieldArr)
-#         return selectField
-
-#     def getData(self):
-#         result = dict()
-#         selectField = self.selectFieldToQuery()
-#         azenqosDatabase.open()
-#         query = QSqlQuery()
-#         queryString = 'select %s from %s' % (selectField, self.tableName)
-#         query.exec_(queryString)
-#         while query.next():
-#             for field in range(len(self.fieldArr)):
-#                 fieldName = fieldArr[field]
-#                 validatedValue = self.valueValidation(query.value(field))
-#                 if fieldName in result:
-#                     if isinstance(result[fieldName], list):
-#                         result[fieldName].append(validatedValue)
-#                     else:
-#                         result[fieldName] = [validatedValue]
-#                 else:
-#                     result[fieldName] = [validatedValue]
-#         azenqosDatabase.close()
-#         return result
-
-#     def valueValidation(self, value):
-#         validatedValue = 0
-#         if value is not None:
-#             validatedValue = value
-#         return validatedValue
-
-
-
-
-
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)
 
@@ -2396,10 +2070,54 @@ class TimeSliderThread(QThread):
 #         self.start_time = None
 #         self.desc = desc
 #         self.exception = None
+#         self.layerGroups = []
+#         self.azqGroup = None
+
+#     def addMapToQgis(self):
+#         self.removeAzenqosGroup()
+#         root = QgsProject.instance().layerTreeRoot()
+#         self.azqGroup = QgsLayerTreeGroup("Azenqos")
+#         root.addChildNode(self.azqGroup)
+#         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
+#         urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
+#         rlayer = QgsRasterLayer(urlWithParams, 'Street map', 'wms')
+#         if rlayer.isValid():
+#             QgsProject.instance().addMapLayer(rlayer, False)
+#             self.azqGroup.addLayer(rlayer)
+#         else:
+#             QgsMessageLog.logMessage('Invalid layer')
+
+#     def classifyLayerToGroup(self):
+#         for vlayer in self.vlayers:
+#             # for group in self.layerGroups:
+#             vlayerName = vlayer.name()
+#             if vlayerName.startswith('gsm'):
+#                 self.addLayerToGroup('gsm', vlayer)
+#             elif vlayerName.startswith('wcdma'):
+#                 self.addLayerToGroup('wcdma', vlayer)
+#             elif vlayerName.startswith('lte'):
+#                 self.addLayerToGroup('lte', vlayer)
+#             elif vlayerName.startswith('cdma'):
+#                 self.addLayerToGroup('cdma', vlayer)
+#             elif vlayerName.startswith('data'):
+#                 self.addLayerToGroup('data', vlayer)
+#             else:
+#                 self.addLayerToGroup('signaling', vlayer)
+
+#     def addLayerToGroup(self, groupname, layer):
+#         nodeGroup = self.azqGroup.findGroup(groupname)
+#         nodeGroup.addLayer(layer)
+
+#     def removeAzenqosGroup(self):
+#         root = QgsProject.instance().layerTreeRoot()
+#         azqGroup = root.findGroup('Azenqos')
+#         if azqGroup:
+#             root.removeChildNode(azqGroup)
 
 #     def run(self):
 #         QgsMessageLog.logMessage('[-- Start add layers --]', tag="Processing")
 #         self.start_time = time.time()
+#         # self.getLayersFromDb()
 #         for tableName in allLayers:
 #             self.uri.setDataSource('', tableName, 'geom')
 #             vlayer = QgsVectorLayer(self.uri.uri(), tableName, 'spatialite')
@@ -2417,8 +2135,12 @@ class TimeSliderThread(QThread):
 
 #     def finished(self, result):
 #         if result:
-#             for vlayer in self.vlayers:
-#                 QgsProject.instance().addMapLayer(vlayer)
+#             self.addMapToQgis()
+#             groups = utils.getLayerGroup()
+#             for groupname in groups:
+#                 self.azqGroup.addGroup(groupname)
+#                 self.layerGroups.append({ 'name' : groupname})
+#             self.classifyLayerToGroup()
 #             iface.mapCanvas().setSelectionColor(QColor("red"))
 #             elapsed_time = time.time() - self.start_time
 #             QgsMessageLog.logMessage('Elapsed time: ' + str(elapsed_time) + ' s.', tag="Processing")
@@ -2437,6 +2159,7 @@ class TimeSliderThread(QThread):
 #                     exception=self.exception,
 #                     tag="Exception")
 #                 raise self.exception
+
 
 
 if __name__ == '__main__':

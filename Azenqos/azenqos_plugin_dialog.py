@@ -75,6 +75,12 @@ def clearAllSelectedFeatures():
     mc.refresh()
     QgsMessageLog.logMessage('[-- Clear selected features --]')
 
+def removeAzenqosGroup():
+        root = QgsProject.instance().layerTreeRoot()
+        azqGroup = root.findGroup('Azenqos')
+        if azqGroup:
+            root.removeChildNode(azqGroup)
+
 
 # Database select window
 class Ui_DatabaseDialog(QDialog):
@@ -219,6 +225,7 @@ class Ui_DatabaseDialog(QDialog):
                 del window
         super().reject()
         QgsProject.removeAllMapLayers(QgsProject.instance())
+        removeAzenqosGroup()
         self.destroy(True)
         del self
 
@@ -1644,6 +1651,7 @@ class AzenqosDialog(QDialog):
         # QgsMessageLog.logMessage('Close App')
         clearAllSelectedFeatures()
         QgsProject.removeAllMapLayers(QgsProject.instance())
+        removeAzenqosGroup()
         for mdiwindow in self.mdi.subWindowList():
             mdiwindow.close()
         self.mdi.close()
@@ -2084,7 +2092,7 @@ class LayerTask(QgsTask):
         self.azqGroup = None
 
     def addMapToQgis(self):
-        self.removeAzenqosGroup()
+        removeAzenqosGroup()
         root = QgsProject.instance().layerTreeRoot()
         self.azqGroup = QgsLayerTreeGroup("Azenqos")
         root.addChildNode(self.azqGroup)
@@ -2118,11 +2126,7 @@ class LayerTask(QgsTask):
         nodeGroup = self.azqGroup.findGroup(groupname)
         nodeGroup.addLayer(layer)
 
-    def removeAzenqosGroup(self):
-        root = QgsProject.instance().layerTreeRoot()
-        azqGroup = root.findGroup('Azenqos')
-        if azqGroup:
-            root.removeChildNode(azqGroup)
+
 
     def run(self):
         QgsMessageLog.logMessage('[-- Start add layers --]', tag="Processing")

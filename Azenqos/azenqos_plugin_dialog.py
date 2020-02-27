@@ -63,14 +63,7 @@ linechartWindowname = [
         ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-
-def validateDateTime(date_string):
-    date_format = "%Y-%m-%d %H:%M:%S.%f"
-    try:
-        date_obj = datetime.datetime.strptime(date_string, date_format)
-        return True
-    except ValueError:
-        return False
+utils = Utils()
 
 def clearAllSelectedFeatures():
     mc = iface.mapCanvas()
@@ -150,7 +143,8 @@ class Ui_DatabaseDialog(QDialog):
         else:
             self.uri = QgsDataSourceUri()
             self.uri.setDatabase(self.databasePath)
-            self.addLayerToQgis()
+            self.getLayersFromDb()
+            # self.addLayerToQgis()
             self.layerTask = LayerTask(u'Waste cpu 1', self.uri)
             QgsApplication.taskManager().addTask(self.layerTask)
             self.getTimeForSlider()
@@ -159,26 +153,6 @@ class Ui_DatabaseDialog(QDialog):
             self.azenqosMainMenu.show()
             self.azenqosMainMenu.raise_()
             self.azenqosMainMenu.activateWindow()
-
-    def addLayerToQgis(self):
-        global allLayers
-        start_time = time.time()
-        QgsProject.removeAllMapLayers(QgsProject.instance())
-        # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
-        urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
-        rlayer = QgsRasterLayer(urlWithParams, 'Street map', 'wms')
-        if rlayer.isValid():
-            QgsProject.instance().addMapLayer(rlayer)
-        else:
-            print('invalid layer')
-        azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "select tbl_name from sqlite_master where sql LIKE '%\"geom\"%' and type = 'table'"
-        query.exec_(queryString)
-        while query.next():
-            tableName = query.value(0)
-            allLayers.append(tableName)
-        azenqosDatabase.close()
 
     def getTimeForSlider(self):
         global minTimeValue
@@ -216,6 +190,22 @@ class Ui_DatabaseDialog(QDialog):
         azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
         azenqosDatabase.setDatabaseName(self.databasePath)
 
+    def getLayersFromDb(self):
+        global allLayers
+        azenqosDatabase.open()
+        query = QSqlQuery()
+        queryString = "select tbl_name from sqlite_master where sql LIKE '%\"geom\"%' and type = 'table' order by tbl_name"
+        query.exec_(queryString)
+        while query.next():
+            tableName = query.value(0)
+            subQueryString = "select count(*) from %s" % (tableName)
+            subQuery = QSqlQuery()
+            subQuery.exec_(subQueryString)
+            while subQuery.next():
+                if int(subQuery.value(0)) > 0:
+                    allLayers.append(tableName)
+        azenqosDatabase.close()
+
     def setIncrementValue(self):
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
@@ -228,6 +218,7 @@ class Ui_DatabaseDialog(QDialog):
                 window.reject()
                 del window
         super().reject()
+        QgsProject.removeAllMapLayers(QgsProject.instance())
         self.destroy(True)
         del self
 
@@ -1651,8 +1642,8 @@ class AzenqosDialog(QDialog):
     def reject(self):
         super().reject()
         # QgsMessageLog.logMessage('Close App')
-        # clearAllSelectedFeatures()
-        # QgsProject.removeAllMapLayers(QgsProject.instance())
+        clearAllSelectedFeatures()
+        QgsProject.removeAllMapLayers(QgsProject.instance())
         for mdiwindow in self.mdi.subWindowList():
             mdiwindow.close()
         self.mdi.close()
@@ -2033,178 +2024,6 @@ class TableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-class DataQuery:
-    def __init__(self, windowName):
-        self.windowName = windowName
-        self.timeFilter = currentTimestamp
-
-    def getGprsEdgeInformation(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getHsdpaHspaStatistics(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getHsupaStatistics(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getLteDataStatistics(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getWifiConnectedAp(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getWifiScannedAps(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-    def getWifiGraph(self):
-        if azenqosDatabase is not None:
-            azenqosDatabase.open()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
-        azenqosDatabase.close()
-        return dataList
-
-
-# LTE Line Chart UI
-
-class DataQuery:
-    def __inti__(self, fieldArr, tableName, conditionStr):
-        self.fieldArr = fieldArr
-        self.tableName = tableName
-        self.condition = conditionStr
-
-    def countField(self):
-        fieldCount = 0
-        if self.fieldArr is not None:
-            fieldCount = len(self.fieldArr)
-        return fieldCount
-
-    def selectFieldToQuery(self):
-        selectField = '*'
-        if self.fieldArr is not None:
-            selectField = ",".join(self.fieldArr)
-        return selectField
-
-    def getData(self):
-        result = dict()
-        selectField = self.selectFieldToQuery()
-        azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = 'select %s from %s' % (selectField, self.tableName)
-        query.exec_(queryString)
-        while query.next():
-            for field in range(len(self.fieldArr)):
-                fieldName = fieldArr[field]
-                validatedValue = self.valueValidation(query.value(field))
-                if fieldName in result:
-                    if isinstance(result[fieldName], list):
-                        result[fieldName].append(validatedValue)
-                    else:
-                        result[fieldName] = [validatedValue]
-                else:
-                    result[fieldName] = [validatedValue]
-        azenqosDatabase.close()
-        return result
-
-    def valueValidation(self, value):
-        validatedValue = 0
-        if value is not None:
-            validatedValue = value
-        return validatedValue
-
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)
 
@@ -2261,10 +2080,54 @@ class LayerTask(QgsTask):
         self.start_time = None
         self.desc = desc
         self.exception = None
+        self.layerGroups = []
+        self.azqGroup = None
+
+    def addMapToQgis(self):
+        self.removeAzenqosGroup()
+        root = QgsProject.instance().layerTreeRoot()
+        self.azqGroup = QgsLayerTreeGroup("Azenqos")
+        root.addChildNode(self.azqGroup)
+        # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
+        urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
+        rlayer = QgsRasterLayer(urlWithParams, 'Street map', 'wms')
+        if rlayer.isValid():
+            QgsProject.instance().addMapLayer(rlayer, False)
+            self.azqGroup.addLayer(rlayer)
+        else:
+            QgsMessageLog.logMessage('Invalid layer')
+
+    def classifyLayerToGroup(self):
+        for vlayer in self.vlayers:
+            # for group in self.layerGroups:
+            vlayerName = vlayer.name()
+            if vlayerName.startswith('gsm'):
+                self.addLayerToGroup('gsm', vlayer)
+            elif vlayerName.startswith('wcdma'):
+                self.addLayerToGroup('wcdma', vlayer)
+            elif vlayerName.startswith('lte'):
+                self.addLayerToGroup('lte', vlayer)
+            elif vlayerName.startswith('cdma'):
+                self.addLayerToGroup('cdma', vlayer)
+            elif vlayerName.startswith('data'):
+                self.addLayerToGroup('data', vlayer)
+            else:
+                self.addLayerToGroup('signaling', vlayer)
+
+    def addLayerToGroup(self, groupname, layer):
+        nodeGroup = self.azqGroup.findGroup(groupname)
+        nodeGroup.addLayer(layer)
+
+    def removeAzenqosGroup(self):
+        root = QgsProject.instance().layerTreeRoot()
+        azqGroup = root.findGroup('Azenqos')
+        if azqGroup:
+            root.removeChildNode(azqGroup)
 
     def run(self):
         QgsMessageLog.logMessage('[-- Start add layers --]', tag="Processing")
         self.start_time = time.time()
+        # self.getLayersFromDb()
         for tableName in allLayers:
             self.uri.setDataSource('', tableName, 'geom')
             vlayer = QgsVectorLayer(self.uri.uri(), tableName, 'spatialite')
@@ -2282,8 +2145,12 @@ class LayerTask(QgsTask):
 
     def finished(self, result):
         if result:
-            for vlayer in self.vlayers:
-                QgsProject.instance().addMapLayer(vlayer)
+            self.addMapToQgis()
+            groups = utils.getLayerGroup()
+            for groupname in groups:
+                self.azqGroup.addGroup(groupname)
+                self.layerGroups.append({ 'name' : groupname})
+            self.classifyLayerToGroup()
             iface.mapCanvas().setSelectionColor(QColor("red"))
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage('Elapsed time: ' + str(elapsed_time) + ' s.', tag="Processing")

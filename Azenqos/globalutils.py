@@ -1,6 +1,7 @@
 from PyQt5.QtSql import QSql,QSqlDatabase,QSqlQuery
 import csv,inspect,os
 from zipfile import ZipFile
+from dataclasses import dataclass
 
 db = None
 elementData = []
@@ -9,6 +10,7 @@ def lineno():
     """Returns the current line number in our program."""
     return inspect.currentframe().f_back.f_lineno
 
+# todo: ใช้ข้อมูลจาก csv อ้างอิงชื่อแต่ละ element
 class ElementInfo:
     data = []
     def __init__(self):
@@ -37,12 +39,11 @@ class ElementInfo:
             if name in obj['name']:
                 return obj
 
-
-def addDatabase():
-    databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
-    global db
-    db = QSqlDatabase.addDatabase("QSQLITE")
-    db.setDatabaseName(databasePath)
+    def addDatabase(self):
+        databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
+        global db
+        db = QSqlDatabase.addDatabase("QSQLITE")
+        db.setDatabaseName(databasePath)
 
 class Row:
     source = []
@@ -64,7 +65,7 @@ class Table:
         print([self.row.source,self.row.datarow])
 
 class Query:
-    def __init__(self, column_name: str, table_name: str):
+    def __init__(self, column_name: str, table_name: str, condition: str):
         self.column_name = column_name
         self.table_name = table_name
 
@@ -102,6 +103,61 @@ class Utils:
             dbFilePath = fileFolderPath + '/azqdata.db'
             return dbFilePath
 
+    def openConnection(self, db: QSqlDatabase):
+        if db:
+            if not db.isOpen():
+                db.open()
+
+    def closeConnection(self, db: QSqlDatabase):
+        if db:
+            if db.isOpen():
+                db.close()
+
+#todo: dynamic data query object
+# class DataQuery:
+#     def __inti__(self, fieldArr, tableName, conditionStr):
+#         self.fieldArr = fieldArr
+#         self.tableName = tableName
+#         self.condition = conditionStr
+
+#     def countField(self):
+#         fieldCount = 0
+#         if self.fieldArr is not None:
+#             fieldCount = len(self.fieldArr)
+#         return fieldCount
+
+#     def selectFieldToQuery(self):
+#         selectField = '*'
+#         if self.fieldArr is not None:
+#             selectField = ",".join(self.fieldArr)
+#         return selectField
+
+#     def getData(self):
+#         result = dict()
+#         selectField = self.selectFieldToQuery()
+#         azenqosDatabase.open()
+#         query = QSqlQuery()
+#         queryString = 'select %s from %s' % (selectField, self.tableName)
+#         query.exec_(queryString)
+#         while query.next():
+#             for field in range(len(self.fieldArr)):
+#                 fieldName = fieldArr[field]
+#                 validatedValue = self.valueValidation(query.value(field))
+#                 if fieldName in result:
+#                     if isinstance(result[fieldName], list):
+#                         result[fieldName].append(validatedValue)
+#                     else:
+#                         result[fieldName] = [validatedValue]
+#                 else:
+#                     result[fieldName] = [validatedValue]
+#         azenqosDatabase.close()
+#         return result
+
+    # def valueValidation(self, value):
+    #     validatedValue = 0
+    #     if value is not None:
+    #         validatedValue = value
+    #     return validatedValue
 
 
 

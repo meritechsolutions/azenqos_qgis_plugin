@@ -163,7 +163,7 @@ class CustomizeQuery:
             queryString = 'SELECT %s FROM %s %s ORDER BY time DESC LIMIT 1' % (self.inputData[1], self.inputData[0], condition)
             query.exec_(queryString)
             while query.next():
-                result = [query.value(0), self.inputData[2], self.inputData[3]]
+                result = [str(query.value(0)), self.inputData[2], self.inputData[3]]
             self.db.close()
         else:
             #inputdata = ['text','row','column']

@@ -2,4 +2,4 @@ language: python
 install:
   - pip install -r requirements-dev.txt
 script: 
-  - black Azenqos/
+  - black --check Azenqos/

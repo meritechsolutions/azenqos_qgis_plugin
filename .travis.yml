@@ -1,2 +1,5 @@
-pip install black
-black Azenqos
+language: python
+install:
+  - pip install -r requirements-dev.txt
+script: 
+  - black Azenqos/

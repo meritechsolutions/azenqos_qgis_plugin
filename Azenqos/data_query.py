@@ -1,8 +1,9 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
+
 class DataQuery:
     def __init__(self, database, currentDateTimeString):
-        self.timeFilter = ''
+        self.timeFilter = ""
         self.azenqosDatabase = database
         if currentDateTimeString:
             self.timeFilter = currentDateTimeString
@@ -20,7 +21,7 @@ class DataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            dataList.append([timeValue, "", nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 
@@ -37,7 +38,7 @@ class DataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            dataList.append([timeValue, "", nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 
@@ -54,7 +55,7 @@ class DataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            dataList.append([timeValue, "", nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 
@@ -71,7 +72,7 @@ class DataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            dataList.append([timeValue, "", nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 
@@ -88,7 +89,7 @@ class DataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            dataList.append([timeValue, "", nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 
@@ -105,7 +106,7 @@ class DataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            dataList.append([timeValue, "", nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList
 
@@ -122,6 +123,6 @@ class DataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', nameValue, detailStrValue])
+            dataList.append([timeValue, "", nameValue, detailStrValue])
         azenqosDatabase.close()
         return dataList

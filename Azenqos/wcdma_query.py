@@ -1,8 +1,9 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
+
 class WcdmaDataQuery:
     def __init__(self, database, currentDateTimeString):
-        self.timeFilter = ''
+        self.timeFilter = ""
         self.azenqosDatabase = database
         if currentDateTimeString:
             self.timeFilter = currentDateTimeString
@@ -10,20 +11,22 @@ class WcdmaDataQuery:
     def getActiveMonitoredSets(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         selectedColumns = """time,wcdma_cellfile_matched_cellname_1,
                              wcdma_celltype_1,wcdma_sc_1,wcdma_ecio_1,wcdma_rscp_1,
 	                           wcdma_cellfreq_1"""
-        #ขาด Column Event
+        # ขาด Column Event
         queryString = """SELECT %s FROM wcdma_cells_combined %s ORDER BY time""" % (
-            selectedColumns, condition)
+            selectedColumns,
+            condition,
+        )
         query = QSqlQuery()
         query.exec_(queryString)
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        #-----------------------------------------------
+        # -----------------------------------------------
         # while query.next():
         #     timeValue = query.value(0)
         #     nameValue = query.value(1)
@@ -35,8 +38,8 @@ class WcdmaDataQuery:
         #     #eventValue = query.value(eventField)
         #     dataList.append([timeValue, nameValue, typeValue, scValue, ecioValue, rscpValue,''])
 
-        #Table Ui Test
-        dataList.append([self.timeFilter, '', '', '', '', '', '', ''])
+        # Table Ui Test
+        dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         self.closeConnection()
         return dataList
 
@@ -44,12 +47,18 @@ class WcdmaDataQuery:
         self.openConnection()
         dataList = []
         fieldsList = [
-            'Time', 'Tx Power', 'Max Tx Power', 'RSSI', 'SIR', 'RRC State',
-            'Cell ID', 'RNC ID'
+            "Time",
+            "Tx Power",
+            "Max Tx Power",
+            "RSSI",
+            "SIR",
+            "RRC State",
+            "Cell ID",
+            "RNC ID",
         ]
         selectedColumns = """wtp.time,wtp.wcdma_txagc,wtp.wcdma_maxtxpwr,wrp.wcdma_rssi,sir.wcdma_sir,
                             rrc.wcdma_rrc_state,cel.wcdma_cellid,cel.wcdma_rnc_id"""
-        condition = ''
+        condition = ""
         if self.timeFilter:
             condition = "WHERE wtp.time <= '%s'" % (self.timeFilter)
         queryString = """SELECT %s
@@ -59,11 +68,13 @@ class WcdmaDataQuery:
                         LEFT JOIN wcdma_rrc_state rrc ON wtp.time = rrc.time
                         LEFT JOIN wcdma_idle_cell_info cel ON wtp.time = cel.time
                         %s
-                        ORDER BY wtp.time DESC LIMIT 1""" % (selectedColumns,
-                                                             condition)
+                        ORDER BY wtp.time DESC LIMIT 1""" % (
+            selectedColumns,
+            condition,
+        )
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        #-----------------------------------------------
+        # -----------------------------------------------
         # query = QSqlQuery()
         # query.exec_(queryString)
         # while query.next():
@@ -73,27 +84,29 @@ class WcdmaDataQuery:
         #         else:
         #             dataList.append([fieldsList[field],''])
 
-        #Table Ui Test
-        dataList.append(['Time', self.timeFilter])
+        # Table Ui Test
+        dataList.append(["Time", self.timeFilter])
         for field in range(1, len(fieldsList)):
-            dataList.append([fieldsList[field], ''])
+            dataList.append([fieldsList[field], ""])
         self.closeConnection()
         return dataList
 
     def getMonitoredSetList(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
         selectedColumns = """time,wcdma_mset_cellfreq_1,wcdma_mset_sc_1"""
-        #ขาด Column Cell Position และ Diversity
+        # ขาด Column Cell Position และ Diversity
         queryString = """SELECT %s FROM wcdma_cell_meas %s ORDER BY time""" % (
-            selectedColumns, condition)
+            selectedColumns,
+            condition,
+        )
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        #-----------------------------------------------
+        # -----------------------------------------------
         # query = QSqlQuery()
         # query.exec_(queryString)
         # while query.next():
@@ -104,8 +117,8 @@ class WcdmaDataQuery:
         #     # diverValue = query.value(4)
         #     dataList.append([timeValue,freqValue,pscValue,'',''])
 
-        #Table Ui Test
-        dataList.append([self.timeFilter, '', '', '', '', ''])
+        # Table Ui Test
+        dataList.append([self.timeFilter, "", "", "", "", ""])
 
         self.closeConnection()
         return dataList
@@ -113,7 +126,7 @@ class WcdmaDataQuery:
     def getActiveSetList(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
         if self.timeFilter:
             condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
 
@@ -124,11 +137,13 @@ class WcdmaDataQuery:
                         FROM wcdma_cell_meas wcm
                         LEFT JOIN wcdma_aset_full_list wafl ON wcm.time = wafl.time
                         %s
-                        ORDER BY wcm.time DESC""" % (selectedColumns,
-                                                     condition)
+                        ORDER BY wcm.time DESC""" % (
+            selectedColumns,
+            condition,
+        )
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        #-----------------------------------------------
+        # -----------------------------------------------
         # query = QSqlQuery()
         # query.exec_(queryString)
         # while query.next():
@@ -140,8 +155,8 @@ class WcdmaDataQuery:
         #     diverValue = query.value(5)
         #     dataList.append([timeValue,freqValue,pscValue,celposValue,tpcValue,diverValue])
 
-        #Table Ui Test
-        dataList.append([self.timeFilter, '', '', '', '', ''])
+        # Table Ui Test
+        dataList.append([self.timeFilter, "", "", "", "", ""])
 
         self.closeConnection()
         return dataList
@@ -150,10 +165,12 @@ class WcdmaDataQuery:
         self.openConnection()
         dataList = []
         fieldsList = [
-            'Time', 'BLER Average Percent', 'BLER Calculation Window Size',
-            'BLER N Transport Channels'
+            "Time",
+            "BLER Average Percent",
+            "BLER Calculation Window Size",
+            "BLER N Transport Channels",
         ]
-        condition = ''
+        condition = ""
         if self.timeFilter:
             condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
 
@@ -161,10 +178,12 @@ class WcdmaDataQuery:
                         wcdma_bler_n_transport_channels
                         FROM wcdma_bler
                         %s
-                        ORDER BY time DESC LIMIT 1""" % (condition)
+                        ORDER BY time DESC LIMIT 1""" % (
+            condition
+        )
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        #-----------------------------------------------
+        # -----------------------------------------------
         # query = QSqlQuery()
         # query.exec_(queryString)
         # while query.next():
@@ -174,17 +193,17 @@ class WcdmaDataQuery:
         #         else:
         #             dataList.append([fieldsList[field],''])
 
-        #Table Ui Test
-        dataList.append(['Time', self.timeFilter])
+        # Table Ui Test
+        dataList.append(["Time", self.timeFilter])
         for field in range(1, len(fieldsList)):
-            dataList.append([fieldsList[field], ''])
+            dataList.append([fieldsList[field], ""])
         self.closeConnection()
         return dataList
 
     def getBLER_TransportChannel(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
         maxChannel = 16
 
         if self.timeFilter:
@@ -195,36 +214,47 @@ class WcdmaDataQuery:
                             FROM wcdma_bler
                             %s
                             ORDER BY time DESC LIMIT 1""" % (
-                channel, channel, channel, channel, condition)
+                channel,
+                channel,
+                channel,
+                channel,
+                condition,
+            )
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
             if rowCount > 0:
                 while query.next():
                     if query.value(0):
-                        dataList.append([
-                            query.value(0),
-                            query.value(1),
-                            query.value(2),
-                            query.value(3)
-                        ])
+                        dataList.append(
+                            [
+                                query.value(0),
+                                query.value(1),
+                                query.value(2),
+                                query.value(3),
+                            ]
+                        )
         self.closeConnection()
         return dataList
 
     def getBearers(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        row = ['', '', '', '']
+        row = ["", "", "", ""]
         maxBearers = 10
         for bearers in range(1, maxBearers):
             queryString = """SELECT data_wcdma_n_bearers,data_wcdma_bearer_id_%d,data_wcdma_bearer_rate_dl_%d,
                              data_wcdma_bearer_rate_ul_%d
                              FROM wcdma_bearers %s
                              ORDER BY time DESC LIMIT 1""" % (
-                bearers, bearers, bearers, condition)
+                bearers,
+                bearers,
+                bearers,
+                condition,
+            )
 
             query = QSqlQuery()
             query.exec_(queryString)
@@ -242,10 +272,10 @@ class WcdmaDataQuery:
     def getPilotPolutingCells(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        row = ['', '', '', '', '']
+        row = ["", "", "", "", ""]
         maxPollution = 32
         for pollution in range(1, maxPollution):
             queryString = """SELECT time,wcdma_n_pilot_polluting_cells,wcdma_pilot_polluting_cell_sc_%d,
@@ -253,7 +283,11 @@ class WcdmaDataQuery:
                              FROM wcdma_pilot_pollution
                              %s
                              ORDER BY time DESC LIMIT 1""" % (
-                pollution, pollution, pollution, condition)
+                pollution,
+                pollution,
+                pollution,
+                condition,
+            )
 
             query = QSqlQuery()
             query.exec_(queryString)
@@ -261,7 +295,7 @@ class WcdmaDataQuery:
             if rowCount > 0:
                 while query.next():
                     if query.value(0):
-                        #row[0] = query.value(0)
+                        # row[0] = query.value(0)
                         row[0] = self.timeFilter
                         row[1] = query.value(1)
                         for index in range(2, len(row)):
@@ -274,7 +308,7 @@ class WcdmaDataQuery:
     def getActiveMonitoredBar(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
         maxItem = 27
 
         if self.timeFilter:
@@ -284,8 +318,12 @@ class WcdmaDataQuery:
             queryString = """SELECT wcdma_celltype_%d,wcdma_ecio_%d,wcdma_rscp_%d
                             FROM wcdma_cells_combined
                             %s
-                            ORDER BY time DESC""" % (item, item, item,
-                                                     condition)
+                            ORDER BY time DESC""" % (
+                item,
+                item,
+                item,
+                condition,
+            )
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -293,9 +331,8 @@ class WcdmaDataQuery:
                 while query.next():
                     if query.value(0):
                         dataList.append(
-                            [query.value(0),
-                             query.value(1),
-                             query.value(2)])
+                            [query.value(0), query.value(1), query.value(2)]
+                        )
 
         self.closeConnection()
         return dataList
@@ -303,13 +340,15 @@ class WcdmaDataQuery:
     def getCmGsmCells(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
 
         queryString = """Select time,wcdma_cm_gsm_meas_arfcn,wcdma_cm_gsm_meas_rxlev,
                         wcdma_cm_gsm_meas_bsic,wcdma_cm_gsm_meas_cell_measure_state
                         FROM wcdma_cm_gsm_meas
                         %s
-                        ORDER BY time DESC""" % (condition)
+                        ORDER BY time DESC""" % (
+            condition
+        )
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
         # -----------------------------------------------
@@ -325,8 +364,8 @@ class WcdmaDataQuery:
         #     else:
         #         dataList.append([self.timeFilter,'','','',''])
 
-        #Table Ui Test
-        dataList.append([self.timeFilter, '', '', '', ''])
+        # Table Ui Test
+        dataList.append([self.timeFilter, "", "", "", ""])
         self.closeConnection()
         return dataList
 
@@ -342,7 +381,7 @@ class WcdmaDataQuery:
         if fieldCount > 0:
             dataList = []
             for index in range(fieldCount):
-                    columnName = fieldsList[index]
-                    value = ''
-                    dataList.append([columnName, value, '', ''])
+                columnName = fieldsList[index]
+                value = ""
+                dataList.append([columnName, value, "", ""])
             return dataList

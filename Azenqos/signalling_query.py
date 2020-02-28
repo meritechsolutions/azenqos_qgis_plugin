@@ -3,14 +3,14 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
 class SignalingDataQuery:
     def __init__(self, database, currentDateTimeString):
-        self.timeFilter = ''
+        self.timeFilter = ""
         self.azenqosDatabase = database
         if currentDateTimeString:
             self.timeFilter = currentDateTimeString
 
     def getEvents(self):
         self.openConnection()
-        queryString = 'SELECT time, name, info FROM events'
+        queryString = "SELECT time, name, info FROM events"
         query = QSqlQuery()
         query.exec_(queryString)
         timeField = query.record().indexOf("time")
@@ -21,7 +21,7 @@ class SignalingDataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
+            dataList.append([timeValue, "", "MS1", nameValue, detailStrValue])
         self.closeConnection()
         return dataList
 
@@ -37,7 +37,7 @@ class SignalingDataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             detailStrValue = query.value(detailField)
-            dataList.append([timeValue, '', 'MS1', nameValue, detailStrValue])
+            dataList.append([timeValue, "", "MS1", nameValue, detailStrValue])
         self.closeConnection()
         return dataList
 
@@ -54,16 +54,15 @@ class SignalingDataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             symbolValue = query.value(symbolField)
-            detailStrValue = query.value(detailField).split(',')
-            if detailStrValue[0].startswith('LTE') == True:
-                detailStrValue = 'LTE RRC'
+            detailStrValue = query.value(detailField).split(",")
+            if detailStrValue[0].startswith("LTE") == True:
+                detailStrValue = "LTE RRC"
             else:
-                detailStrValue = ''
-            if detailStrValue != '':
-                dataList.append([
-                    timeValue, symbolValue, 'MS1', detailStrValue, nameValue,
-                    ''
-                ])
+                detailStrValue = ""
+            if detailStrValue != "":
+                dataList.append(
+                    [timeValue, symbolValue, "MS1", detailStrValue, nameValue, ""]
+                )
         self.closeConnection()
         return dataList
 
@@ -72,17 +71,23 @@ class SignalingDataQuery:
         dataList = []
         condition = ""
 
-        #Voice section (ยังไม่มีข้อมูลใน database)
-        dataList.append(['---- Voice ----', '', '', '', ''])
-        dataList.append(['Call Count', 0, 0, 0, 0])
-        dataList.append(['Drop Count', 0, 0, 0, 0])
-        dataList.append(['Block Count', 0, 0, 0, 0])
-        dataList.append(['Handover Fail Count', 0, 0, 0, 0])
+        # Voice section (ยังไม่มีข้อมูลใน database)
+        dataList.append(["---- Voice ----", "", "", "", ""])
+        dataList.append(["Call Count", 0, 0, 0, 0])
+        dataList.append(["Drop Count", 0, 0, 0, 0])
+        dataList.append(["Block Count", 0, 0, 0, 0])
+        dataList.append(["Handover Fail Count", 0, 0, 0, 0])
 
-        #LTE section
+        # LTE section
         lteField = [
-            '---- LTE ----', 'SINR Rx[0][1]', 'SINR RX[1][1]', 'Inst RSRP[1]',
-            'Inst RSRQ[1]', 'Inst RSSI', 'Cell ID', 'Cell Name'
+            "---- LTE ----",
+            "SINR Rx[0][1]",
+            "SINR RX[1][1]",
+            "Inst RSRP[1]",
+            "Inst RSRQ[1]",
+            "Inst RSSI",
+            "Cell ID",
+            "Cell Name",
         ]
         if self.timeFilter:
             condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
@@ -91,26 +96,33 @@ class SignalingDataQuery:
                          FROM lte_cell_meas lcm
                          LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
                          %s
-                         ORDER BY lcm.time DESC LIMIT 1""" % (condition)
+                         ORDER BY lcm.time DESC LIMIT 1""" % (
+            condition
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         for field in range(len(lteField)):
-            dataList.append([lteField[field], '', '', '', ''])
+            dataList.append([lteField[field], "", "", "", ""])
         while query.next():
             for field in range(len(lteField)):
                 if query.value(field):
-                    dataList[field+5][1] = query.value(field)
+                    dataList[field + 5][1] = query.value(field)
                     # dataList.append(
                     #     [lteField[field],
                     #      query.value(field), '', '', ''])
                 else:
-                    dataList[field+5][1] = ''
-                    #dataList.append([lteField[field], '', '', '', ''])
+                    dataList[field + 5][1] = ""
+                    # dataList.append([lteField[field], '', '', '', ''])
 
-        #WCDMA section
+        # WCDMA section
         wcdmaField = [
-            '---- WCDMA ----', 'ASET Ec/Io Avg.', 'ASET RSCP Avg.', 'RSSI',
-            'BLER Avg.', 'Cell ID', 'Cell Name'
+            "---- WCDMA ----",
+            "ASET Ec/Io Avg.",
+            "ASET RSCP Avg.",
+            "RSSI",
+            "BLER Avg.",
+            "Cell ID",
+            "Cell Name",
         ]
         if self.timeFilter:
             condition = "WHERE wcm.time <= '%s'" % (self.timeFilter)
@@ -121,11 +133,13 @@ class SignalingDataQuery:
                          LEFT JOIN wcdma_bler wb ON wcm.time = wb.time
                          LEFT JOIN wcdma_idle_cell_info wici ON wcm.time = wici.time
                          %s
-                         ORDER BY wcm.time DESC LIMIT 1""" % (condition)
-        #ยังหา WCDMA Cellname ไม่เจอ
+                         ORDER BY wcm.time DESC LIMIT 1""" % (
+            condition
+        )
+        # ยังหา WCDMA Cellname ไม่เจอ
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        #-----------------------------------------------
+        # -----------------------------------------------
         # query = QSqlQuery()
         # query.exec_(queryString)
         # while query.next():
@@ -135,24 +149,27 @@ class SignalingDataQuery:
         #         else:
         #             dataList.append([wcdmaField[field],'','','',''])
 
-        #Table Ui Test for WCDMA section
+        # Table Ui Test for WCDMA section
         for field in range(len(wcdmaField)):
-            dataList.append([wcdmaField[field], '', '', '', ''])
+            dataList.append([wcdmaField[field], "", "", "", ""])
 
         # #Data Section
         dataField = [
-            '---- Data ----', 'DL Application Throughput',
-            'UL Application Throughput'
+            "---- Data ----",
+            "DL Application Throughput",
+            "UL Application Throughput",
         ]
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         queryString = """SELECT '' as header,data_app_dl_throughput_1,data_app_ul_throughput_1
                             FROM data_app_throughput
                             %s
-                            ORDER BY time DESC LIMIT 1""" % (condition)
+                            ORDER BY time DESC LIMIT 1""" % (
+            condition
+        )
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        #-----------------------------------------------
+        # -----------------------------------------------
         # query = QSqlQuery()
         # query.exec_(queryString)
         # while query.next():
@@ -162,43 +179,45 @@ class SignalingDataQuery:
         #         else:
         #             dataList.append([dataField[field],'','','',''])
 
-        #Table Ui Test for Data section
+        # Table Ui Test for Data section
         for field in range(len(dataField)):
-            dataList.append([dataField[field], '', '', '', ''])
+            dataList.append([dataField[field], "", "", "", ""])
         #'Data Connect Fail Count','Download Timeout'
-        dataList.append(['Data Connect Fail Count', 0, 0, 0, 0])
-        dataList.append(['Download Timeout', 0, 0, 0, 0])
+        dataList.append(["Data Connect Fail Count", 0, 0, 0, 0])
+        dataList.append(["Download Timeout", 0, 0, 0, 0])
 
-        #LTE RLC section
-        lte_rlcField = [
-            '---- LTE ----', 'RLC DL Thoughput', 'RLC UL Thoughput'
-        ]
+        # LTE RLC section
+        lte_rlcField = ["---- LTE ----", "RLC DL Thoughput", "RLC UL Thoughput"]
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         queryString = """SELECT '' as header,lte_rlc_dl_tp,lte_rlc_ul_tp
                          FROM lte_rlc_stats
                          %s
-                         ORDER BY time DESC LIMIT 1""" % (condition)
+                         ORDER BY time DESC LIMIT 1""" % (
+            condition
+        )
 
         query = QSqlQuery()
         query.exec_(queryString)
         for field in range(len(lte_rlcField)):
-            dataList.append([lte_rlcField[field], '', '', '', ''])
+            dataList.append([lte_rlcField[field], "", "", "", ""])
         while query.next():
             for field in range(len(lte_rlcField)):
                 if query.value(field):
-                     dataList[field+25][1] = query.value(field)
-                    # dataList.append(
-                    #     [lte_rlcField[field],
-                    #      query.value(field), '', '', ''])
+                    dataList[field + 25][1] = query.value(field)
+                # dataList.append(
+                #     [lte_rlcField[field],
+                #      query.value(field), '', '', ''])
                 else:
-                     dataList[field+25][1] = query.value(field)
+                    dataList[field + 25][1] = query.value(field)
                 #     dataList.append([lte_rlcField[field], '', '', '', ''])
 
-        #WCDMA RLC section
+        # WCDMA RLC section
         wcdma_rlcField = [
-            '---- WCDMA ----', 'HS-DSCH Throughput', 'WCDMA RLC DL Thoughput',
-            'WCDMA RLC UL Thoughput'
+            "---- WCDMA ----",
+            "HS-DSCH Throughput",
+            "WCDMA RLC DL Thoughput",
+            "WCDMA RLC UL Thoughput",
         ]
         if self.timeFilter:
             condition = "WHERE whs.time <= '%s'" % (self.timeFilter)
@@ -207,10 +226,12 @@ class SignalingDataQuery:
                          FROM wcdma_hsdpa_stats whs
                          LEFT JOIN data_wcdma_rlc_stats dwrs ON whs.time = dwrs.time
                          %s
-                         ORDER BY whs.time DESC LIMIT 1""" % (condition)
+                         ORDER BY whs.time DESC LIMIT 1""" % (
+            condition
+        )
 
         # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        #-----------------------------------------------
+        # -----------------------------------------------
         # query = QSqlQuery()
         # query.exec_(queryString)
         # while query.next():
@@ -220,9 +241,9 @@ class SignalingDataQuery:
         #         else:
         #             dataList.append([wcdma_rlcField[field],'','','',''])
 
-        #Table Ui Test for Data section
+        # Table Ui Test for Data section
         for field in range(len(wcdma_rlcField)):
-            dataList.append([wcdma_rlcField[field], '', '', '', ''])
+            dataList.append([wcdma_rlcField[field], "", "", "", ""])
 
         self.closeConnection()
         return dataList
@@ -231,29 +252,42 @@ class SignalingDataQuery:
         self.openConnection()
         dataList = []
         fieldsList = [
-            'Time', 'MM State', 'MM Substate', 'MM Update Status',
-            'MM Network Operation Mode', 'MM Service Type', 'MM MCC', 'MM MNC',
-            'MM Lac', 'MM Rai', 'REG State', 'REG UE Operation Mode',
-            'GMM State', 'GMM Substate', 'GMM Update'
+            "Time",
+            "MM State",
+            "MM Substate",
+            "MM Update Status",
+            "MM Network Operation Mode",
+            "MM Service Type",
+            "MM MCC",
+            "MM MNC",
+            "MM Lac",
+            "MM Rai",
+            "REG State",
+            "REG UE Operation Mode",
+            "GMM State",
+            "GMM Substate",
+            "GMM Update",
         ]
         selectedColumns = """ms.time,ms.mm_state_state,ms.mm_state_substate,ms.mm_state_update_status,
                              ms.mm_characteristics_network_operation_mode,ms.mm_characteristics_service_type,
                              ms.mm_characteristics_mcc,ms.mm_characteristics_mnc,ms.mm_characteristics_lac,ms.mm_characteristics_rai,
                              rs.reg_state_state,rs.reg_state_ue_operation_mode,gs.gmm_state_state,gs.gmm_state_substate,gs.gmm_state_update"""
-        condition = ''
+        condition = ""
         if self.timeFilter:
             condition = "WHERE ms.time <= '%s'" % (self.timeFilter)
         queryString = """SELECT %s FROM mm_state ms
                         LEFT JOIN reg_state rs ON ms.time = rs.time
                         LEFT JOIN gmm_state gs ON ms.time = gs.time
                         %s
-                        ORDER BY ms.time DESC LIMIT 1""" % (selectedColumns,
-                                                            condition)
+                        ORDER BY ms.time DESC LIMIT 1""" % (
+            selectedColumns,
+            condition,
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         queryRowCount = query.record().count()
         for field in range(len(fieldsList)):
-            dataList.append([fieldsList[field], ''])
+            dataList.append([fieldsList[field], ""])
         while query.next():
             for field in range(len(fieldsList)):
                 if query.value(field):
@@ -268,38 +302,47 @@ class SignalingDataQuery:
         self.openConnection()
         dataList = []
         fieldsList = [
-            'Time', 'mcc', 'mnc', 'lac', 'service status', 'service domain',
-            'service capability', 'system mode', 'roaming status',
-            'system id type'
+            "Time",
+            "mcc",
+            "mnc",
+            "lac",
+            "service status",
+            "service domain",
+            "service capability",
+            "system mode",
+            "roaming status",
+            "system id type",
         ]
-        selectedColumns = 'time,serving_system_mcc,serving_system_mnc,serving_system_lac,cm_service_status,cm_service_domain,cm_service_capability,cm_system_mode,cm_roaming_status,cm_system_id_type'
-        condition = ''
+        selectedColumns = "time,serving_system_mcc,serving_system_mnc,serving_system_lac,cm_service_status,cm_service_domain,cm_service_capability,cm_system_mode,cm_roaming_status,cm_system_id_type"
+        condition = ""
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        queryString = 'select %s from serving_system %s order by time desc limit 1' % (
-            selectedColumns, condition)
+        queryString = "select %s from serving_system %s order by time desc limit 1" % (
+            selectedColumns,
+            condition,
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         for field in range(len(fieldsList)):
-            dataList.append([fieldsList[field], ''])
+            dataList.append([fieldsList[field], ""])
         while query.next():
             for field in range(len(fieldsList)):
                 if query.value(field):
                     if field == 0:
                         dataList[field][1] = self.timeFilter
-                        #dataList.append([fieldsList[field], self.timeFilter])
+                        # dataList.append([fieldsList[field], self.timeFilter])
                     else:
                         dataList[field][1] = query.value(field)
                         # dataList.append(
                         #     [fieldsList[field],
                         #      query.value(field)])
                 else:
-                    dataList[field][1] = ''
+                    dataList[field][1] = ""
                     # dataList.append([fieldsList[field], ''])
         self.closeConnection()
         return dataList
 
-    def getDebugAndroidEvent(self): #ยังไม่มีข้อมูลใน database
+    def getDebugAndroidEvent(self):  # ยังไม่มีข้อมูลใน database
 
         self.openConnection()
         # query = QSqlQuery()
@@ -316,13 +359,16 @@ class SignalingDataQuery:
         self.closeConnection()
 
         fieldsList = [
-            'Time', 'Device Time Stamp', 'Raw Layer Message', 'Processed Event'
+            "Time",
+            "Device Time Stamp",
+            "Raw Layer Message",
+            "Processed Event",
         ]
         fieldCount = len(fieldsList)
-        dataList.append(['Time', self.timeFilter])
+        dataList.append(["Time", self.timeFilter])
         for index in range(1, len(fieldsList)):
             columnName = fieldsList[index]
-            dataList.append([columnName, ''])
+            dataList.append([columnName, ""])
         return dataList
 
     def openConnection(self):
@@ -337,7 +383,7 @@ class SignalingDataQuery:
         if fieldCount > 0:
             dataList = []
             for index in range(fieldCount):
-                    columnName = fieldsList[index]
-                    value = ''
-                    dataList.append([columnName, value, '', ''])
+                columnName = fieldsList[index]
+                value = ""
+                dataList.append([columnName, value, "", ""])
             return dataList

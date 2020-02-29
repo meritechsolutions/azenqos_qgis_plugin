@@ -1,8 +1,9 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
+
 class LteDataQuery:
     def __init__(self, database, currentDateTimeString):
-        self.timeFilter = ''
+        self.timeFilter = ""
         self.azenqosDatabase = database
         if currentDateTimeString:
             self.timeFilter = currentDateTimeString
@@ -10,23 +11,63 @@ class LteDataQuery:
     def getRadioParameters(self):
         self.openConnection()
         dataList = []
-        condition = ''
+        condition = ""
         fieldsList = [
-            'Time', 'Band', 'E-ARFCN', 'Serving PCI', 'Serving RSRP[0]',
-            'Serving RSRP[1]', 'Serving RSRP', 'Serving RSRQ[0]',
-            'Serving RSRQ[1]', 'Serving RSRQ', 'SINR Rx[0]', 'SINR Rx[1]',
-            'SINR', 'RSSI Rx[0]', 'RSSI Rx[1]', 'RSSI', 'BLER', 'CQI CW[0]',
-            'CQI CW[1]', 'Tx Power', 'PUCCH TxPower (dBm)',
-            'PUSCH TxPower (dBm)', 'TimingAdvance',
-            'Transmission Mode (RRC-tm)', 'LTE RRC State', 'LTE EMM State',
-            'LTE RRC Substate', 'Modern ServCellInfo', 'Allowed Access', 'MCC',
-            'MNC', 'TAC', 'Cell ID (ECI)', 'eNodeB ID', 'LCI', 'PCI',
-            'Derived SCC ECI', 'Derived SCC eNodeB ID', 'Derived SCC LCI',
-            'DL EARFCN', 'UL EARFCN', 'DL Bandwidth (Mhz)',
-            'UL Bandwidth (Mhz)', 'SCC DL Bandwidth (Mhz)', 'SIB1 info:',
-            'sib1 MCC', 'sib1 MNC', 'sib1 TAC', 'sib1 ECI', 'sib1 eNBid',
-            'sib1 LCI', 'TDD Config:', 'SubframeAssignment',
-            'SpclSubframePattern', 'DedBearer QCI'
+            "Time",
+            "Band",
+            "E-ARFCN",
+            "Serving PCI",
+            "Serving RSRP[0]",
+            "Serving RSRP[1]",
+            "Serving RSRP",
+            "Serving RSRQ[0]",
+            "Serving RSRQ[1]",
+            "Serving RSRQ",
+            "SINR Rx[0]",
+            "SINR Rx[1]",
+            "SINR",
+            "RSSI Rx[0]",
+            "RSSI Rx[1]",
+            "RSSI",
+            "BLER",
+            "CQI CW[0]",
+            "CQI CW[1]",
+            "Tx Power",
+            "PUCCH TxPower (dBm)",
+            "PUSCH TxPower (dBm)",
+            "TimingAdvance",
+            "Transmission Mode (RRC-tm)",
+            "LTE RRC State",
+            "LTE EMM State",
+            "LTE RRC Substate",
+            "Modern ServCellInfo",
+            "Allowed Access",
+            "MCC",
+            "MNC",
+            "TAC",
+            "Cell ID (ECI)",
+            "eNodeB ID",
+            "LCI",
+            "PCI",
+            "Derived SCC ECI",
+            "Derived SCC eNodeB ID",
+            "Derived SCC LCI",
+            "DL EARFCN",
+            "UL EARFCN",
+            "DL Bandwidth (Mhz)",
+            "UL Bandwidth (Mhz)",
+            "SCC DL Bandwidth (Mhz)",
+            "SIB1 info:",
+            "sib1 MCC",
+            "sib1 MNC",
+            "sib1 TAC",
+            "sib1 ECI",
+            "sib1 eNBid",
+            "sib1 LCI",
+            "TDD Config:",
+            "SubframeAssignment",
+            "SpclSubframePattern",
+            "DedBearer QCI",
         ]
 
         selectedColumns = """lcm.time as Time, lcm.lte_band_1 as Band, lcm.lte_earfcn_1 as 'E-ARFCN', lcm.lte_physical_cell_id_1 as 'Serving PCI',
@@ -52,18 +93,20 @@ class LteDataQuery:
                         LEFT JOIN lte_sib1_info lsoi ON lcm.time = lsoi.time
                         LEFT JOIN lte_tdd_config ltc ON lcm.time = ltc.time
                         %s
-                        ORDER BY lcm.time DESC LIMIT 1""" % (selectedColumns,
-                                                             condition)
+                        ORDER BY lcm.time DESC LIMIT 1""" % (
+            selectedColumns,
+            condition,
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         fieldCount = len(selectedColumns.split(","))
         while query.next():
             for index in range(fieldCount):
                 columnName = fieldsList[index]
-                value = ''
-                if query.value(index) != '':
+                value = ""
+                if query.value(index) != "":
                     value = query.value(index)
-                dataList.append([columnName, value, '', ''])
+                dataList.append([columnName, value, "", ""])
         if len(dataList) == 0:
             dataList = self.defaultData(fieldsList)
         self.closeConnection()
@@ -74,35 +117,37 @@ class LteDataQuery:
         MAX_NEIGHBORS = 16
         dataList = []
         typeHeader = {
-            'serving': ['dateString', 'Serving cell:', '', '', '', ''],
-            'neigh': ['', 'Neighbor cells:', '', '', '', '']
+            "serving": ["dateString", "Serving cell:", "", "", "", ""],
+            "neigh": ["", "Neighbor cells:", "", "", "", ""],
         }
-        emptyRow = ['', '', '', '', '', '']
-        condition = ''
+        emptyRow = ["", "", "", "", "", ""]
+        condition = ""
 
         # Set query condition for serving cell
         if self.timeFilter:
             condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
 
-        typeHeader['serving'][0] = self.timeFilter
-        dataList.append(typeHeader['serving'])
+        typeHeader["serving"][0] = self.timeFilter
+        dataList.append(typeHeader["serving"])
 
         queryString = """SELECT lcm.lte_earfcn_1, lcm.lte_band_1, lcm.lte_physical_cell_id_1, lcm.lte_inst_rsrp_1,
                         lcm.lte_inst_rsrq_1
                         FROM lte_cell_meas as lcm
                         %s
                         ORDER BY lcm.time DESC
-                        LIMIT 1""" % (condition)
+                        LIMIT 1""" % (
+            condition
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         while query.next():
             servingCell = [
-                '',
+                "",
                 query.value(0),
                 query.value(1),
                 query.value(2),
                 query.value(3),
-                query.value(4)
+                query.value(4),
             ]
             dataList.append(servingCell)
 
@@ -116,8 +161,14 @@ class LteDataQuery:
                             FROM lte_neigh_meas as lnm
                             %s
                             ORDER BY lnm.time DESC
-                            LIMIT 1""" % (neighbor, neighbor, neighbor,
-                                          neighbor, neighbor, condition)
+                            LIMIT 1""" % (
+                neighbor,
+                neighbor,
+                neighbor,
+                neighbor,
+                neighbor,
+                condition,
+            )
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -125,14 +176,14 @@ class LteDataQuery:
                 while query.next():
                     if query.value(0):
                         if neighbor == 1:
-                            dataList.append(typeHeader['neigh'])
+                            dataList.append(typeHeader["neigh"])
                         neighCell = [
-                            '',
+                            "",
                             query.value(0),
                             query.value(1),
                             query.value(2),
                             query.value(3),
-                            query.value(4)
+                            query.value(4),
                         ]
                         dataList.append(neighCell)
                     else:
@@ -149,31 +200,45 @@ class LteDataQuery:
         condition = ""
         maxBearers = 8
         pucchFields = [
-            '---- PUCCH ----', 'CQI CW 0', 'CQI CW 1', 'CQI N Sub-bands',
-            'Rank Indicator'
+            "---- PUCCH ----",
+            "CQI CW 0",
+            "CQI CW 1",
+            "CQI N Sub-bands",
+            "Rank Indicator",
         ]
         pdschFields = [
-            '---- PDSCH ----', 'PDSCH Serving Cell ID', 'PDSCH RNTI ID',
-            'PDSCH RNTI Type', 'PDSCH Serving N Tx Antennas',
-            'PDSCH Serving N Rx Antennas', 'PDSCH Transmission Mode Current',
-            'PDSCH Spatial Rank', 'PDSCH Rb Allocation Slot 0',
-            'PDSCH Rb Allocation Slot 1', 'PDSCH PMI Type', 'PDSCH PMI Index',
-            'PDSCH Stream[0] Block Size', 'PDSCH Stream[0] Modulation',
-            'PDSCH Traffic To Pilot Ratio', 'PDSCH Stream[1] Block Size',
-            'PDSCH Stream[1] Modulation'
+            "---- PDSCH ----",
+            "PDSCH Serving Cell ID",
+            "PDSCH RNTI ID",
+            "PDSCH RNTI Type",
+            "PDSCH Serving N Tx Antennas",
+            "PDSCH Serving N Rx Antennas",
+            "PDSCH Transmission Mode Current",
+            "PDSCH Spatial Rank",
+            "PDSCH Rb Allocation Slot 0",
+            "PDSCH Rb Allocation Slot 1",
+            "PDSCH PMI Type",
+            "PDSCH PMI Index",
+            "PDSCH Stream[0] Block Size",
+            "PDSCH Stream[0] Modulation",
+            "PDSCH Traffic To Pilot Ratio",
+            "PDSCH Stream[1] Block Size",
+            "PDSCH Stream[1] Modulation",
         ]
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-            dateString = '%s' % (self.timeFilter)
+            dateString = "%s" % (self.timeFilter)
 
-        dataList.append(['Time', self.timeFilter])
+        dataList.append(["Time", self.timeFilter])
 
         queryString = """SELECT '' as header, lte_cqi_cw0_1, lte_cqi_cw1_1, lte_cqi_n_subbands_1, lte_rank_indication_1
                         FROM lte_cqi
                         %s
                         ORDER BY time DESC
-                        LIMIT 1""" % (condition)
+                        LIMIT 1""" % (
+            condition
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         while query.next():
@@ -181,7 +246,7 @@ class LteDataQuery:
                 if query.value(field):
                     dataList.append([pucchFields[field], query.value(field)])
                 else:
-                    dataList.append([pucchFields[field], ''])
+                    dataList.append([pucchFields[field], ""])
 
         queryString = """SELECT '' as pdsch, lte_pdsch_serving_cell_id_1, lte_pdsch_rnti_id_1, lte_pdsch_rnti_type_1,
                         lte_pdsch_serving_n_tx_antennas_1, lte_pdsch_serving_n_rx_antennas_1,
@@ -193,7 +258,9 @@ class LteDataQuery:
                         FROM lte_pdsch_meas
                         %s
                         ORDER BY time DESC
-                        LIMIT 1""" % (condition)
+                        LIMIT 1""" % (
+            condition
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         rowCount = query.record().count()
@@ -202,11 +269,9 @@ class LteDataQuery:
             while query.next():
                 for field in range(len(pdschFields)):
                     if query.value(field):
-                        dataList.append(
-                            [pdschFields[field],
-                             query.value(field)])
+                        dataList.append([pdschFields[field], query.value(field)])
                     else:
-                        dataList.append([pdschFields[field], ''])
+                        dataList.append([pdschFields[field], ""])
         self.closeConnection()
         return dataList
 
@@ -219,34 +284,38 @@ class LteDataQuery:
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        dataList.append(['Time', self.timeFilter, '', '', ''])
+        dataList.append(["Time", self.timeFilter, "", "", ""])
         queryString = """SELECT time, lte_rlc_dl_tp_mbps, lte_rlc_dl_tp, lte_rlc_n_bearers
                         FROM lte_rlc_stats
                         %s
                         ORDER BY time DESC
-                        LIMIT 1""" % (condition)
+                        LIMIT 1""" % (
+            condition
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         while query.next():
 
             dataList.append(
-                ['DL TP(Mbps)',
-                 query.value('lte_rlc_dl_tp_mbps'), '', '', ''])
-            dataList.append(
-                ['DL TP(Kbps)',
-                 query.value('lte_rlc_dl_tp'), '', '', ''])
-            dataList.append(['Bearers:', '', '', '', ''])
-            dataList.append(
-                ['N Bearers',
-                 query.value('lte_rlc_n_bearers'), '', '', ''])
+                ["DL TP(Mbps)", query.value("lte_rlc_dl_tp_mbps"), "", "", ""]
+            )
+            dataList.append(["DL TP(Kbps)", query.value("lte_rlc_dl_tp"), "", "", ""])
+            dataList.append(["Bearers:", "", "", "", ""])
+            dataList.append(["N Bearers", query.value("lte_rlc_n_bearers"), "", "", ""])
         for bearer in range(1, maxBearers):
             queryString = """SELECT lte_rlc_per_rb_dl_rb_mode_%d, lte_rlc_per_rb_dl_rb_type_%d, lte_rlc_per_rb_dl_rb_id_%d, lte_rlc_per_rb_cfg_index_%d,
                             lte_rlc_per_rb_dl_tp_%d
                             FROM lte_rlc_stats
                             %s
                             ORDER BY time DESC
-                            LIMIT 1""" % (bearer, bearer, bearer, bearer,
-                                          bearer, condition)
+                            LIMIT 1""" % (
+                bearer,
+                bearer,
+                bearer,
+                bearer,
+                bearer,
+                condition,
+            )
             query = QSqlQuery()
             query.exec_(queryString)
             rowCount = query.record().count()
@@ -255,14 +324,17 @@ class LteDataQuery:
                     if query.value(0):
                         if bearer == 1:
                             dataList.append(
-                                ['Mode', 'Type', 'RB-ID', 'Index', 'TP Mbps'])
-                        dataList.append([
-                            query.value(0),
-                            query.value(1),
-                            query.value(2),
-                            query.value(3),
-                            query.value(4)
-                        ])
+                                ["Mode", "Type", "RB-ID", "Index", "TP Mbps"]
+                            )
+                        dataList.append(
+                            [
+                                query.value(0),
+                                query.value(1),
+                                query.value(2),
+                                query.value(3),
+                                query.value(4),
+                            ]
+                        )
         self.closeConnection()
         return dataList
 
@@ -271,14 +343,24 @@ class LteDataQuery:
         dataList = []
         condition = ""
         volteFields = [
-            'Time', 'Codec:', 'AMR SpeechCodec-RX', 'AMR SpeechCodec-TX',
-            'Delay interval avg:', 'Audio Packet delay (ms.)',
-            'RTP Packet delay (ms.)', 'RTCP SR Params:',
-            'RTCP Round trip time (ms.)', 'RTCP SR Params - Jitter DL:',
-            'RTCP SR Jitter DL (ts unit)', 'RTCP SR Jitter DL (ms.)',
-            'RTCP SR Params - Jitter UL:', 'RTCP SR Jitter UL (ts unit)',
-            'RTCP SR Jitter UL (ms.)', 'RTCP SR Params - Packet loss rate:',
-            'RTCP SR Packet loss DL (%)', 'RTCP SR Packet loss UL (%)'
+            "Time",
+            "Codec:",
+            "AMR SpeechCodec-RX",
+            "AMR SpeechCodec-TX",
+            "Delay interval avg:",
+            "Audio Packet delay (ms.)",
+            "RTP Packet delay (ms.)",
+            "RTCP SR Params:",
+            "RTCP Round trip time (ms.)",
+            "RTCP SR Params - Jitter DL:",
+            "RTCP SR Jitter DL (ts unit)",
+            "RTCP SR Jitter DL (ms.)",
+            "RTCP SR Params - Jitter UL:",
+            "RTCP SR Jitter UL (ts unit)",
+            "RTCP SR Jitter UL (ms.)",
+            "RTCP SR Params - Packet loss rate:",
+            "RTCP SR Packet loss DL (%)",
+            "RTCP SR Packet loss UL (%)",
         ]
 
         if self.timeFilter:
@@ -293,7 +375,9 @@ class LteDataQuery:
                         LEFT JOIN vocoder_info vi ON lvs.time = vi.time
                         %s
                         ORDER BY lvs.time DESC
-                        LIMIT 1""" % (condition)
+                        LIMIT 1""" % (
+            condition
+        )
         query = QSqlQuery()
         query.exec_(queryString)
         rowCount = query.record().count()
@@ -304,17 +388,15 @@ class LteDataQuery:
                         dataList.append([volteFields[field], self.timeFilter])
                     else:
                         if query.value(field):
-                            dataList.append(
-                                [volteFields[field],
-                                 query.value(field)])
+                            dataList.append([volteFields[field], query.value(field)])
                         else:
-                            dataList.append([volteFields[field], ''])
+                            dataList.append([volteFields[field], ""])
             if len(dataList) == 0:
                 for field in range(len(volteFields)):
                     if field == 0:
                         dataList.append([volteFields[field], self.timeFilter])
                     else:
-                        dataList.append([volteFields[field], ''])
+                        dataList.append([volteFields[field], ""])
         self.closeConnection()
         return dataList
 
@@ -323,9 +405,9 @@ class LteDataQuery:
         if fieldCount > 0:
             dataList = []
             for index in range(fieldCount):
-                    columnName = fieldsList[index]
-                    value = ''
-                    dataList.append([columnName, value, '', ''])
+                columnName = fieldsList[index]
+                value = ""
+                dataList.append([columnName, value, "", ""])
             return dataList
 
     def openConnection(self):

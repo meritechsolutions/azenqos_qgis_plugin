@@ -19,8 +19,9 @@ import globalutils
 MAX_COLUMNS = 10
 MAX_ROWS = 10
 
+
 class PropertiesWindow(QWidget):
-    def __init__(self, main_window = None, database = None, data_set = None):
+    def __init__(self, main_window=None, database=None, data_set=None):
         super().__init__(None)
 
         self.main_window = main_window
@@ -40,7 +41,7 @@ class PropertiesWindow(QWidget):
 
     def setupUi(self):
         self.setObjectName("Properties")
-        self.setFixedSize(360,360)
+        self.setFixedSize(360, 360)
         self.setMouseTracking(False)
         self.verticalLayoutWidget = QWidget(self)
         self.verticalLayoutWidget.setGeometry(QRect(0, 0, 360, 300))
@@ -66,7 +67,7 @@ class PropertiesWindow(QWidget):
 
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setGeometry(QRect(13, 310, 331, 32))
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok|QDialogButtonBox.Close)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok | QDialogButtonBox.Close)
         self.buttonBox.setCenterButtons(False)
         self.buttonBox.setObjectName("buttonBox")
         self.buttonBox.accepted.connect(self.submit)
@@ -87,8 +88,13 @@ class PropertiesWindow(QWidget):
         self.lblTitle.setText(_translate("Properties", "Title"))
         self.lblRow.setText(_translate("Properties", "Row"))
         self.lblColumns.setText(_translate("Properties", "Columns"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.Table), _translate("Properties", "Table"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.CellContent), _translate("Properties", "Cell Content"))
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.Table), _translate("Properties", "Table")
+        )
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.CellContent),
+            _translate("Properties", "Cell Content"),
+        )
         self.editBtn.setText(_translate("Properties", "Edit"))
         self.mobileLbl.setText(_translate("Properties", "Mobile"))
         self.setAllBtn.setText(_translate("Properties", "Set All"))
@@ -219,19 +225,23 @@ class PropertiesWindow(QWidget):
             if self.parentCurrentSelect:
                 self.editBtn.setDisabled(False)
                 parentName = self.parentCurrentSelect.text(0)
-                if parentName == 'Header':
-                    self.parentName = 'Header'
+                if parentName == "Header":
+                    self.parentName = "Header"
                 else:
-                    self.parentName = 'Row'
-                    if self.parentCurrentSelect.text(0).startswith('Row'):
-                        self.currentRowSelect = int(self.parentCurrentSelect.text(0).replace('Row ',''))
-                        self.currentColumnSelect = self.parentCurrentSelect.indexOfChild(current) + 1
+                    self.parentName = "Row"
+                    if self.parentCurrentSelect.text(0).startswith("Row"):
+                        self.currentRowSelect = int(
+                            self.parentCurrentSelect.text(0).replace("Row ", "")
+                        )
+                        self.currentColumnSelect = (
+                            self.parentCurrentSelect.indexOfChild(current) + 1
+                        )
             else:
                 self.editBtn.setDisabled(True)
 
     def editBtnEvent(self):
         if self.parentName:
-            if self.parentName == 'Header':
+            if self.parentName == "Header":
                 self.editHeader()
             else:
                 self.editRow()
@@ -241,47 +251,53 @@ class PropertiesWindow(QWidget):
         self.header_editor.show()
 
     def editRow(self):
-        self.cell_setting = CellSetting(self, self.currentSelect, self.db, self.currentRowSelect, self.currentColumnSelect)
+        self.cell_setting = CellSetting(
+            self,
+            self.currentSelect,
+            self.db,
+            self.currentRowSelect,
+            self.currentColumnSelect,
+        )
         self.cell_setting.show()
 
     def changeTreeWidget(self):
         headers = []
 
-        self.header = QTreeWidgetItem(self.treeWidget, ['Header'])
+        self.header = QTreeWidgetItem(self.treeWidget, ["Header"])
         for column in range(self.currentColumnLength):
-            header_name = '\"\"'
+            header_name = '""'
             QTreeWidgetItem(self.header, [header_name])
             headers.append(header_name)
 
         rows = []
         for row in range(self.currentRowLength):
             columnlist = []
-            rowItem = QTreeWidgetItem(self.treeWidget, [str('Row %i') % (row + 1)])
+            rowItem = QTreeWidgetItem(self.treeWidget, [str("Row %i") % (row + 1)])
             for column in range(self.currentColumnLength):
-                column_name = 'Column %i' % (column + 1)
-                item = QTreeWidgetItem(rowItem, [str('Column %i') % (column + 1)])
+                column_name = "Column %i" % (column + 1)
+                item = QTreeWidgetItem(rowItem, [str("Column %i") % (column + 1)])
                 columnlist.append(column_name)
             rows.append(columnlist)
 
     def getHeaders(self):
         headerTable = []
         headerCount = self.header.childCount()
-        for header in range(0,headerCount):
+        for header in range(0, headerCount):
             headerTable.append(self.header.child(header).text(0))
         return headerTable
 
     def getDataSet(self):
         data = []
         toplevel_count = self.treeWidget.topLevelItemCount()
-        for toplevel_index in range(1,toplevel_count):
+        for toplevel_index in range(1, toplevel_count):
             row = toplevel_index
             row_item = self.treeWidget.topLevelItem(toplevel_index)
             children_count = row_item.childCount()
-            for child_index in range(0,children_count):
+            for child_index in range(0, children_count):
                 sub_data = []
                 column = child_index + 1
                 text = row_item.child(child_index).text(0)
-                sub_data = text.split(',')
+                sub_data = text.split(",")
                 sub_data.append(row)
                 sub_data.append(column)
                 data.append(sub_data)
@@ -306,7 +322,10 @@ class PropertiesWindow(QWidget):
             self.main_window.setDataSet(data_set)
 
         if self.cbRows.currentText() and self.cbColumns.currentText():
-            tableSize = [int(self.cbRows.currentText()), int(self.cbColumns.currentText())]
+            tableSize = [
+                int(self.cbRows.currentText()),
+                int(self.cbColumns.currentText()),
+            ]
             self.main_window.setTableSize(tableSize)
             self.main_window.updateTable()
 

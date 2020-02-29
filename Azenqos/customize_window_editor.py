@@ -17,9 +17,22 @@ import globalutils
 
 class CellSetting(QWidget):
     # databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
-    system_types = ['WCDMA', 'General', 'Positioning', 'Data', 'Non-Access-Stratum', 'Wifi', 'LTE', 'CDMA', 'Android', 'NB-IoT', 'Unlisted']
+    system_types = [
+        "WCDMA",
+        "General",
+        "Positioning",
+        "Data",
+        "Non-Access-Stratum",
+        "Wifi",
+        "LTE",
+        "CDMA",
+        "Android",
+        "NB-IoT",
+        "Unlisted",
+    ]
     unused_columns = "'log_hash','time','modem_time','posid','seqid','netid','geom'"
-    def __init__(self, previous_window, selectitem, database = None, row = 0, column = 0):
+
+    def __init__(self, previous_window, selectitem, database=None, row=0, column=0):
         super().__init__(None)
         self.selected_item = selectitem
         self.system_data_obj = None
@@ -30,7 +43,6 @@ class CellSetting(QWidget):
         # if self.db is None:
         #     self.addDatabase()
         self.setupUi()
-
 
     def setupUi(self):
         self.setObjectName("cellSetting")
@@ -119,7 +131,9 @@ class CellSetting(QWidget):
         self.bbCellContent = QDialogButtonBox(self)
         self.bbCellContent.setGeometry(QRect(240, 460, 164, 32))
         self.bbCellContent.setOrientation(Qt.Horizontal)
-        self.bbCellContent.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
+        self.bbCellContent.setStandardButtons(
+            QDialogButtonBox.Cancel | QDialogButtonBox.Ok
+        )
         self.bbCellContent.setObjectName("bbCellContent")
         self.bbCellContent.accepted.connect(self.submit)
         self.bbCellContent.rejected.connect(self.close)
@@ -128,7 +142,7 @@ class CellSetting(QWidget):
         self.tabWidget.setCurrentIndex(0)
         QMetaObject.connectSlotsByName(self)
 
-        #Set signal events
+        # Set signal events
         self.rbInformationElement.toggled.connect(self.rbInformationElementSelected)
         self.rbEventCounter.toggled.connect(self.rbEventCounterSelected)
         self.rbText.toggled.connect(self.rbTextSelected)
@@ -136,14 +150,15 @@ class CellSetting(QWidget):
         self.cbSystem.currentTextChanged.connect(self.cbSystemOnChanged)
         self.fcbElement.currentTextChanged.connect(self.fcbElementOnChanged)
 
-        #Prepare combo boxes
+        # Prepare combo boxes
         self.prepareSystemTypes()
-
 
     def retranslateUi(self):
         _translate = QCoreApplication.translate
         self.setWindowTitle(_translate("cellSetting", "Cell setting"))
-        self.rbInformationElement.setText(_translate("cellSetting", "Information Element"))
+        self.rbInformationElement.setText(
+            _translate("cellSetting", "Information Element")
+        )
         self.lblSystem.setText(_translate("cellSetting", "System"))
         self.lblMobile.setText(_translate("cellSetting", "Mobile"))
         self.lblElement.setText(_translate("cellSetting", "Element"))
@@ -151,7 +166,10 @@ class CellSetting(QWidget):
         self.rbEventCounter.setText(_translate("cellSetting", "Event counter"))
         self.rbText.setText(_translate("cellSetting", "Text"))
         self.lblValue.setText(_translate("cellSetting", "Value"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.CellContent), _translate("cellSetting", "Cell Content"))
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.CellContent),
+            _translate("cellSetting", "Cell Content"),
+        )
 
     def addDatabase(self):
         self.db = QSqlDatabase.addDatabase("QSQLITE")
@@ -190,38 +208,38 @@ class CellSetting(QWidget):
 
     def cbSystemOnChanged(self, value):
         # ['WCDMA', 'General', 'Positioning', 'Data', 'Non-Access-Stratum', 'Wifi', 'LTE', 'CDMA', 'Android', 'NB-IoT', 'Unlisted']
-        queryString = ''
-        if value == 'WCDMA':
+        queryString = ""
+        if value == "WCDMA":
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'wcdma%'"
 
-        elif value == 'General':
+        elif value == "General":
             queryString = ""
 
-        elif value == 'Positioning':
+        elif value == "Positioning":
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'location%'"
 
-        elif value == 'Data':
+        elif value == "Data":
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'data%'"
 
-        elif value == 'Non-Access-Stratum':
+        elif value == "Non-Access-Stratum":
             queryString = ""
 
-        elif value == 'Wifi':
+        elif value == "Wifi":
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'wifi%'"
 
-        elif value == 'LTE':
+        elif value == "LTE":
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'lte%'"
 
-        elif value == 'CDMA':
+        elif value == "CDMA":
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'cdma%'"
 
-        elif value == 'Android':
+        elif value == "Android":
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'android%'"
 
-        elif value == 'NB-IoT':
+        elif value == "NB-IoT":
             queryString = "SELECT name FROM sqlite_master WHERE type ='table' AND name LIKE 'nb1%'"
 
-        elif value == 'Unlisted':
+        elif value == "Unlisted":
             queryString = ""
 
         if value and queryString:
@@ -244,9 +262,12 @@ class CellSetting(QWidget):
                 self.fcbElement.addItems(dataList)
 
     def fcbElementOnChanged(self, value):
-        queryString = ''
+        queryString = ""
         if value:
-            queryString = "select name from pragma_table_info(\"%s\") where name NOT IN (%s)" % (value, self.unused_columns)
+            queryString = (
+                'select name from pragma_table_info("%s") where name NOT IN (%s)'
+                % (value, self.unused_columns)
+            )
 
         if queryString:
             dataList = []
@@ -278,16 +299,14 @@ class CellSetting(QWidget):
             customElements.append(self.fcbValue.currentText())
 
         elif self.rbEventCounter.isChecked():
-            customElements.append('')
-            customElements.append('')
+            customElements.append("")
+            customElements.append("")
 
         elif self.rbText.isChecked():
             customElements.append(self.leText.text())
 
         if len(customElements) > 0:
-            result = ','.join(customElements)
+            result = ",".join(customElements)
             self.selected_item.setText(0, result)
 
         self.close()
-
-

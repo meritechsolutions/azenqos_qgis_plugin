@@ -171,7 +171,7 @@ class CustomizeQuery:
             )
             query.exec_(queryString)
             while query.next():
-                result = [query.value(0), self.inputData[2], self.inputData[3]]
+                result = [str(query.value(0)), self.inputData[2], self.inputData[3]]
             self.db.close()
         else:
             # inputdata = ['text','row','column']

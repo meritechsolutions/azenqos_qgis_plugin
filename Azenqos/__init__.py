@@ -33,4 +33,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     """
     #
     from .azenqos_plugin import Azenqos
+
     return Azenqos(iface)

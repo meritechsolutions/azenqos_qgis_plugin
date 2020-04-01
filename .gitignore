@@ -2,6 +2,7 @@
 .vscode/launch.json
 .idea/*
 .vscode/settings.json
+Azenqos/__pycache__/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

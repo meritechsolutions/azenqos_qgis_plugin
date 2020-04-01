@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import * #QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import * #QSqlQuery, QSqlDatabase
+from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
+from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
+
 
 class CellInformation(QDialog):
     def __init__(self, parent=None):
@@ -19,19 +20,16 @@ class CellInformation(QDialog):
         self.SettingLayout.setContentsMargins(10, 10, 10, 10)
         self.SettingLayout.setObjectName("SettingLayout")
         self.Setting = QGroupBox(self.verticalLayoutWidget)
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred,
-                                           QSizePolicy.Preferred)
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.Setting.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(self.Setting.sizePolicy().hasHeightForWidth())
         self.Setting.setSizePolicy(sizePolicy)
         self.Setting.setMinimumSize(QSize(0, 0))
         font = QtGui.QFont()
         font.setPointSize(13)
         self.Setting.setFont(font)
-        self.Setting.setAlignment(Qt.AlignLeading | Qt.AlignLeft
-                                  | Qt.AlignTop)
+        self.Setting.setAlignment(Qt.AlignLeading | Qt.AlignLeft | Qt.AlignTop)
         self.Setting.setObjectName("Setting")
         self.OpacityCheckbox = QCheckBox(self.Setting)
         self.OpacityCheckbox.setGeometry(QRect(30, 30, 86, 31))
@@ -49,8 +47,7 @@ class CellInformation(QDialog):
         self.CellDefinitionCombobox.setGeometry(QRect(160, 60, 121, 41))
         self.CellDefinitionCombobox.setObjectName("CellDefinitionCombobox")
         self.SearchCellDistanceLabel = QLabel(self.Setting)
-        self.SearchCellDistanceLabel.setGeometry(QRect(
-            30, 100, 131, 16))
+        self.SearchCellDistanceLabel.setGeometry(QRect(30, 100, 131, 16))
         self.SearchCellDistanceLabel.setObjectName("SearchCellDistanceLabel")
         self.KiloAmount = QLineEdit(self.Setting)
         self.KiloAmount.setGeometry(QRect(180, 100, 61, 21))
@@ -65,14 +62,13 @@ class CellInformation(QDialog):
         self.CellLayout = QVBoxLayout(self.verticalLayoutWidget_2)
         self.CellLayout.setContentsMargins(10, 20, 10, 10)
         self.CellLayout.setObjectName("CellLayout")
-        self.CellDefinitionFile = QGroupBox(
-            self.verticalLayoutWidget_2)
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred,
-                                           QSizePolicy.Preferred)
+        self.CellDefinitionFile = QGroupBox(self.verticalLayoutWidget_2)
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.CellDefinitionFile.sizePolicy().hasHeightForWidth())
+            self.CellDefinitionFile.sizePolicy().hasHeightForWidth()
+        )
         self.CellDefinitionFile.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setPointSize(13)
@@ -81,8 +77,7 @@ class CellInformation(QDialog):
         self.FilePath4 = QLineEdit(self.CellDefinitionFile)
         self.FilePath4.setGeometry(QRect(110, 270, 341, 21))
         self.FilePath4.setObjectName("FilePath4")
-        self.CdmaCellFileCheckbox = QCheckBox(
-            self.CellDefinitionFile)
+        self.CdmaCellFileCheckbox = QCheckBox(self.CellDefinitionFile)
         self.CdmaCellFileCheckbox.setGeometry(QRect(30, 240, 151, 20))
         self.CdmaCellFileCheckbox.setObjectName("CdmaCellFileCheckbox")
         self.LteCellFileCheckbox = QCheckBox(self.CellDefinitionFile)
@@ -97,8 +92,7 @@ class CellInformation(QDialog):
         self.FilenameLabel4 = QLabel(self.CellDefinitionFile)
         self.FilenameLabel4.setGeometry(QRect(40, 270, 59, 16))
         self.FilenameLabel4.setObjectName("FilenameLabel4")
-        self.WcdmaCellFileCheckbox = QCheckBox(
-            self.CellDefinitionFile)
+        self.WcdmaCellFileCheckbox = QCheckBox(self.CellDefinitionFile)
         self.WcdmaCellFileCheckbox.setGeometry(QRect(30, 100, 161, 20))
         self.WcdmaCellFileCheckbox.setObjectName("WcdmaCellFileCheckbox")
         self.FilePath1 = QLineEdit(self.CellDefinitionFile)
@@ -135,17 +129,15 @@ class CellInformation(QDialog):
         self.ButtonLayout = QVBoxLayout(self.verticalLayoutWidget_3)
         self.ButtonLayout.setContentsMargins(10, 10, 10, 10)
         self.ButtonLayout.setObjectName("ButtonLayout")
-        self.buttonBox = QDialogButtonBox(
-            self.verticalLayoutWidget_3)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok
-                                          | QDialogButtonBox.Cancel)
+        self.buttonBox = QDialogButtonBox(self.verticalLayoutWidget_3)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self.buttonBox.setObjectName("buttonBox")
         self.ButtonLayout.addWidget(self.buttonBox)
 
-        self.BrowseButton1.clicked.connect(lambda: self.browseFile('1'))
-        self.BrowseButton2.clicked.connect(lambda: self.browseFile('2'))
-        self.BrowseButton3.clicked.connect(lambda: self.browseFile('3'))
-        self.BrowseButton4.clicked.connect(lambda: self.browseFile('4'))
+        self.BrowseButton1.clicked.connect(lambda: self.browseFile("1"))
+        self.BrowseButton2.clicked.connect(lambda: self.browseFile("2"))
+        self.BrowseButton3.clicked.connect(lambda: self.browseFile("3"))
+        self.BrowseButton4.clicked.connect(lambda: self.browseFile("4"))
 
         self.retranslateUi(CellInformation)
         QMetaObject.connectSlotsByName(CellInformation)
@@ -153,28 +145,36 @@ class CellInformation(QDialog):
     def retranslateUi(self, CellInformation):
         _translate = QCoreApplication.translate
         CellInformation.setWindowTitle(
-            _translate("CellInformation", "Cell Information"))
+            _translate("CellInformation", "Cell Information")
+        )
         self.Setting.setTitle(_translate("CellInformation", "Setting"))
         self.OpacityCheckbox.setText(_translate("CellInformation", "Opacity"))
         self.PercentageLabel.setText(_translate("CellInformation", "%"))
         self.CellDefinitionLabel.setText(
-            _translate("CellInformation", "Cell Definition Text"))
+            _translate("CellInformation", "Cell Definition Text")
+        )
         self.SearchCellDistanceLabel.setText(
-            _translate("CellInformation", "Search Cell Distance"))
+            _translate("CellInformation", "Search Cell Distance")
+        )
         self.KilometerLabel.setText(_translate("CellInformation", "Kilometer"))
         self.CellDefinitionFile.setTitle(
-            _translate("CellInformation", "Cell definition file"))
+            _translate("CellInformation", "Cell definition file")
+        )
         self.CdmaCellFileCheckbox.setText(
-            _translate("CellInformation", "Use CDMA cell file"))
+            _translate("CellInformation", "Use CDMA cell file")
+        )
         self.LteCellFileCheckbox.setText(
-            _translate("CellInformation", "Use LTE cell file"))
+            _translate("CellInformation", "Use LTE cell file")
+        )
         self.FilenameLabel1.setText(_translate("CellInformation", "Filename"))
         self.FilenameLabel4.setText(_translate("CellInformation", "Filename"))
         self.WcdmaCellFileCheckbox.setText(
-            _translate("CellInformation", "Use WCDMA cell file"))
+            _translate("CellInformation", "Use WCDMA cell file")
+        )
         self.FilenameLabel3.setText(_translate("CellInformation", "Filename"))
         self.GsmCellFileCheckbox.setText(
-            _translate("CellInformation", "Use GSM cell file"))
+            _translate("CellInformation", "Use GSM cell file")
+        )
         self.FilenameLabel2.setText(_translate("CellInformation", "Filename"))
         self.BrowseButton1.setText(_translate("CellInformation", "Browse"))
         self.BrowseButton2.setText(_translate("CellInformation", "Browse"))
@@ -182,34 +182,34 @@ class CellInformation(QDialog):
         self.BrowseButton4.setText(_translate("CellInformation", "Browse"))
 
     def browseFile(self, buttonNo):
-        if buttonNo == '1':
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                      QDir.rootPath(),
-                                                      '*.cel')
+        if buttonNo == "1":
+            fileName, _ = QFileDialog.getOpenFileName(
+                self, "Single File", QDir.rootPath(), "*.cel"
+            )
             if fileName != "":
                 baseFileName = os.path.basename(str(fileName))
                 self.FilePath1.setText(fileName)
             return False
-        elif buttonNo == '2':
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                      QDir.rootPath(),
-                                                      '*.cel')
+        elif buttonNo == "2":
+            fileName, _ = QFileDialog.getOpenFileName(
+                self, "Single File", QDir.rootPath(), "*.cel"
+            )
             if fileName != "":
                 baseFileName = os.path.basename(str(fileName))
                 self.FilePath2.setText(fileName)
             return False
-        elif buttonNo == '3':
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                      QDir.rootPath(),
-                                                      '*.cel')
+        elif buttonNo == "3":
+            fileName, _ = QFileDialog.getOpenFileName(
+                self, "Single File", QDir.rootPath(), "*.cel"
+            )
             if fileName != "":
                 baseFileName = os.path.basename(str(fileName))
                 self.FilePath3.setText(fileName)
             return False
-        elif buttonNo == '4':
-            fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                      QDir.rootPath(),
-                                                      '*.cel')
+        elif buttonNo == "4":
+            fileName, _ = QFileDialog.getOpenFileName(
+                self, "Single File", QDir.rootPath(), "*.cel"
+            )
             if fileName != "":
                 baseFileName = os.path.basename(str(fileName))
                 self.FilePath4.setText(fileName)

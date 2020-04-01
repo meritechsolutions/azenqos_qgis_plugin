@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import * #QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import * #QSqlQuery, QSqlDatabase
+from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
+from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from customize_properties import PropertiesWindow
@@ -14,8 +14,9 @@ class CustomizedWindowWidget(QWidget):
     rowCount = 0
     columnCount = 0
     tableData = []
-    databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
-    def __init__(self, parent = None, windowName = None, database = None, currentTime = None):
+    databasePath = "/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db"
+
+    def __init__(self, parent=None, windowName=None, database=None, currentTime=None):
         super().__init__(parent=parent)
         self.window_name = windowName
         self.db = database
@@ -25,7 +26,9 @@ class CustomizedWindowWidget(QWidget):
         self.customContextMenuRequested.connect(self.generateMenu)
         self.layout = QVBoxLayout()
         self.currentTime = currentTime
-        self.customizeTable = CustomizeTable(self, None, self.db, self.rowCount, self.columnCount)
+        self.customizeTable = CustomizeTable(
+            self, None, self.db, self.rowCount, self.columnCount
+        )
         self.layout.addWidget(self.customizeTable)
         self.setLayout(self.layout)
 
@@ -36,7 +39,7 @@ class CustomizedWindowWidget(QWidget):
 
     def generateMenu(self, pos):
         menu = QMenu()
-        item1 = menu.addAction(u'Customize')
+        item1 = menu.addAction(u"Customize")
         action = menu.exec_(self.mapToGlobal(pos))
         if action == item1:
             self.properties_window.show()
@@ -59,22 +62,23 @@ class CustomizedWindowWidget(QWidget):
     def updateTable(self):
         if self.rowCount > 0 and self.columnCount > 0:
             self.tableData = []
-            for x in range(0,self.rowCount):
+            for x in range(0, self.rowCount):
                 dataPerRow = []
-                for y in range(0,self.columnCount):
-                    dataPerRow.append('')
+                for y in range(0, self.columnCount):
+                    dataPerRow.append("")
                 self.tableData.append(dataPerRow)
             if len(self.tableData) > 0:
                 if self.dataSet:
                     for data in self.dataSet:
-                        query = CustomizeQuery(self.db, data,'')
-                        result = query.query();
+                        query = CustomizeQuery(self.db, data, "")
+                        result = query.query()
                         row = result[1] - 1
                         column = result[2] - 1
                         self.tableData[row][column] = result[0]
-                    self.cusvtomizeTable.setTableModel(self.tableData,self.header)
+                    self.cusvtomizeTable.setTableModel(self.tableData, self.header)
 
     # def structuerDatalist(self, )
+
 
 class CustomizeTable(QWidget):
     def __init__(self, parent, windowName, database, rowCount: int, columnCount: int):
@@ -93,8 +97,7 @@ class CustomizeTable(QWidget):
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(
-            -1, Qt.AscendingOrder)
+        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
         self.setLayout(layout)
@@ -144,6 +147,7 @@ class CustomizeModel(QAbstractTableModel):
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
+
 class CustomizeQuery:
     def __init__(self, database, inputData: list, globalTime: str):
         self.db = database
@@ -151,22 +155,26 @@ class CustomizeQuery:
         self.globalTime = globalTime
 
     def query(self):
-        condition = ''
+        condition = ""
         result = []
-        if len(self.inputData) == 4 :
-            #inputdata = ['table','value','row',column']
+        if len(self.inputData) == 4:
+            # inputdata = ['table','value','row',column']
             if self.globalTime:
-                condition = 'WHERE time <= \'%s\'' % (self.globalTime)
+                condition = "WHERE time <= '%s'" % (self.globalTime)
             if not self.db.isOpen():
                 self.db.open()
             query = QSqlQuery()
-            queryString = 'SELECT %s FROM %s %s ORDER BY time DESC LIMIT 1' % (self.inputData[1], self.inputData[0], condition)
+            queryString = "SELECT %s FROM %s %s ORDER BY time DESC LIMIT 1" % (
+                self.inputData[1],
+                self.inputData[0],
+                condition,
+            )
             query.exec_(queryString)
             while query.next():
-                result = [query.value(0), self.inputData[2], self.inputData[3]]
+                result = [str(query.value(0)), self.inputData[2], self.inputData[3]]
             self.db.close()
         else:
-            #inputdata = ['text','row','column']
+            # inputdata = ['text','row','column']
             result = [self.inputData[0], self.inputData[1], self.inputData[2]]
         return result
 

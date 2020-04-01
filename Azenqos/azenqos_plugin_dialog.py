@@ -29,8 +29,8 @@ from qgis.utils import *
 from qgis.core import *
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import * #QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import * #QSqlQuery, QSqlDatabase
+from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
+from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import QColor
 
 from .linechart import *
@@ -49,7 +49,7 @@ minTimeValue = None
 maxTimeValue = None
 currentTimestamp = None
 currentDateTimeString = None
-recentDateTimeString = ''
+recentDateTimeString = ""
 clickedLatLon = {"lat": 0, "lon": 0}
 sliderLength = 0
 openedWindows = []
@@ -58,12 +58,16 @@ isSliderPlay = False
 allLayers = []
 tableList = []
 linechartWindowname = [
-            'WCDMA_Line Chart', 'LTE_LTE Line Chart',
-            'Data_WCDMA Data Line Chart', 'Data_LTE Data Line Chart','WCDMA_Pilot Analyzer'
-        ]
+    "WCDMA_Line Chart",
+    "LTE_LTE Line Chart",
+    "Data_WCDMA Data Line Chart",
+    "Data_LTE Data Line Chart",
+    "WCDMA_Pilot Analyzer",
+]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 utils = Utils()
+
 
 def clearAllSelectedFeatures():
     mc = iface.mapCanvas()
@@ -73,7 +77,14 @@ def clearAllSelectedFeatures():
             layer.removeSelection()
 
     mc.refresh()
-    QgsMessageLog.logMessage('[-- Clear selected features --]')
+    QgsMessageLog.logMessage("[-- Clear selected features --]")
+
+
+def removeAzenqosGroup():
+    root = QgsProject.instance().layerTreeRoot()
+    azqGroup = root.findGroup("Azenqos")
+    if azqGroup:
+        root.removeChildNode(azqGroup)
 
 
 # Database select window
@@ -95,8 +106,9 @@ class Ui_DatabaseDialog(QDialog):
         self.dbPath.setObjectName("dbPath")
         self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
         self.buttonBox.setGeometry(QtCore.QRect(370, 56, 164, 32))
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Ok
-                                          | QtWidgets.QDialogButtonBox.Cancel)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.dbPathLabel = QtWidgets.QLabel(DatabaseDialog)
         self.dbPathLabel.setGeometry(QtCore.QRect(10, 10, 181, 16))
@@ -107,20 +119,24 @@ class Ui_DatabaseDialog(QDialog):
 
         self.browseButton.clicked.connect(self.getfiles)
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
-            self.checkDatabase)
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.reject)
+            self.checkDatabase
+        )
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(
+            self.reject
+        )
 
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
         DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos"))
         self.browseButton.setText(_translate("DatabaseDialog", "Browse.."))
         self.dbPathLabel.setText(
-            _translate("DatabaseDialog", "Database path: ( .azm )"))
+            _translate("DatabaseDialog", "Database path: ( .azm )")
+        )
 
     def getfiles(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, 'Single File',
-                                                  QtCore.QDir.rootPath(),
-                                                  '*.azm')
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Single File", QtCore.QDir.rootPath(), "*.azm"
+        )
         if fileName != "":
             self.dbPath.setText(fileName)
             databasePath = Utils().unzipToFile(CURRENT_PATH, fileName)
@@ -133,19 +149,22 @@ class Ui_DatabaseDialog(QDialog):
         self.addDatabase()
         if not azenqosDatabase.open():
             QtWidgets.QMessageBox.critical(
-                None, "Cannot open database",
+                None,
+                "Cannot open database",
                 "Unable to establish a database connection.\n"
                 "This example needs SQLite support. Please read "
                 "the Qt SQL driver documentation for information how "
                 "to build it.\n\n"
-                "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
+                "Click Cancel to exit.",
+                QtWidgets.QMessageBox.Cancel,
+            )
             return False
         else:
             self.uri = QgsDataSourceUri()
             self.uri.setDatabase(self.databasePath)
             self.getLayersFromDb()
             # self.addLayerToQgis()
-            self.layerTask = LayerTask(u'Waste cpu 1', self.uri)
+            self.layerTask = LayerTask(u"Waste cpu 1", self.uri)
             QgsApplication.taskManager().addTask(self.layerTask)
             self.getTimeForSlider()
             self.hide()
@@ -170,18 +189,26 @@ class Ui_DatabaseDialog(QDialog):
         azenqosDatabase.close()
 
         try:
-            minTimeValue = datetime.datetime.strptime(str(startTime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
-            maxTimeValue = datetime.datetime.strptime(str(endTime), '%Y-%m-%d %H:%M:%S.%f').timestamp()
-            currentDateTimeString = '%s' % (
-                datetime.datetime.fromtimestamp(minTimeValue))
+            minTimeValue = datetime.datetime.strptime(
+                str(startTime), "%Y-%m-%d %H:%M:%S.%f"
+            ).timestamp()
+            maxTimeValue = datetime.datetime.strptime(
+                str(endTime), "%Y-%m-%d %H:%M:%S.%f"
+            ).timestamp()
+            currentDateTimeString = "%s" % (
+                datetime.datetime.fromtimestamp(minTimeValue)
+            )
         except:
             QtWidgets.QMessageBox.critical(
-                None, "Cannot open database",
+                None,
+                "Cannot open database",
                 "Unable to establish a database connection.\n"
                 "This example needs SQLite support. Please read "
                 "the Qt SQL driver documentation for information how "
                 "to build it.\n\n"
-                "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
+                "Click Cancel to exit.",
+                QtWidgets.QMessageBox.Cancel,
+            )
             return False
         self.setIncrementValue()
 
@@ -219,6 +246,7 @@ class Ui_DatabaseDialog(QDialog):
                 del window
         super().reject()
         QgsProject.removeAllMapLayers(QgsProject.instance())
+        removeAzenqosGroup()
         self.destroy(True)
         del self
 
@@ -252,8 +280,7 @@ class AzenqosDialog(QDialog):
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            timeSlider.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(timeSlider.sizePolicy().hasHeightForWidth())
         timeSlider.setSizePolicy(sizePolicy)
         timeSlider.setBaseSize(QtCore.QSize(500, 0))
         timeSlider.setPageStep(1)
@@ -268,8 +295,7 @@ class AzenqosDialog(QDialog):
         self.timeEdit.setGeometry(QtCore.QRect(480, 56, 140, 22))
         self.timeEdit.setObjectName("timeEdit")
         self.timeEdit.setDisplayFormat("hh:mm:ss")
-        self.timeEdit.setDateTime(
-            datetime.datetime.fromtimestamp(minTimeValue))
+        self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(minTimeValue))
         self.timeEdit.setReadOnly(True)
 
         # Time label
@@ -297,10 +323,10 @@ class AzenqosDialog(QDialog):
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
-        AzenqosDialog.setWindowTitle(
-            _translate("AzenqosDialog", "Azenqos Main Menu"))
+        AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos Main Menu"))
         self.presentationTreeWidget.headerItem().setText(
-            0, _translate("AzenqosDialog", "Presentation"))
+            0, _translate("AzenqosDialog", "Presentation")
+        )
         __sortingEnabled = self.presentationTreeWidget.isSortingEnabled()
         self.presentationTreeWidget.setSortingEnabled(False)
         self.presentationTreeWidget.setSortingEnabled(__sortingEnabled)
@@ -308,8 +334,7 @@ class AzenqosDialog(QDialog):
         #     0, _translate("AzenqosDialog", "Configuration"))
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
-        self.importDatabaseBtn.setText(
-            _translate("AzenqosDialog", "Import Database"))
+        self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
 
@@ -320,8 +345,7 @@ class AzenqosDialog(QDialog):
         self.presentationTreeWidget.setFrameShape(QFrame.StyledPanel)
         self.presentationTreeWidget.setAllColumnsShowFocus(True)
         self.presentationTreeWidget.setObjectName("presentationTreeWidget")
-        self.presentationTreeWidget.itemDoubleClicked.connect(
-            self.loadAllMessages)
+        self.presentationTreeWidget.itemDoubleClicked.connect(self.loadAllMessages)
 
         # GSM Section
         # gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
@@ -333,63 +357,58 @@ class AzenqosDialog(QDialog):
         # gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
 
         # WCDMA Section
-        wcdma = QTreeWidgetItem(self.presentationTreeWidget, ['WCDMA'])
-        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma,
-                                                   ['Active + Monitored Sets'])
-        wcdmaRadioParams = QTreeWidgetItem(wcdma, ['Radio Parameters'])
-        wcdmaASL = QTreeWidgetItem(wcdma, ['Active Set List'])
-        wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ['Monitored Set List'])
-        wcdmaSummary = QTreeWidgetItem(wcdma, ['BLER Summary'])
-        wcdmaTransportChannel = QTreeWidgetItem(wcdma,
-                                                ['BLER / Transport Channel'])
-        wcdmaLineChart = QTreeWidgetItem(wcdma, ['Line Chart'])
-        wcdmaBearers = QTreeWidgetItem(wcdma, ['Bearers'])
-        wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ['Pilot Poluting Cells'])
-        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma,
-                                                  ['Active + Monitored Bar'])
-        wcdmaReports = QTreeWidgetItem(wcdma, ['CM GSM Reports'])
-        wcdmaCells = QTreeWidgetItem(wcdma, ['CM GSM Cells'])
-        wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ['Pilot Analyzer'])
+        wcdma = QTreeWidgetItem(self.presentationTreeWidget, ["WCDMA"])
+        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma, ["Active + Monitored Sets"])
+        wcdmaRadioParams = QTreeWidgetItem(wcdma, ["Radio Parameters"])
+        wcdmaASL = QTreeWidgetItem(wcdma, ["Active Set List"])
+        wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ["Monitored Set List"])
+        wcdmaSummary = QTreeWidgetItem(wcdma, ["BLER Summary"])
+        wcdmaTransportChannel = QTreeWidgetItem(wcdma, ["BLER / Transport Channel"])
+        wcdmaLineChart = QTreeWidgetItem(wcdma, ["Line Chart"])
+        wcdmaBearers = QTreeWidgetItem(wcdma, ["Bearers"])
+        wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ["Pilot Poluting Cells"])
+        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma, ["Active + Monitored Bar"])
+        wcdmaReports = QTreeWidgetItem(wcdma, ["CM GSM Reports"])
+        wcdmaCells = QTreeWidgetItem(wcdma, ["CM GSM Cells"])
+        wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ["Pilot Analyzer"])
 
         # LTE Section
-        lte = QTreeWidgetItem(self.presentationTreeWidget, ['LTE'])
-        lteRadioParams = QTreeWidgetItem(lte, ['Radio Parameters'])
-        lteServingNeighbors = QTreeWidgetItem(lte, ['Serving + Neighbors'])
-        ltePPParams = QTreeWidgetItem(lte, ['PUCCH/PDSCH Parameters'])
-        lteLineChart = QTreeWidgetItem(lte, ['LTE Line Chart'])
-        lteRlc = QTreeWidgetItem(lte, ['LTE RLC'])
-        lteVo = QTreeWidgetItem(lte, ['LTE VoLTE'])
+        lte = QTreeWidgetItem(self.presentationTreeWidget, ["LTE"])
+        lteRadioParams = QTreeWidgetItem(lte, ["Radio Parameters"])
+        lteServingNeighbors = QTreeWidgetItem(lte, ["Serving + Neighbors"])
+        ltePPParams = QTreeWidgetItem(lte, ["PUCCH/PDSCH Parameters"])
+        lteLineChart = QTreeWidgetItem(lte, ["LTE Line Chart"])
+        lteRlc = QTreeWidgetItem(lte, ["LTE RLC"])
+        lteVo = QTreeWidgetItem(lte, ["LTE VoLTE"])
 
         # CDMA/EVDO Section
-        cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ['CDMA/EVDO'])
-        cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ['Radio Parameters'])
-        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo,
-                                                   ['Serving + Neighbors'])
-        cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ['EVDO Parameters'])
+        cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ["CDMA/EVDO"])
+        cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ["Radio Parameters"])
+        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo, ["Serving + Neighbors"])
+        cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ["EVDO Parameters"])
 
         # Data Section
-        data = QTreeWidgetItem(self.presentationTreeWidget, ['Data'])
-        dataGsmLineChart = QTreeWidgetItem(data, ['GSM Data Line Chart'])
-        dataWcdmaLineChart = QTreeWidgetItem(data, ['WCDMA Data Line Chart'])
-        dataEdgeInfo = QTreeWidgetItem(data, ['GPRS/EDGE Information'])
-        dataWebBrowser = QTreeWidgetItem(data, ['Web Browser'])
-        dataStats = QTreeWidgetItem(data, ['HSDPA/HSPA + Statistics'])
-        dataHsupaStats = QTreeWidgetItem(data, ['HSUPA Statistics'])
-        dataLteStats = QTreeWidgetItem(data, ['LTE Data Statistics'])
-        dataLteLineChart = QTreeWidgetItem(data, ['LTE Data Line Chart'])
-        dataWifiConnectedAp = QTreeWidgetItem(data, ['Wifi Connected AP'])
-        dataWifiScannedAp = QTreeWidgetItem(data, ['Wifi Scanned APs'])
-        dataWifiGraph = QTreeWidgetItem(data, ['Wifi Graph'])
+        data = QTreeWidgetItem(self.presentationTreeWidget, ["Data"])
+        dataGsmLineChart = QTreeWidgetItem(data, ["GSM Data Line Chart"])
+        dataWcdmaLineChart = QTreeWidgetItem(data, ["WCDMA Data Line Chart"])
+        dataEdgeInfo = QTreeWidgetItem(data, ["GPRS/EDGE Information"])
+        dataWebBrowser = QTreeWidgetItem(data, ["Web Browser"])
+        dataStats = QTreeWidgetItem(data, ["HSDPA/HSPA + Statistics"])
+        dataHsupaStats = QTreeWidgetItem(data, ["HSUPA Statistics"])
+        dataLteStats = QTreeWidgetItem(data, ["LTE Data Statistics"])
+        dataLteLineChart = QTreeWidgetItem(data, ["LTE Data Line Chart"])
+        dataWifiConnectedAp = QTreeWidgetItem(data, ["Wifi Connected AP"])
+        dataWifiScannedAp = QTreeWidgetItem(data, ["Wifi Scanned APs"])
+        dataWifiGraph = QTreeWidgetItem(data, ["Wifi Graph"])
 
         # Signaling Section
-        signaling = QTreeWidgetItem(self.presentationTreeWidget, ['Signaling'])
-        signalingEvents = QTreeWidgetItem(signaling, ['Events'])
+        signaling = QTreeWidgetItem(self.presentationTreeWidget, ["Signaling"])
+        signalingEvents = QTreeWidgetItem(signaling, ["Events"])
         # signalingLayerOne = QTreeWidgetItem(signaling, ['Layer 1 Messages'])
-        signalingLayerThree = QTreeWidgetItem(signaling, ['Layer 3 Messages'])
-        signalingBenchmark = QTreeWidgetItem(signaling, ['Benchmark'])
-        signalingMM = QTreeWidgetItem(signaling, ['MM Reg States'])
-        signalingSystemInfo = QTreeWidgetItem(signaling,
-                                              ['Serving System Info'])
+        signalingLayerThree = QTreeWidgetItem(signaling, ["Layer 3 Messages"])
+        signalingBenchmark = QTreeWidgetItem(signaling, ["Benchmark"])
+        signalingMM = QTreeWidgetItem(signaling, ["MM Reg States"])
+        signalingSystemInfo = QTreeWidgetItem(signaling, ["Serving System Info"])
         # signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
 
         # Positioning Section
@@ -437,8 +456,7 @@ class AzenqosDialog(QDialog):
         self.playButton = QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.pauseButton = QToolButton()
-        self.pauseButton.setIcon(self.style().standardIcon(
-            QStyle.SP_MediaPause))
+        self.pauseButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
         layout = QHBoxLayout(self.horizontalLayout)
         layout.addStretch(1)
         layout.addWidget(self.playButton)
@@ -500,35 +518,40 @@ class AzenqosDialog(QDialog):
         # QgsMessageLog.logMessage(text)
 
         if len(tableList) > 0:
-            QgsMessageLog.logMessage('[-- have tableList --]')
+            QgsMessageLog.logMessage("[-- have tableList --]")
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
         # self.hilightFeature()
         self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
-        currentDateTimeString = '%s' % (datetime.datetime.fromtimestamp(currentTimestamp))
+        currentDateTimeString = "%s" % (
+            datetime.datetime.fromtimestamp(currentTimestamp)
+        )
 
     # def threadComplete(self):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
     #     iface.mapCanvas().refresh()
 
     def hilightFeature(self):
-        QgsMessageLog.logMessage('[-- Start hilight features --]')
+        QgsMessageLog.logMessage("[-- Start hilight features --]")
         start_time = time.time()
         self.getPosIdsByTable()
         if len(self.posIds) > 0 and len(self.posObjs) > 0:
             self.usePosIdsSelectedFeatures()
-        QgsMessageLog.logMessage('[-- End hilight features --]')
+        QgsMessageLog.logMessage("[-- End hilight features --]")
 
     def getPosIdsByTable(self):
         azenqosDatabase.open()
         # start_time = time.time()
-        QgsMessageLog.logMessage('tables: ' + str(tableList))
+        QgsMessageLog.logMessage("tables: " + str(tableList))
         for tableName in tableList:
             self.posObjs = []
             self.posIds = []
             query = QSqlQuery()
-            queryString = "SELECT posid FROM %s WHERE time <= '%s' AND geom IS NOT NULL ORDER BY time DESC LIMIT 1" % (tableName, currentDateTimeString)
+            queryString = (
+                "SELECT posid FROM %s WHERE time <= '%s' AND geom IS NOT NULL ORDER BY time DESC LIMIT 1"
+                % (tableName, currentDateTimeString)
+            )
             query.exec_(queryString)
             while query.next():
                 posid = query.value(0)
@@ -538,7 +561,6 @@ class AzenqosDialog(QDialog):
         # elapsed_time = time.time() - start_time
         # QgsMessageLog.logMessage('Query Elapsed time: ' + str(elapsed_time) + ' s.')
         azenqosDatabase.close()
-
 
     def usePosIdsSelectedFeatures(self):
         if self.posIds:
@@ -560,16 +582,16 @@ class AzenqosDialog(QDialog):
             root = QgsProject.instance().layerTreeRoot()
             root.setHasCustomLayerOrder(True)
             order = root.customLayerOrder()
-            order.insert(0, order.pop(order.index(layer))) # vlayer to the top
+            order.insert(0, order.pop(order.index(layer)))  # vlayer to the top
             root.setCustomLayerOrder(order)
             iface.setActiveLayer(layer)
-            QgsMessageLog.logMessage('layer name: ' + str(layerName))
+            QgsMessageLog.logMessage("layer name: " + str(layerName))
 
             for feature in layerFeatures:
-                posid = feature['posid']
+                posid = feature["posid"]
                 if self.currentMaxPosId == posid:
                     selected_ids.append(feature.id())
-            QgsMessageLog.logMessage('selected_ids: {0}'.format(str(selected_ids)))
+            QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
 
             if layer:
                 start_time = time.time()
@@ -582,7 +604,7 @@ class AzenqosDialog(QDialog):
                     xmax = ext.xMaximum()
                     ymin = ext.yMinimum()
                     ymax = ext.yMaximum()
-                    zoomRectangle = QgsRectangle(xmin,ymin,xmax,ymax)
+                    zoomRectangle = QgsRectangle(xmin, ymin, xmax, ymax)
                     iface.mapCanvas().setExtent(zoomRectangle)
 
                     # box = layer.boundingBoxOfSelected()
@@ -592,21 +614,22 @@ class AzenqosDialog(QDialog):
                     iface.mapCanvas().zoomScale(25600.0)
                     iface.mapCanvas().refresh()
                 elapsed_time = time.time() - start_time
-                QgsMessageLog.logMessage('Select Features Elapsed time: ' + str(elapsed_time) + ' s.')
+                QgsMessageLog.logMessage(
+                    "Select Features Elapsed time: " + str(elapsed_time) + " s."
+                )
                 # self.maxPosId = self.currentMaxPosId
-
 
     def classifySelectedItems(self, parent, child):
         global openedWindows
         global tableList
         windowName = parent + "_" + child
-        if hasattr(self, 'mdi') is False:
+        if hasattr(self, "mdi") is False:
             self.mdi = GroupArea()
         subwindowList = self.mdi.subWindowList()
         if parent == "WCDMA":
             if child == "Active + Monitored Sets":
                 tableWidget = None
-                if hasattr(self, 'wcdma_ams_window') is True:
+                if hasattr(self, "wcdma_ams_window") is True:
                     tableWindow = self.wcdma_ams_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_ams_window, windowName)
@@ -630,7 +653,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Radio Parameters":
                 tableWidget = None
-                if hasattr(self, 'wcdma_rp_window') is True:
+                if hasattr(self, "wcdma_rp_window") is True:
                     tableWindow = self.wcdma_rp_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_rp_window, windowName)
@@ -654,7 +677,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Active Set List":
                 tableWidget = None
-                if hasattr(self, 'wcdma_asl_window') is True:
+                if hasattr(self, "wcdma_asl_window") is True:
                     tableWindow = self.wcdma_asl_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_asl_window, windowName)
@@ -678,7 +701,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Monitored Set List":
                 tableWidget = None
-                if hasattr(self, 'wcdma_msl_window') is True:
+                if hasattr(self, "wcdma_msl_window") is True:
                     tableWindow = self.wcdma_msl_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_msl_window, windowName)
@@ -702,7 +725,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "BLER Summary":
                 tableWidget = None
-                if hasattr(self, 'wcdma_bler_window') is True:
+                if hasattr(self, "wcdma_bler_window") is True:
                     tableWindow = self.wcdma_msl_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_bler_window, windowName)
@@ -726,7 +749,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "BLER / Transport Channel":
                 tableWidget = None
-                if hasattr(self, 'wcdma_blertc_window') is True:
+                if hasattr(self, "wcdma_blertc_window") is True:
                     tableWindow = self.wcdma_blertc_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_blertc_window, windowName)
@@ -750,10 +773,12 @@ class AzenqosDialog(QDialog):
 
             elif child == "Line Chart":
                 linechartWidget = None
-                if hasattr(self, 'wcdma_lc_window') is True:
+                if hasattr(self, "wcdma_lc_window") is True:
                     linechartWindow = self.wcdma_lc_window.widget()
                     if not linechartWindow:
-                        linechartWidget = Ui_WCDMA_LCwidget(self, windowName, azenqosDatabase)
+                        linechartWidget = Ui_WCDMA_LCwidget(
+                            self, windowName, azenqosDatabase
+                        )
                         openedWindows.append(linechartWidget)
 
                     if self.wcdma_lc_window not in subwindowList:
@@ -766,7 +791,9 @@ class AzenqosDialog(QDialog):
                 else:
                     # create new subwindow
                     self.wcdma_lc_window = QMdiSubWindow(self.mdi)
-                    linechartWidget = Ui_WCDMA_LCwidget(self, windowName, azenqosDatabase)
+                    linechartWidget = Ui_WCDMA_LCwidget(
+                        self, windowName, azenqosDatabase
+                    )
                     self.wcdma_lc_window.setWidget(linechartWidget)
                     self.mdi.addSubWindow(self.wcdma_lc_window)
                     self.wcdma_lc_window.show()
@@ -774,7 +801,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Bearers":
                 tableWidget = None
-                if hasattr(self, 'wcdma_bearer_window') is True:
+                if hasattr(self, "wcdma_bearer_window") is True:
                     tableWindow = self.wcdma_bearer_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_bearer_window, windowName)
@@ -798,7 +825,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Pilot Poluting Cells":
                 tableWidget = None
-                if hasattr(self, 'wcdma_ppc_window') is True:
+                if hasattr(self, "wcdma_ppc_window") is True:
                     tableWindow = self.wcdma_ppc_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_ppc_window, windowName)
@@ -822,7 +849,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Active + Monitored Bar":
                 tableWidget = None
-                if hasattr(self, 'wcdma_amb_window') is True:
+                if hasattr(self, "wcdma_amb_window") is True:
                     tableWindow = self.wcdma_amb_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_amb_window, windowName)
@@ -846,7 +873,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "CM GSM Reports":
                 tableWidget = None
-                if hasattr(self, 'wcdma_report_window') is True:
+                if hasattr(self, "wcdma_report_window") is True:
                     tableWindow = self.wcdma_report_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_report_window, windowName)
@@ -870,7 +897,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "CM GSM Cells":
                 tableWidget = None
-                if hasattr(self, 'wcdma_cells_window') is True:
+                if hasattr(self, "wcdma_cells_window") is True:
                     tableWindow = self.wcdma_cells_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wcdma_cells_window, windowName)
@@ -894,10 +921,12 @@ class AzenqosDialog(QDialog):
 
             elif child == "Pilot Analyzer":
                 tableWidget = None
-                if hasattr(self, 'wcdma_analyzer_window') is True:
+                if hasattr(self, "wcdma_analyzer_window") is True:
                     tableWindow = self.wcdma_analyzer_window.widget()
                     if not tableWindow:
-                        tableWidget = TableWindow(self.wcdma_analyzer_window, windowName)
+                        tableWidget = TableWindow(
+                            self.wcdma_analyzer_window, windowName
+                        )
                         openedWindows.append(tableWidget)
 
                     if self.wcdma_analyzer_window not in subwindowList:
@@ -919,7 +948,7 @@ class AzenqosDialog(QDialog):
         elif parent == "LTE":
             if child == "Radio Parameters":
                 tableWidget = None
-                if hasattr(self, 'lte_param_window') is True:
+                if hasattr(self, "lte_param_window") is True:
                     tableWindow = self.lte_param_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.lte_param_window, windowName)
@@ -943,7 +972,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Serving + Neighbors":
                 tableWidget = None
-                if hasattr(self, 'lte_sn_window') is True:
+                if hasattr(self, "lte_sn_window") is True:
                     tableWindow = self.lte_sn_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.lte_sn_window, windowName)
@@ -967,7 +996,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "PUCCH/PDSCH Parameters":
                 tableWidget = None
-                if hasattr(self, 'lte_ppparam_window') is True:
+                if hasattr(self, "lte_ppparam_window") is True:
                     tableWindow = self.lte_ppparam_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.lte_ppparam_window, windowName)
@@ -991,10 +1020,12 @@ class AzenqosDialog(QDialog):
 
             elif child == "LTE Line Chart":
                 widget = None
-                if hasattr(self, 'lte_lc_window') is True:
+                if hasattr(self, "lte_lc_window") is True:
                     linechartWindow = self.lte_lc_window.widget()
                     if not linechartWindow:
-                        widget = Ui_LTE_LCwidget(self.lte_lc_window, windowName, azenqosDatabase)
+                        widget = Ui_LTE_LCwidget(
+                            self.lte_lc_window, windowName, azenqosDatabase
+                        )
                         openedWindows.append(widget)
                     else:
                         widget = linechartWindow
@@ -1010,7 +1041,9 @@ class AzenqosDialog(QDialog):
                 else:
                     # create new subwindow
                     self.lte_lc_window = QMdiSubWindow(self.mdi)
-                    widget = Ui_LTE_LCwidget(self.lte_lc_window, windowName, azenqosDatabase)
+                    widget = Ui_LTE_LCwidget(
+                        self.lte_lc_window, windowName, azenqosDatabase
+                    )
                     self.lte_lc_window.setWidget(widget)
                     self.mdi.addSubWindow(self.lte_lc_window)
                     self.lte_lc_window.show()
@@ -1018,7 +1051,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "LTE RLC":
                 widget = None
-                if hasattr(self, 'lte_rlc_window') is True:
+                if hasattr(self, "lte_rlc_window") is True:
                     tableWindow = self.lte_rlc_window.widget()
                     if not tableWindow:
                         widget = TableWindow(self.lte_rlc_window, windowName)
@@ -1042,7 +1075,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "LTE VoLTE":
                 widget = None
-                if hasattr(self, 'lte_volte_window') is True:
+                if hasattr(self, "lte_volte_window") is True:
                     widget = self.lte_volte_window.widget()
                     if not widget:
                         widget = TableWindow(self.lte_volte_window, windowName)
@@ -1067,7 +1100,7 @@ class AzenqosDialog(QDialog):
         elif parent == "CDMA/EVDO":
             if child == "Radio Parameters":
                 tableWidget = None
-                if hasattr(self, 'cdma_rp_window') is True:
+                if hasattr(self, "cdma_rp_window") is True:
                     tableWindow = self.cdma_rp_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.cdma_rp_window, windowName)
@@ -1091,7 +1124,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Serving + Neighbors":
                 tableWidget = None
-                if hasattr(self, 'cdma_sn_window') is True:
+                if hasattr(self, "cdma_sn_window") is True:
                     tableWindow = self.cdma_sn_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.cdma_sn_window, windowName)
@@ -1115,7 +1148,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "EVDO Parameters":
                 tableWidget = None
-                if hasattr(self, 'cdma_evdo_window') is True:
+                if hasattr(self, "cdma_evdo_window") is True:
                     tableWindow = self.cdma_evdo_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.cdma_evdo_window, windowName)
@@ -1146,10 +1179,12 @@ class AzenqosDialog(QDialog):
                 # self.wcdma_data_lc.show()
                 # self.wcdma_data_lc.activateWindow()
                 linechartWidget = None
-                if hasattr(self, 'wcdma_data_lc') is True:
+                if hasattr(self, "wcdma_data_lc") is True:
                     linechartWindow = self.wcdma_data_lc.widget()
                     if not linechartWindow:
-                        linechartWidget = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
+                        linechartWidget = Ui_WCDMA_Data_LCwidget(
+                            self, windowName, azenqosDatabase
+                        )
                         openedWindows.append(linechartWidget)
 
                     if self.wcdma_data_lc not in subwindowList:
@@ -1162,7 +1197,9 @@ class AzenqosDialog(QDialog):
                 else:
                     # create new subwindow
                     self.wcdma_data_lc = QMdiSubWindow(self.mdi)
-                    linechartWidget = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
+                    linechartWidget = Ui_WCDMA_Data_LCwidget(
+                        self, windowName, azenqosDatabase
+                    )
                     self.wcdma_data_lc.setWidget(linechartWidget)
                     self.mdi.addSubWindow(self.wcdma_data_lc)
                     self.wcdma_data_lc.show()
@@ -1170,7 +1207,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "GPRS/EDGE Information":
                 tableWidget = None
-                if hasattr(self, 'gprs_info') is True:
+                if hasattr(self, "gprs_info") is True:
                     tableWindow = self.gprs_info.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.gprs_info, windowName)
@@ -1200,11 +1237,9 @@ class AzenqosDialog(QDialog):
             #     self.gprs_info.show()
             #     self.gprs_info.activateWindow()
 
-
-
             elif child == "HSDPA/HSPA + Statistics":
                 tableWidget = None
-                if hasattr(self, 'hsdpa_stat') is True:
+                if hasattr(self, "hsdpa_stat") is True:
                     tableWindow = self.hsdpa_stat.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.hsdpa_stat, windowName)
@@ -1228,7 +1263,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "HSUPA Statistics":
                 tableWidget = None
-                if hasattr(self, 'hsupa_stat') is True:
+                if hasattr(self, "hsupa_stat") is True:
                     tableWindow = self.hsupa_stat.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.hsupa_stat, windowName)
@@ -1252,7 +1287,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "LTE Data Statistics":
                 tableWidget = None
-                if hasattr(self, 'lte_data_stat') is True:
+                if hasattr(self, "lte_data_stat") is True:
                     tableWindow = self.lte_data_stat.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.lte_data_stat, windowName)
@@ -1274,7 +1309,6 @@ class AzenqosDialog(QDialog):
                     self.lte_data_stat.show()
                     openedWindows.append(tableWidget)
 
-
             elif child == "LTE Data Line Chart":
                 # if hasattr(self, 'lte_data_lc') is False:
                 #     self.lte_data_lc = Ui_LTE_Data_LCwidget(self, windowName, azenqosDatabase)
@@ -1283,10 +1317,12 @@ class AzenqosDialog(QDialog):
                 # self.lte_data_lc.show()
                 # self.lte_data_lc.activateWindow()
                 linechartWidget = None
-                if hasattr(self, 'lte_data_lc') is True:
+                if hasattr(self, "lte_data_lc") is True:
                     linechartWindow = self.lte_data_lc.widget()
                     if not linechartWindow:
-                        linechartWidget = Ui_LTE_Data_LCwidget(self, windowName, azenqosDatabase)
+                        linechartWidget = Ui_LTE_Data_LCwidget(
+                            self, windowName, azenqosDatabase
+                        )
                         openedWindows.append(linechartWidget)
 
                     if self.lte_data_lc not in subwindowList:
@@ -1299,7 +1335,9 @@ class AzenqosDialog(QDialog):
                 else:
                     # create new subwindow
                     self.lte_data_lc = QMdiSubWindow(self.mdi)
-                    linechartWidget = Ui_LTE_Data_LCwidget(self, windowName, azenqosDatabase)
+                    linechartWidget = Ui_LTE_Data_LCwidget(
+                        self, windowName, azenqosDatabase
+                    )
                     self.lte_data_lc.setWidget(linechartWidget)
                     self.mdi.addSubWindow(self.lte_data_lc)
                     self.lte_data_lc.show()
@@ -1307,7 +1345,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Wifi Connected AP":
                 tableWidget = None
-                if hasattr(self, 'wifi_connected_ap') is True:
+                if hasattr(self, "wifi_connected_ap") is True:
                     tableWindow = self.wifi_connected_ap.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wifi_connected_ap, windowName)
@@ -1331,7 +1369,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Wifi Scanned APs":
                 tableWidget = None
-                if hasattr(self, 'wifi_scanned_ap') is True:
+                if hasattr(self, "wifi_scanned_ap") is True:
                     tableWindow = self.wifi_scanned_ap.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wifi_scanned_ap, windowName)
@@ -1355,7 +1393,7 @@ class AzenqosDialog(QDialog):
 
             elif child == "Wifi Graph":
                 tableWidget = None
-                if hasattr(self, 'wifi_graph') is True:
+                if hasattr(self, "wifi_graph") is True:
                     tableWindow = self.wifi_graph.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.wifi_graph, windowName)
@@ -1380,7 +1418,7 @@ class AzenqosDialog(QDialog):
         elif parent == "Signaling":
             if child == "Events":
                 events_widget = None
-                if hasattr(self, 'events_window') is True:
+                if hasattr(self, "events_window") is True:
                     tableWindow = self.events_window.widget()
                     if not tableWindow:
                         events_widget = TableWindow(self.events_window, windowName)
@@ -1403,13 +1441,14 @@ class AzenqosDialog(QDialog):
                     self.events_window.show()
                     openedWindows.append(events_widget)
 
-
             elif child == "Layer 1 Messages":
                 layer_one_widget = None
-                if hasattr(self, 'layer_one_messages') is True:
+                if hasattr(self, "layer_one_messages") is True:
                     tableWindow = self.layer_one_messages.widget()
                     if not tableWindow:
-                        layer_one_widget = TableWindow(self.layer_one_messages, windowName)
+                        layer_one_widget = TableWindow(
+                            self.layer_one_messages, windowName
+                        )
                         openedWindows.append(layer_one_widget)
 
                     if self.layer_one_messages not in subwindowList:
@@ -1438,10 +1477,12 @@ class AzenqosDialog(QDialog):
                 # self.layer_one_messages.activateWindow()
             elif child == "Layer 3 Messages":
                 layer_three_widget = None
-                if hasattr(self, 'layer_three_messages') is True:
+                if hasattr(self, "layer_three_messages") is True:
                     tableWindow = self.layer_three_messages.widget()
                     if not tableWindow:
-                        layer_three_widget = TableWindow(self.layer_three_messages, windowName)
+                        layer_three_widget = TableWindow(
+                            self.layer_three_messages, windowName
+                        )
                         openedWindows.append(layer_three_widget)
 
                     if self.layer_three_messages not in subwindowList:
@@ -1455,7 +1496,9 @@ class AzenqosDialog(QDialog):
                 else:
                     # create new subwindow
                     self.layer_three_messages = QMdiSubWindow(self.mdi)
-                    layer_three_widget = TableWindow(self.layer_three_messages, windowName)
+                    layer_three_widget = TableWindow(
+                        self.layer_three_messages, windowName
+                    )
                     self.layer_three_messages.setWidget(layer_three_widget)
                     self.mdi.addSubWindow(self.layer_three_messages)
                     self.layer_three_messages.show()
@@ -1470,7 +1513,7 @@ class AzenqosDialog(QDialog):
                 # self.layer_three_messages.activateWindow()
             elif child == "Benchmark":
                 benchmark_widget = None
-                if hasattr(self, 'benchmark') is True:
+                if hasattr(self, "benchmark") is True:
                     tableWindow = self.benchmark.widget()
                     if not tableWindow:
                         benchmark_widget = TableWindow(self.benchmark, windowName)
@@ -1503,7 +1546,7 @@ class AzenqosDialog(QDialog):
                 # self.benchmark.activateWindow()
             elif child == "MM Reg States":
                 mm_widget = None
-                if hasattr(self, 'mm_reg_states') is True:
+                if hasattr(self, "mm_reg_states") is True:
                     tableWindow = self.mm_reg_states.widget()
                     if not tableWindow:
                         mm_widget = TableWindow(self.mm_reg_states, windowName)
@@ -1536,10 +1579,12 @@ class AzenqosDialog(QDialog):
                 # self.mm_reg_states.activateWindow()
             elif child == "Serving System Info":
                 serving_system_widget = None
-                if hasattr(self, 'serving_system_info') is True:
+                if hasattr(self, "serving_system_info") is True:
                     tableWindow = self.serving_system_info.widget()
                     if not tableWindow:
-                        serving_system_widget = TableWindow(self.serving_system_info, windowName)
+                        serving_system_widget = TableWindow(
+                            self.serving_system_info, windowName
+                        )
                         openedWindows.append(serving_system_widget)
 
                     if self.serving_system_info not in subwindowList:
@@ -1554,7 +1599,9 @@ class AzenqosDialog(QDialog):
                 else:
                     # create new subwindow
                     self.serving_system_info = QMdiSubWindow(self.mdi)
-                    serving_system_widget = TableWindow(self.serving_system_info, windowName)
+                    serving_system_widget = TableWindow(
+                        self.serving_system_info, windowName
+                    )
                     self.serving_system_info.setWidget(serving_system_widget)
                     self.mdi.addSubWindow(self.serving_system_info)
                     self.serving_system_info.show()
@@ -1569,7 +1616,7 @@ class AzenqosDialog(QDialog):
                 # self.serving_system_info.activateWindow()
             elif child == "Debug Android/Event":
                 debug_event_widget = None
-                if hasattr(self, 'debug_event') is True:
+                if hasattr(self, "debug_event") is True:
                     tableWindow = self.debug_event.widget()
                     if not tableWindow:
                         debug_event_widget = TableWindow(self.debug_event, windowName)
@@ -1626,24 +1673,25 @@ class AzenqosDialog(QDialog):
             baseNode = getSelected[0]
             if baseNode.text(0) is not None:
                 getChildNode = baseNode.text(0)
-                if getChildNode == 'Cell Information':
+                if getChildNode == "Cell Information":
                     self.cell_information = CellInformation(self)
                     self.cell_information.show()
-                elif getChildNode == 'Equipment Configuration':
+                elif getChildNode == "Equipment Configuration":
                     pass
 
     def closeEvents(self):
         self.pauseTime()
         self.timeSliderThread.exit()
         self.close()
-        self.databaseUi.destroy(True,True)
-        self.destroy(True,True)
+        self.databaseUi.destroy(True, True)
+        self.destroy(True, True)
 
     def reject(self):
         super().reject()
         # QgsMessageLog.logMessage('Close App')
         clearAllSelectedFeatures()
         QgsProject.removeAllMapLayers(QgsProject.instance())
+        removeAzenqosGroup()
         for mdiwindow in self.mdi.subWindowList():
             mdiwindow.close()
         self.mdi.close()
@@ -1656,6 +1704,7 @@ class AzenqosDialog(QDialog):
 
         # del self.databaseUi
         # del self
+
 
 class GroupArea(QMdiArea):
     def __init__(self):
@@ -1712,7 +1761,7 @@ class TableWindow(QWidget):
     def __init__(self, parent, windowName):
         super().__init__(parent)
         self.title = windowName
-        self.tablename = ''
+        self.tablename = ""
         self.tableHeader = None
         self.left = 10
         self.top = 10
@@ -1720,7 +1769,7 @@ class TableWindow(QWidget):
         self.height = 480
         self.dataList = []
         self.currentRow = 0
-        self.dateString = ''
+        self.dateString = ""
         self.tableViewCount = 0
         self.setupUi()
 
@@ -1729,8 +1778,7 @@ class TableWindow(QWidget):
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(
-            -1, Qt.AscendingOrder)
+        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.specifyTablesHeader()
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
@@ -1749,190 +1797,208 @@ class TableWindow(QWidget):
     def specifyTablesHeader(self):
         if self.title is not None:
             # WCDMA
-            if self.title == 'WCDMA_Active + Monitored Sets':
+            if self.title == "WCDMA_Active + Monitored Sets":
                 self.tableHeader = [
-                    "Time", "CellName", "CellType", "SC", "Ec/Io", "RSCP",
-                    "Freq", "Event"
+                    "Time",
+                    "CellName",
+                    "CellType",
+                    "SC",
+                    "Ec/Io",
+                    "RSCP",
+                    "Freq",
+                    "Event",
                 ]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getActiveMonitoredSets()
-            elif self.title == 'WCDMA_Radio Parameters':
+                    azenqosDatabase, currentDateTimeString
+                ).getActiveMonitoredSets()
+            elif self.title == "WCDMA_Radio Parameters":
                 self.tableHeader = ["Element", "Value"]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getRadioParameters()
-            elif self.title == 'WCDMA_Active Set List':
+                    azenqosDatabase, currentDateTimeString
+                ).getRadioParameters()
+            elif self.title == "WCDMA_Active Set List":
                 self.tableHeader = [
-                    "Time", "Freq", "PSC", "Cell Position", "Cell TPC",
-                    "Diversity"
+                    "Time",
+                    "Freq",
+                    "PSC",
+                    "Cell Position",
+                    "Cell TPC",
+                    "Diversity",
                 ]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase, currentDateTimeString).getActiveSetList()
-            elif self.title == 'WCDMA_Monitored Set List':
-                self.tableHeader = [
-                    "Time", "Freq", "PSC", "Cell Position", "Diversity"
-                ]
+                    azenqosDatabase, currentDateTimeString
+                ).getActiveSetList()
+            elif self.title == "WCDMA_Monitored Set List":
+                self.tableHeader = ["Time", "Freq", "PSC", "Cell Position", "Diversity"]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getMonitoredSetList()
-            elif self.title == 'WCDMA_BLER Summary':
+                    azenqosDatabase, currentDateTimeString
+                ).getMonitoredSetList()
+            elif self.title == "WCDMA_BLER Summary":
                 self.tableHeader = ["Element", "Value"]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase, currentDateTimeString).getBlerSummary()
-            elif self.title == 'WCDMA_BLER / Transport Channel':
-                self.tableHeader = [
-                    "Transport Channel", "Percent", "Err", "Rcvd"
-                ]
+                    azenqosDatabase, currentDateTimeString
+                ).getBlerSummary()
+            elif self.title == "WCDMA_BLER / Transport Channel":
+                self.tableHeader = ["Transport Channel", "Percent", "Err", "Rcvd"]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getBLER_TransportChannel()
-            elif self.title == 'WCDMA_Line Chart':
+                    azenqosDatabase, currentDateTimeString
+                ).getBLER_TransportChannel()
+            elif self.title == "WCDMA_Line Chart":
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == 'WCDMA_Bearers':
+            elif self.title == "WCDMA_Bearers":
                 self.tableHeader = [
-                    "N Bearers", "Bearers ID", "Bearers Rate DL",
-                    "Bearers Rate UL"
+                    "N Bearers",
+                    "Bearers ID",
+                    "Bearers Rate DL",
+                    "Bearers Rate UL",
                 ]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase, currentDateTimeString).getBearers()
-            elif self.title == 'WCDMA_Pilot Poluting Cells':
+                    azenqosDatabase, currentDateTimeString
+                ).getBearers()
+            elif self.title == "WCDMA_Pilot Poluting Cells":
                 self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getPilotPolutingCells()
-            elif self.title == 'WCDMA_Active + Monitored Bar':
+                    azenqosDatabase, currentDateTimeString
+                ).getPilotPolutingCells()
+            elif self.title == "WCDMA_Active + Monitored Bar":
                 self.tableHeader = ["Cell Type", "Ec/Io", "RSCP"]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getActiveMonitoredBar()
-            elif self.title == 'WCDMA_CM GSM Reports':
+                    azenqosDatabase, currentDateTimeString
+                ).getActiveMonitoredBar()
+            elif self.title == "WCDMA_CM GSM Reports":
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
 
-            elif self.title == 'WCDMA_CM GSM Cells':
-                self.tableHeader = [
-                    "Time", "ARFCN", "RxLev", "BSIC", "Measure"
-                ]
+            elif self.title == "WCDMA_CM GSM Cells":
+                self.tableHeader = ["Time", "ARFCN", "RxLev", "BSIC", "Measure"]
                 self.dataList = WcdmaDataQuery(
-                    azenqosDatabase, currentDateTimeString).getCmGsmCells()
-            elif self.title == 'WCDMA_Pilot Analyzer':
+                    azenqosDatabase, currentDateTimeString
+                ).getCmGsmCells()
+            elif self.title == "WCDMA_Pilot Analyzer":
                 self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 
             # LTE
-            elif self.title == 'LTE_Radio Parameters':
+            elif self.title == "LTE_Radio Parameters":
                 self.tableHeader = ["Element", "PCC", "SCC0", "SCC1"]
                 self.dataList = LteDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getRadioParameters()
-            elif self.title == 'LTE_Serving + Neighbors':
-                self.tableHeader = [
-                    "Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"
-                ]
+                    azenqosDatabase, currentDateTimeString
+                ).getRadioParameters()
+            elif self.title == "LTE_Serving + Neighbors":
+                self.tableHeader = ["Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"]
                 self.dataList = LteDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getServingAndNeighbors()
-            elif self.title == 'LTE_PUCCH/PDSCH Parameters':
+                    azenqosDatabase, currentDateTimeString
+                ).getServingAndNeighbors()
+            elif self.title == "LTE_PUCCH/PDSCH Parameters":
                 self.tableHeader = ["Element", "Value"]
                 self.dataList = LteDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getPucchPdschParameters()
-            elif self.title == 'LTE_LTE Line Chart':
+                    azenqosDatabase, currentDateTimeString
+                ).getPucchPdschParameters()
+            elif self.title == "LTE_LTE Line Chart":
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == 'LTE_LTE RLC':
+            elif self.title == "LTE_LTE RLC":
                 self.tableHeader = ["Element", "Value", "", "", ""]
-                self.dataList = LteDataQuery(azenqosDatabase,
-                                             currentDateTimeString).getRlc()
-            elif self.title == 'LTE_LTE VoLTE':
+                self.dataList = LteDataQuery(
+                    azenqosDatabase, currentDateTimeString
+                ).getRlc()
+            elif self.title == "LTE_LTE VoLTE":
                 self.tableHeader = ["Element", "Value"]
-                self.dataList = LteDataQuery(azenqosDatabase,
-                                             currentDateTimeString).getVolte()
+                self.dataList = LteDataQuery(
+                    azenqosDatabase, currentDateTimeString
+                ).getVolte()
 
             # CDMA/EVDO
-            elif self.title == 'CDMA/EVDO_Radio Parameters':
+            elif self.title == "CDMA/EVDO_Radio Parameters":
                 self.tableHeader = ["Element", "Value"]
                 self.dataList = CdmaEvdoQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getRadioParameters()
-            elif self.title == 'CDMA/EVDO_Serving + Neighbors':
+                    azenqosDatabase, currentDateTimeString
+                ).getRadioParameters()
+            elif self.title == "CDMA/EVDO_Serving + Neighbors":
                 self.tableHeader = ["Time", "PN", "Ec/Io", "Type"]
                 self.dataList = CdmaEvdoQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getServingAndNeighbors()
-            elif self.title == 'CDMA/EVDO_EVDO Parameters':
+                    azenqosDatabase, currentDateTimeString
+                ).getServingAndNeighbors()
+            elif self.title == "CDMA/EVDO_EVDO Parameters":
                 self.tableHeader = ["Element", "Value"]
                 self.dataList = CdmaEvdoQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getEvdoParameters()
+                    azenqosDatabase, currentDateTimeString
+                ).getEvdoParameters()
 
             # Data
-            elif self.title == 'Data_GSM Data Line Chart':
+            elif self.title == "Data_GSM Data Line Chart":
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == 'Data_WCDMA Data Line Chart':
+            elif self.title == "Data_WCDMA Data Line Chart":
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == 'Data_GPRS/EDGE Information':
+            elif self.title == "Data_GPRS/EDGE Information":
                 self.tableHeader = ["Element", "Value"]
-            elif self.title == 'Data_Web Browser':
+            elif self.title == "Data_Web Browser":
                 self.tableHeader = ["Type", "Object"]
                 self.windowHeader = ["ID", "URL", "Type", "State", "Size(%)"]
-            elif self.title == 'Data_HSDPA/HSPA + Statistics':
+            elif self.title == "Data_HSDPA/HSPA + Statistics":
                 self.tableHeader = ["Element", "Value"]
-            elif self.title == 'Data_HSUPA Statistics':
+            elif self.title == "Data_HSUPA Statistics":
                 self.tableHeader = ["Element", "Value"]
-            elif self.title == 'Data_LTE Data Statistics':
+            elif self.title == "Data_LTE Data Statistics":
                 self.tableHeader = ["Element", "Value", "", ""]
-            elif self.title == 'Data_LTE Data Line Chart':
+            elif self.title == "Data_LTE Data Line Chart":
                 self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == 'Data_Wifi Connected AP':
+            elif self.title == "Data_Wifi Connected AP":
                 self.tableHeader = ["Element", "Value"]
-            elif self.title == 'Data_Wifi Scanned APs':
+            elif self.title == "Data_Wifi Scanned APs":
                 self.tableHeader = [
-                    "Time", "BSSID", "SSID", "Freq", "Ch.", "Level",
-                    "Encryption"
+                    "Time",
+                    "BSSID",
+                    "SSID",
+                    "Freq",
+                    "Ch.",
+                    "Level",
+                    "Encryption",
                 ]
-            elif self.title == 'Data_Wifi Graph':
+            elif self.title == "Data_Wifi Graph":
                 return False
 
             # Signaling
-            elif self.title == 'Signaling_Events':
+            elif self.title == "Signaling_Events":
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                self.tablename = 'events'
+                self.tablename = "events"
                 self.dataList = SignalingDataQuery(
-                    azenqosDatabase, currentDateTimeString).getEvents()
+                    azenqosDatabase, currentDateTimeString
+                ).getEvents()
 
-            elif self.title == 'Signaling_Layer 1 Messages':
+            elif self.title == "Signaling_Layer 1 Messages":
                 self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                self.tablename = 'events'
+                self.tablename = "events"
                 self.dataList = SignalingDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getLayerOneMessages()
-            elif self.title == 'Signaling_Layer 3 Messages':
+                    azenqosDatabase, currentDateTimeString
+                ).getLayerOneMessages()
+            elif self.title == "Signaling_Layer 3 Messages":
                 self.tableHeader = ["Time", "", "Eq.", "", "Name", "Info."]
-                self.tablename = 'signalling'
+                self.tablename = "signalling"
                 self.dataList = SignalingDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getLayerThreeMessages()
-            elif self.title == 'Signaling_Benchmark':
+                    azenqosDatabase, currentDateTimeString
+                ).getLayerThreeMessages()
+            elif self.title == "Signaling_Benchmark":
                 self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
                 # self.tablename = 'signalling'
                 self.dataList = SignalingDataQuery(
-                    azenqosDatabase, currentDateTimeString).getBenchmark()
-            elif self.title == 'Signaling_MM Reg States':
+                    azenqosDatabase, currentDateTimeString
+                ).getBenchmark()
+            elif self.title == "Signaling_MM Reg States":
                 self.tableHeader = ["Element", "Value"]
-                self.tablename = 'mm_state'
+                self.tablename = "mm_state"
                 self.dataList = SignalingDataQuery(
-                    azenqosDatabase, currentDateTimeString).getMmRegStates()
-            elif self.title == 'Signaling_Serving System Info':
+                    azenqosDatabase, currentDateTimeString
+                ).getMmRegStates()
+            elif self.title == "Signaling_Serving System Info":
                 self.tableHeader = ["Element", "Value"]
-                self.tablename = 'serving_system'
+                self.tablename = "serving_system"
                 self.dataList = SignalingDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getServingSystemInfo()
-            elif self.title == 'Signaling_Debug Android/Event':
+                    azenqosDatabase, currentDateTimeString
+                ).getServingSystemInfo()
+            elif self.title == "Signaling_Debug Android/Event":
                 self.tableHeader = ["Element", "Value"]
                 # self.tablename = 'serving_system'
                 self.dataList = SignalingDataQuery(
-                    azenqosDatabase,
-                    currentDateTimeString).getDebugAndroidEvent()
+                    azenqosDatabase, currentDateTimeString
+                ).getDebugAndroidEvent()
 
             if self.dataList is not None:
                 self.setTableModel(self.dataList)
@@ -1948,7 +2014,11 @@ class TableWindow(QWidget):
         # start_time = time.time()
         self.dateString = str(sampledate)
         # self.findCurrentRow()
-        if not self.dataList or self.title not in ['Signaling_Events', 'Signaling_Layer 1 Messages', 'Signaling_Layer 3 Messages']:
+        if not self.dataList or self.title not in [
+            "Signaling_Events",
+            "Signaling_Layer 1 Messages",
+            "Signaling_Layer 3 Messages",
+        ]:
             worker = Worker(self.specifyTablesHeader())
             threadpool.start(worker)
             # self.specifyTablesHeader()
@@ -1962,14 +2032,13 @@ class TableWindow(QWidget):
 
     # def hilightRowProcesses(self):
 
-
     def findCurrentRow(self):
         startRange = 0
 
         if self.currentRow and isSliderPlay == True:
             startRange = self.currentRow
 
-        for row in range(startRange , self.tableViewCount):
+        for row in range(startRange, self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
             if value and index:
@@ -2072,6 +2141,7 @@ class TimeSliderThread(QThread):
     def set(self, value):
         self.currentSliderValue = value
 
+
 class LayerTask(QgsTask):
     def __init__(self, desc, uri):
         QgsTask.__init__(self, desc)
@@ -2084,59 +2154,53 @@ class LayerTask(QgsTask):
         self.azqGroup = None
 
     def addMapToQgis(self):
-        self.removeAzenqosGroup()
+        removeAzenqosGroup()
         root = QgsProject.instance().layerTreeRoot()
         self.azqGroup = QgsLayerTreeGroup("Azenqos")
         root.addChildNode(self.azqGroup)
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
-        urlWithParams = 'contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service'
-        rlayer = QgsRasterLayer(urlWithParams, 'Street map', 'wms')
+        urlWithParams = "contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service"
+        rlayer = QgsRasterLayer(urlWithParams, "Street map", "wms")
         if rlayer.isValid():
             QgsProject.instance().addMapLayer(rlayer, False)
             self.azqGroup.addLayer(rlayer)
         else:
-            QgsMessageLog.logMessage('Invalid layer')
+            QgsMessageLog.logMessage("Invalid layer")
 
     def classifyLayerToGroup(self):
         for vlayer in self.vlayers:
             # for group in self.layerGroups:
             vlayerName = vlayer.name()
-            if vlayerName.startswith('gsm'):
-                self.addLayerToGroup('gsm', vlayer)
-            elif vlayerName.startswith('wcdma'):
-                self.addLayerToGroup('wcdma', vlayer)
-            elif vlayerName.startswith('lte'):
-                self.addLayerToGroup('lte', vlayer)
-            elif vlayerName.startswith('cdma'):
-                self.addLayerToGroup('cdma', vlayer)
-            elif vlayerName.startswith('data'):
-                self.addLayerToGroup('data', vlayer)
+            if vlayerName.startswith("gsm"):
+                self.addLayerToGroup("gsm", vlayer)
+            elif vlayerName.startswith("wcdma"):
+                self.addLayerToGroup("wcdma", vlayer)
+            elif vlayerName.startswith("lte"):
+                self.addLayerToGroup("lte", vlayer)
+            elif vlayerName.startswith("cdma"):
+                self.addLayerToGroup("cdma", vlayer)
+            elif vlayerName.startswith("data"):
+                self.addLayerToGroup("data", vlayer)
             else:
-                self.addLayerToGroup('signaling', vlayer)
+                self.addLayerToGroup("signaling", vlayer)
 
     def addLayerToGroup(self, groupname, layer):
         nodeGroup = self.azqGroup.findGroup(groupname)
         nodeGroup.addLayer(layer)
 
-    def removeAzenqosGroup(self):
-        root = QgsProject.instance().layerTreeRoot()
-        azqGroup = root.findGroup('Azenqos')
-        if azqGroup:
-            root.removeChildNode(azqGroup)
-
     def run(self):
-        QgsMessageLog.logMessage('[-- Start add layers --]', tag="Processing")
+        QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         # self.getLayersFromDb()
         for tableName in allLayers:
-            self.uri.setDataSource('', tableName, 'geom')
-            vlayer = QgsVectorLayer(self.uri.uri(), tableName, 'spatialite')
+            self.uri.setDataSource("", tableName, "geom")
+            vlayer = QgsVectorLayer(self.uri.uri(), tableName, "spatialite")
             if vlayer:
                 symbol_renderer = vlayer.renderer()
                 if symbol_renderer:
                     symbol = symbol_renderer.symbol()
-                    symbol.setColor(QColor(125,139,142))
-                    symbol.symbolLayer(0).setStrokeColor(QColor(0,0,0))
+                    symbol.setColor(QColor(125, 139, 142))
+                    symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
                     symbol.setSize(2.4)
                 iface.layerTreeView().refreshLayerSymbology(vlayer.id())
                 vlayer.triggerRepaint()
@@ -2149,25 +2213,28 @@ class LayerTask(QgsTask):
             groups = utils.getLayerGroup()
             for groupname in groups:
                 self.azqGroup.addGroup(groupname)
-                self.layerGroups.append({ 'name' : groupname})
+                self.layerGroups.append({"name": groupname})
             self.classifyLayerToGroup()
             iface.mapCanvas().setSelectionColor(QColor("red"))
             elapsed_time = time.time() - self.start_time
-            QgsMessageLog.logMessage('Elapsed time: ' + str(elapsed_time) + ' s.', tag="Processing")
-            QgsMessageLog.logMessage('[-- End add layers --]', tag="Processing")
+            QgsMessageLog.logMessage(
+                "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
+            )
+            QgsMessageLog.logMessage("[-- End add layers --]", tag="Processing")
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(
-                    'Task "{name}" not successful but without '\
-                    'exception (probably the task was manually '\
-                    'canceled by the user)'.format(
-                    name=self.desc), tag="Exception")
+                    'Task "{name}" not successful but without '
+                    "exception (probably the task was manually "
+                    "canceled by the user)".format(name=self.desc),
+                    tag="Exception",
+                )
             else:
                 QgsMessageLog.logMessage(
-                    'Task "{name}" Exception: {exception}'.format(
-                    name=self.desc),
+                    'Task "{name}" Exception: {exception}'.format(name=self.desc),
                     exception=self.exception,
-                    tag="Exception")
+                    tag="Exception",
+                )
                 raise self.exception
 
 

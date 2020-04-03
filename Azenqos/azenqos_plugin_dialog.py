@@ -21,28 +21,26 @@
  *                                                                        *
  ***************************************************************************/
 """
-import datetime, os, threading, time, zipfile, traceback, sys
+import datetime
+import threading
 
 import pyqtgraph as pg
 
-from qgis.utils import *
-from qgis.core import *
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import QColor
-
-from .linechart import *
+from qgis.core import *
+from qgis.utils import *
 
 from .cdma_evdo_query import CdmaEvdoQuery
+from .globalutils import Utils
+from .linechart import *
 from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
-
 from .worker import Worker
-
-from .globalutils import Utils
 
 azenqosDatabase = None
 minTimeValue = None
@@ -71,7 +69,6 @@ utils = Utils()
 
 def clearAllSelectedFeatures():
     mc = iface.mapCanvas()
-
     for layer in mc.layers():
         if layer.type() == layer.VectorLayer:
             layer.removeSelection()
@@ -146,32 +143,41 @@ class Ui_DatabaseDialog(QDialog):
                 self.databasePath = self.dbPath.text()
 
     def checkDatabase(self):
-        self.addDatabase()
-        if not azenqosDatabase.open():
+        if self.dbPath.text() != "":
+            self.databasePath = CURRENT_PATH + "/file/azqdata.db"
+            self.addDatabase()
+            if not azenqosDatabase.open():
+                QtWidgets.QMessageBox.critical(
+                    None,
+                    "Cannot open database",
+                    "Unable to establish a database connection.\n"
+                    "This example needs SQLite support. Please read "
+                    "the Qt SQL driver documentation for information how "
+                    "to build it.\n\n"
+                    "Click Cancel to exit.",
+                    QtWidgets.QMessageBox.Cancel,
+                )
+                return False
+            else:
+                self.uri = QgsDataSourceUri()
+                self.uri.setDatabase(self.databasePath)
+                self.addLayerToQgis()
+                self.layerTask = LayerTask(u"Waste cpu 1", self.uri)
+                QgsApplication.taskManager().addTask(self.layerTask)
+                self.getTimeForSlider()
+                self.hide()
+                self.azenqosMainMenu = AzenqosDialog(self)
+                self.azenqosMainMenu.show()
+                self.azenqosMainMenu.raise_()
+                self.azenqosMainMenu.activateWindow()
+        else:
             QtWidgets.QMessageBox.critical(
                 None,
                 "Cannot open database",
-                "Unable to establish a database connection.\n"
-                "This example needs SQLite support. Please read "
-                "the Qt SQL driver documentation for information how "
-                "to build it.\n\n"
-                "Click Cancel to exit.",
+                "Unable to establish a database connection.\n" "Click Cancel to exit.",
                 QtWidgets.QMessageBox.Cancel,
             )
             return False
-        else:
-            self.uri = QgsDataSourceUri()
-            self.uri.setDatabase(self.databasePath)
-            self.getLayersFromDb()
-            # self.addLayerToQgis()
-            self.layerTask = LayerTask(u"Waste cpu 1", self.uri)
-            QgsApplication.taskManager().addTask(self.layerTask)
-            self.getTimeForSlider()
-            self.hide()
-            self.azenqosMainMenu = AzenqosDialog(self)
-            self.azenqosMainMenu.show()
-            self.azenqosMainMenu.raise_()
-            self.azenqosMainMenu.activateWindow()
 
     def getTimeForSlider(self):
         global minTimeValue
@@ -1793,6 +1799,7 @@ class TableWindow(QWidget):
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(True)
         self.tableView.resizeColumnsToContents()
+        self.tableView.doubleClicked.connect(self.showDetail)
 
     def specifyTablesHeader(self):
         if self.title is not None:
@@ -2032,6 +2039,11 @@ class TableWindow(QWidget):
 
     # def hilightRowProcesses(self):
 
+    def showDetail(self, item):
+        parentWindow = self.parentWindow.parentWidget()
+        cellContent = str(item.data())
+        self.detailWidget = DetailWidget(parentWindow, cellContent)
+
     def findCurrentRow(self):
         startRange = 0
 
@@ -2059,6 +2071,31 @@ class TableWindow(QWidget):
             tableList.remove(self.tablename)
         self.close()
         del self
+
+
+class DetailWidget(QDialog):
+    def __init__(self, parent, detailText):
+        super().__init__(None)
+        self.title = "Detail"
+        self.detailText = detailText
+        self.left = 10
+        self.top = 10
+        self.width = 640
+        self.height = 480
+        self.setupUi()
+
+    def setupUi(self):
+        self.setObjectName(self.title)
+        self.setWindowTitle(self.title)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.textEdit = QTextEdit(self.detailText)
+        self.textEdit.setReadOnly(True)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.textEdit)
+        self.setLayout(layout)
+        self.show()
+        self.raise_()
+        self.activateWindow()
 
 
 class TableModel(QAbstractTableModel):

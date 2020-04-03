@@ -32,7 +32,7 @@ class ElementInfo:
         for obj in elementData:
             if obj["name"] == name:
                 source = [obj["column_name"], obj["db_table"]]
-                query = Query(source[0], source[1]).query()
+                query = Query(source[0], source[1], "").query()
                 table = Table()
                 table.row.setSource(source)
                 table.row.setDatarow(query)
@@ -74,7 +74,7 @@ class Table:
         print([self.row.source, self.row.datarow])
 
 
-class Query:
+class Query(object):
     def __init__(self, column_name: str, table_name: str, condition: str):
         self.column_name = column_name
         self.table_name = table_name
@@ -105,18 +105,18 @@ class Utils:
         super().__init__()
 
     def unzipToFile(self, currentPath, filePath):
-        fileFolderPath = currentPath + "/file"
-        if not os.path.exists(fileFolderPath):
-            os.makedirs(fileFolderPath)
-        fileList = os.listdir(fileFolderPath)
-        if len(fileList) > 0:
-            for f in fileList:
-                os.remove(fileFolderPath + "/" + f)
-        if len(os.listdir(fileFolderPath)) == 0:
-            with ZipFile(filePath, "r") as zipObj:
-                zipObj.extractall(fileFolderPath)
-            dbFilePath = fileFolderPath + "/azqdata.db"
-            return dbFilePath
+        file_folder_path = currentPath + "/file"
+        if not os.path.exists(file_folder_path):
+            os.makedirs(file_folder_path)
+        file_list = os.listdir(file_folder_path)
+        if len(file_list) > 0:
+            for f in file_list:
+                os.remove(file_folder_path + "/" + f)
+        if len(os.listdir(file_folder_path)) == 0:
+            with ZipFile(filePath, "r") as zip_obj:
+                zip_obj.extractall(file_folder_path)
+            db_file_path = file_folder_path + "/azqdata.db"
+            return db_file_path
 
     def openConnection(self, db: QSqlDatabase):
         if db:

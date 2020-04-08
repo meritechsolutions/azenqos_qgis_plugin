@@ -64,7 +64,6 @@ linechartWindowname = [
 ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-utils = Utils()
 
 
 def clearAllSelectedFeatures():
@@ -161,7 +160,8 @@ class Ui_DatabaseDialog(QDialog):
             else:
                 self.uri = QgsDataSourceUri()
                 self.uri.setDatabase(self.databasePath)
-                self.addLayerToQgis()
+                self.getLayersFromDb()
+                # self.addLayerToQgis()
                 self.layerTask = LayerTask(u"Waste cpu 1", self.uri)
                 QgsApplication.taskManager().addTask(self.layerTask)
                 self.getTimeForSlider()
@@ -2189,12 +2189,18 @@ class LayerTask(QgsTask):
         self.exception = None
         self.layerGroups = []
         self.azqGroup = None
-
-    def addMapToQgis(self):
+        
+    def initLayerGroup(self):
         removeAzenqosGroup()
         root = QgsProject.instance().layerTreeRoot()
         self.azqGroup = QgsLayerTreeGroup("Azenqos")
         root.addChildNode(self.azqGroup)
+        groups = ['gsm','wcdma','lte','cdma','data','signaling']
+        for groupname in groups:
+            self.azqGroup.addGroup(groupname)
+            self.layerGroups.append({"name": groupname})
+
+    def addMapToQgis(self):
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
         urlWithParams = "contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service"
         rlayer = QgsRasterLayer(urlWithParams, "Street map", "wms")
@@ -2246,12 +2252,9 @@ class LayerTask(QgsTask):
 
     def finished(self, result):
         if result:
-            self.addMapToQgis()
-            groups = utils.getLayerGroup()
-            for groupname in groups:
-                self.azqGroup.addGroup(groupname)
-                self.layerGroups.append({"name": groupname})
+            self.initLayerGroup()
             self.classifyLayerToGroup()
+            self.addMapToQgis()
             iface.mapCanvas().setSelectionColor(QColor("red"))
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(

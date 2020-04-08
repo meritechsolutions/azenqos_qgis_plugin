@@ -616,7 +616,7 @@ class AzenqosDialog(QDialog):
                     # box = layer.boundingBoxOfSelected()
                     # iface.mapCanvas().setExtent(box)
                     iface.mapCanvas().setSelectionColor(QColor("red"))
-                    iface.mapCanvas().zoomToSelected(layer)
+                    iface.mapCanvas().zoomToSelected()
                     iface.mapCanvas().zoomScale(25600.0)
                     iface.mapCanvas().refresh()
                 elapsed_time = time.time() - start_time
@@ -1777,6 +1777,7 @@ class TableWindow(QWidget):
         self.currentRow = 0
         self.dateString = ""
         self.tableViewCount = 0
+        self.parentWindow = parent
         self.setupUi()
 
     def setupUi(self):
@@ -1785,6 +1786,7 @@ class TableWindow(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.tableView = QTableView(self)
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.tableView.doubleClicked.connect(self.showDetail)
         self.specifyTablesHeader()
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
@@ -1799,7 +1801,7 @@ class TableWindow(QWidget):
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(True)
         self.tableView.resizeColumnsToContents()
-        self.tableView.doubleClicked.connect(self.showDetail)
+        
 
     def specifyTablesHeader(self):
         if self.title is not None:
@@ -2037,8 +2039,6 @@ class TableWindow(QWidget):
         # QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
         # QgsMessageLog.logMessage('[-- End hilight row --]', tag="Processing")
 
-    # def hilightRowProcesses(self):
-
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
         cellContent = str(item.data())
@@ -2189,16 +2189,16 @@ class LayerTask(QgsTask):
         self.exception = None
         self.layerGroups = []
         self.azqGroup = None
-        
+
     def initLayerGroup(self):
         removeAzenqosGroup()
         root = QgsProject.instance().layerTreeRoot()
         self.azqGroup = QgsLayerTreeGroup("Azenqos")
         root.addChildNode(self.azqGroup)
-        groups = ['gsm','wcdma','lte','cdma','data','signaling']
-        for groupname in groups:
-            self.azqGroup.addGroup(groupname)
-            self.layerGroups.append({"name": groupname})
+        # groups = ["gsm", "wcdma", "lte", "cdma", "data", "signaling"]
+        # for groupname in groups:
+        #     self.azqGroup.addGroup(groupname)
+        #     self.layerGroups.append({"name": groupname})
 
     def addMapToQgis(self):
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
@@ -2228,8 +2228,14 @@ class LayerTask(QgsTask):
                 self.addLayerToGroup("signaling", vlayer)
 
     def addLayerToGroup(self, groupname, layer):
+        self.checkIsGroupExist(groupname)
         nodeGroup = self.azqGroup.findGroup(groupname)
         nodeGroup.addLayer(layer)
+
+    def checkIsGroupExist(self, groupname):
+        nodeGroup = self.azqGroup.findGroup(groupname)
+        if not nodeGroup:
+            self.azqGroup.addGroup(groupname)
 
     def run(self):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")

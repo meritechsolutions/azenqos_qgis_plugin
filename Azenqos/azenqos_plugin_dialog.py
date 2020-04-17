@@ -23,8 +23,10 @@
 """
 import datetime
 import threading
+import ptvsd
 
 import pyqtgraph as pg
+import numpy as np
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -33,6 +35,7 @@ from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import QColor
 from qgis.core import *
 from qgis.utils import *
+from qgis.gui import *
 
 from .cdma_evdo_query import CdmaEvdoQuery
 from .globalutils import Utils
@@ -45,6 +48,8 @@ from .worker import Worker
 azenqosDatabase = None
 minTimeValue = None
 maxTimeValue = None
+fastForwardValue = 1
+slowDownValue = 1
 currentTimestamp = None
 currentDateTimeString = None
 recentDateTimeString = ""
@@ -241,7 +246,7 @@ class Ui_DatabaseDialog(QDialog):
 
     def setIncrementValue(self):
         global sliderLength
-        sliderLength = maxTimeValue - minTimeValue
+        sliderLength = ( maxTimeValue - minTimeValue )
 
     def reject(self):
         global openedWindows
@@ -264,6 +269,7 @@ class AzenqosDialog(QDialog):
         self.timeSliderThread = TimeSliderThread()
         self.posObjs = []
         self.posIds = []
+        self.hilightList = []
         self.maxPosId = 0
         self.currentMaxPosId = 0
         self.setupUi(self)
@@ -294,13 +300,24 @@ class AzenqosDialog(QDialog):
         timeSlider.setOrientation(QtCore.Qt.Horizontal)
         timeSlider.setObjectName("timeSlider")
         timeSlider.setTracking(True)
-        timeSlider.setRange(0, int(sliderLength))
+        timeSlider.setRange(0, int(maxTimeValue-minTimeValue))
+
+        # Play Speed Textbox
+        self.speedLabel = QLabel(AzenqosDialog)
+        self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
+        self.speedLabel.setObjectName("Speed")
+        self.playSpeed = QLineEdit(AzenqosDialog)
+        self.onlyDouble = QDoubleValidator(float(0), float(20), 2, self.playSpeed)
+        self.playSpeed.setValidator(self.onlyDouble)
+        self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
+        self.playSpeed.setText("{:.2f}".format(1))
+        self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
         # Datetime Textbox
         self.timeEdit = QDateTimeEdit(AzenqosDialog)
         self.timeEdit.setGeometry(QtCore.QRect(480, 56, 140, 22))
         self.timeEdit.setObjectName("timeEdit")
-        self.timeEdit.setDisplayFormat("hh:mm:ss")
+        self.timeEdit.setDisplayFormat("hh:mm:ss.zzz")
         self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(minTimeValue))
         self.timeEdit.setReadOnly(True)
 
@@ -343,6 +360,7 @@ class AzenqosDialog(QDialog):
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
+        self.speedLabel.setText(_translate("AzenqosDialog", "Speed:"))
 
     def setupTreeWidget(self, AzenqosDialog):
         # Presentation Tree Widget
@@ -491,6 +509,19 @@ class AzenqosDialog(QDialog):
         timeSlider.update()
         if value == maxTimeValue:
             self.pauseTime()
+
+    def setPlaySpeed(self,value):
+        global fastForwardValue,slowDownValue
+        value = float(value)
+        if(value >= float(1)):
+            fastForwardValue = value
+            slowDownValue = 1
+        elif (value < float(1)):
+            fastForwardValue = 1
+            slowDownValue = value
+            
+        timeSlider.setRange(0, int(maxTimeValue-minTimeValue))
+
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -1727,15 +1758,15 @@ class TimeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = minTimeValue
         super().setMinimum(0)
-        self._max_int = sliderLength
+        self._max_int = (sliderLength / slowDownValue)
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
-        self._max_value = self._max_int
+        self._max_value = (maxTimeValue - minTimeValue)
 
     @property
     def _value_range(self):
-        return self._max_value - self._min_value
+        return (self._max_value - self._min_value)
 
     def value(self):
         thisValue = float(super().value())
@@ -2143,29 +2174,31 @@ class TimeSliderThread(QThread):
         self.playTime()
 
     def playTime(self):
+        ptvsd.debug_this_thread()
         timeSlider.setDisabled(True)
-        global isSliderPlay
+        global isSliderPlay,fastForwardValue,slowDownValue
+        sleeptime = 1/fastForwardValue
         # isSliderPlay = True
         if isSliderPlay:
             if self.currentSliderValue:
-                for x in range(int(self.currentSliderValue), int(sliderLength)):
+                for x in np.arange(int(self.currentSliderValue), int(sliderLength),(1*slowDownValue) ):
                     if not isSliderPlay:
                         break
                     else:
-                        self.sleep(1)
-                        value = timeSlider.value() + 1
+                        time.sleep(sleeptime)
+                        value = timeSlider.value() + (1*slowDownValue)
                         self.changeValue.emit(value)
 
                     if x >= int(sliderLength):
                         isSliderPlay = False
                         break
             else:
-                for x in range(int(sliderLength)):
+                for x in np.arange(0,int(sliderLength),(1*slowDownValue)):
                     if not isSliderPlay:
                         break
                     else:
-                        self.sleep(1)
-                        value = timeSlider.value() + 1
+                        time.sleep(sleeptime)
+                        value = timeSlider.value() + (1*slowDownValue)
                         self.changeValue.emit(value)
 
                     if x >= int(sliderLength):

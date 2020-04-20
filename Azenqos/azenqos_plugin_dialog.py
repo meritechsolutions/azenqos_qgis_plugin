@@ -90,6 +90,15 @@ def removeAzenqosGroup():
         root.removeChildNode(azqGroup)
 
 
+def datetimeStringtoTimestamp(datetimeString: str):
+    try:
+        element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+        timestamp = datetime.datetime.timestamp(element)
+        return timestamp
+    except expression as identifier:
+        return False
+
+
 # Database select window
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -534,8 +543,13 @@ class AzenqosDialog(QDialog):
         timeSlider.initMaxInt()
 
     def clickCanvas(self, point, button):
+        global timeSlider
         layerData = []
         times = []
+
+        for layer in vLayers:
+            layer.removeSelection()
+
         for layer in vLayers:
             if layer.featureCount() == 0:
                 # There are no features - skip
@@ -549,7 +563,7 @@ class AzenqosDialog(QDialog):
 
                 shortestDistance = dist
                 closestFeatureId = f.id()
-                if shortestDistance > -1.0 and shortestDistance <= 0.05:
+                if shortestDistance > -1.0 and shortestDistance <= 0.005:
                     info = (layer, closestFeatureId, shortestDistance)
                     layerData.append(info)
                     times.append(layer.getFeature(closestFeatureId).attribute("time"))
@@ -566,7 +580,12 @@ class AzenqosDialog(QDialog):
             selected_fid.append((layer, closestFeatureId, shortestDistance))
             layer.select(closestFeatureId)
 
-        print(max(times))
+        maxTime = max(times)
+        maxTimestamp = datetimeStringtoTimestamp(maxTime)
+        if maxTimestamp:
+            timeSliderValue = maxTimeValue - maxTimestamp
+            timeSlider.setValue(timeSliderValue)
+            timeSlider.update()
         self.canvas.refreshAllLayers()
 
     def loadAllMessages(self):
@@ -602,8 +621,9 @@ class AzenqosDialog(QDialog):
 
         if len(tableList) > 0:
             QgsMessageLog.logMessage("[-- have tableList --]")
-            worker = Worker(self.hilightFeature)
+            worker = Worker(self.hilightFeature())
             threadpool.start(worker)
+
         self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
         currentDateTimeString = "%s" % (
@@ -620,6 +640,7 @@ class AzenqosDialog(QDialog):
         self.getPosIdsByTable()
         if len(self.posIds) > 0 and len(self.posObjs) > 0:
             self.usePosIdsSelectedFeatures()
+        return True
         QgsMessageLog.logMessage("[-- End hilight features --]")
 
     def getPosIdsByTable(self):

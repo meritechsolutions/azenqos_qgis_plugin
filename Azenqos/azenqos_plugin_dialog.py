@@ -516,11 +516,14 @@ class AzenqosDialog(QDialog):
         if(value >= float(1)):
             fastForwardValue = value
             slowDownValue = 1
+        elif (value == float(0)):
+            fastForwardValue = 1
+            slowDownValue = 1        
         elif (value < float(1)):
             fastForwardValue = 1
             slowDownValue = value
-            
-        timeSlider.setRange(0, int(maxTimeValue-minTimeValue))
+        
+        timeSlider.initMaxInt()
 
 
     def loadAllMessages(self):
@@ -1792,6 +1795,12 @@ class TimeSlider(QSlider):
 
     def proportion(self):
         return (self.value() - self._min_value) / self._value_range
+
+    def initMaxInt(self):
+        old_value = self.value()
+        self._max_int = (sliderLength / slowDownValue)
+        super().setMaximum(self._max_int)
+        self.setValue(old_value)  # Put slider in correct position
 
 
 class TableWindow(QWidget):

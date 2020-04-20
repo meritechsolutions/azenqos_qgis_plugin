@@ -57,7 +57,10 @@ class Worker(QRunnable):
 
         # Retrieve args/kwargs here; and fire processing using them
         try:
-            result = self.fn(*self.args, **self.kwargs)
+            if self.args and self.kwargs:
+                result = self.fn(*self.args, **self.kwargs)
+            else:
+                result = self.fn
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]

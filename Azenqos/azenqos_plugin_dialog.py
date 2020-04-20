@@ -44,6 +44,7 @@ from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
+from .azq_maptool import AzenqosPointTool
 
 azenqosDatabase = None
 minTimeValue = None
@@ -69,6 +70,7 @@ linechartWindowname = [
 ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
+vLayers = []
 
 
 def clearAllSelectedFeatures():
@@ -246,7 +248,7 @@ class Ui_DatabaseDialog(QDialog):
 
     def setIncrementValue(self):
         global sliderLength
-        sliderLength = ( maxTimeValue - minTimeValue )
+        sliderLength = maxTimeValue - minTimeValue
 
     def reject(self):
         global openedWindows
@@ -276,6 +278,10 @@ class AzenqosDialog(QDialog):
         self.raise_()
         self.activateWindow()
         self.databaseUi = databaseUi
+        self.canvas = iface.mapCanvas()
+        self.clickTool = QgsMapToolEmitPoint(self.canvas)
+        self.canvas.setMapTool(self.clickTool)
+        self.clickTool.canvasClicked.connect(self.clickCanvas)
         azenqosDatabase.open()
 
     def setupUi(self, AzenqosDialog):
@@ -300,7 +306,7 @@ class AzenqosDialog(QDialog):
         timeSlider.setOrientation(QtCore.Qt.Horizontal)
         timeSlider.setObjectName("timeSlider")
         timeSlider.setTracking(True)
-        timeSlider.setRange(0, int(maxTimeValue-minTimeValue))
+        timeSlider.setRange(0, int(maxTimeValue - minTimeValue))
 
         # Play Speed Textbox
         self.speedLabel = QLabel(AzenqosDialog)
@@ -512,21 +518,56 @@ class AzenqosDialog(QDialog):
         if value == maxTimeValue:
             self.pauseTime()
 
-    def setPlaySpeed(self,value):
-        global fastForwardValue,slowDownValue
+    def setPlaySpeed(self, value):
+        global fastForwardValue, slowDownValue
         value = float(value) if value != "" else float(1)
-        if(value >= float(1)):
+        if value >= float(1):
             fastForwardValue = value
             slowDownValue = 1
-        elif (value == float(0)):
+        elif value == float(0):
             fastForwardValue = 1
-            slowDownValue = 1        
-        elif (value < float(1)):
+            slowDownValue = 1
+        elif value < float(1):
             fastForwardValue = 1
             slowDownValue = value
-        
+
         timeSlider.initMaxInt()
 
+    def clickCanvas(self, point, button):
+        layerData = []
+        times = []
+        for layer in vLayers:
+            if layer.featureCount() == 0:
+                # There are no features - skip
+                continue
+            # layerPoint = self.toLayerCoordinates( layer, event.pos() )
+            shortestDistance = float("inf")
+            closestFeatureId = -1
+            # Loop through all features in the layer
+            for f in layer.getFeatures():
+                dist = f.geometry().distance(QgsGeometry.fromPointXY(point))
+
+                shortestDistance = dist
+                closestFeatureId = f.id()
+                if shortestDistance > -1.0 and shortestDistance <= 0.05:
+                    info = (layer, closestFeatureId, shortestDistance)
+                    layerData.append(info)
+                    times.append(layer.getFeature(closestFeatureId).attribute("time"))
+
+        if not len(layerData) > 0:
+            # Looks like no vector layers were found - do nothing
+            return
+
+            # Sort the layer information by shortest distance
+        layerData.sort(key=lambda element: element[2])
+
+        selected_fid = []
+        for (layer, closestFeatureId, shortestDistance) in layerData:
+            selected_fid.append((layer, closestFeatureId, shortestDistance))
+            layer.select(closestFeatureId)
+
+        print(max(times))
+        self.canvas.refreshAllLayers()
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -561,9 +602,8 @@ class AzenqosDialog(QDialog):
 
         if len(tableList) > 0:
             QgsMessageLog.logMessage("[-- have tableList --]")
-            worker = Worker(self.hilightFeature())
+            worker = Worker(self.hilightFeature)
             threadpool.start(worker)
-        # self.hilightFeature()
         self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
         currentDateTimeString = "%s" % (
@@ -1753,15 +1793,15 @@ class TimeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = minTimeValue
         super().setMinimum(0)
-        self._max_int = (sliderLength / slowDownValue)
+        self._max_int = sliderLength / slowDownValue
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
-        self._max_value = (maxTimeValue - minTimeValue)
+        self._max_value = maxTimeValue - minTimeValue
 
     @property
     def _value_range(self):
-        return (self._max_value - self._min_value)
+        return self._max_value - self._min_value
 
     def value(self):
         thisValue = float(super().value())
@@ -1790,7 +1830,7 @@ class TimeSlider(QSlider):
 
     def initMaxInt(self):
         old_value = self.value()
-        self._max_int = (sliderLength / slowDownValue)
+        self._max_int = sliderLength / slowDownValue
         super().setMaximum(self._max_int)
         self.setValue(old_value)  # Put slider in correct position
 
@@ -2177,29 +2217,31 @@ class TimeSliderThread(QThread):
     def playTime(self):
         ptvsd.debug_this_thread()
         timeSlider.setDisabled(True)
-        global isSliderPlay,fastForwardValue,slowDownValue
-        sleeptime = 1/fastForwardValue
+        global isSliderPlay, fastForwardValue, slowDownValue
+        sleeptime = 1 / fastForwardValue
         # isSliderPlay = True
         if isSliderPlay:
             if self.currentSliderValue:
-                for x in np.arange(int(self.currentSliderValue), int(sliderLength),(1*slowDownValue) ):
+                for x in np.arange(
+                    int(self.currentSliderValue), int(sliderLength), (1 * slowDownValue)
+                ):
                     if not isSliderPlay:
                         break
                     else:
                         time.sleep(sleeptime)
-                        value = timeSlider.value() + (1*slowDownValue)
+                        value = timeSlider.value() + (1 * slowDownValue)
                         self.changeValue.emit(value)
 
                     if x >= int(sliderLength):
                         isSliderPlay = False
                         break
             else:
-                for x in np.arange(0,int(sliderLength),(1*slowDownValue)):
+                for x in np.arange(0, int(sliderLength), (1 * slowDownValue)):
                     if not isSliderPlay:
                         break
                     else:
                         time.sleep(sleeptime)
-                        value = timeSlider.value() + (1*slowDownValue)
+                        value = timeSlider.value() + (1 * slowDownValue)
                         self.changeValue.emit(value)
 
                     if x >= int(sliderLength):
@@ -2211,11 +2253,11 @@ class TimeSliderThread(QThread):
     def set(self, value):
         self.currentSliderValue = value
 
+
 class LayerTask(QgsTask):
     def __init__(self, desc, uri):
         QgsTask.__init__(self, desc)
         self.uri = uri
-        self.vlayers = []
         self.start_time = None
         self.desc = desc
         self.exception = None
@@ -2234,8 +2276,8 @@ class LayerTask(QgsTask):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         global allLayers
+        global vLayers
         allLayers.sort(reverse=True)
-        print(allLayers)
         for tableName in allLayers:
             self.uri.setDataSource("", tableName, "geom")
             vlayer = QgsVectorLayer(self.uri.uri(), tableName, "spatialite")
@@ -2248,15 +2290,14 @@ class LayerTask(QgsTask):
                     symbol.setSize(2.4)
                 iface.layerTreeView().refreshLayerSymbology(vlayer.id())
                 vlayer.triggerRepaint()
-                self.vlayers.append(vlayer)
+                vLayers.append(vlayer)
         return True
 
     def finished(self, result):
         if result:
             self.addMapToQgis()
-            for vlayer in self.vlayers:
+            for vlayer in vLayers:
                 QgsProject.instance().addMapLayer(vlayer)
-            # iface.mapCanvas().setSelectionColor(QColor("red"))
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
@@ -2277,6 +2318,7 @@ class LayerTask(QgsTask):
                     tag="Exception",
                 )
                 raise self.exception
+
 
 # @todo: Will assign layer group later
 # class LayerTask(QgsTask):
@@ -2382,4 +2424,3 @@ class LayerTask(QgsTask):
 #                     tag="Exception",
 #                 )
 #                 raise self.exception
-

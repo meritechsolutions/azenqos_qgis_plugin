@@ -610,14 +610,10 @@ class AzenqosDialog(QDialog):
             layerName = None
             # start_time = time.time()
             self.currentMaxPosId = max(self.posIds)
-            # if self.currentMaxPosId > self.maxPosId:
             for obj in self.posObjs:
                 if obj.get("posid") == self.currentMaxPosId:
                     layerName = obj.get("table")
                     break
-            # elapsed_time = time.time() - start_time
-            # QgsMessageLog.logMessage('Get layer name and Max PosId Elapsed time: ' + str(elapsed_time) + ' s.')
-            # QgsMessageLog.logMessage('posIdAppoarchToTime: ' + str(self.currentMaxPosId))
 
             layer = QgsProject.instance().mapLayersByName(layerName)[0]
             layerFeatures = layer.getFeatures()
@@ -635,12 +631,11 @@ class AzenqosDialog(QDialog):
                     selected_ids.append(feature.id())
             QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
 
-            if layer:
-                start_time = time.time()
+            if layer is not None:
 
                 if len(selected_ids) > 0:
-                    # clearAllSelectedFeatures()
                     layer.selectByIds(selected_ids)
+
                     ext = layer.extent()
                     xmin = ext.xMinimum()
                     xmax = ext.xMaximum()
@@ -648,18 +643,13 @@ class AzenqosDialog(QDialog):
                     ymax = ext.yMaximum()
                     zoomRectangle = QgsRectangle(xmin, ymin, xmax, ymax)
                     iface.mapCanvas().setExtent(zoomRectangle)
-
-                    # box = layer.boundingBoxOfSelected()
-                    # iface.mapCanvas().setExtent(box)
-                    iface.mapCanvas().setSelectionColor(QColor("red"))
+                    box = layer.boundingBoxOfSelected()
+                    iface.mapCanvas().setExtent(box)
+                    iface.mapCanvas().setSelectionColor(QColor("yellow"))
                     iface.mapCanvas().zoomToSelected()
                     iface.mapCanvas().zoomScale(25600.0)
                     iface.mapCanvas().refresh()
-                elapsed_time = time.time() - start_time
-                QgsMessageLog.logMessage(
-                    "Select Features Elapsed time: " + str(elapsed_time) + " s."
-                )
-                # self.maxPosId = self.currentMaxPosId
+                self.maxPosId = self.currentMaxPosId
 
     def classifySelectedItems(self, parent, child):
         global openedWindows

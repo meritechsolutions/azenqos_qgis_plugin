@@ -492,6 +492,7 @@ class AzenqosDialog(QDialog):
         global isSliderPlay
         isSliderPlay = True
         self.playButton.setDisabled(True)
+        self.playSpeed.setDisabled(True)
         self.timeSliderThread.changeValue.connect(self.setTimeValue)
         self.timeSliderThread.start()
 
@@ -499,6 +500,7 @@ class AzenqosDialog(QDialog):
         global isSliderPlay
         timeSlider.setEnabled(True)
         self.playButton.setEnabled(True)
+        self.playSpeed.setEnabled(True)
         self.timeSliderThread.quit()
         threading.Event()
         isSliderPlay = False
@@ -512,7 +514,7 @@ class AzenqosDialog(QDialog):
 
     def setPlaySpeed(self,value):
         global fastForwardValue,slowDownValue
-        value = float(value)
+        value = float(value) if value != "" else float(1)
         if(value >= float(1)):
             fastForwardValue = value
             slowDownValue = 1

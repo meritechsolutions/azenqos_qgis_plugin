@@ -2177,7 +2177,6 @@ class TimeSliderThread(QThread):
     def set(self, value):
         self.currentSliderValue = value
 
-
 class LayerTask(QgsTask):
     def __init__(self, desc, uri):
         QgsTask.__init__(self, desc)
@@ -2186,60 +2185,23 @@ class LayerTask(QgsTask):
         self.start_time = None
         self.desc = desc
         self.exception = None
-        self.layerGroups = []
-        self.azqGroup = None
-
-    def initLayerGroup(self):
-        removeAzenqosGroup()
-        root = QgsProject.instance().layerTreeRoot()
-        self.azqGroup = QgsLayerTreeGroup("Azenqos")
-        root.addChildNode(self.azqGroup)
-        # groups = ["gsm", "wcdma", "lte", "cdma", "data", "signaling"]
-        # for groupname in groups:
-        #     self.azqGroup.addGroup(groupname)
-        #     self.layerGroups.append({"name": groupname})
 
     def addMapToQgis(self):
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
         urlWithParams = "contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service"
         rlayer = QgsRasterLayer(urlWithParams, "Street map", "wms")
         if rlayer.isValid():
-            QgsProject.instance().addMapLayer(rlayer, False)
-            self.azqGroup.addLayer(rlayer)
+            QgsProject.instance().addMapLayer(rlayer)
+            # self.azqGroup.addLayer(rlayer)
         else:
             QgsMessageLog.logMessage("Invalid layer")
-
-    def classifyLayerToGroup(self):
-        for vlayer in self.vlayers:
-            # for group in self.layerGroups:
-            vlayerName = vlayer.name()
-            if vlayerName.startswith("gsm"):
-                self.addLayerToGroup("gsm", vlayer)
-            elif vlayerName.startswith("wcdma"):
-                self.addLayerToGroup("wcdma", vlayer)
-            elif vlayerName.startswith("lte"):
-                self.addLayerToGroup("lte", vlayer)
-            elif vlayerName.startswith("cdma"):
-                self.addLayerToGroup("cdma", vlayer)
-            elif vlayerName.startswith("data"):
-                self.addLayerToGroup("data", vlayer)
-            else:
-                self.addLayerToGroup("signaling", vlayer)
-
-    def addLayerToGroup(self, groupname, layer):
-        self.checkIsGroupExist(groupname)
-        nodeGroup = self.azqGroup.findGroup(groupname)
-        nodeGroup.addLayer(layer)
-
-    def checkIsGroupExist(self, groupname):
-        nodeGroup = self.azqGroup.findGroup(groupname)
-        if not nodeGroup:
-            self.azqGroup.addGroup(groupname)
 
     def run(self):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
-        # self.getLayersFromDb()
+        global allLayers
+        allLayers.sort(reverse=True)
+        print(allLayers)
         for tableName in allLayers:
             self.uri.setDataSource("", tableName, "geom")
             vlayer = QgsVectorLayer(self.uri.uri(), tableName, "spatialite")
@@ -2257,10 +2219,10 @@ class LayerTask(QgsTask):
 
     def finished(self, result):
         if result:
-            self.initLayerGroup()
-            self.classifyLayerToGroup()
             self.addMapToQgis()
-            iface.mapCanvas().setSelectionColor(QColor("red"))
+            for vlayer in self.vlayers:
+                QgsProject.instance().addMapLayer(vlayer)
+            # iface.mapCanvas().setSelectionColor(QColor("red"))
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
@@ -2282,9 +2244,108 @@ class LayerTask(QgsTask):
                 )
                 raise self.exception
 
+# @todo: Will assign layer group later
+# class LayerTask(QgsTask):
+#     def __init__(self, desc, uri):
+#         QgsTask.__init__(self, desc)
+#         self.uri = uri
+#         self.vlayers = []
+#         self.start_time = None
+#         self.desc = desc
+#         self.exception = None
+#         self.layerGroups = []
+#         self.azqGroup = None
 
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     dialog = Ui_DatabaseDialog()
-#     dialog.show()
-#     sys.exit(app.exec_())
+#     def initLayerGroup(self):
+#         removeAzenqosGroup()
+#         root = QgsProject.instance().layerTreeRoot()
+#         self.azqGroup = QgsLayerTreeGroup("Azenqos")
+#         root.addChildNode(self.azqGroup)
+#         # groups = ["gsm", "wcdma", "lte", "cdma", "data", "signaling"]
+#         # for groupname in groups:
+#         #     self.azqGroup.addGroup(groupname)
+#         #     self.layerGroups.append({"name": groupname})
+
+#     def addMapToQgis(self):
+#         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
+#         urlWithParams = "contextualWMSLegend=0&crs=EPSG:4326&dpiMode=7&featureCount=10&format=image/tiff&layers=longdo_icons&styles&url=http://ms.longdo.com/mapproxy/service"
+#         rlayer = QgsRasterLayer(urlWithParams, "Street map", "wms")
+#         if rlayer.isValid():
+#             QgsProject.instance().addMapLayer(rlayer, False)
+#             # self.azqGroup.addLayer(rlayer)
+#         else:
+#             QgsMessageLog.logMessage("Invalid layer")
+
+#     def classifyLayerToGroup(self):
+#         for vlayer in self.vlayers:
+#             # for group in self.layerGroups:
+#             vlayerName = vlayer.name()
+#             if vlayerName.startswith("gsm"):
+#                 self.addLayerToGroup("gsm", vlayer)
+#             elif vlayerName.startswith("wcdma"):
+#                 self.addLayerToGroup("wcdma", vlayer)
+#             elif vlayerName.startswith("lte"):
+#                 self.addLayerToGroup("lte", vlayer)
+#             elif vlayerName.startswith("cdma"):
+#                 self.addLayerToGroup("cdma", vlayer)
+#             elif vlayerName.startswith("data"):
+#                 self.addLayerToGroup("data", vlayer)
+#             else:
+#                 self.addLayerToGroup("signaling", vlayer)
+
+#     def addLayerToGroup(self, groupname, layer):
+#         self.checkIsGroupExist(groupname)
+#         nodeGroup = self.azqGroup.findGroup(groupname)
+#         nodeGroup.addLayer(layer)
+
+#     def checkIsGroupExist(self, groupname):
+#         nodeGroup = self.azqGroup.findGroup(groupname)
+#         if not nodeGroup:
+#             self.azqGroup.addGroup(groupname)
+
+#     def run(self):
+#         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
+#         self.start_time = time.time()
+#         # self.getLayersFromDb()
+#         for tableName in allLayers:
+#             self.uri.setDataSource("", tableName, "geom")
+#             vlayer = QgsVectorLayer(self.uri.uri(), tableName, "spatialite")
+#             if vlayer:
+#                 symbol_renderer = vlayer.renderer()
+#                 if symbol_renderer:
+#                     symbol = symbol_renderer.symbol()
+#                     symbol.setColor(QColor(125, 139, 142))
+#                     symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
+#                     symbol.setSize(2.4)
+#                 iface.layerTreeView().refreshLayerSymbology(vlayer.id())
+#                 vlayer.triggerRepaint()
+#                 self.vlayers.append(vlayer)
+#         return True
+
+#     def finished(self, result):
+#         if result:
+#             self.initLayerGroup()
+#             self.classifyLayerToGroup()
+#             self.addMapToQgis()
+#             iface.mapCanvas().setSelectionColor(QColor("red"))
+#             elapsed_time = time.time() - self.start_time
+#             QgsMessageLog.logMessage(
+#                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
+#             )
+#             QgsMessageLog.logMessage("[-- End add layers --]", tag="Processing")
+#         else:
+#             if self.exception is None:
+#                 QgsMessageLog.logMessage(
+#                     'Task "{name}" not successful but without '
+#                     "exception (probably the task was manually "
+#                     "canceled by the user)".format(name=self.desc),
+#                     tag="Exception",
+#                 )
+#             else:
+#                 QgsMessageLog.logMessage(
+#                     'Task "{name}" Exception: {exception}'.format(name=self.desc),
+#                     exception=self.exception,
+#                     tag="Exception",
+#                 )
+#                 raise self.exception
+

@@ -61,6 +61,7 @@ timeSlider = None
 isSliderPlay = False
 allLayers = []
 tableList = []
+h_list = []
 linechartWindowname = [
     "WCDMA_Line Chart",
     "LTE_LTE Line Chart",
@@ -291,7 +292,31 @@ class AzenqosDialog(QDialog):
         self.clickTool = QgsMapToolEmitPoint(self.canvas)
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
+        self.canvas.selectionChanged.connect(self.selectChanged)
+
         azenqosDatabase.open()
+
+    def selectChanged(self):
+        global h_list
+        layer = iface.activeLayer()
+        # remove all highlight objects
+        for hi in h_list:
+            hi.hide()
+        h_list = []
+
+        # create highlight geometries for selected objects
+        for i in layer.selectedFeatures():
+            h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
+
+            # set highlight symbol properties
+            h.setColor(QColor(255,0,0,255))
+            h.setWidth(2)
+            h.setFillColor(QColor(255,255,255,0))
+
+            # write the object to the list
+            h_list.append(h)
+        iface.mapCanvas().refresh()
+        print(h_list)
 
     def setupUi(self, AzenqosDialog):
         global timeSlider
@@ -685,6 +710,7 @@ class AzenqosDialog(QDialog):
             root.setCustomLayerOrder(order)
             iface.setActiveLayer(layer)
             QgsMessageLog.logMessage("layer name: " + str(layerName))
+            # layer.selectionChanged.connect(self.test)
 
             for feature in layerFeatures:
                 posid = feature["posid"]
@@ -695,7 +721,9 @@ class AzenqosDialog(QDialog):
             if layer is not None:
 
                 if len(selected_ids) > 0:
-                    layer.selectByIds(selected_ids)
+                    clearAllSelectedFeatures()
+                    layer.selectByIds(selected_ids,QgsVectorLayer.AddToSelection)
+                    print(selected_ids)
 
                     ext = layer.extent()
                     xmin = ext.xMinimum()
@@ -708,7 +736,7 @@ class AzenqosDialog(QDialog):
                     iface.mapCanvas().setExtent(box)
                     iface.mapCanvas().setSelectionColor(QColor("yellow"))
                     iface.mapCanvas().zoomToSelected()
-                    iface.mapCanvas().zoomScale(25600.0)
+                    iface.mapCanvas().zoomScale(5000.0)
                     iface.mapCanvas().refresh()
                 self.maxPosId = self.currentMaxPosId
 
@@ -2236,7 +2264,6 @@ class TimeSliderThread(QThread):
         self.playTime()
 
     def playTime(self):
-        ptvsd.debug_this_thread()
         timeSlider.setDisabled(True)
         global isSliderPlay, fastForwardValue, slowDownValue
         sleeptime = 1 / fastForwardValue

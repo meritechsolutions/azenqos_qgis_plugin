@@ -249,6 +249,7 @@ class Ui_DatabaseDialog(QDialog):
     def setIncrementValue(self):
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
+        sliderLength = round(sliderLength,3)
 
     def reject(self):
         global openedWindows
@@ -330,14 +331,14 @@ class AzenqosDialog(QDialog):
         timeSlider.setOrientation(QtCore.Qt.Horizontal)
         timeSlider.setObjectName("timeSlider")
         timeSlider.setTracking(True)
-        timeSlider.setRange(0, int(maxTimeValue - minTimeValue))
+        timeSlider.setRange(0, sliderLength)
 
         # Play Speed Textbox
         self.speedLabel = QLabel(AzenqosDialog)
         self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
         self.speedLabel.setObjectName("Speed")
         self.playSpeed = QLineEdit(AzenqosDialog)
-        self.onlyDouble = QDoubleValidator(float(0), float(20), 2, self.playSpeed)
+        self.onlyDouble = QDoubleValidator(float(0), float(20), 3, self.playSpeed)
         self.playSpeed.setValidator(self.onlyDouble)
         self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
         self.playSpeed.setText("{:.2f}".format(1))
@@ -539,7 +540,7 @@ class AzenqosDialog(QDialog):
         global isSliderPlay
         timeSlider.setValue(value)
         timeSlider.update()
-        if value == maxTimeValue:
+        if value == sliderLength:
             self.pauseTime()
 
     def setPlaySpeed(self, value):
@@ -550,12 +551,10 @@ class AzenqosDialog(QDialog):
             slowDownValue = 1
         elif value == float(0):
             fastForwardValue = 1
-            slowDownValue = 1
+            slowDownValue = 1 
         elif value < float(1):
             fastForwardValue = 1
             slowDownValue = value
-
-        timeSlider.initMaxInt()
 
     def clickCanvas(self, point, button):
         layerData = []
@@ -1820,7 +1819,7 @@ class TimeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = minTimeValue
         super().setMinimum(0)
-        self._max_int = sliderLength / slowDownValue
+        self._max_int = int(str(maxTimeValue).replace('.', '')) - int(str(minTimeValue).replace('.', ''))
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
@@ -1836,7 +1835,8 @@ class TimeSlider(QSlider):
         return value
 
     def setValue(self, value):
-        resultValue = int(value / self._value_range * self._max_int)
+        resultValue = value / self._value_range * self._max_int
+        resultValue = round(resultValue)
         super().setValue(resultValue)
         # super().repaint()
 
@@ -1854,12 +1854,6 @@ class TimeSlider(QSlider):
 
     def proportion(self):
         return (self.value() - self._min_value) / self._value_range
-
-    def initMaxInt(self):
-        old_value = self.value()
-        self._max_int = sliderLength / slowDownValue
-        super().setMaximum(self._max_int)
-        self.setValue(old_value)  # Put slider in correct position
 
 
 class TableWindow(QWidget):
@@ -1886,6 +1880,7 @@ class TableWindow(QWidget):
         self.tableView = QTableView(self)
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.doubleClicked.connect(self.showDetail)
+        self.tableView.clicked.connect(self.updateSlider)
         self.specifyTablesHeader()
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
@@ -2142,6 +2137,22 @@ class TableWindow(QWidget):
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 
+    def updateSlider(self, item):
+        cellContent = str(item.data())
+        timeCell = None
+        try:
+            timeCell = datetime.datetime.strptime(
+                    str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
+                ).timestamp()
+        except Exception as e:
+            # avoid error warnings
+            timeCell = timeCell 
+        finally:
+            if timeCell is not None:
+                sliderValue = timeCell - minTimeValue
+                sliderValue = round(sliderValue,3)
+                timeSlider.setValue(sliderValue)
+
     def findCurrentRow(self):
         startRange = 0
 
@@ -2249,7 +2260,7 @@ class TimeSliderThread(QThread):
         if isSliderPlay:
             if self.currentSliderValue:
                 for x in np.arange(
-                    int(self.currentSliderValue), int(sliderLength), (1 * slowDownValue)
+                    self.currentSliderValue, sliderLength, (1 * slowDownValue)
                 ):
                     if not isSliderPlay:
                         break
@@ -2258,11 +2269,11 @@ class TimeSliderThread(QThread):
                         value = timeSlider.value() + (1 * slowDownValue)
                         self.changeValue.emit(value)
 
-                    if x >= int(sliderLength):
+                    if x >= sliderLength:
                         isSliderPlay = False
                         break
             else:
-                for x in np.arange(0, int(sliderLength), (1 * slowDownValue)):
+                for x in np.arange(0, sliderLength, (1 * slowDownValue)):
                     if not isSliderPlay:
                         break
                     else:
@@ -2270,7 +2281,7 @@ class TimeSliderThread(QThread):
                         value = timeSlider.value() + (1 * slowDownValue)
                         self.changeValue.emit(value)
 
-                    if x >= int(sliderLength):
+                    if x >= sliderLength:
                         isSliderPlay = False
                         break
         else:

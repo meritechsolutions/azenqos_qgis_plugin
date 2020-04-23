@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import *
 from qgis.core import *
 from qgis.utils import *
 from qgis.gui import *
@@ -1884,13 +1884,23 @@ class TableWindow(QWidget):
         self.specifyTablesHeader()
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
+        flayout = QFormLayout()
+        layout.addLayout(flayout)
+        for i in range(len(self.tableHeader)):
+            headerText = self.tableHeader[i]
+            if headerText:
+                le = QLineEdit(self)
+                flayout.addRow("Filter: {}".format(headerText), le)
+                le.textChanged.connect(lambda text, col=i:
+                                    self.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
+                                                            col))
         # self.setFixedWidth(layout.sizeHint())
         self.setLayout(layout)
         self.show()
 
     def setTableModel(self, dataList):
         self.tableModel = TableModel(dataList, self.tableHeader, self)
-        self.proxyModel = QtCore.QSortFilterProxyModel()
+        self.proxyModel = SortFilterProxyModel(self)
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(True)
@@ -2181,6 +2191,22 @@ class TableWindow(QWidget):
         self.close()
         del self
 
+class SortFilterProxyModel(QSortFilterProxyModel):
+    def __init__(self, *args, **kwargs):
+        QSortFilterProxyModel.__init__(self, *args, **kwargs)
+        self.filters = {}
+
+    def setFilterByColumn(self, regex, column):
+        self.filters[column] = regex
+        self.invalidateFilter()
+
+    def filterAcceptsRow(self, source_row, source_parent):
+        for key, regex in self.filters.items():
+            ix = self.sourceModel().index(source_row, key, source_parent)
+            if ix.isValid():
+                if regex.indexIn(self.sourceModel().dataString(ix)) == -1:
+                    return False
+        return True
 
 class DetailWidget(QDialog):
     def __init__(self, parent, detailText):
@@ -2232,6 +2258,9 @@ class TableModel(QAbstractTableModel):
         elif role != Qt.DisplayRole:
             return QVariant()
         return QVariant(self.dataSource[index.row()][index.column()])
+
+    def dataString(self, index):
+        return (self.dataSource[index.row()][index.column()])
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:

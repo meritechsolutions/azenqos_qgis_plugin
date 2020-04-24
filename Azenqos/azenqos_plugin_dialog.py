@@ -293,6 +293,7 @@ class AzenqosDialog(QDialog):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
+        self.clickTool.mapToolSet.connect(self.useCustomMapTool)
 
         azenqosDatabase.open()
 
@@ -571,6 +572,8 @@ class AzenqosDialog(QDialog):
         global timeSlider
         layerData = []
         times = []
+        
+        self.canvas.setCenter(point)
 
         for layer in vLayers:
             layer.removeSelection()
@@ -587,31 +590,37 @@ class AzenqosDialog(QDialog):
                 dist = f.geometry().distance(QgsGeometry.fromPointXY(point))
 
                 shortestDistance = dist
-                closestFeatureId = f.id()
                 if shortestDistance > -1.0 and shortestDistance <= 0.005:
+                    closestFeatureId = f.id()
                     info = (layer, closestFeatureId, shortestDistance)
                     layerData.append(info)
+                    selected_fid.append(closestFeatureId)
                     times.append(layer.getFeature(closestFeatureId).attribute("time"))
 
         if not len(layerData) > 0:
             # Looks like no vector layers were found - do nothing
             return
 
-            # Sort the layer information by shortest distance
+        # Sort the layer information by shortest distance
         layerData.sort(key=lambda element: element[2])
 
-        selected_fid = []
         for (layer, closestFeatureId, shortestDistance) in layerData:
-            selected_fid.append((layer, closestFeatureId, shortestDistance))
             layer.select(closestFeatureId)
-
-        maxTime = max(times)
-        maxTimestamp = datetimeStringtoTimestamp(maxTime)
-        if maxTimestamp:
-            timeSliderValue = maxTimeValue - maxTimestamp
-            timeSlider.setValue(timeSliderValue)
-            timeSlider.update()
+        
+        if len(times) > 0:
+            minTime = min(times)
+            minTimestamp = datetimeStringtoTimestamp(minTime)
+            if minTimestamp:
+                timeSliderValue = maxTimeValue - minTimestamp
+                timeSlider.setValue(timeSliderValue)
+                timeSlider.update()
+                
         self.canvas.refreshAllLayers()
+
+    def useCustomMapTool(self):
+        currentTool = self.canvas.mapTool()
+        if currentTool != self.clickTool:
+            self.canvas.setMapTool(self.clickTool)
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()

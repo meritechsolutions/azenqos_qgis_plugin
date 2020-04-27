@@ -594,7 +594,6 @@ class AzenqosDialog(QDialog):
                     closestFeatureId = f.id()
                     info = (layer, closestFeatureId, shortestDistance)
                     layerData.append(info)
-                    selected_fid.append(closestFeatureId)
                     times.append(layer.getFeature(closestFeatureId).attribute("time"))
 
         if not len(layerData) > 0:

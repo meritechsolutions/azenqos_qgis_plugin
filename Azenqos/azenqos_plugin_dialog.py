@@ -90,6 +90,7 @@ def removeAzenqosGroup():
     if azqGroup:
         root.removeChildNode(azqGroup)
 
+
 # Database select window
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -168,9 +169,9 @@ class Ui_DatabaseDialog(QDialog):
                 self.uri = QgsDataSourceUri()
                 self.uri.setDatabase(self.databasePath)
                 self.getLayersFromDb()
-                # self.addLayerToQgis()
-                self.layerTask = LayerTask(u"Waste cpu 1", self.uri)
-                QgsApplication.taskManager().addTask(self.layerTask)
+                if hasattr(self, "layerTask") is False:
+                    self.layerTask = LayerTask(u"Add layers", self.uri)
+                    QgsApplication.taskManager().addTask(self.layerTask)
                 self.getTimeForSlider()
                 self.hide()
                 self.azenqosMainMenu = AzenqosDialog(self)
@@ -249,7 +250,7 @@ class Ui_DatabaseDialog(QDialog):
     def setIncrementValue(self):
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
-        sliderLength = round(sliderLength,3)
+        sliderLength = round(sliderLength, 3)
 
     def reject(self):
         global openedWindows
@@ -300,9 +301,9 @@ class AzenqosDialog(QDialog):
             h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
 
             # set highlight symbol properties
-            h.setColor(QColor(255,0,0,255))
+            h.setColor(QColor(255, 0, 0, 255))
             h.setWidth(2)
-            h.setFillColor(QColor(255,255,255,0))
+            h.setFillColor(QColor(255, 255, 255, 0))
 
             # write the object to the list
             h_list.append(h)
@@ -403,13 +404,13 @@ class AzenqosDialog(QDialog):
         self.presentationTreeWidget.itemDoubleClicked.connect(self.loadAllMessages)
 
         # GSM Section
-        # gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
-        # gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
-        # gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
-        # gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
-        # gsmCI = QTreeWidgetItem(gsm, ['C/I'])
-        # gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
-        # gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
+        gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
+        gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
+        gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
+        gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
+        gsmCI = QTreeWidgetItem(gsm, ['C/I'])
+        gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
+        gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ["WCDMA"])
@@ -551,7 +552,7 @@ class AzenqosDialog(QDialog):
             slowDownValue = 1
         elif value == float(0):
             fastForwardValue = 1
-            slowDownValue = 1 
+            slowDownValue = 1
         elif value < float(1):
             fastForwardValue = 1
             slowDownValue = value
@@ -592,6 +593,11 @@ class AzenqosDialog(QDialog):
 
         print(max(times))
         self.canvas.refreshAllLayers()
+
+    def useCustomMapTool(self):
+        currentTool = self.canvas.mapTool()
+        if currentTool != self.clickTool:
+            self.canvas.setMapTool(self.clickTool)
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -700,7 +706,7 @@ class AzenqosDialog(QDialog):
 
                 if len(selected_ids) > 0:
                     clearAllSelectedFeatures()
-                    layer.selectByIds(selected_ids,QgsVectorLayer.AddToSelection)
+                    layer.selectByIds(selected_ids, QgsVectorLayer.AddToSelection)
                     print(selected_ids)
 
                     ext = layer.extent()
@@ -725,6 +731,150 @@ class AzenqosDialog(QDialog):
         if hasattr(self, "mdi") is False:
             self.mdi = GroupArea()
         subwindowList = self.mdi.subWindowList()
+        if parent == "GSM":
+            if child == "Radio Parameters":
+                if hasattr(self, 'gsm_rdp_window') is True:
+                    tableWindow = self.gsm_rdp_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.gsm_rdp_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.gsm_rdp_window not in subwindowList:
+                        self.gsm_rdp_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.gsm_rdp_window)
+
+                    if tableWidget:
+                        self.gsm_rdp_window.setWidget(tableWidget)
+                    self.gsm_rdp_window.show()
+                else:
+                    # create new subwindow
+                    self.gsm_rdp_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.gsm_rdp_window, windowName)
+                    self.gsm_rdp_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.gsm_rdp_window)
+                    self.gsm_rdp_window.show()
+                    openedWindows.append(tableWidget)
+                    
+            elif child == "Serving + Neighbors":
+                if hasattr(self, 'gsm_sn_window') is True:
+                    tableWindow = self.gsm_sn_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.gsm_sn_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.gsm_sn_window not in subwindowList:
+                        self.gsm_sn_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.gsm_sn_window)
+
+                    if tableWidget:
+                        self.gsm_sn_window.setWidget(tableWidget)
+                    self.gsm_sn_window.show()
+                else:
+                    # create new subwindow
+                    self.gsm_sn_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.gsm_sn_window, windowName)
+                    self.gsm_sn_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.gsm_sn_window)
+                    self.gsm_sn_window.show()
+                    openedWindows.append(tableWidget)
+                    
+            elif child == "Current Channel":
+                if hasattr(self, 'gsm_cc_window') is True:
+                    tableWindow = self.gsm_cc_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.gsm_cc_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.gsm_cc_window not in subwindowList:
+                        self.gsm_cc_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.gsm_cc_window)
+
+                    if tableWidget:
+                        self.gsm_cc_window.setWidget(tableWidget)
+                    self.gsm_cc_window.show()
+                else:
+                    # create new subwindow
+                    self.gsm_cc_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.gsm_cc_window, windowName)
+                    self.gsm_cc_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.gsm_cc_window)
+                    self.gsm_cc_window.show()
+                    openedWindows.append(tableWidget)
+                
+            elif child == "C/I":
+                if hasattr(self, 'gsm_ci_window') is True:
+                    tableWindow = self.gsm_ci_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.gsm_ci_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.gsm_ci_window not in subwindowList:
+                        self.gsm_ci_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.gsm_ci_window)
+
+                    if tableWidget:
+                        self.gsm_ci_window.setWidget(tableWidget)
+                    self.gsm_ci_window.show()
+                else:
+                    # create new subwindow
+                    self.gsm_ci_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.gsm_ci_window, windowName)
+                    self.gsm_ci_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.gsm_ci_window)
+                    self.gsm_ci_window.show()
+                    openedWindows.append(tableWidget)
+                    
+            elif child == "GSM Line Chart":
+                linechartWidget = None
+                if hasattr(self, "gsm_lc_window") is True:
+                    linechartWindow = self.gsm_lc_window.widget()
+                    if not linechartWindow:
+                        linechartWidget = Ui_GSM_LCwidget(
+                            self, windowName, azenqosDatabase
+                        )
+                        openedWindows.append(linechartWidget)
+
+                    if self.gsm_lc_window not in subwindowList:
+                        self.gsm_lc_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.gsm_lc_window)
+
+                    if linechartWidget:
+                        self.gsm_lc_window.setWidget(linechartWidget)
+                    self.gsm_lc_window.show()
+                else:
+                    # create new subwindow
+                    self.gsm_lc_window = QMdiSubWindow(self.mdi)
+                    linechartWidget = Ui_GSM_LCwidget(
+                        self, windowName, azenqosDatabase
+                    )
+                    self.gsm_lc_window.setWidget(linechartWidget)
+                    self.mdi.addSubWindow(self.gsm_lc_window)
+                    self.gsm_lc_window.show()
+                    openedWindows.append(linechartWidget)
+                    
+            elif child == "Events Counter":
+                if hasattr(self, 'gsm_ec_window') is True:
+                    tableWindow = self.gsm_ec_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.gsm_ec_window, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.gsm_ec_window not in subwindowList:
+                        self.gsm_ec_window = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.gsm_ec_window)
+
+                    if tableWidget:
+                        self.gsm_ec_window.setWidget(tableWidget)
+                    self.gsm_ec_window.show()
+                else:
+                    # create new subwindow
+                    self.gsm_ec_window = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.gsm_ec_window, windowName)
+                    self.gsm_ec_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.gsm_ec_window)
+                    self.gsm_ec_window.show()
+                    openedWindows.append(tableWidget)
+                    
         if parent == "WCDMA":
             if child == "Active + Monitored Sets":
                 tableWidget = None
@@ -1820,7 +1970,9 @@ class TimeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = minTimeValue
         super().setMinimum(0)
-        self._max_int = int(str(maxTimeValue).replace('.', '')) - int(str(minTimeValue).replace('.', ''))
+        self._max_int = int(str(maxTimeValue).replace(".", "")) - int(
+            str(minTimeValue).replace(".", "")
+        )
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
@@ -1878,25 +2030,29 @@ class TableWindow(QWidget):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
-        
-        #Init table
-        self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(-1,Qt.AscendingOrder)
 
-        #Init filter header
-        self.filterHeader = FilterHeader(self.tableView) 
-        self.filterHeader.setSortIndicator(-1,Qt.AscendingOrder)     
+        # Init table
+        self.tableView = QTableView(self)
+        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+
+        # Init filter header
+        self.filterHeader = FilterHeader(self.tableView)
+        self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.doubleClicked.connect(self.showDetail)
         self.tableView.clicked.connect(self.updateSlider)
         self.tableView.setSortingEnabled(True)
         self.tableView.setCornerButtonEnabled(False)
-        self.tableView.setStyleSheet("QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}")
+        self.tableView.setStyleSheet(
+            "QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}"
+        )
         self.specifyTablesHeader()
 
-        #Attach header to table, create text filter
+        # Attach header to table, create text filter
         self.tableView.setHorizontalHeader(self.filterHeader)
-        self.tableView.verticalHeader().setFixedWidth(self.tableView.verticalHeader().sizeHint().width())
-        self.filterHeader.setFilterBoxes(len(self.tableHeader),self)
+        self.tableView.verticalHeader().setFixedWidth(
+            self.tableView.verticalHeader().sizeHint().width()
+        )
+        self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
@@ -1924,6 +2080,24 @@ class TableWindow(QWidget):
 
     def specifyTablesHeader(self):
         if self.title is not None:
+            GSM
+            if self.title == 'GSM_Radio Parameters':
+                self.tableHeader = ["Element", "Full", "Sub"]
+                # self.dataList = GsmDataQuery(None).getRadioParameters()
+            elif self.title == 'GSM_Serving + Neighbors':
+                self.tableHeader = [
+                    "Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1",
+                    "C2", "C31", "C32"
+                ]
+            elif self.title == 'GSM_Current Channel':
+                self.tableHeader = ["Element", "Value"]
+            elif self.title == 'GSM_C/I':
+                self.tableHeader = ["Time", "ARFCN", "Value"]
+            elif self.title == 'GSM_Line Chart':
+                self.tableHeader = ["Element", "Value", "MS", "Color"]
+            elif self.title == 'GSM_Events Counter':
+                self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
+            
             # WCDMA
             if self.title == "WCDMA_Active + Monitored Sets":
                 self.tableHeader = [
@@ -2168,15 +2342,15 @@ class TableWindow(QWidget):
         timeCell = None
         try:
             timeCell = datetime.datetime.strptime(
-                    str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
-                ).timestamp()
+                str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
+            ).timestamp()
         except Exception as e:
             # avoid error warnings
-            timeCell = timeCell 
+            timeCell = timeCell
         finally:
             if timeCell is not None:
                 sliderValue = timeCell - minTimeValue
-                sliderValue = round(sliderValue,3)
+                sliderValue = round(sliderValue, 3)
                 timeSlider.setValue(sliderValue)
 
     def findCurrentRow(self):
@@ -2207,6 +2381,7 @@ class TableWindow(QWidget):
         self.close()
         del self
 
+
 class SortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, *args, **kwargs):
         QSortFilterProxyModel.__init__(self, *args, **kwargs)
@@ -2223,6 +2398,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
                 if regex.indexIn(self.sourceModel().dataString(ix)) == -1:
                     return False
         return True
+
 
 class DetailWidget(QDialog):
     def __init__(self, parent, detailText):
@@ -2276,12 +2452,13 @@ class TableModel(QAbstractTableModel):
         return QVariant(self.dataSource[index.row()][index.column()])
 
     def dataString(self, index):
-        return (self.dataSource[index.row()][index.column()])
+        return self.dataSource[index.row()][index.column()]
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
+
 
 class FilterHeader(QtGui.QHeaderView):
     filterActivated = QtCore.pyqtSignal()
@@ -2307,10 +2484,12 @@ class FilterHeader(QtGui.QHeaderView):
             editor.deleteLater()
         for index in range(count):
             editor = QtGui.QLineEdit(self.parent())
-            editor.setPlaceholderText('Filter')
-            editor.textChanged.connect(lambda text, col=index:
-                                    parent.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
-                                                            col))
+            editor.setPlaceholderText("Filter")
+            editor.textChanged.connect(
+                lambda text, col=index: parent.proxyModel.setFilterByColumn(
+                    QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString), col
+                )
+            )
             editor.textChanged.connect(self.adjustPositions)
             self._editors.append(editor)
         self._verticalWidth = parent.tableView.verticalHeader().sizeHint().width()
@@ -2332,18 +2511,19 @@ class FilterHeader(QtGui.QHeaderView):
         super().updateGeometries()
         self.adjustPositions()
 
-    def adjustPositions(self,dummy=None):
+    def adjustPositions(self, dummy=None):
         for index, editor in enumerate(self._editors):
             height = editor.sizeHint().height()
             editor.move(
                 self.sectionPosition(index) - self.offset() + self._verticalWidth,
-                height + (self._padding // 2))
+                height + (self._padding // 2),
+            )
             editor.resize(self.sectionSize(index), height)
 
     def filterText(self, index):
         if 0 <= index < len(self._editors):
             return self._editors[index].text()
-        return ''
+        return ""
 
     def setFilterText(self, index, text):
         if 0 <= index < len(self._editors):
@@ -2352,6 +2532,7 @@ class FilterHeader(QtGui.QHeaderView):
     def clearFilters(self):
         for editor in self._editors:
             editor.clear()
+
 
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)

@@ -90,6 +90,16 @@ def removeAzenqosGroup():
     if azqGroup:
         root.removeChildNode(azqGroup)
 
+
+def datetimeStringtoTimestamp(datetimeString: str):
+    try:
+        element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+        timestamp = datetime.datetime.timestamp(element)
+        return timestamp
+    except expression as identifier:
+        return False
+
+
 # Database select window
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -284,6 +294,7 @@ class AzenqosDialog(QDialog):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
+        self.clickTool.mapToolSet.connect(self.useCustomMapTool)
 
         azenqosDatabase.open()
 
@@ -557,8 +568,15 @@ class AzenqosDialog(QDialog):
             slowDownValue = value
 
     def clickCanvas(self, point, button):
+        global timeSlider
         layerData = []
         times = []
+        
+        self.canvas.setCenter(point)
+
+        for layer in vLayers:
+            layer.removeSelection()
+
         for layer in vLayers:
             if layer.featureCount() == 0:
                 # There are no features - skip
@@ -571,8 +589,8 @@ class AzenqosDialog(QDialog):
                 dist = f.geometry().distance(QgsGeometry.fromPointXY(point))
 
                 shortestDistance = dist
-                closestFeatureId = f.id()
-                if shortestDistance > -1.0 and shortestDistance <= 0.05:
+                if shortestDistance > -1.0 and shortestDistance <= 0.005:
+                    closestFeatureId = f.id()
                     info = (layer, closestFeatureId, shortestDistance)
                     layerData.append(info)
                     times.append(layer.getFeature(closestFeatureId).attribute("time"))
@@ -581,16 +599,26 @@ class AzenqosDialog(QDialog):
             # Looks like no vector layers were found - do nothing
             return
 
-            # Sort the layer information by shortest distance
+        # Sort the layer information by shortest distance
         layerData.sort(key=lambda element: element[2])
 
-        selected_fid = []
         for (layer, closestFeatureId, shortestDistance) in layerData:
-            selected_fid.append((layer, closestFeatureId, shortestDistance))
             layer.select(closestFeatureId)
-
-        print(max(times))
+        
+        if len(times) > 0:
+            minTime = min(times)
+            minTimestamp = datetimeStringtoTimestamp(minTime)
+            if minTimestamp:
+                timeSliderValue = maxTimeValue - minTimestamp
+                timeSlider.setValue(timeSliderValue)
+                timeSlider.update()
+                
         self.canvas.refreshAllLayers()
+
+    def useCustomMapTool(self):
+        currentTool = self.canvas.mapTool()
+        if currentTool != self.clickTool:
+            self.canvas.setMapTool(self.clickTool)
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -627,6 +655,7 @@ class AzenqosDialog(QDialog):
             QgsMessageLog.logMessage("[-- have tableList --]")
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
+
         self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
         currentDateTimeString = "%s" % (
@@ -643,6 +672,7 @@ class AzenqosDialog(QDialog):
         self.getPosIdsByTable()
         if len(self.posIds) > 0 and len(self.posObjs) > 0:
             self.usePosIdsSelectedFeatures()
+        return True
         QgsMessageLog.logMessage("[-- End hilight features --]")
 
     def getPosIdsByTable(self):

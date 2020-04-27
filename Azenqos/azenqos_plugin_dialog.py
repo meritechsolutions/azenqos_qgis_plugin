@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import *
 from qgis.core import *
 from qgis.utils import *
 from qgis.gui import *
@@ -259,6 +259,7 @@ class Ui_DatabaseDialog(QDialog):
     def setIncrementValue(self):
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
+        sliderLength = round(sliderLength,3)
 
     def reject(self):
         global openedWindows
@@ -341,14 +342,14 @@ class AzenqosDialog(QDialog):
         timeSlider.setOrientation(QtCore.Qt.Horizontal)
         timeSlider.setObjectName("timeSlider")
         timeSlider.setTracking(True)
-        timeSlider.setRange(0, int(maxTimeValue - minTimeValue))
+        timeSlider.setRange(0, sliderLength)
 
         # Play Speed Textbox
         self.speedLabel = QLabel(AzenqosDialog)
         self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
         self.speedLabel.setObjectName("Speed")
         self.playSpeed = QLineEdit(AzenqosDialog)
-        self.onlyDouble = QDoubleValidator(float(0), float(20), 2, self.playSpeed)
+        self.onlyDouble = QDoubleValidator(float(0), float(20), 3, self.playSpeed)
         self.playSpeed.setValidator(self.onlyDouble)
         self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
         self.playSpeed.setText("{:.2f}".format(1))
@@ -550,7 +551,7 @@ class AzenqosDialog(QDialog):
         global isSliderPlay
         timeSlider.setValue(value)
         timeSlider.update()
-        if value == maxTimeValue:
+        if value == sliderLength:
             self.pauseTime()
 
     def setPlaySpeed(self, value):
@@ -561,12 +562,10 @@ class AzenqosDialog(QDialog):
             slowDownValue = 1
         elif value == float(0):
             fastForwardValue = 1
-            slowDownValue = 1
+            slowDownValue = 1 
         elif value < float(1):
             fastForwardValue = 1
             slowDownValue = value
-
-        timeSlider.initMaxInt()
 
     def clickCanvas(self, point, button):
         global timeSlider
@@ -1850,7 +1849,7 @@ class TimeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = minTimeValue
         super().setMinimum(0)
-        self._max_int = sliderLength / slowDownValue
+        self._max_int = int(str(maxTimeValue).replace('.', '')) - int(str(minTimeValue).replace('.', ''))
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
@@ -1866,7 +1865,8 @@ class TimeSlider(QSlider):
         return value
 
     def setValue(self, value):
-        resultValue = int(value / self._value_range * self._max_int)
+        resultValue = value / self._value_range * self._max_int
+        resultValue = round(resultValue)
         super().setValue(resultValue)
         # super().repaint()
 
@@ -1884,12 +1884,6 @@ class TimeSlider(QSlider):
 
     def proportion(self):
         return (self.value() - self._min_value) / self._value_range
-
-    def initMaxInt(self):
-        old_value = self.value()
-        self._max_int = sliderLength / slowDownValue
-        super().setMaximum(self._max_int)
-        self.setValue(old_value)  # Put slider in correct position
 
 
 class TableWindow(QWidget):
@@ -1913,19 +1907,45 @@ class TableWindow(QWidget):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
+        
+        #Init table
         self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.tableView.horizontalHeader().setSortIndicator(-1,Qt.AscendingOrder)
+
+        #Init filter header
+        self.filterHeader = FilterHeader(self.tableView) 
+        self.filterHeader.setSortIndicator(-1,Qt.AscendingOrder)     
         self.tableView.doubleClicked.connect(self.showDetail)
+        self.tableView.clicked.connect(self.updateSlider)
+        self.tableView.setSortingEnabled(True)
+        self.tableView.setCornerButtonEnabled(False)
+        self.tableView.setStyleSheet("QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}")
         self.specifyTablesHeader()
+
+        #Attach header to table, create text filter
+        self.tableView.setHorizontalHeader(self.filterHeader)
+        self.tableView.verticalHeader().setFixedWidth(self.tableView.verticalHeader().sizeHint().width())
+        self.filterHeader.setFilterBoxes(len(self.tableHeader),self)
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
+        # flayout = QFormLayout()
+        # layout.addLayout(flayout)
+        # for i in range(len(self.tableHeader)):
+        #     headerText = self.tableHeader[i]
+        #     if headerText:
+        #         le = QLineEdit(self)
+        #         flayout.addRow("Filter: {}".format(headerText), le)
+        #         le.textChanged.connect(lambda text, col=i:
+        #                             self.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
+        #                                                     col))
         # self.setFixedWidth(layout.sizeHint())
         self.setLayout(layout)
         self.show()
 
     def setTableModel(self, dataList):
         self.tableModel = TableModel(dataList, self.tableHeader, self)
-        self.proxyModel = QtCore.QSortFilterProxyModel()
+        self.proxyModel = SortFilterProxyModel(self)
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(True)
@@ -2172,6 +2192,22 @@ class TableWindow(QWidget):
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 
+    def updateSlider(self, item):
+        cellContent = str(item.data())
+        timeCell = None
+        try:
+            timeCell = datetime.datetime.strptime(
+                    str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
+                ).timestamp()
+        except Exception as e:
+            # avoid error warnings
+            timeCell = timeCell 
+        finally:
+            if timeCell is not None:
+                sliderValue = timeCell - minTimeValue
+                sliderValue = round(sliderValue,3)
+                timeSlider.setValue(sliderValue)
+
     def findCurrentRow(self):
         startRange = 0
 
@@ -2200,6 +2236,22 @@ class TableWindow(QWidget):
         self.close()
         del self
 
+class SortFilterProxyModel(QSortFilterProxyModel):
+    def __init__(self, *args, **kwargs):
+        QSortFilterProxyModel.__init__(self, *args, **kwargs)
+        self.filters = {}
+
+    def setFilterByColumn(self, regex, column):
+        self.filters[column] = regex
+        self.invalidateFilter()
+
+    def filterAcceptsRow(self, source_row, source_parent):
+        for key, regex in self.filters.items():
+            ix = self.sourceModel().index(source_row, key, source_parent)
+            if ix.isValid():
+                if regex.indexIn(self.sourceModel().dataString(ix)) == -1:
+                    return False
+        return True
 
 class DetailWidget(QDialog):
     def __init__(self, parent, detailText):
@@ -2252,11 +2304,83 @@ class TableModel(QAbstractTableModel):
             return QVariant()
         return QVariant(self.dataSource[index.row()][index.column()])
 
+    def dataString(self, index):
+        return (self.dataSource[index.row()][index.column()])
+
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
+class FilterHeader(QtGui.QHeaderView):
+    filterActivated = QtCore.pyqtSignal()
+
+    def __init__(self, parent):
+        super().__init__(QtCore.Qt.Horizontal, parent)
+        self._editors = []
+        self._padding = 4
+        self.setStretchLastSection(True)
+        self.setSectionsClickable(True)
+        self.setHighlightSections(True)
+        self.setResizeMode(QHeaderView.Interactive)
+        # self.setResizeMode(QtGui.QHeaderView.Stretch)
+        # self.setDefaultAlignment(
+        #     QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.setSortIndicatorShown(True)
+        self.sectionResized.connect(self.adjustPositions)
+        parent.horizontalScrollBar().valueChanged.connect(self.adjustPositions)
+
+    def setFilterBoxes(self, count, parent):
+        while self._editors:
+            editor = self._editors.pop()
+            editor.deleteLater()
+        for index in range(count):
+            editor = QtGui.QLineEdit(self.parent())
+            editor.setPlaceholderText('Filter')
+            editor.textChanged.connect(lambda text, col=index:
+                                    parent.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
+                                                            col))
+            editor.textChanged.connect(self.adjustPositions)
+            self._editors.append(editor)
+        self._verticalWidth = parent.tableView.verticalHeader().sizeHint().width()
+        self.adjustPositions()
+
+    def sizeHint(self):
+        size = super().sizeHint()
+        if self._editors:
+            height = self._editors[0].sizeHint().height()
+            size.setHeight(size.height() + height + self._padding)
+        return size
+
+    def updateGeometries(self):
+        if self._editors:
+            height = self._editors[0].sizeHint().height()
+            self.setViewportMargins(0, 0, 0, height + self._padding)
+        else:
+            self.setViewportMargins(0, 0, 0, 0)
+        super().updateGeometries()
+        self.adjustPositions()
+
+    def adjustPositions(self,dummy=None):
+        for index, editor in enumerate(self._editors):
+            height = editor.sizeHint().height()
+            editor.move(
+                self.sectionPosition(index) - self.offset() + self._verticalWidth,
+                height + (self._padding // 2))
+            editor.resize(self.sectionSize(index), height)
+
+    def filterText(self, index):
+        if 0 <= index < len(self._editors):
+            return self._editors[index].text()
+        return ''
+
+    def setFilterText(self, index, text):
+        if 0 <= index < len(self._editors):
+            self._editors[index].setText(text)
+
+    def clearFilters(self):
+        for editor in self._editors:
+            editor.clear()
 
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)
@@ -2279,7 +2403,7 @@ class TimeSliderThread(QThread):
         if isSliderPlay:
             if self.currentSliderValue:
                 for x in np.arange(
-                    int(self.currentSliderValue), int(sliderLength), (1 * slowDownValue)
+                    self.currentSliderValue, sliderLength, (1 * slowDownValue)
                 ):
                     if not isSliderPlay:
                         break
@@ -2288,11 +2412,11 @@ class TimeSliderThread(QThread):
                         value = timeSlider.value() + (1 * slowDownValue)
                         self.changeValue.emit(value)
 
-                    if x >= int(sliderLength):
+                    if x >= sliderLength:
                         isSliderPlay = False
                         break
             else:
-                for x in np.arange(0, int(sliderLength), (1 * slowDownValue)):
+                for x in np.arange(0, sliderLength, (1 * slowDownValue)):
                     if not isSliderPlay:
                         break
                     else:
@@ -2300,7 +2424,7 @@ class TimeSliderThread(QThread):
                         value = timeSlider.value() + (1 * slowDownValue)
                         self.changeValue.emit(value)
 
-                    if x >= int(sliderLength):
+                    if x >= sliderLength:
                         isSliderPlay = False
                         break
         else:

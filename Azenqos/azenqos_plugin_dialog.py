@@ -1907,38 +1907,23 @@ class TableWindow(QWidget):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
-        
-        #Init table
         self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(-1,Qt.AscendingOrder)
-
-        #Init filter header
-        self.filterHeader = FilterHeader(self.tableView) 
-        self.filterHeader.setSortIndicator(-1,Qt.AscendingOrder)     
+        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.doubleClicked.connect(self.showDetail)
         self.tableView.clicked.connect(self.updateSlider)
-        self.tableView.setSortingEnabled(True)
-        self.tableView.setCornerButtonEnabled(False)
-        self.tableView.setStyleSheet("QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}")
         self.specifyTablesHeader()
-
-        #Attach header to table, create text filter
-        self.tableView.setHorizontalHeader(self.filterHeader)
-        self.tableView.verticalHeader().setFixedWidth(self.tableView.verticalHeader().sizeHint().width())
-        self.filterHeader.setFilterBoxes(len(self.tableHeader),self)
-
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
-        # flayout = QFormLayout()
-        # layout.addLayout(flayout)
-        # for i in range(len(self.tableHeader)):
-        #     headerText = self.tableHeader[i]
-        #     if headerText:
-        #         le = QLineEdit(self)
-        #         flayout.addRow("Filter: {}".format(headerText), le)
-        #         le.textChanged.connect(lambda text, col=i:
-        #                             self.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
-        #                                                     col))
+        flayout = QFormLayout()
+        layout.addLayout(flayout)
+        for i in range(len(self.tableHeader)):
+            headerText = self.tableHeader[i]
+            if headerText:
+                le = QLineEdit(self)
+                flayout.addRow("Filter: {}".format(headerText), le)
+                le.textChanged.connect(lambda text, col=i:
+                                    self.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
+                                                            col))
         # self.setFixedWidth(layout.sizeHint())
         self.setLayout(layout)
         self.show()
@@ -2312,75 +2297,6 @@ class TableModel(QAbstractTableModel):
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
-class FilterHeader(QtGui.QHeaderView):
-    filterActivated = QtCore.pyqtSignal()
-
-    def __init__(self, parent):
-        super().__init__(QtCore.Qt.Horizontal, parent)
-        self._editors = []
-        self._padding = 4
-        self.setStretchLastSection(True)
-        self.setSectionsClickable(True)
-        self.setHighlightSections(True)
-        self.setResizeMode(QHeaderView.Interactive)
-        # self.setResizeMode(QtGui.QHeaderView.Stretch)
-        # self.setDefaultAlignment(
-        #     QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.setSortIndicatorShown(True)
-        self.sectionResized.connect(self.adjustPositions)
-        parent.horizontalScrollBar().valueChanged.connect(self.adjustPositions)
-
-    def setFilterBoxes(self, count, parent):
-        while self._editors:
-            editor = self._editors.pop()
-            editor.deleteLater()
-        for index in range(count):
-            editor = QtGui.QLineEdit(self.parent())
-            editor.setPlaceholderText('Filter')
-            editor.textChanged.connect(lambda text, col=index:
-                                    parent.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
-                                                            col))
-            editor.textChanged.connect(self.adjustPositions)
-            self._editors.append(editor)
-        self._verticalWidth = parent.tableView.verticalHeader().sizeHint().width()
-        self.adjustPositions()
-
-    def sizeHint(self):
-        size = super().sizeHint()
-        if self._editors:
-            height = self._editors[0].sizeHint().height()
-            size.setHeight(size.height() + height + self._padding)
-        return size
-
-    def updateGeometries(self):
-        if self._editors:
-            height = self._editors[0].sizeHint().height()
-            self.setViewportMargins(0, 0, 0, height + self._padding)
-        else:
-            self.setViewportMargins(0, 0, 0, 0)
-        super().updateGeometries()
-        self.adjustPositions()
-
-    def adjustPositions(self,dummy=None):
-        for index, editor in enumerate(self._editors):
-            height = editor.sizeHint().height()
-            editor.move(
-                self.sectionPosition(index) - self.offset() + self._verticalWidth,
-                height + (self._padding // 2))
-            editor.resize(self.sectionSize(index), height)
-
-    def filterText(self, index):
-        if 0 <= index < len(self._editors):
-            return self._editors[index].text()
-        return ''
-
-    def setFilterText(self, index, text):
-        if 0 <= index < len(self._editors):
-            self._editors[index].setText(text)
-
-    def clearFilters(self):
-        for editor in self._editors:
-            editor.clear()
 
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)

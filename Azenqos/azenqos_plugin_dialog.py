@@ -90,16 +90,6 @@ def removeAzenqosGroup():
     if azqGroup:
         root.removeChildNode(azqGroup)
 
-
-def datetimeStringtoTimestamp(datetimeString: str):
-    try:
-        element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
-        timestamp = datetime.datetime.timestamp(element)
-        return timestamp
-    except expression as identifier:
-        return False
-
-
 # Database select window
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -294,7 +284,6 @@ class AzenqosDialog(QDialog):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
-        self.clickTool.mapToolSet.connect(self.useCustomMapTool)
 
         azenqosDatabase.open()
 
@@ -568,15 +557,8 @@ class AzenqosDialog(QDialog):
             slowDownValue = value
 
     def clickCanvas(self, point, button):
-        global timeSlider
         layerData = []
         times = []
-        
-        self.canvas.setCenter(point)
-
-        for layer in vLayers:
-            layer.removeSelection()
-
         for layer in vLayers:
             if layer.featureCount() == 0:
                 # There are no features - skip
@@ -589,8 +571,8 @@ class AzenqosDialog(QDialog):
                 dist = f.geometry().distance(QgsGeometry.fromPointXY(point))
 
                 shortestDistance = dist
-                if shortestDistance > -1.0 and shortestDistance <= 0.005:
-                    closestFeatureId = f.id()
+                closestFeatureId = f.id()
+                if shortestDistance > -1.0 and shortestDistance <= 0.05:
                     info = (layer, closestFeatureId, shortestDistance)
                     layerData.append(info)
                     times.append(layer.getFeature(closestFeatureId).attribute("time"))
@@ -599,26 +581,16 @@ class AzenqosDialog(QDialog):
             # Looks like no vector layers were found - do nothing
             return
 
-        # Sort the layer information by shortest distance
+            # Sort the layer information by shortest distance
         layerData.sort(key=lambda element: element[2])
 
+        selected_fid = []
         for (layer, closestFeatureId, shortestDistance) in layerData:
+            selected_fid.append((layer, closestFeatureId, shortestDistance))
             layer.select(closestFeatureId)
-        
-        if len(times) > 0:
-            minTime = min(times)
-            minTimestamp = datetimeStringtoTimestamp(minTime)
-            if minTimestamp:
-                timeSliderValue = maxTimeValue - minTimestamp
-                timeSlider.setValue(timeSliderValue)
-                timeSlider.update()
-                
-        self.canvas.refreshAllLayers()
 
-    def useCustomMapTool(self):
-        currentTool = self.canvas.mapTool()
-        if currentTool != self.clickTool:
-            self.canvas.setMapTool(self.clickTool)
+        print(max(times))
+        self.canvas.refreshAllLayers()
 
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
@@ -655,7 +627,6 @@ class AzenqosDialog(QDialog):
             QgsMessageLog.logMessage("[-- have tableList --]")
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
-
         self.timeSliderThread.set(value)
         currentTimestamp = timestampValue
         currentDateTimeString = "%s" % (
@@ -672,7 +643,6 @@ class AzenqosDialog(QDialog):
         self.getPosIdsByTable()
         if len(self.posIds) > 0 and len(self.posObjs) > 0:
             self.usePosIdsSelectedFeatures()
-        return True
         QgsMessageLog.logMessage("[-- End hilight features --]")
 
     def getPosIdsByTable(self):
@@ -1907,23 +1877,38 @@ class TableWindow(QWidget):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
+        
+        #Init table
         self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.tableView.horizontalHeader().setSortIndicator(-1,Qt.AscendingOrder)
+
+        #Init filter header
+        self.filterHeader = FilterHeader(self.tableView) 
+        self.filterHeader.setSortIndicator(-1,Qt.AscendingOrder)     
         self.tableView.doubleClicked.connect(self.showDetail)
         self.tableView.clicked.connect(self.updateSlider)
+        self.tableView.setSortingEnabled(True)
+        self.tableView.setCornerButtonEnabled(False)
+        self.tableView.setStyleSheet("QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}")
         self.specifyTablesHeader()
+
+        #Attach header to table, create text filter
+        self.tableView.setHorizontalHeader(self.filterHeader)
+        self.tableView.verticalHeader().setFixedWidth(self.tableView.verticalHeader().sizeHint().width())
+        self.filterHeader.setFilterBoxes(len(self.tableHeader),self)
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
-        flayout = QFormLayout()
-        layout.addLayout(flayout)
-        for i in range(len(self.tableHeader)):
-            headerText = self.tableHeader[i]
-            if headerText:
-                le = QLineEdit(self)
-                flayout.addRow("Filter: {}".format(headerText), le)
-                le.textChanged.connect(lambda text, col=i:
-                                    self.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
-                                                            col))
+        # flayout = QFormLayout()
+        # layout.addLayout(flayout)
+        # for i in range(len(self.tableHeader)):
+        #     headerText = self.tableHeader[i]
+        #     if headerText:
+        #         le = QLineEdit(self)
+        #         flayout.addRow("Filter: {}".format(headerText), le)
+        #         le.textChanged.connect(lambda text, col=i:
+        #                             self.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
+        #                                                     col))
         # self.setFixedWidth(layout.sizeHint())
         self.setLayout(layout)
         self.show()
@@ -2297,6 +2282,75 @@ class TableModel(QAbstractTableModel):
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
+class FilterHeader(QtGui.QHeaderView):
+    filterActivated = QtCore.pyqtSignal()
+
+    def __init__(self, parent):
+        super().__init__(QtCore.Qt.Horizontal, parent)
+        self._editors = []
+        self._padding = 4
+        self.setStretchLastSection(True)
+        self.setSectionsClickable(True)
+        self.setHighlightSections(True)
+        self.setResizeMode(QHeaderView.Interactive)
+        # self.setResizeMode(QtGui.QHeaderView.Stretch)
+        # self.setDefaultAlignment(
+        #     QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.setSortIndicatorShown(True)
+        self.sectionResized.connect(self.adjustPositions)
+        parent.horizontalScrollBar().valueChanged.connect(self.adjustPositions)
+
+    def setFilterBoxes(self, count, parent):
+        while self._editors:
+            editor = self._editors.pop()
+            editor.deleteLater()
+        for index in range(count):
+            editor = QtGui.QLineEdit(self.parent())
+            editor.setPlaceholderText('Filter')
+            editor.textChanged.connect(lambda text, col=index:
+                                    parent.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
+                                                            col))
+            editor.textChanged.connect(self.adjustPositions)
+            self._editors.append(editor)
+        self._verticalWidth = parent.tableView.verticalHeader().sizeHint().width()
+        self.adjustPositions()
+
+    def sizeHint(self):
+        size = super().sizeHint()
+        if self._editors:
+            height = self._editors[0].sizeHint().height()
+            size.setHeight(size.height() + height + self._padding)
+        return size
+
+    def updateGeometries(self):
+        if self._editors:
+            height = self._editors[0].sizeHint().height()
+            self.setViewportMargins(0, 0, 0, height + self._padding)
+        else:
+            self.setViewportMargins(0, 0, 0, 0)
+        super().updateGeometries()
+        self.adjustPositions()
+
+    def adjustPositions(self,dummy=None):
+        for index, editor in enumerate(self._editors):
+            height = editor.sizeHint().height()
+            editor.move(
+                self.sectionPosition(index) - self.offset() + self._verticalWidth,
+                height + (self._padding // 2))
+            editor.resize(self.sectionSize(index), height)
+
+    def filterText(self, index):
+        if 0 <= index < len(self._editors):
+            return self._editors[index].text()
+        return ''
+
+    def setFilterText(self, index, text):
+        if 0 <= index < len(self._editors):
+            self._editors[index].setText(text)
+
+    def clearFilters(self):
+        for editor in self._editors:
+            editor.clear()
 
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)

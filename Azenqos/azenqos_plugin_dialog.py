@@ -1785,14 +1785,26 @@ class AzenqosDialog(QDialog):
         self.destroy(True, True)
 
     def reject(self):
-        super().reject()
+        reply = QMessageBox.question(self, 'Quit Azenqos',
+            "Do you want to quit?", QMessageBox.Yes, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.pauseTime()
+            self.timeSliderThread.exit()
+            self.close()
+            self.databaseUi.destroy(True, True)
+            self.destroy(True, True)
+
+            super().reject()
+            clearAllSelectedFeatures()
+            QgsProject.removeAllMapLayers(QgsProject.instance())
+            removeAzenqosGroup()
+            for mdiwindow in self.mdi.subWindowList():
+                mdiwindow.close()
+            self.mdi.close()
+        
         # QgsMessageLog.logMessage('Close App')
-        clearAllSelectedFeatures()
-        QgsProject.removeAllMapLayers(QgsProject.instance())
-        removeAzenqosGroup()
-        for mdiwindow in self.mdi.subWindowList():
-            mdiwindow.close()
-        self.mdi.close()
+        
 
         # if len(openedWindows) > 0:
         #     for window in openedWindows:

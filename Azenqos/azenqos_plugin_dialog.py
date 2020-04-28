@@ -308,7 +308,7 @@ class AzenqosDialog(QDialog):
             # write the object to the list
             h_list.append(h)
         iface.mapCanvas().refresh()
-        print(h_list)
+        # print(h_list)
 
     def setupUi(self, AzenqosDialog):
         global timeSlider

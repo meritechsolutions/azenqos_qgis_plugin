@@ -24,6 +24,7 @@
 import datetime
 import threading
 import ptvsd
+import sys
 
 import pyqtgraph as pg
 import numpy as np
@@ -1785,6 +1786,7 @@ class AzenqosDialog(QDialog):
         self.destroy(True, True)
 
     def reject(self):
+        global azenqosDatabase
         reply = QMessageBox.question(self, 'Quit Azenqos',
             "Do you want to quit?", QMessageBox.Yes, QMessageBox.No)
 
@@ -1792,8 +1794,23 @@ class AzenqosDialog(QDialog):
             self.pauseTime()
             self.timeSliderThread.exit()
             self.close()
+            self.databaseUi.reject()
             self.databaseUi.destroy(True, True)
             self.destroy(True, True)
+
+            QthreadCount = threadpool.activeThreadCount()
+            threadingActive = threading.activeCount()
+
+            before = QSqlDatabase.connectionNames()
+
+            azenqosDatabase.close()
+            QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
+            names = QSqlDatabase.connectionNames()
+            for name in names:
+                QSqlDatabase.database(name).close()
+                QSqlDatabase.removeDatabase(name)
+
+            after = QSqlDatabase.connectionNames()
 
             super().reject()
             clearAllSelectedFeatures()
@@ -1803,6 +1820,11 @@ class AzenqosDialog(QDialog):
                 mdiwindow.close()
             self.mdi.close()
         
+            del azenqosDatabase
+            del self.databaseUi
+            del self
+            # sys.exit(0)
+
         # QgsMessageLog.logMessage('Close App')
         
 

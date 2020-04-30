@@ -40,6 +40,7 @@ from qgis.gui import *
 from .cdma_evdo_query import CdmaEvdoQuery
 from .globalutils import Utils
 from .linechart import *
+from .gsm_query import GsmDataQuery
 from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
@@ -89,6 +90,16 @@ def removeAzenqosGroup():
     azqGroup = root.findGroup("Azenqos")
     if azqGroup:
         root.removeChildNode(azqGroup)
+
+
+def datetimeStringtoTimestamp(datetimeString: str):
+    try:
+        element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+        timestamp = datetime.datetime.timestamp(element)
+        return timestamp
+    except Exception as ex:
+        print(ex)
+        return False
 
 
 # Database select window
@@ -169,9 +180,10 @@ class Ui_DatabaseDialog(QDialog):
                 self.uri = QgsDataSourceUri()
                 self.uri.setDatabase(self.databasePath)
                 self.getLayersFromDb()
-                if hasattr(self, "layerTask") is False:
-                    self.layerTask = LayerTask(u"Add layers", self.uri)
-                    QgsApplication.taskManager().addTask(self.layerTask)
+                # if hasattr(self, "layerTask") is False:
+                self.layerTask = LayerTask(u"Add layers", self.uri)
+                QgsApplication.taskManager().addTask(self.layerTask)
+                self.uri.setDatabase("")
                 self.getTimeForSlider()
                 self.hide()
                 self.azenqosMainMenu = AzenqosDialog(self)
@@ -254,6 +266,7 @@ class Ui_DatabaseDialog(QDialog):
 
     def reject(self):
         global openedWindows
+
         if len(openedWindows) > 0:
             for window in openedWindows:
                 window.close()
@@ -262,6 +275,10 @@ class Ui_DatabaseDialog(QDialog):
         super().reject()
         QgsProject.removeAllMapLayers(QgsProject.instance())
         removeAzenqosGroup()
+        # if azenqosDatabase:
+        #     global azenqosDatabase
+        #     azenqosDatabase.close()
+        #     del azenqosDatabase
         self.destroy(True)
         del self
 
@@ -286,29 +303,29 @@ class AzenqosDialog(QDialog):
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
 
-        azenqosDatabase.open()
-
     def selectChanged(self):
         global h_list
         layer = iface.activeLayer()
-        # remove all highlight objects
-        for hi in h_list:
-            hi.hide()
-        h_list = []
 
-        # create highlight geometries for selected objects
-        for i in layer.selectedFeatures():
-            h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
+        if layer.type() == layer.VectorLayer:
+            # remove all highlight objects
+            for hi in h_list:
+                hi.hide()
 
-            # set highlight symbol properties
-            h.setColor(QColor(255, 0, 0, 255))
-            h.setWidth(2)
-            h.setFillColor(QColor(255, 255, 255, 0))
+            h_list = []
 
-            # write the object to the list
-            h_list.append(h)
-        iface.mapCanvas().refresh()
-        # print(h_list)
+            # create highlight geometries for selected objects
+            for i in layer.selectedFeatures():
+                h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
+
+                # set highlight symbol properties
+                h.setColor(QColor(255, 0, 0, 255))
+                h.setWidth(2)
+                h.setFillColor(QColor(255, 255, 255, 0))
+
+                # write the object to the list
+                h_list.append(h)
+            iface.mapCanvas().refresh()
 
     def setupUi(self, AzenqosDialog):
         global timeSlider
@@ -404,13 +421,13 @@ class AzenqosDialog(QDialog):
         self.presentationTreeWidget.itemDoubleClicked.connect(self.loadAllMessages)
 
         # GSM Section
-        gsm = QTreeWidgetItem(self.presentationTreeWidget, ['GSM'])
-        gsmRadioParams = QTreeWidgetItem(gsm, ['Radio Parameters'])
-        gsmServeNeighbor = QTreeWidgetItem(gsm, ['Serving + Neighbors'])
-        gsmCurrentChannel = QTreeWidgetItem(gsm, ['Current Channel'])
-        gsmCI = QTreeWidgetItem(gsm, ['C/I'])
-        gsmLineChart = QTreeWidgetItem(gsm, ['GSM Line Chart'])
-        gsmEventsCounter = QTreeWidgetItem(gsm, ['Events Counter'])
+        gsm = QTreeWidgetItem(self.presentationTreeWidget, ["GSM"])
+        gsmRadioParams = QTreeWidgetItem(gsm, ["Radio Parameters"])
+        gsmServeNeighbor = QTreeWidgetItem(gsm, ["Serving + Neighbors"])
+        gsmCurrentChannel = QTreeWidgetItem(gsm, ["Current Channel"])
+        gsmCI = QTreeWidgetItem(gsm, ["C/I"])
+        gsmLineChart = QTreeWidgetItem(gsm, ["GSM Line Chart"])
+        gsmEventsCounter = QTreeWidgetItem(gsm, ["Events Counter"])
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ["WCDMA"])
@@ -559,40 +576,51 @@ class AzenqosDialog(QDialog):
 
     def clickCanvas(self, point, button):
         layerData = []
-        times = []
-        for layer in vLayers:
+        layer = iface.activeLayer()
+        selectedTime = None
+        clearAllSelectedFeatures()
+
+        self.canvas.setCenter(point)
+
+        if layer.type() == layer.VectorLayer:
             if layer.featureCount() == 0:
                 # There are no features - skip
-                continue
-            # layerPoint = self.toLayerCoordinates( layer, event.pos() )
+                return
+
             shortestDistance = float("inf")
             closestFeatureId = -1
             # Loop through all features in the layer
             for f in layer.getFeatures():
-                dist = f.geometry().distance(QgsGeometry.fromPointXY(point))
-
-                shortestDistance = dist
-                closestFeatureId = f.id()
-                if shortestDistance > -1.0 and shortestDistance <= 0.05:
-                    info = (layer, closestFeatureId, shortestDistance)
+                distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
+                if distance != -1.0 and distance <= 0.001:
+                    closestFeatureId = f.id()
+                    time = layer.getFeature(closestFeatureId).attribute("time")
+                    info = (layer, closestFeatureId, distance, time)
                     layerData.append(info)
-                    selected_fid.append(closestFeatureId)
-                    times.append(layer.getFeature(closestFeatureId).attribute("time"))
 
-        if not len(layerData) > 0:
-            # Looks like no vector layers were found - do nothing
-            return
+            if not len(layerData) > 0:
+                # Looks like no vector layers were found - do nothing
+                return
 
-            # Sort the layer information by shortest distance
-        layerData.sort(key=lambda element: element[2])
+                # Sort the layer information by shortest distance
+            layerData.sort(key=lambda element: element[2])
 
-        selected_fid = []
-        for (layer, closestFeatureId, shortestDistance) in layerData:
-            selected_fid.append((layer, closestFeatureId, shortestDistance))
-            layer.select(closestFeatureId)
+            for (layer, closestFeatureId, distance, time) in layerData:
+                layer.select(closestFeatureId)
+                selectedTime = time
+                break
 
-        print(max(times))
-        self.canvas.refreshAllLayers()
+            selectedTimestamp = datetimeStringtoTimestamp(selectedTime)
+            if selectedTimestamp:
+                timeSliderValue = sliderLength - (maxTimeValue - selectedTimestamp)
+                timeSlider.setValue(timeSliderValue)
+                timeSlider.update()
+
+            self.canvas.refreshAllLayers()
+
+    def clickCanvasWorker(self, point, button):
+        worker = Worker(self.clickCanvas(point, button))
+        threadpool.start(worker)
 
     def useCustomMapTool(self):
         currentTool = self.canvas.mapTool()
@@ -707,8 +735,6 @@ class AzenqosDialog(QDialog):
                 if len(selected_ids) > 0:
                     clearAllSelectedFeatures()
                     layer.selectByIds(selected_ids, QgsVectorLayer.AddToSelection)
-                    print(selected_ids)
-
                     ext = layer.extent()
                     xmin = ext.xMinimum()
                     xmax = ext.xMaximum()
@@ -721,7 +747,7 @@ class AzenqosDialog(QDialog):
                     iface.mapCanvas().setSelectionColor(QColor("yellow"))
                     iface.mapCanvas().zoomToSelected()
                     iface.mapCanvas().zoomScale(5000.0)
-                    iface.mapCanvas().refresh()
+                    # iface.mapCanvas().refresh()
                 self.maxPosId = self.currentMaxPosId
 
     def classifySelectedItems(self, parent, child):
@@ -733,7 +759,7 @@ class AzenqosDialog(QDialog):
         subwindowList = self.mdi.subWindowList()
         if parent == "GSM":
             if child == "Radio Parameters":
-                if hasattr(self, 'gsm_rdp_window') is True:
+                if hasattr(self, "gsm_rdp_window") is True:
                     tableWindow = self.gsm_rdp_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.gsm_rdp_window, windowName)
@@ -754,9 +780,9 @@ class AzenqosDialog(QDialog):
                     self.mdi.addSubWindow(self.gsm_rdp_window)
                     self.gsm_rdp_window.show()
                     openedWindows.append(tableWidget)
-                    
+
             elif child == "Serving + Neighbors":
-                if hasattr(self, 'gsm_sn_window') is True:
+                if hasattr(self, "gsm_sn_window") is True:
                     tableWindow = self.gsm_sn_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.gsm_sn_window, windowName)
@@ -777,9 +803,9 @@ class AzenqosDialog(QDialog):
                     self.mdi.addSubWindow(self.gsm_sn_window)
                     self.gsm_sn_window.show()
                     openedWindows.append(tableWidget)
-                    
+
             elif child == "Current Channel":
-                if hasattr(self, 'gsm_cc_window') is True:
+                if hasattr(self, "gsm_cc_window") is True:
                     tableWindow = self.gsm_cc_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.gsm_cc_window, windowName)
@@ -800,9 +826,9 @@ class AzenqosDialog(QDialog):
                     self.mdi.addSubWindow(self.gsm_cc_window)
                     self.gsm_cc_window.show()
                     openedWindows.append(tableWidget)
-                
+
             elif child == "C/I":
-                if hasattr(self, 'gsm_ci_window') is True:
+                if hasattr(self, "gsm_ci_window") is True:
                     tableWindow = self.gsm_ci_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.gsm_ci_window, windowName)
@@ -823,7 +849,7 @@ class AzenqosDialog(QDialog):
                     self.mdi.addSubWindow(self.gsm_ci_window)
                     self.gsm_ci_window.show()
                     openedWindows.append(tableWidget)
-                    
+
             elif child == "GSM Line Chart":
                 linechartWidget = None
                 if hasattr(self, "gsm_lc_window") is True:
@@ -844,16 +870,14 @@ class AzenqosDialog(QDialog):
                 else:
                     # create new subwindow
                     self.gsm_lc_window = QMdiSubWindow(self.mdi)
-                    linechartWidget = Ui_GSM_LCwidget(
-                        self, windowName, azenqosDatabase
-                    )
+                    linechartWidget = Ui_GSM_LCwidget(self, windowName, azenqosDatabase)
                     self.gsm_lc_window.setWidget(linechartWidget)
                     self.mdi.addSubWindow(self.gsm_lc_window)
                     self.gsm_lc_window.show()
                     openedWindows.append(linechartWidget)
-                    
+
             elif child == "Events Counter":
-                if hasattr(self, 'gsm_ec_window') is True:
+                if hasattr(self, "gsm_ec_window") is True:
                     tableWindow = self.gsm_ec_window.widget()
                     if not tableWindow:
                         tableWidget = TableWindow(self.gsm_ec_window, windowName)
@@ -874,7 +898,7 @@ class AzenqosDialog(QDialog):
                     self.mdi.addSubWindow(self.gsm_ec_window)
                     self.gsm_ec_window.show()
                     openedWindows.append(tableWidget)
-                    
+
         if parent == "WCDMA":
             if child == "Active + Monitored Sets":
                 tableWidget = None
@@ -1928,15 +1952,11 @@ class AzenqosDialog(QDialog):
                 elif getChildNode == "Equipment Configuration":
                     pass
 
-    def closeEvents(self):
-        self.pauseTime()
-        self.timeSliderThread.exit()
-        self.close()
-        self.databaseUi.destroy(True, True)
-        self.destroy(True, True)
-
     def reject(self):
         super().reject()
+        global azenqosDatabase
+        azenqosDatabase.close()
+        del azenqosDatabase
         # QgsMessageLog.logMessage('Close App')
         clearAllSelectedFeatures()
         QgsProject.removeAllMapLayers(QgsProject.instance())
@@ -1944,15 +1964,13 @@ class AzenqosDialog(QDialog):
         for mdiwindow in self.mdi.subWindowList():
             mdiwindow.close()
         self.mdi.close()
-
-        # if len(openedWindows) > 0:
-        #     for window in openedWindows:
-        #         window.close()
-        #         window.reject()
-        #         del window
-
-        # del self.databaseUi
-        # del self
+        self.pauseTime()
+        self.timeSliderThread.exit()
+        self.close()
+        self.databaseUi.destroy(True, True)
+        self.destroy(True, True)
+        del self
+        print("Close All")
 
 
 class GroupArea(QMdiArea):
@@ -2080,24 +2098,43 @@ class TableWindow(QWidget):
 
     def specifyTablesHeader(self):
         if self.title is not None:
-            GSM
-            if self.title == 'GSM_Radio Parameters':
+            # GSM
+            if self.title == "GSM_Radio Parameters":
                 self.tableHeader = ["Element", "Full", "Sub"]
+                self.dataList = GsmDataQuery(
+                    azenqosDatabase, currentDateTimeString
+                ).getRadioParameters()
                 # self.dataList = GsmDataQuery(None).getRadioParameters()
-            elif self.title == 'GSM_Serving + Neighbors':
+            elif self.title == "GSM_Serving + Neighbors":
                 self.tableHeader = [
-                    "Time", "Cellname", "LAC", "BSIC", "ARFCN", "RxLev", "C1",
-                    "C2", "C31", "C32"
+                    "Time",
+                    "Cellname",
+                    "LAC",
+                    "BSIC",
+                    "ARFCN",
+                    "RxLev",
+                    "C1",
+                    "C2",
+                    "C31",
+                    "C32",
                 ]
-            elif self.title == 'GSM_Current Channel':
+                self.dataList = GsmDataQuery(
+                    azenqosDatabase, currentDateTimeString
+                ).getServingAndNeighbors()
+            elif self.title == "GSM_Current Channel":
                 self.tableHeader = ["Element", "Value"]
-            elif self.title == 'GSM_C/I':
+                self.dataList = GsmDataQuery(
+                    azenqosDatabase, currentDateTimeString
+                ).getCurrentChannel()
+            elif self.title == "GSM_C/I":
                 self.tableHeader = ["Time", "ARFCN", "Value"]
-            elif self.title == 'GSM_Line Chart':
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == 'GSM_Events Counter':
-                self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
-            
+                self.dataList = GsmDataQuery(
+                    azenqosDatabase, currentDateTimeString
+                ).getCSlashI()
+            # TODO: เดี๋ยวมาเช็ค all query
+            # elif self.title == "GSM_Events Counter":
+            #     self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
+
             # WCDMA
             if self.title == "WCDMA_Active + Monitored Sets":
                 self.tableHeader = [

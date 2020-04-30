@@ -61,6 +61,7 @@ class WcdmaDataQuery:
         condition = ""
         if self.timeFilter:
             condition = "WHERE wtp.time <= '%s'" % (self.timeFilter)
+
         queryString = """SELECT %s
                         FROM wcdma_tx_power wtp
                         LEFT JOIN wcdma_rx_power wrp ON wtp.time = wrp.time
@@ -73,16 +74,14 @@ class WcdmaDataQuery:
             condition,
         )
 
-        # Real Query Code (รันไม่ได้เพราะ no data in DB)
-        # -----------------------------------------------
-        # query = QSqlQuery()
-        # query.exec_(queryString)
-        # while query.next():
-        #     for field in range(len(fieldsList)):
-        #         if query.value(fieldsList):
-        #             dataList.append([fieldsList[field],query.value(field)])
-        #         else:
-        #             dataList.append([fieldsList[field],''])
+        query = QSqlQuery()
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(fieldsList)):
+                if query.value(fieldsList):
+                    dataList.append([fieldsList[field], query.value(field)])
+                else:
+                    dataList.append([fieldsList[field], ""])
 
         # Table Ui Test
         dataList.append(["Time", self.timeFilter])

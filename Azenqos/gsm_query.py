@@ -90,22 +90,108 @@ class GsmDataQuery:
 
     def getCurrentChannel(self):
         self.openConnection()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
+
         dataList = []
+        condition = ""
+        gsmFields = [
+            "Cellname",
+            "CGI",
+            "Channel type",
+            "Sub channel number",
+            "Mobile Allocation Index Offset (MAIO)",
+            "Hopping Sequence Number (HSN)",
+            "Cipering Algorithm",
+            "MS Power Control Level",
+            "Channel Mode",
+            "Speech Codec TX",
+            "Speech Codec RX",
+            "Hopping Channel",
+            "Hopping Frequencies",
+            "ARFCN BCCH",
+            "ARFCN TCH",
+            "Time slot",
+        ]
+
+        if self.timeFilter:
+            condition = "WHERE gcm.time <= '%s'" % (self.timeFilter)
+            dateString = "%s" % (self.timeFilter)
+
+        dataList.append(["Time", self.timeFilter])
+
+        queryString = """SELECT gcm.gsm_cellfile_matched_cellname, gcm.gsm_cgi, grcd.gsm_channeltype, grs.gsm_subchannelnumber,
+                        grcd.gsm_maio, grcd.gsm_hsn, grca.gsm_cipheringalgorithm, grpc.gsm_ms_powercontrollevel, gchm.gsm_channelmode,
+                        vi.gsm_speechcodectx, vi.gsm_speechcodecrx, grcd.gsm_hoppingchannel, ghl.gsm_hoppingfrequencies, gcm.gsm_arfcn_bcch,
+                        grcd.gsm_arfcn_tch
+                        FROM gsm_cell_meas gcm
+                        INNER JOIN gsm_rr_chan_desc grcd ON gcm.time = grcd.time
+                        INNER JOIN gsm_rr_subchan grs ON grs.time = gcm.time
+                        INNER JOIN gsm_rr_cipher_alg grca ON grca.time = gcm.time
+                        INNER JOIN gsm_rr_power_ctrl grpc ON grpc.time = gcm.time
+                        INNER JOIN gsm_chan_mode gchm ON gchm.time = gcm.time
+                        INNER JOIN vocoder_info vi ON vi.time = gcm.time
+                        INNER JOIN gsm_hopping_list ghl ON ghl.time = gcm.time
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (
+            condition
+        )
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
+            for field in range(len(gsmFields)):
+                if query.value(field):
+                    dataList.append([gsmFields[field], query.value(field)])
+                else:
+                    dataList.append([gsmFields[field], ""])
         self.closeConnection()
         return dataList
 
     def getCSlashI(self):
         self.openConnection()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
         dataList = []
+        condition = ""
+        maxUnits = 10
+
+        if self.timeFilter:
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        dataList.append([self.timeFilter, "", ""])
+        queryString = """SELECT gsm_coi_avg, gsm_coi_worst
+                        FROM gsm_coi_per_chan
+                        %s
+                        ORDER BY time DESC
+                        LIMIT 1""" % (
+            condition
+        )
+        query = QSqlQuery()
+        query.exec_(queryString)
         while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
+
+            dataList.append(["Worst", query.value("gsm_coi_worst"), ""])
+            dataList.append(["Avg", query.value("gsm_coi_avg"), ""])
+        for unit in range(1, maxUnits):
+            queryString = """SELECT gsm_coi_arfcn_%d, gsm_coi_%d
+                            FROM gsm_coi_per_chan
+                            %s
+                            ORDER BY time DESC
+                            LIMIT 1""" % (
+                unit,
+                unit,
+                condition,
+            )
+            query = QSqlQuery()
+            query.exec_(queryString)
+            rowCount = query.record().count()
+            if rowCount > 0:
+                while query.next():
+                    if query.value(0):
+                        dataList.append(
+                            [
+                                "",
+                                query.value("gsm_coi_arfcn_" + unit),
+                                query.value("gsm_coi_" + unit),
+                            ]
+                        )
+        self.closeConnection()
         return dataList
 
     def getGSMLineChart(self):

@@ -1786,7 +1786,7 @@ class AzenqosDialog(QDialog):
         self.destroy(True, True)
 
     def reject(self):
-        global azenqosDatabase
+        global azenqosDatabase, allLayers, vLayers, tableList, h_list
         reply = QMessageBox.question(self, 'Quit Azenqos',
             "Do you want to quit?", QMessageBox.Yes, QMessageBox.No)
 
@@ -1794,12 +1794,14 @@ class AzenqosDialog(QDialog):
             self.pauseTime()
             self.timeSliderThread.exit()
             self.close()
+            # self.databaseUi.uri.setDatabase(None)
             self.databaseUi.reject()
             self.databaseUi.destroy(True, True)
             self.destroy(True, True)
 
             QthreadCount = threadpool.activeThreadCount()
             threadingActive = threading.activeCount()
+            taskActive = QgsApplication.taskManager().tasks()
 
             before = QSqlDatabase.connectionNames()
 
@@ -1820,6 +1822,10 @@ class AzenqosDialog(QDialog):
                 mdiwindow.close()
             self.mdi.close()
         
+            tableList = []
+            h_list = []
+            allLayers = []
+            vLayers = []
             del azenqosDatabase
             del self.databaseUi
             del self
@@ -2455,6 +2461,12 @@ class LayerTask(QgsTask):
             # self.azqGroup.addLayer(rlayer)
         else:
             QgsMessageLog.logMessage("Invalid layer")
+
+    def removeMapToQgis(self):
+        self.uri = QgsDataSourceUri()
+        layers = QgsProject.instance().mapLayers()
+        for layer in layers:
+             QgsProject.instance().removeMapLayer(layer)
 
     def run(self):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")

@@ -1477,7 +1477,7 @@ class AzenqosDialog(QDialog):
                     self.mdi.addSubWindow(self.gsm_data_lc)
                     self.gsm_data_lc.show()
                     openedWindows.append(linechartWidget)
-            
+
             if child == "WCDMA Data Line Chart":
                 # if hasattr(self, 'wcdma_data_lc') is False:
                 #     self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)

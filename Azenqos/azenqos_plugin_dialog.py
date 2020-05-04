@@ -24,6 +24,7 @@
 import datetime
 import threading
 import ptvsd
+import sys
 
 import pyqtgraph as pg
 import numpy as np
@@ -1987,24 +1988,62 @@ class AzenqosDialog(QDialog):
                     pass
 
     def reject(self):
-        super().reject()
-        global azenqosDatabase
-        azenqosDatabase.close()
-        del azenqosDatabase
+        global azenqosDatabase, allLayers, vLayers, tableList, h_list
+        reply = QMessageBox.question(self, 'Quit Azenqos',
+            "Do you want to quit?", QMessageBox.Yes, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.pauseTime()
+            self.timeSliderThread.exit()
+            self.close()
+            # self.databaseUi.uri.setDatabase(None)
+            self.databaseUi.reject()
+            self.databaseUi.destroy(True, True)
+            self.destroy(True, True)
+
+            QthreadCount = threadpool.activeThreadCount()
+            threadingActive = threading.activeCount()
+            taskActive = QgsApplication.taskManager().tasks()
+
+            before = QSqlDatabase.connectionNames()
+
+            azenqosDatabase.close()
+            QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
+            names = QSqlDatabase.connectionNames()
+            for name in names:
+                QSqlDatabase.database(name).close()
+                QSqlDatabase.removeDatabase(name)
+
+            after = QSqlDatabase.connectionNames()
+
+            super().reject()
+            clearAllSelectedFeatures()
+            QgsProject.removeAllMapLayers(QgsProject.instance())
+            removeAzenqosGroup()
+            for mdiwindow in self.mdi.subWindowList():
+                mdiwindow.close()
+            self.mdi.close()
+        
+            tableList = []
+            h_list = []
+            allLayers = []
+            vLayers = []
+            del azenqosDatabase
+            del self.databaseUi
+            del self
+            # sys.exit(0)
+
         # QgsMessageLog.logMessage('Close App')
-        clearAllSelectedFeatures()
-        QgsProject.removeAllMapLayers(QgsProject.instance())
-        removeAzenqosGroup()
-        for mdiwindow in self.mdi.subWindowList():
-            mdiwindow.close()
-        self.mdi.close()
-        self.pauseTime()
-        self.timeSliderThread.exit()
-        self.close()
-        self.databaseUi.destroy(True, True)
-        self.destroy(True, True)
-        del self
-        print("Close All")
+        
+
+        # if len(openedWindows) > 0:
+        #     for window in openedWindows:
+        #         window.close()
+        #         window.reject()
+        #         del window
+
+        # del self.databaseUi
+        # del self
 
 
 class GroupArea(QMdiArea):
@@ -2675,6 +2714,12 @@ class LayerTask(QgsTask):
             # self.azqGroup.addLayer(rlayer)
         else:
             QgsMessageLog.logMessage("Invalid layer")
+
+    def removeMapToQgis(self):
+        self.uri = QgsDataSourceUri()
+        layers = QgsProject.instance().mapLayers()
+        for layer in layers:
+             QgsProject.instance().removeMapLayer(layer)
 
     def run(self):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")

@@ -183,7 +183,6 @@ class Ui_DatabaseDialog(QDialog):
                 # if hasattr(self, "layerTask") is False:
                 self.layerTask = LayerTask(u"Add layers", self.uri)
                 QgsApplication.taskManager().addTask(self.layerTask)
-                self.uri.setDatabase("")
                 self.getTimeForSlider()
                 self.hide()
                 self.azenqosMainMenu = AzenqosDialog(self)
@@ -652,9 +651,10 @@ class AzenqosDialog(QDialog):
         if len(openedWindows) > 0:
             for window in openedWindows:
                 if not window.title in linechartWindowname:
-                    window.hilightRow(sampledate)
+                    worker = Worker(window.hilightRow(sampledate))
                 else:
-                    window.moveChart(sampledate)
+                    worker = Worker(window.moveChart(sampledate))
+                threadpool.start(worker)
         # text = "[--" + str(len(tableList) + "--]"
         # QgsMessageLog.logMessage(text)
 
@@ -1444,6 +1444,40 @@ class AzenqosDialog(QDialog):
                     openedWindows.append(tableWidget)
 
         elif parent == "Data":
+            if child == "GSM Data Line Chart":
+                # if hasattr(self, 'wcdma_data_lc') is False:
+                #     self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
+                # openedWindows.append(self.wcdma_data_lc)
+                # #self.mdi.addSubWindow(self.wcdma_data_lc)
+                # self.wcdma_data_lc.show()
+                # self.wcdma_data_lc.activateWindow()
+                linechartWidget = None
+                if hasattr(self, "gsm_data_lc") is True:
+                    linechartWindow = self.gsm_data_lc.widget()
+                    if not linechartWindow:
+                        linechartWidget = Ui_GSM_Data_LCwidget(
+                            self, windowName, azenqosDatabase
+                        )
+                        openedWindows.append(linechartWidget)
+
+                    if self.gsm_data_lc not in subwindowList:
+                        self.gsm_data_lc = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.gsm_data_lc)
+
+                    if linechartWidget:
+                        self.gsm_data_lc.setWidget(linechartWidget)
+                    self.gsm_data_lc.show()
+                else:
+                    # create new subwindow
+                    self.gsm_data_lc = QMdiSubWindow(self.mdi)
+                    linechartWidget = Ui_GSM_Data_LCwidget(
+                        self, windowName, azenqosDatabase
+                    )
+                    self.gsm_data_lc.setWidget(linechartWidget)
+                    self.mdi.addSubWindow(self.gsm_data_lc)
+                    self.gsm_data_lc.show()
+                    openedWindows.append(linechartWidget)
+            
             if child == "WCDMA Data Line Chart":
                 # if hasattr(self, 'wcdma_data_lc') is False:
                 #     self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
@@ -2131,7 +2165,7 @@ class TableWindow(QWidget):
                 self.dataList = GsmDataQuery(
                     azenqosDatabase, currentDateTimeString
                 ).getCSlashI()
-            # TODO: เดี๋ยวมาเช็ค all query
+            # TODO: find the way to find event counter
             # elif self.title == "GSM_Events Counter":
             #     self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
 
@@ -2351,6 +2385,7 @@ class TableWindow(QWidget):
     def hilightRow(self, sampledate):
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
+        worker = None
         self.dateString = str(sampledate)
         # self.findCurrentRow()
         if not self.dataList or self.title not in [
@@ -2359,11 +2394,11 @@ class TableWindow(QWidget):
             "Signaling_Layer 3 Messages",
         ]:
             worker = Worker(self.specifyTablesHeader())
-            threadpool.start(worker)
-            # self.specifyTablesHeader()
         else:
-            self.findCurrentRow()
-            # self.findCurrentRow()
+            worker = Worker(self.findCurrentRow())
+
+        if worker:
+            threadpool.start(worker)
         # elapse_time = time.time() - start_time
         # del worker
         # QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
@@ -2672,6 +2707,7 @@ class LayerTask(QgsTask):
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
             )
             QgsMessageLog.logMessage("[-- End add layers --]", tag="Processing")
+            self.uri.setDatabase("")
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(

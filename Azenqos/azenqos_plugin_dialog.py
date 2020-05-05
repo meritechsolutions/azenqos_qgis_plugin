@@ -91,6 +91,7 @@ def removeAzenqosGroup():
     if azqGroup:
         root.removeChildNode(azqGroup)
 
+
 # Database select window
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -250,7 +251,7 @@ class Ui_DatabaseDialog(QDialog):
     def setIncrementValue(self):
         global sliderLength
         sliderLength = maxTimeValue - minTimeValue
-        sliderLength = round(sliderLength,3)
+        sliderLength = round(sliderLength, 3)
 
     def reject(self):
         global openedWindows
@@ -301,9 +302,9 @@ class AzenqosDialog(QDialog):
             h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
 
             # set highlight symbol properties
-            h.setColor(QColor(255,0,0,255))
+            h.setColor(QColor(255, 0, 0, 255))
             h.setWidth(2)
-            h.setFillColor(QColor(255,255,255,0))
+            h.setFillColor(QColor(255, 255, 255, 0))
 
             # write the object to the list
             h_list.append(h)
@@ -552,7 +553,7 @@ class AzenqosDialog(QDialog):
             slowDownValue = 1
         elif value == float(0):
             fastForwardValue = 1
-            slowDownValue = 1 
+            slowDownValue = 1
         elif value < float(1):
             fastForwardValue = 1
             slowDownValue = value
@@ -700,7 +701,7 @@ class AzenqosDialog(QDialog):
 
                 if len(selected_ids) > 0:
                     clearAllSelectedFeatures()
-                    layer.selectByIds(selected_ids,QgsVectorLayer.AddToSelection)
+                    layer.selectByIds(selected_ids, QgsVectorLayer.AddToSelection)
                     print(selected_ids)
 
                     ext = layer.extent()
@@ -1787,8 +1788,13 @@ class AzenqosDialog(QDialog):
 
     def reject(self):
         global azenqosDatabase, allLayers, vLayers, tableList, h_list
-        reply = QMessageBox.question(self, 'Quit Azenqos',
-            "Do you want to quit?", QMessageBox.Yes, QMessageBox.No)
+        reply = QMessageBox.question(
+            self,
+            "Quit Azenqos",
+            "Do you want to quit?",
+            QMessageBox.Yes,
+            QMessageBox.No,
+        )
 
         if reply == QMessageBox.Yes:
             self.pauseTime()
@@ -1821,7 +1827,7 @@ class AzenqosDialog(QDialog):
             for mdiwindow in self.mdi.subWindowList():
                 mdiwindow.close()
             self.mdi.close()
-        
+
             tableList = []
             h_list = []
             allLayers = []
@@ -1832,7 +1838,6 @@ class AzenqosDialog(QDialog):
             # sys.exit(0)
 
         # QgsMessageLog.logMessage('Close App')
-        
 
         # if len(openedWindows) > 0:
         #     for window in openedWindows:
@@ -1859,7 +1864,9 @@ class TimeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = minTimeValue
         super().setMinimum(0)
-        self._max_int = int(str(maxTimeValue).replace('.', '')) - int(str(minTimeValue).replace('.', ''))
+        self._max_int = int(str(maxTimeValue).replace(".", "")) - int(
+            str(minTimeValue).replace(".", "")
+        )
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
@@ -1917,25 +1924,29 @@ class TableWindow(QWidget):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
-        
-        #Init table
-        self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(-1,Qt.AscendingOrder)
 
-        #Init filter header
-        self.filterHeader = FilterHeader(self.tableView) 
-        self.filterHeader.setSortIndicator(-1,Qt.AscendingOrder)     
+        # Init table
+        self.tableView = QTableView(self)
+        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+
+        # Init filter header
+        self.filterHeader = FilterHeader(self.tableView)
+        self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.doubleClicked.connect(self.showDetail)
         self.tableView.clicked.connect(self.updateSlider)
         self.tableView.setSortingEnabled(True)
         self.tableView.setCornerButtonEnabled(False)
-        self.tableView.setStyleSheet("QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}")
+        self.tableView.setStyleSheet(
+            "QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}"
+        )
         self.specifyTablesHeader()
 
-        #Attach header to table, create text filter
+        # Attach header to table, create text filter
         self.tableView.setHorizontalHeader(self.filterHeader)
-        self.tableView.verticalHeader().setFixedWidth(self.tableView.verticalHeader().sizeHint().width())
-        self.filterHeader.setFilterBoxes(len(self.tableHeader),self)
+        self.tableView.verticalHeader().setFixedWidth(
+            self.tableView.verticalHeader().sizeHint().width()
+        )
+        self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
@@ -2207,15 +2218,15 @@ class TableWindow(QWidget):
         timeCell = None
         try:
             timeCell = datetime.datetime.strptime(
-                    str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
-                ).timestamp()
+                str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
+            ).timestamp()
         except Exception as e:
             # avoid error warnings
-            timeCell = timeCell 
+            timeCell = timeCell
         finally:
             if timeCell is not None:
                 sliderValue = timeCell - minTimeValue
-                sliderValue = round(sliderValue,3)
+                sliderValue = round(sliderValue, 3)
                 timeSlider.setValue(sliderValue)
 
     def findCurrentRow(self):
@@ -2246,6 +2257,7 @@ class TableWindow(QWidget):
         self.close()
         del self
 
+
 class SortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, *args, **kwargs):
         QSortFilterProxyModel.__init__(self, *args, **kwargs)
@@ -2262,6 +2274,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
                 if regex.indexIn(self.sourceModel().dataString(ix)) == -1:
                     return False
         return True
+
 
 class DetailWidget(QDialog):
     def __init__(self, parent, detailText):
@@ -2315,12 +2328,13 @@ class TableModel(QAbstractTableModel):
         return QVariant(self.dataSource[index.row()][index.column()])
 
     def dataString(self, index):
-        return (self.dataSource[index.row()][index.column()])
+        return self.dataSource[index.row()][index.column()]
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
+
 
 class FilterHeader(QtGui.QHeaderView):
     filterActivated = QtCore.pyqtSignal()
@@ -2346,10 +2360,12 @@ class FilterHeader(QtGui.QHeaderView):
             editor.deleteLater()
         for index in range(count):
             editor = QtGui.QLineEdit(self.parent())
-            editor.setPlaceholderText('Filter')
-            editor.textChanged.connect(lambda text, col=index:
-                                    parent.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
-                                                            col))
+            editor.setPlaceholderText("Filter")
+            editor.textChanged.connect(
+                lambda text, col=index: parent.proxyModel.setFilterByColumn(
+                    QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString), col
+                )
+            )
             editor.textChanged.connect(self.adjustPositions)
             self._editors.append(editor)
         self._verticalWidth = parent.tableView.verticalHeader().sizeHint().width()
@@ -2371,18 +2387,19 @@ class FilterHeader(QtGui.QHeaderView):
         super().updateGeometries()
         self.adjustPositions()
 
-    def adjustPositions(self,dummy=None):
+    def adjustPositions(self, dummy=None):
         for index, editor in enumerate(self._editors):
             height = editor.sizeHint().height()
             editor.move(
                 self.sectionPosition(index) - self.offset() + self._verticalWidth,
-                height + (self._padding // 2))
+                height + (self._padding // 2),
+            )
             editor.resize(self.sectionSize(index), height)
 
     def filterText(self, index):
         if 0 <= index < len(self._editors):
             return self._editors[index].text()
-        return ''
+        return ""
 
     def setFilterText(self, index, text):
         if 0 <= index < len(self._editors):
@@ -2391,6 +2408,7 @@ class FilterHeader(QtGui.QHeaderView):
     def clearFilters(self):
         for editor in self._editors:
             editor.clear()
+
 
 class TimeSliderThread(QThread):
     changeValue = pyqtSignal(float)
@@ -2466,7 +2484,7 @@ class LayerTask(QgsTask):
         self.uri = QgsDataSourceUri()
         layers = QgsProject.instance().mapLayers()
         for layer in layers:
-             QgsProject.instance().removeMapLayer(layer)
+            QgsProject.instance().removeMapLayer(layer)
 
     def run(self):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")

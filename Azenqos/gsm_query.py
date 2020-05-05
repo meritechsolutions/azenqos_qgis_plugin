@@ -22,7 +22,11 @@ class GsmDataQuery:
             "TxPower",
             "FER",
         ]
-        selectedColumns = "gcm.time, gcm.gsm_rxlev_full_dbm, gcm.gsm_rxlev_sub_dbm, gcm.gsm_rxqual_full, gcm.gsm_rxqual_sub, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"
+        if self.timeFilter:
+            condition = "WHERE gcm.time <= '%s'" % (self.timeFilter)
+        selectedColumns = """gcm.time, gcm.gsm_rxlev_full_dbm || ' ' || gcm.gsm_rxlev_sub_dbm as gsm_rxlev, 
+                            gcm.gsm_rxqual_full || ' ' || gcm.gsm_rxqual_sub as gsm_rxqual, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, 
+                            grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"""
         queryString = """SELECT %s
                         FROM gsm_cell_meas gcm
                         LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
@@ -30,8 +34,10 @@ class GsmDataQuery:
                         LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
                         LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
                         LEFT JOIN vocoder_info vi ON gcm.time = vi.time
-                        ORDER BY time DESC LIMIT 1""" % (
-            selectedColumns
+                        %s
+                        ORDER BY gcm.time DESC LIMIT 1""" % (
+            selectedColumns,
+            condition,
         )
         query = QSqlQuery()
         query.exec_(queryString)
@@ -41,11 +47,20 @@ class GsmDataQuery:
                 columnName = fieldsList[index]
                 fullValue = query.value(index)
                 subValue = ""
-                if columnName in any(("RxLev", "RxQual")):
-                    index + 1
-                    subValue = query.value(index)
+                if columnName in ["RxLev", "RxQual"]:
+                    if query.value(index):
+                        splitValue = query.value(index).split(" ")
+                        fullValue = splitValue[0]
+                        subValue = splitValue[1]
                 dataList.append([columnName, fullValue, subValue])
-        azenqosDatabase.close()
+        else:
+            if len(dataList) == 0:
+                for index in range(fieldCount):
+                    columnName = fieldsList[index]
+                    fullValue = ""
+                    subValue = ""
+                    dataList.append([columnName, fullValue, subValue])
+        self.closeConnection()
         return dataList
 
     def getServingAndNeighbors(self):
@@ -192,26 +207,6 @@ class GsmDataQuery:
                             ]
                         )
         self.closeConnection()
-        return dataList
-
-    def getGSMLineChart(self):
-        self.openConnection()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
-        return dataList
-
-    def getGSMEventsCounter(self):
-        self.openConnection()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        dataList = []
-        while query.next():
-            dataList.append(None)
-        azenqosDatabase.close()
         return dataList
 
     def openConnection(self):

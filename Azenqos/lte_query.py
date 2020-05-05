@@ -14,7 +14,7 @@ class LteDataQuery:
         condition = ""
         # add Time for first row
         if self.timeFilter:
-            dataList.append(["Time", self.timeFilter])
+            dataList.append(["Time", self.timeFilter, "", ""])
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         elementDictList = [
             {
@@ -171,10 +171,17 @@ class LteDataQuery:
             "DedBearer QCI",
         ]
 
-        selectedColumns = """lsci.lte_serv_cell_info_pci as 'Serving PCI',
-                                lcm.lte_inst_rsrp_rx0_1 as 'Serving RSRP[0]', lcm.lte_inst_rsrp_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrp_1 as 'Serving RSRP', lcm.lte_inst_rsrq_rx0_1 as 'Serving RSRQ[0]', lcm.lte_inst_rsrq_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrq_1 as 'Serving RSRQ', lcm.lte_sinr_rx0_1 as 'SINR Rx[0]', lcm.lte_sinr_rx1_1 as 'SINR Rx[1]', lcm.lte_sinr_1 as 'SINR', lcm.lte_inst_rssi_rx0_1 as 'RSSI Rx[0]', lcm.lte_inst_rssi_rx1_1 as 'RSSI Rx[1]', lcm.lte_inst_rssi_1 as 'RSSI', lldt.lte_bler_1 as 'BLER', lc.lte_cqi_cw0_1 as 'CQI CW[0]', lc.lte_cqi_cw1_1 as 'CQI CW[1]', ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)', lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State', les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo', lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
-                                lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID', lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
-                                lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)', '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI', lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment', ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', '' as 'DedBearer QCI'"""
+        selectedColumns = """ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)',
+                            lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State',
+                            les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo',
+                            lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
+                            lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', 
+                            lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID',
+                            lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
+                            lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)',
+                            '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI',
+                            lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment',
+                             ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', '' as 'DedBearer QCI'"""
 
         if self.timeFilter:
             condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
@@ -208,8 +215,8 @@ class LteDataQuery:
                 if query.value(index) != "":
                     value = query.value(index)
                 dataList.append([columnName, value, "", ""])
-        if len(dataList) == 0:
-            dataList = self.defaultData(fieldsList)
+        else:
+            dataList = self.defaultData(fieldsList, dataList)
         self.closeConnection()
         return dataList
 
@@ -490,14 +497,12 @@ class LteDataQuery:
         self.closeConnection()
         return dataList
 
-    def defaultData(self, fieldsList):
+    def defaultData(self, fieldsList, dataList):
         fieldCount = len(fieldsList)
         if fieldCount > 0:
-            dataList = []
             for index in range(fieldCount):
                 columnName = fieldsList[index]
-                value = ""
-                dataList.append([columnName, value, "", ""])
+                dataList.append([columnName, "", "", ""])
             return dataList
 
     def openConnection(self):

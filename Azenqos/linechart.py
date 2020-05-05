@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import pyqtgraph as pg
 from .globalutils import Utils
+from .linechart_query import LineChartQueryNew
 
 
 class Ui_LTE_LCwidget(QWidget):
@@ -483,6 +484,8 @@ class Ui_LTE_Data_LCwidget(QWidget):
         self.setObjectName("LTE_Data_LCwidget")
         self.resize(841, 586)
 
+        layout = QVBoxLayout(self)
+
         # Graph Area
         self.lte_datalc_GArea = QScrollArea(self)
         self.lte_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
@@ -621,7 +624,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
 
         # Graph's Widget
         self.lte_data_widget = LineChart(
-            self.scrollAreaWidgetContents,
+            self.lte_datalc_GArea,
             self.title,
             self.lte_data_tableWidget,
             self.lineEdit,
@@ -629,9 +632,13 @@ class Ui_LTE_Data_LCwidget(QWidget):
         )
         self.lte_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.lte_data_widget.setObjectName("lte_data_widget")
+        self.lte_datalc_GArea.setWidget(self.lte_data_widget)
 
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
+        
+        layout.addWidget(self.lte_datalc_GArea)
+        layout.addWidget(self.lte_data_tableWidget)
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
@@ -696,6 +703,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
     def setupUi(self):
         self.setObjectName("WCDMA_Data_LCwidget")
         layout = QVBoxLayout(self)
+        self.resize(841, 586)
 
         # Graph Area
         self.wcdma_datalc_GArea = QScrollArea(self)
@@ -814,35 +822,40 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         self.wcdma_data_tableWidget.verticalHeader().setVisible(False)
 
         # DateLabel
-        self.datelabel = QLabel(WCDMA_Data_LCwidget)
-        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.datelabel.setFont(font)
-        self.datelabel.setObjectName("datelabel")
-        self.lineEdit = QLineEdit(WCDMA_Data_LCwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lineEdit.setFont(font)
-        self.lineEdit.setReadOnly(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+        # self.datelabel = QLabel(WCDMA_Data_LCwidget)
+        # self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        # font = QtGui.QFont()
+        # font.setPointSize(10)
+        # font.setBold(True)
+        # font.setWeight(75)
+        # self.datelabel.setFont(font)
+        # self.datelabel.setObjectName("datelabel")
+        # self.lineEdit = QLineEdit(WCDMA_Data_LCwidget)
+        # self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        # font = QtGui.QFont()
+        # font.setPointSize(10)
+        # font.setBold(True)
+        # font.setWeight(75)
+        # self.lineEdit.setFont(font)
+        # self.lineEdit.setReadOnly(True)
+        # self.lineEdit.setObjectName("lineEdit")
+        # self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
 
         # Graph's Widget
         self.wcdma_data_widget = LineChart(
-            self.scrollAreaWidgetContents,
+            self.wcdma_datalc_GArea,
             self.title,
             self.wcdma_data_tableWidget,
-            self.lineEdit,
+            None,
             self.database,
         )
-        self.wcdma_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        # self.wcdma_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.wcdma_data_widget.setObjectName("wcdma_data_widget")
+        
+        self.wcdma_datalc_GArea.setWidget(self.wcdma_data_widget)
+        
+        layout.addWidget(self.wcdma_datalc_GArea)
+        layout.addWidget(self.wcdma_data_tableWidget)
 
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
@@ -895,7 +908,7 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         item = self.wcdma_data_tableWidget.item(3, 2)
         item.setText(_translate("WCDMA_Data_LCwidget", "MS1"))
         self.wcdma_data_tableWidget.setSortingEnabled(__sortingEnabled)
-        self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
+        # self.datelabel.setText(_translate("WCDMA_Data_LCwidget", "Date :"))
 
     def moveChart(self, sampledate):
         self.wcdma_data_widget.moveLineChart(sampledate)
@@ -1294,37 +1307,45 @@ class Ui_GSM_Data_LCwidget(QWidget):
         self.gsm_data_tableWidget.setGeometry(QtCore.QRect(20, 390, 421, 81))
         self.gsm_data_tableWidget.setObjectName("gsm_data_tableWidget")
         self.gsm_data_tableWidget.setColumnCount(4)
-        self.gsm_data_tableWidget.setRowCount(2)
+        self.gsm_data_tableWidget.setRowCount(3)
+        
         item = QtWidgets.QTableWidgetItem()
         self.gsm_data_tableWidget.setVerticalHeaderItem(0, item)
+        
         item = QtWidgets.QTableWidgetItem()
         self.gsm_data_tableWidget.setVerticalHeaderItem(1, item)
+        
         item = QtWidgets.QTableWidgetItem()
         self.gsm_data_tableWidget.setVerticalHeaderItem(2, item)
+        
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
         self.gsm_data_tableWidget.setHorizontalHeaderItem(0, item)
+        
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
         self.gsm_data_tableWidget.setHorizontalHeaderItem(1, item)
+        
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
         self.gsm_data_tableWidget.setHorizontalHeaderItem(2, item)
+        
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
         self.gsm_data_tableWidget.setHorizontalHeaderItem(3, item)
+        
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.gsm_data_tableWidget.setItem(0, 0, item)
@@ -1340,6 +1361,7 @@ class Ui_GSM_Data_LCwidget(QWidget):
         item.setBackground(brush)
         self.gsm_data_tableWidget.setItem(0, 3, item)
         item = QtWidgets.QTableWidgetItem()
+        
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.gsm_data_tableWidget.setItem(1, 0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1353,6 +1375,23 @@ class Ui_GSM_Data_LCwidget(QWidget):
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
         self.gsm_data_tableWidget.setItem(1, 3, item)
+        
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 0, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 1, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.gsm_data_tableWidget.setItem(2, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        brush = QtGui.QBrush(QtGui.QColor(0, 255, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        item.setBackground(brush)
+        self.gsm_data_tableWidget.setItem(2, 3, item)
+        
+       
         self.gsm_data_tableWidget.horizontalHeader().setVisible(True)
         self.gsm_data_tableWidget.horizontalHeader().setHighlightSections(True)
         self.gsm_data_tableWidget.verticalHeader().setVisible(False)
@@ -1520,13 +1559,8 @@ class LineChart(QWidget):
     # Create GSM Line Chart
     def GSM(self):
         # Open Database And Query
-        ChartQuery = LineChartQuery(
-            ["time", "gsm_rxlev_sub_dbm", "gsm_rxqual_sub"],
-            "gsm_cell_meas",
-            "",
-            self.database,
-        )
-        self.result = ChartQuery.getData()
+        ChartQuery = LineChartQueryNew(self.database)
+        self.result = ChartQuery.getGsm()
         for index in range(len(self.result["time"])):
             self.Date.append(self.result["time"][index].split(" ")[0])
             self.Time.append(self.result["time"][index].split(" ")[1])
@@ -1554,7 +1588,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120, 30)
+            self.canvas.axes.setYRange(-120, 7)
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1568,19 +1602,20 @@ class LineChart(QWidget):
     # Create GSM Data Line Chart
     def GSM_Data(self):
         # Open Database And Query
-        condition = "LEFT JOIN data_app_throughput dat ON des.time = dat.time"
-        ChartQuery = LineChartQuery(
-            [
-                "des.time",
-                "des.data_gsm_rlc_ul_throughput",
-                "dat.data_app_dl_throughput",
-                "dat.data_download_session_average",
-            ],
-            "data_egprs_stats des",
-            condition,
-            self.database,
-        )
-        self.result = ChartQuery.getData()
+        # condition = "LEFT JOIN data_app_throughput dat ON des.time = dat.time"
+        # ChartQuery = LineChartQuery(
+        #     [
+        #         "des.time",
+        #         "des.data_gsm_rlc_ul_throughput",
+        #         "dat.data_app_dl_throughput",
+        #         "dat.data_download_session_average",
+        #     ],
+        #     "data_egprs_stats des",
+        #     condition,
+        #     self.database,
+        # )
+        ChartQuery = LineChartQueryNew(self.database)
+        self.result = ChartQuery.getGsmData()
         for index in range(len(self.result["time"])):
             self.Date.append(self.result["time"][index].split(" ")[0])
             self.Time.append(self.result["time"][index].split(" ")[1])
@@ -1608,62 +1643,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120, 30)
-            self.canvas.axes.setXRange(
-                list(self.xdict.keys())[0], list(self.xdict.keys())[4]
-            )
-
-            # Call Event Function
-            pick = [
-                self.lines[i].sigClicked.connect(self.on_pick)
-                for i in range(len(self.lines))
-            ]
-
-    # Create LTE Line Chart
-    def LTE(self):
-        # Open Database And Query
-        ChartQuery = LineChartQuery(
-            [
-                "time",
-                "lte_sinr_rx0_1",
-                "lte_sinr_rx1_1",
-                "lte_inst_rsrp_1",
-                "lte_inst_rsrq_1",
-                "lte_inst_rssi_1",
-            ],
-            "lte_cell_meas",
-            "",
-            self.database,
-        )
-        self.result = ChartQuery.getData()
-        for index in range(len(self.result["time"])):
-            self.Date.append(self.result["time"][index].split(" ")[0])
-            self.Time.append(self.result["time"][index].split(" ")[1])
-
-        if self.result["time"] != "":
-            # Graph setting
-            # self.datelabel.setText("Date: " + self.Date[0])
-
-            # Ploting Graph
-            self.ColorArr = ["#ff0000", "#0000ff", "#007c00", "#ff77ab", "#000000"]
-            x = self.Time
-            self.xdict = dict(enumerate(x))
-            self.stringaxis.setTicks([self.xdict.items()])
-            for data in self.result.items():
-                if data[0] != "time":
-                    newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1]
-                    )
-                    newline.curve.setClickable(True)
-                    self.lines.append(newline)
-
-            for colorindex in range(len(self.lines)):
-                self.lines[colorindex].setPen(
-                    pg.mkPen(self.ColorArr[colorindex], width=2)
-                )
-
-            # Scale Editing
-            self.canvas.axes.setYRange(-120, 30)
+            self.canvas.axes.setYRange(0, 150000)
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1679,27 +1659,30 @@ class LineChart(QWidget):
 
         # Open Database And Query
 
-        condition = """LEFT JOIN wcdma_rx_power wrp ON wcm.time = wrp.time
-                       LEFT JOIN wcdma_bler wb ON wcm.time = wb.time"""
-        ChartQuery = LineChartQuery(
-            [
-                "wcm.time",
-                "wcm.wcdma_aset_ecio_avg",
-                "wcm.wcdma_aset_rscp_avg",
-                "wrp.wcdma_rssi",
-                "wb.wcdma_bler_average_percent_all_channels",
-            ],
-            "wcdma_cell_meas wcm",
-            condition,
-            self.database,
-        )
-        self.result = ChartQuery.getData()
+        # condition = """LEFT JOIN wcdma_rx_power wrp ON wcm.time = wrp.time
+        #                LEFT JOIN wcdma_bler wb ON wcm.time = wb.time"""
+        # ChartQuery = LineChartQuery(
+        #     [
+        #         "wcm.time",
+        #         "wcm.wcdma_aset_ecio_avg",
+        #         "wcm.wcdma_aset_rscp_avg",
+        #         "wrp.wcdma_rssi",
+        #         "wb.wcdma_bler_average_percent_all_channels",
+        #     ],
+        #     "wcdma_cell_meas wcm",
+        #     condition,
+        #     self.database,
+        # )
+        # self.result = ChartQuery.getData()
+        
+        ChartQuery = LineChartQueryNew(self.database)
+        self.result = ChartQuery.getWcdma()
 
-        for index in range(len(self.result["wcm.time"])):
-            self.Date.append(self.result["wcm.time"][index].split(" ")[0])
-            self.Time.append(self.result["wcm.time"][index].split(" ")[1])
+        for index in range(len(self.result["time"])):
+            self.Date.append(self.result["time"][index].split(" ")[0])
+            self.Time.append(self.result["time"][index].split(" ")[1])
 
-        if self.result["wcm.time"] != "":
+        if self.result["time"] != "":
             # Graph setting
             # self.datelabel.setText(self.Date[0])
 
@@ -1710,7 +1693,7 @@ class LineChart(QWidget):
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
-                if data[0] != "wcm.time":
+                if data[0] != "time":
                     newline = self.canvas.axes.plot(
                         x=list(self.xdict.keys()), y=data[1]
                     )
@@ -1723,7 +1706,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120, 20)
+            self.canvas.axes.setYRange(-140, 5000)
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1739,27 +1722,30 @@ class LineChart(QWidget):
 
         # Open Database And Query
 
-        condition = """LEFT JOIN data_app_throughput dat ON dwrs.time = dat.time
-                       LEFT JOIN wcdma_hsdpa_stats whs ON dwrs.time = whs.time"""
-        ChartQuery = LineChartQuery(
-            [
-                "dwrs.time",
-                "dwrs.data_wcdma_rlc_dl_throughput",
-                "dat.data_app_dl_throughput_1",
-                "dat.data_download_session_average",
-                "whs.data_hsdpa_thoughput",
-            ],
-            "data_wcdma_rlc_stats dwrs",
-            condition,
-            self.database,
-        )
-        self.result = ChartQuery.getData()
+        # condition = """LEFT JOIN data_app_throughput dat ON dwrs.time = dat.time
+        #                LEFT JOIN wcdma_hsdpa_stats whs ON dwrs.time = whs.time"""
+        # ChartQuery = LineChartQuery(
+        #     [
+        #         "dwrs.time",
+        #         "dwrs.data_wcdma_rlc_dl_throughput",
+        #         "dat.data_app_dl_throughput_1",
+        #         "dat.data_download_session_average",
+        #         "whs.data_hsdpa_thoughput",
+        #     ],
+        #     "data_wcdma_rlc_stats dwrs",
+        #     condition,
+        #     self.database,
+        # )
+        # self.result = ChartQuery.getData()
+        
+        ChartQuery = LineChartQueryNew(self.database)
+        self.result = ChartQuery.getWcdmaData()
 
-        for index in range(len(self.result["dwrs.time"])):
-            self.Date.append(self.result["dwrs.time"][index].split(" ")[0])
-            self.Time.append(self.result["dwrs.time"][index].split(" ")[1])
+        for index in range(len(self.result["time"])):
+            self.Date.append(self.result["time"][index].split(" ")[0])
+            self.Time.append(self.result["time"][index].split(" ")[1])
 
-        if self.result["dwrs.time"] != "":
+        if self.result["time"] != "":
             # Graph setting
             # self.datelabel.setText(self.Date[0])
 
@@ -1770,7 +1756,7 @@ class LineChart(QWidget):
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
-                if data[0] != "dwrs.time":
+                if data[0] != "time":
                     newline = self.canvas.axes.plot(
                         x=list(self.xdict.keys()), y=data[1]
                     )
@@ -1783,7 +1769,63 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120, 20)
+            self.canvas.axes.setYRange(0, 150000)
+            self.canvas.axes.setXRange(
+                list(self.xdict.keys())[0], list(self.xdict.keys())[4]
+            )
+
+            # Call Event Function
+            pick = [
+                self.lines[i].sigClicked.connect(self.on_pick)
+                for i in range(len(self.lines))
+            ]
+
+    # Create LTE Line Chart
+    def LTE(self):
+        # Open Database And Query
+        # ChartQuery = LineChartQuery(
+        #     [
+        #         "time",
+        #         "lte_sinr_rx0_1",
+        #         "lte_sinr_rx1_1",
+        #         "lte_inst_rsrp_1",
+        #         "lte_inst_rsrq_1",
+        #         "lte_inst_rssi_1",
+        #     ],
+        #     "lte_cell_meas",
+        #     "",
+        #     self.database,
+        # )
+        ChartQuery = LineChartQueryNew(self.database)
+        self.result = ChartQuery.getLte()
+        for index in range(len(self.result["time"])):
+            self.Date.append(self.result["time"][index].split(" ")[0])
+            self.Time.append(self.result["time"][index].split(" ")[1])
+
+        if self.result["time"] != "":
+            # Graph setting
+            # self.datelabel.setText("Date: " + self.Date[0])
+
+            # Ploting Graph
+            self.ColorArr = ["#ff0000", "#0000ff", "#007c00", "#ff77ab", "#000000"]
+            x = self.Time
+            self.xdict = dict(enumerate(x))
+            self.stringaxis.setTicks([self.xdict.items()])
+            for data in self.result.items():
+                if data[0] != "time":
+                    newline = self.canvas.axes.plot(
+                        x=list(self.xdict.keys()), y=data[1]
+                    )
+                    newline.curve.setClickable(True)
+                    self.lines.append(newline)
+
+            for colorindex in range(len(self.lines)):
+                self.lines[colorindex].setPen(
+                    pg.mkPen(self.ColorArr[colorindex], width=2)
+                )
+
+            # Scale Editing
+            self.canvas.axes.setYRange(0, 30)
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1798,26 +1840,27 @@ class LineChart(QWidget):
     def LTE_Data(self):
 
         # Open Database And Query
-        condition = """LEFT JOIN data_app_throughput dat ON lldt.time = dat.time"""
-        ChartQuery = LineChartQuery(
-            [
-                "lldt.time",
-                "dat.data_download_overall",
-                "dat.data_upload_overall",
-                "lldt.lte_l1_throughput_mbps_1",
-                "lldt.lte_bler_1",
-            ],
-            "lte_l1_dl_tp lldt",
-            condition,
-            self.database,
-        )
-        self.result = ChartQuery.getData()
+        # condition = """LEFT JOIN data_app_throughput dat ON lldt.time = dat.time"""
+        # ChartQuery = LineChartQuery(
+        #     [
+        #         "lldt.time",
+        #         "dat.data_download_overall",
+        #         "dat.data_upload_overall",
+        #         "lldt.lte_l1_throughput_mbps_1",
+        #         "lldt.lte_bler_1",
+        #     ],
+        #     "lte_l1_dl_tp lldt",
+        #     condition,
+        #     self.database,
+        # )
+        # self.result = ChartQuery.getData()
+        ChartQuery = LineChartQueryNew(self.database)
+        self.result = ChartQuery.getLteData()
+        for index in range(len(self.result["time"])):
+            self.Date.append(self.result["time"][index].split(" ")[0])
+            self.Time.append(self.result["time"][index].split(" ")[1])
 
-        for index in range(len(self.result["lldt.time"])):
-            self.Date.append(self.result["lldt.time"][index].split(" ")[0])
-            self.Time.append(self.result["lldt.time"][index].split(" ")[1])
-
-        if self.result["lldt.time"] != "":
+        if self.result["time"] != "":
             # Graph setting
             # self.datelabel.setText(self.Date[0])
 
@@ -1828,7 +1871,7 @@ class LineChart(QWidget):
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
             for data in self.result.items():
-                if data[0] != "lldt.time":
+                if data[0] != "time":
                     newline = self.canvas.axes.plot(
                         x=list(self.xdict.keys()), y=data[1]
                     )
@@ -1841,7 +1884,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(-5, 35)
+            self.canvas.axes.setYRange(0, 150000)
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1900,9 +1943,7 @@ class LineChart(QWidget):
         height = size.height()
         datalabelX = int((width * 0.94) - 110)
         datalabelY = int((height * 0.11) - 20)
-        # print(datalabelX)
-        # print(datalabelY)
-        self.datelabel.move(QPoint(datalabelX, datalabelY))
+        # self.datelabel.move(QPoint(datalabelX, datalabelY))
 
 
 class LineChartQuery:
@@ -1953,7 +1994,6 @@ class LineChartQuery:
                 fieldName = self.fieldArr[field]
                 self.result[fieldName] = ""
         self.database.close()
-        # print(self.result, lineno())
         return self.result
 
     def valueValidation(self, value):

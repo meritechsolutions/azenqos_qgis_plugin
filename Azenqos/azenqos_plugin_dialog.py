@@ -23,8 +23,8 @@
 """
 import datetime
 import threading
-import ptvsd
 import sys
+import ptvsd
 
 import pyqtgraph as pg
 import numpy as np
@@ -167,11 +167,9 @@ class Ui_DatabaseDialog(QDialog):
                 )
                 return False
             else:
-                self.uri = QgsDataSourceUri()
-                self.uri.setDatabase(self.databasePath)
                 self.getLayersFromDb()
                 # self.addLayerToQgis()
-                self.layerTask = LayerTask(u"Waste cpu 1", self.uri)
+                self.layerTask = LayerTask(u"Waste cpu 1", self.databasePath)
                 QgsApplication.taskManager().addTask(self.layerTask)
                 self.getTimeForSlider()
                 self.hide()
@@ -260,7 +258,7 @@ class Ui_DatabaseDialog(QDialog):
                 window.close()
                 window.reject()
                 del window
-        super().reject()
+        # super().reject()
         QgsProject.removeAllMapLayers(QgsProject.instance())
         removeAzenqosGroup()
         self.destroy(True)
@@ -1787,7 +1785,6 @@ class AzenqosDialog(QDialog):
         self.destroy(True, True)
 
     def reject(self):
-        global azenqosDatabase, allLayers, vLayers, tableList, h_list
         reply = QMessageBox.question(
             self,
             "Quit Azenqos",
@@ -1799,51 +1796,34 @@ class AzenqosDialog(QDialog):
         if reply == QMessageBox.Yes:
             self.pauseTime()
             self.timeSliderThread.exit()
-            self.close()
-            # self.databaseUi.uri.setDatabase(None)
-            self.databaseUi.reject()
+            self.quitTask = QuitTask(u"Quiting Plugin")
+            QgsApplication.taskManager().addTask(self.quitTask)
+            # self.databaseUi.reject()
             self.databaseUi.destroy(True, True)
+            self.close()
             self.destroy(True, True)
 
-            QthreadCount = threadpool.activeThreadCount()
-            threadingActive = threading.activeCount()
-            taskActive = QgsApplication.taskManager().tasks()
-
-            before = QSqlDatabase.connectionNames()
-
-            azenqosDatabase.close()
-            QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
-            names = QSqlDatabase.connectionNames()
-            for name in names:
-                QSqlDatabase.database(name).close()
-                QSqlDatabase.removeDatabase(name)
-
-            after = QSqlDatabase.connectionNames()
-
-            super().reject()
-            clearAllSelectedFeatures()
-            QgsProject.removeAllMapLayers(QgsProject.instance())
+            # super().reject()
             removeAzenqosGroup()
             for mdiwindow in self.mdi.subWindowList():
                 mdiwindow.close()
             self.mdi.close()
 
-            tableList = []
-            h_list = []
-            allLayers = []
-            vLayers = []
-            del azenqosDatabase
-            del self.databaseUi
-            del self
+            # layers = QgsProject.instance().mapLayers()
+            # for layer in layers:
+            #     QgsProject.instance().removeMapLayer(layer)
+
+            # del self.databaseUi
+            # del self
             # sys.exit(0)
 
-        # QgsMessageLog.logMessage('Close App')
+        QgsMessageLog.logMessage("Close App")
 
-        # if len(openedWindows) > 0:
-        #     for window in openedWindows:
-        #         window.close()
-        #         window.reject()
-        #         del window
+        if len(openedWindows) > 0:
+            for window in openedWindows:
+                window.close()
+                window.reject()
+                del window
 
         # del self.databaseUi
         # del self
@@ -2463,9 +2443,10 @@ class TimeSliderThread(QThread):
 
 
 class LayerTask(QgsTask):
-    def __init__(self, desc, uri):
+    def __init__(self, desc, databasePath):
         QgsTask.__init__(self, desc)
-        self.uri = uri
+        self.uri = QgsDataSourceUri()
+        self.uri.setDatabase(databasePath)
         self.start_time = None
         self.desc = desc
         self.exception = None
@@ -2480,13 +2461,8 @@ class LayerTask(QgsTask):
         else:
             QgsMessageLog.logMessage("Invalid layer")
 
-    def removeMapToQgis(self):
-        self.uri = QgsDataSourceUri()
-        layers = QgsProject.instance().mapLayers()
-        for layer in layers:
-            QgsProject.instance().removeMapLayer(layer)
-
     def run(self):
+        ptvsd.debug_this_thread()
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         global allLayers
@@ -2505,18 +2481,94 @@ class LayerTask(QgsTask):
                 iface.layerTreeView().refreshLayerSymbology(vlayer.id())
                 vlayer.triggerRepaint()
                 vLayers.append(vlayer)
+                vlayer = None
         return True
 
     def finished(self, result):
+        global vLayers
         if result:
             self.addMapToQgis()
-            for vlayer in vLayers:
-                QgsProject.instance().addMapLayer(vlayer)
+            # for vlayer in vLayers:
+            #     QgsProject.instance().addMapLayer(vlayer)
+            #     vlayer = None
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
             )
             QgsMessageLog.logMessage("[-- End add layers --]", tag="Processing")
+        else:
+            if self.exception is None:
+                QgsMessageLog.logMessage(
+                    'Task "{name}" not successful but without '
+                    "exception (probably the task was manually "
+                    "canceled by the user)".format(name=self.desc),
+                    tag="Exception",
+                )
+            else:
+                QgsMessageLog.logMessage(
+                    'Task "{name}" Exception: {exception}'.format(name=self.desc),
+                    exception=self.exception,
+                    tag="Exception",
+                )
+                raise self.exception
+
+
+class QuitTask(QgsTask):
+    def __init__(self, desc):
+        QgsTask.__init__(self, desc)
+        self.start_time = None
+        self.desc = desc
+        self.exception = None
+
+    def run(self):
+        ptvsd.debug_this_thread()
+        QgsMessageLog.logMessage(
+            "[-- Start Removing Dependencies --]", tag="Processing"
+        )
+        self.start_time = time.time()
+        global azenqosDatabase
+        global allLayers
+        global vLayers
+
+        azenqosDatabase.close()
+        QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
+        names = QSqlDatabase.connectionNames()
+        for name in names:
+            QSqlDatabase.database(name).close()
+            QSqlDatabase.removeDatabase(name)
+        del azenqosDatabase
+
+        return True
+
+    def finished(self, result):
+        ptvsd.debug_this_thread()
+        global allLayers
+        global vLayers
+        if result:
+            project = QgsProject.instance()
+            for (id_l, layer) in project.mapLayers().items():
+                source = layer.source()
+                dp = layer.dataProvider()
+                du = layer.dataUrl()
+                to_be_deleted = project.mapLayersByName(layer.name())[0]
+                project.removeMapLayer(to_be_deleted.id())
+                layer = None
+
+            QgsProject.instance().reloadAllLayers()
+            # QgsProject.instance().clear()
+            allLayers = []
+            vLayers = []
+            isSuccess = False
+            while not isSuccess:
+                time.sleep(0.5)
+                isSuccess = Utils().cleanupFile(CURRENT_PATH)
+            elapsed_time = time.time() - self.start_time
+            QgsMessageLog.logMessage(
+                "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
+            )
+            QgsMessageLog.logMessage(
+                "[-- End Removing Dependencies --]", tag="Processing"
+            )
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(

@@ -65,8 +65,10 @@ allLayers = []
 tableList = []
 h_list = []
 linechartWindowname = [
+    "GSM_Line Chart",
     "WCDMA_Line Chart",
     "LTE_LTE Line Chart",
+    "Data_GSM Data Line Chart",
     "Data_WCDMA Data Line Chart",
     "Data_LTE Data Line Chart",
     "WCDMA_Pilot Analyzer",
@@ -427,7 +429,7 @@ class AzenqosDialog(QDialog):
         gsmCurrentChannel = QTreeWidgetItem(gsm, ["Current Channel"])
         gsmCI = QTreeWidgetItem(gsm, ["C/I"])
         gsmLineChart = QTreeWidgetItem(gsm, ["GSM Line Chart"])
-        gsmEventsCounter = QTreeWidgetItem(gsm, ["Events Counter"])
+        # gsmEventsCounter = QTreeWidgetItem(gsm, ["Events Counter"])
 
         # WCDMA Section
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ["WCDMA"])
@@ -855,6 +857,8 @@ class AzenqosDialog(QDialog):
                 linechartWidget = None
                 if hasattr(self, "gsm_lc_window") is True:
                     linechartWindow = self.gsm_lc_window.widget()
+                    del linechartWindow
+                    linechartWindow = None
                     if not linechartWindow:
                         linechartWidget = Ui_GSM_LCwidget(
                             self, windowName, azenqosDatabase
@@ -1049,6 +1053,8 @@ class AzenqosDialog(QDialog):
                 linechartWidget = None
                 if hasattr(self, "wcdma_lc_window") is True:
                     linechartWindow = self.wcdma_lc_window.widget()
+                    del linechartWindow
+                    linechartWindow = None
                     if not linechartWindow:
                         linechartWidget = Ui_WCDMA_LCwidget(
                             self, windowName, azenqosDatabase
@@ -1293,9 +1299,11 @@ class AzenqosDialog(QDialog):
                     openedWindows.append(tableWidget)
 
             elif child == "LTE Line Chart":
-                widget = None
+               linechartWidget = None
                 if hasattr(self, "lte_lc_window") is True:
                     linechartWindow = self.lte_lc_window.widget()
+                    del linechartWindow
+                    linechartWindow = None
                     if not linechartWindow:
                         widget = Ui_LTE_LCwidget(
                             self.lte_lc_window, windowName, azenqosDatabase
@@ -1446,15 +1454,11 @@ class AzenqosDialog(QDialog):
 
         elif parent == "Data":
             if child == "GSM Data Line Chart":
-                # if hasattr(self, 'wcdma_data_lc') is False:
-                #     self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
-                # openedWindows.append(self.wcdma_data_lc)
-                # #self.mdi.addSubWindow(self.wcdma_data_lc)
-                # self.wcdma_data_lc.show()
-                # self.wcdma_data_lc.activateWindow()
                 linechartWidget = None
                 if hasattr(self, "gsm_data_lc") is True:
                     linechartWindow = self.gsm_data_lc.widget()
+                    del linechartWindow
+                    linechartWindow = None
                     if not linechartWindow:
                         linechartWidget = Ui_GSM_Data_LCwidget(
                             self, windowName, azenqosDatabase
@@ -1480,15 +1484,11 @@ class AzenqosDialog(QDialog):
                     openedWindows.append(linechartWidget)
 
             if child == "WCDMA Data Line Chart":
-                # if hasattr(self, 'wcdma_data_lc') is False:
-                #     self.wcdma_data_lc = Ui_WCDMA_Data_LCwidget(self, windowName, azenqosDatabase)
-                # openedWindows.append(self.wcdma_data_lc)
-                # #self.mdi.addSubWindow(self.wcdma_data_lc)
-                # self.wcdma_data_lc.show()
-                # self.wcdma_data_lc.activateWindow()
                 linechartWidget = None
                 if hasattr(self, "wcdma_data_lc") is True:
                     linechartWindow = self.wcdma_data_lc.widget()
+                    del linechartWindow
+                    linechartWindow = None
                     if not linechartWindow:
                         linechartWidget = Ui_WCDMA_Data_LCwidget(
                             self, windowName, azenqosDatabase
@@ -1618,15 +1618,11 @@ class AzenqosDialog(QDialog):
                     openedWindows.append(tableWidget)
 
             elif child == "LTE Data Line Chart":
-                # if hasattr(self, 'lte_data_lc') is False:
-                #     self.lte_data_lc = Ui_LTE_Data_LCwidget(self, windowName, azenqosDatabase)
-                # openedWindows.append(self.lte_data_lc)
-                # #self.mdi.addSubWindow(self.lte_data_lc)
-                # self.lte_data_lc.show()
-                # self.lte_data_lc.activateWindow()
                 linechartWidget = None
                 if hasattr(self, "lte_data_lc") is True:
                     linechartWindow = self.lte_data_lc.widget()
+                    del linechartWindow
+                    linechartWindow = None
                     if not linechartWindow:
                         linechartWidget = Ui_LTE_Data_LCwidget(
                             self, windowName, azenqosDatabase
@@ -2034,16 +2030,6 @@ class AzenqosDialog(QDialog):
             # sys.exit(0)
 
         # QgsMessageLog.logMessage('Close App')
-        
-
-        # if len(openedWindows) > 0:
-        #     for window in openedWindows:
-        #         window.close()
-        #         window.reject()
-        #         del window
-
-        # del self.databaseUi
-        # del self
 
 
 class GroupArea(QMdiArea):
@@ -2143,7 +2129,8 @@ class TableWindow(QWidget):
         self.tableView.verticalHeader().setFixedWidth(
             self.tableView.verticalHeader().sizeHint().width()
         )
-        self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
+        if self.tableHeader and len(self.tableHeader) > 0:
+            self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
@@ -2560,7 +2547,10 @@ class TableModel(QAbstractTableModel):
             return QVariant()
         elif role != Qt.DisplayRole:
             return QVariant()
-        return QVariant(self.dataSource[index.row()][index.column()])
+        if index:
+            row = index.row()
+            column = index.column()
+            return QVariant(self.dataSource[row][column])
 
     def dataString(self, index):
         return self.dataSource[index.row()][index.column()]

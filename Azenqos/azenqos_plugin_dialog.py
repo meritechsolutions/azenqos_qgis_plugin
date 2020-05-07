@@ -182,7 +182,7 @@ class Ui_DatabaseDialog(QDialog):
             else:
                 self.getLayersFromDb()
                 # if hasattr(self, "layerTask") is False:
-                self.layerTask = LayerTask(u"Add layers", self.uri)
+                self.layerTask = LayerTask(u"Add layers", self.databasePath)
                 QgsApplication.taskManager().addTask(self.layerTask)
                 self.getTimeForSlider()
                 self.hide()

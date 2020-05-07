@@ -118,6 +118,18 @@ class Utils:
             db_file_path = file_folder_path + "/azqdata.db"
             return db_file_path
 
+    def cleanupFile(self, currentPath):
+        file_folder_path = currentPath + "/file"
+        file_list = os.listdir(file_folder_path)
+        try:
+            if len(file_list) > 0:
+                for f in file_list:
+                    os.remove(file_folder_path + "/" + f)
+        except: 
+            return False
+
+        return True
+
     def openConnection(self, db: QSqlDatabase):
         if db:
             if not db.isOpen():

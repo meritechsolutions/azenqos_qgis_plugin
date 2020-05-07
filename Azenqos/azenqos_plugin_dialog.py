@@ -1297,7 +1297,7 @@ class AzenqosDialog(QDialog):
                     openedWindows.append(tableWidget)
 
             elif child == "LTE Line Chart":
-               linechartWidget = None
+                linechartWidget = None
                 if hasattr(self, "lte_lc_window") is True:
                     linechartWindow = self.lte_lc_window.widget()
                     del linechartWindow
@@ -2014,13 +2014,14 @@ class AzenqosDialog(QDialog):
             # del self
             # sys.exit(0)
 
-        QgsMessageLog.logMessage("Close App")
+            QgsMessageLog.logMessage("Close App")
 
-        if len(openedWindows) > 0:
-            for window in openedWindows:
-                window.close()
-                window.reject()
-                del window
+            if len(openedWindows) > 0:
+                for window in openedWindows:
+                    window.close()
+                    window.reject()
+                    del window
+
 
 class GroupArea(QMdiArea):
     def __init__(self):

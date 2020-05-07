@@ -1,3 +1,12 @@
+from PyQt5.QtWidgets import *
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
+from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
+from PyQt5.QtGui import *
+from qgis.core import *
+from qgis.utils import *
+from qgis.gui import *
+
 class AzenqosPointTool(QgsMapTool):
     def __init__(self, canvas):
         QgsMapTool.__init__(self, canvas)

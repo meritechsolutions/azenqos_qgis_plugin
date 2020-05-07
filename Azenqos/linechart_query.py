@@ -1,4 +1,5 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+import numpy as np
 
 
 class LineChartQueryNew:
@@ -236,7 +237,7 @@ class LineChartQueryNew:
         return self.result
 
     def valueValidation(self, value):
-        validatedValue = 0.00
+        validatedValue = np.nan
         if value:
             validatedValue = value
         return validatedValue

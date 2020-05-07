@@ -5,6 +5,7 @@ from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import pyqtgraph as pg
+import numpy as np
 from .globalutils import Utils
 from .linechart_query import LineChartQueryNew
 
@@ -1493,7 +1494,7 @@ class LineChart(QWidget):
         self.canvas.axes = self.canvas.addPlot(axisItems={"bottom": self.stringaxis})
         self.setLayout(vertical_layout)
         self.canvas.axes.hideButtons()
-        self.canvas.axes.disableAutoRange()
+        # self.canvas.axes.disableAutoRange()
         self.canvas.axes.showGrid(y=True)
         self.canvas.axes.setMouseEnabled(x=True, y=False)
         self.canvas.axes.scene().sigMouseClicked.connect(self.get_table_data)
@@ -1546,14 +1547,19 @@ class LineChart(QWidget):
     def get_table_data(self, event):
         Chart_datalist = []
         mousePoint = self.canvas.axes.vb.mapSceneToView(event.pos())
-        x, y = int(mousePoint.x()), mousePoint.y()
+        x, y = round(mousePoint.x()), mousePoint.y()
+        dataIndex = None
 
         for dict_item in self.result.items():
             keyStr = dict_item[0]
             if not keyStr.endswith("time"):
                 Chart_datalist.append(dict_item[1][x])
+
         for row in range(len(Chart_datalist)):
-            Value = round(Chart_datalist[row], 3)
+            if np.isnan(Chart_datalist[row]):
+                Value = "-"
+            else: 
+                Value = round(Chart_datalist[row], 3)
             self.tablewidget.item(row, 1).setText(str(Value))
 
     # Create GSM Line Chart
@@ -1561,6 +1567,8 @@ class LineChart(QWidget):
         # Open Database And Query
         ChartQuery = LineChartQueryNew(self.database)
         self.result = ChartQuery.getGsm()
+        overallMax = []
+        overallMin = []
         for index in range(len(self.result["time"])):
             self.Date.append(self.result["time"][index].split(" ")[0])
             self.Time.append(self.result["time"][index].split(" ")[1])
@@ -1577,10 +1585,12 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1]
+                        x=list(self.xdict.keys()), y=data[1], connect='finite'
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
+                    overallMax.append(np.nanmax(data[1]))
+                    overallMin.append(np.nanmin(data[1]))
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
@@ -1588,10 +1598,11 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(-120, 7)
+            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
+            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
 
             # Call Event Function
             pick = [
@@ -1616,6 +1627,8 @@ class LineChart(QWidget):
         # )
         ChartQuery = LineChartQueryNew(self.database)
         self.result = ChartQuery.getGsmData()
+        overallMax = []
+        overallMin = []
         for index in range(len(self.result["time"])):
             self.Date.append(self.result["time"][index].split(" ")[0])
             self.Time.append(self.result["time"][index].split(" ")[1])
@@ -1632,10 +1645,12 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1]
+                        x=list(self.xdict.keys()), y=data[1], connect='finite'
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
+                    overallMax.append(np.nanmax(data[1]))
+                    overallMin.append(np.nanmin(data[1]))
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
@@ -1643,10 +1658,12 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(0, 150000)
+            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
+            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
+
 
             # Call Event Function
             pick = [
@@ -1677,7 +1694,8 @@ class LineChart(QWidget):
         
         ChartQuery = LineChartQueryNew(self.database)
         self.result = ChartQuery.getWcdma()
-
+        overallMax = []
+        overallMin = []
         for index in range(len(self.result["time"])):
             self.Date.append(self.result["time"][index].split(" ")[0])
             self.Time.append(self.result["time"][index].split(" ")[1])
@@ -1695,10 +1713,12 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1]
+                        x=list(self.xdict.keys()), y=data[1], connect='finite'
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
+                    overallMax.append(np.nanmax(data[1]))
+                    overallMin.append(np.nanmin(data[1]))
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
@@ -1706,10 +1726,12 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(-140, 5000)
+            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
+            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
+
 
             # Call Event Function
             pick = [
@@ -1740,7 +1762,8 @@ class LineChart(QWidget):
         
         ChartQuery = LineChartQueryNew(self.database)
         self.result = ChartQuery.getWcdmaData()
-
+        overallMax = []
+        overallMin = []
         for index in range(len(self.result["time"])):
             self.Date.append(self.result["time"][index].split(" ")[0])
             self.Time.append(self.result["time"][index].split(" ")[1])
@@ -1758,10 +1781,12 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1]
+                        x=list(self.xdict.keys()), y=data[1], connect='finite'
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
+                    overallMax.append(np.nanmax(data[1]))
+                    overallMin.append(np.nanmin(data[1]))
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
@@ -1769,10 +1794,12 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(0, 150000)
+            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
+            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
+
 
             # Call Event Function
             pick = [
@@ -1798,6 +1825,8 @@ class LineChart(QWidget):
         # )
         ChartQuery = LineChartQueryNew(self.database)
         self.result = ChartQuery.getLte()
+        overallMax = []
+        overallMin = []
         for index in range(len(self.result["time"])):
             self.Date.append(self.result["time"][index].split(" ")[0])
             self.Time.append(self.result["time"][index].split(" ")[1])
@@ -1814,10 +1843,12 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1]
+                        x=list(self.xdict.keys()), y=data[1], connect='finite'
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
+                    overallMax.append(np.nanmax(data[1]))
+                    overallMin.append(np.nanmin(data[1]))
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
@@ -1825,10 +1856,12 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(0, 30)
+            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
+            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
+
 
             # Call Event Function
             pick = [
@@ -1856,6 +1889,8 @@ class LineChart(QWidget):
         # self.result = ChartQuery.getData()
         ChartQuery = LineChartQueryNew(self.database)
         self.result = ChartQuery.getLteData()
+        overallMax = []
+        overallMin = []
         for index in range(len(self.result["time"])):
             self.Date.append(self.result["time"][index].split(" ")[0])
             self.Time.append(self.result["time"][index].split(" ")[1])
@@ -1873,10 +1908,12 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1]
+                        x=list(self.xdict.keys()), y=data[1], connect='finite'
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
+                    overallMax.append(np.nanmax(data[1]))
+                    overallMin.append(np.nanmin(data[1]))
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
@@ -1884,10 +1921,12 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(0, 150000)
+            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
+            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
+
 
             # Call Event Function
             pick = [
@@ -1997,7 +2036,7 @@ class LineChartQuery:
         return self.result
 
     def valueValidation(self, value):
-        validatedValue = 0.00
+        validatedValue = np.nan
         if value:
             validatedValue = value
         return validatedValue

@@ -2724,9 +2724,9 @@ class LayerTask(QgsTask):
         global vLayers
         if result:
             self.addMapToQgis()
-            # for vlayer in vLayers:
-            #     QgsProject.instance().addMapLayer(vlayer)
-            #     vlayer = None
+            for vlayer in vLayers:
+                QgsProject.instance().addMapLayer(vlayer)
+                vlayer = None
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"

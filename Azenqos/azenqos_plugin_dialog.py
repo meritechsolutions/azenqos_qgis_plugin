@@ -2016,11 +2016,11 @@ class AzenqosDialog(QDialog):
 
             QgsMessageLog.logMessage("Close App")
 
-            if len(openedWindows) > 0:
-                for window in openedWindows:
-                    window.close()
-                    window.reject()
-                    del window
+            # if len(openedWindows) > 0:
+            #     for window in openedWindows:
+            #         window.close()
+            #         window.reject()
+            #         del window
 
 
 class GroupArea(QMdiArea):
@@ -2698,7 +2698,7 @@ class LayerTask(QgsTask):
             QgsMessageLog.logMessage("Invalid layer")
 
     def run(self):
-        ptvsd.debug_this_thread()
+        # ptvsd.debug_this_thread()
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         global allLayers
@@ -2758,7 +2758,7 @@ class QuitTask(QgsTask):
         self.exception = None
 
     def run(self):
-        ptvsd.debug_this_thread()
+        # ptvsd.debug_this_thread()
         QgsMessageLog.logMessage(
             "[-- Start Removing Dependencies --]", tag="Processing"
         )
@@ -2778,7 +2778,7 @@ class QuitTask(QgsTask):
         return True
 
     def finished(self, result):
-        ptvsd.debug_this_thread()
+        # ptvsd.debug_this_thread()
         global allLayers
         global vLayers
         if result:
@@ -2795,10 +2795,10 @@ class QuitTask(QgsTask):
             # QgsProject.instance().clear()
             allLayers = []
             vLayers = []
-            isSuccess = False
-            while not isSuccess:
-                time.sleep(0.5)
-                isSuccess = Utils().cleanupFile(CURRENT_PATH)
+            # isSuccess = False
+            # while not isSuccess:
+            #     time.sleep(0.5)
+            #     isSuccess = Utils().cleanupFile(CURRENT_PATH)
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"

@@ -12,26 +12,127 @@ class LteDataQuery:
         self.openConnection()
         dataList = []
         condition = ""
+        # add Time for first row
+        if self.timeFilter:
+            dataList.append(["Time", self.timeFilter, "", ""])
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        elementDictList = [
+            {
+                "name": "Band",
+                "column": "lte_band_1,lte_band_2,lte_band_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "E-ARFCN",
+                "column": "lte_earfcn_1,lte_earfcn_2,lte_earfcn_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "Serving PCI",
+                "column": "lte_physical_cell_id_1,lte_physical_cell_id_2,lte_physical_cell_id_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "Serving RSRP[0]",
+                "column": "lte_inst_rsrp_rx0_1,lte_inst_rsrp_rx0_2,lte_inst_rsrp_rx0_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "Serving RSRP[1]",
+                "column": "lte_inst_rsrp_rx1_1,lte_inst_rsrp_rx1_2,lte_inst_rsrp_rx1_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "Serving RSRP",
+                "column": "lte_inst_rsrp_1,lte_inst_rsrp_2,lte_inst_rsrp_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "Serving RSRQ[0]",
+                "column": "lte_inst_rsrq_rx0_1,lte_inst_rsrq_rx0_2,lte_inst_rsrq_rx0_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "Serving RSRQ[1]",
+                "column": "lte_inst_rsrq_rx1_1,lte_inst_rsrq_rx1_2,lte_inst_rsrq_rx1_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "Serving RSRQ",
+                "column": "lte_inst_rsrq_1,lte_inst_rsrq_2,lte_inst_rsrq_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "SINR Rx[0]",
+                "column": "lte_sinr_rx0_1,lte_sinr_rx0_2,lte_sinr_rx0_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "SINR Rx[1]",
+                "column": "lte_sinr_rx1_1,lte_sinr_rx1_2,lte_sinr_rx1_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "SINR",
+                "column": "lte_sinr_1,lte_sinr_2,lte_sinr_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "RSSI Rx[0]",
+                "column": "lte_inst_rssi_rx0_1,lte_inst_rssi_rx0_2,lte_inst_rssi_rx0_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "RSSI Rx[1]",
+                "column": "lte_inst_rssi_rx1_1,lte_inst_rssi_rx1_2,lte_inst_rssi_rx1_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "RSSI",
+                "column": "lte_inst_rssi_1,lte_inst_rssi_2,lte_inst_rssi_3",
+                "table": "lte_cell_meas",
+            },
+            {
+                "name": "BLER",
+                "column": "lte_bler_1,lte_bler_2,lte_bler_3",
+                "table": "lte_l1_dl_tp",
+            },
+            {
+                "name": "CQI CW[0]",
+                "column": "lte_cqi_cw0_1,lte_cqi_cw0_2,lte_cqi_cw0_3",
+                "table": "lte_cqi",
+            },
+            {
+                "name": "CQI CW[1]",
+                "column": "lte_cqi_cw1_1,lte_cqi_cw1_2,lte_cqi_cw1_3",
+                "table": "lte_cqi",
+            },
+        ]
+        for dic in elementDictList:
+            name = dic["name"]
+            column = dic["column"]
+            table = dic["table"]
+            query = QSqlQuery()
+            if column != "" and table != "":
+                queryString = """SELECT %s
+                            FROM %s
+                            %s
+                            ORDER BY lrrs.time DESC
+                            LIMIT 1""" % (
+                    column,
+                    table,
+                    condition,
+                )
+                query.exec_(queryString)
+                while query.next():
+                    dataList.append(
+                        [name, query.value(0), query.value(1), query.value(2)]
+                    )
+                else:
+                    dataList.append([name, "", "", ""])
+            else:
+                dataList.append([name, "", "", ""])
         fieldsList = [
-            "Time",
-            "Band",
-            "E-ARFCN",
-            "Serving PCI",
-            "Serving RSRP[0]",
-            "Serving RSRP[1]",
-            "Serving RSRP",
-            "Serving RSRQ[0]",
-            "Serving RSRQ[1]",
-            "Serving RSRQ",
-            "SINR Rx[0]",
-            "SINR Rx[1]",
-            "SINR",
-            "RSSI Rx[0]",
-            "RSSI Rx[1]",
-            "RSSI",
-            "BLER",
-            "CQI CW[0]",
-            "CQI CW[1]",
             "Tx Power",
             "PUCCH TxPower (dBm)",
             "PUSCH TxPower (dBm)",
@@ -70,10 +171,17 @@ class LteDataQuery:
             "DedBearer QCI",
         ]
 
-        selectedColumns = """lcm.time as Time, lcm.lte_band_1 as Band, lcm.lte_earfcn_1 as 'E-ARFCN', lcm.lte_physical_cell_id_1 as 'Serving PCI',
-                                lcm.lte_inst_rsrp_rx0_1 as 'Serving RSRP[0]', lcm.lte_inst_rsrp_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrp_1 as 'Serving RSRP', lcm.lte_inst_rsrq_rx0_1 as 'Serving RSRQ[0]', lcm.lte_inst_rsrq_rx1_1 as 'Serving RSRP[1]', lcm.lte_inst_rsrq_1 as 'Serving RSRQ', lcm.lte_sinr_rx0_1 as 'SINR Rx[0]', lcm.lte_sinr_rx1_1 as 'SINR Rx[1]', lcm.lte_sinr_1 as 'SINR', lcm.lte_inst_rssi_rx0_1 as 'RSSI Rx[0]', lcm.lte_inst_rssi_rx1_1 as 'RSSI Rx[1]', lcm.lte_inst_rssi_1 as 'RSSI', lldt.lte_bler_1 as 'BLER', lc.lte_cqi_cw0_1 as 'CQI CW[0]', lc.lte_cqi_cw1_1 as 'CQI CW[1]', ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)', lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State', les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo', lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
-                                lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID', lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
-                                lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)', '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI', lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment', ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', '' as 'DedBearer QCI'"""
+        selectedColumns = """ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)',
+                            lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State',
+                            les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo',
+                            lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
+                            lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', 
+                            lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID',
+                            lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
+                            lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)',
+                            '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI',
+                            lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment',
+                             ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', '' as 'DedBearer QCI'"""
 
         if self.timeFilter:
             condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
@@ -107,8 +215,8 @@ class LteDataQuery:
                 if query.value(index) != "":
                     value = query.value(index)
                 dataList.append([columnName, value, "", ""])
-        if len(dataList) == 0:
-            dataList = self.defaultData(fieldsList)
+        else:
+            dataList = self.defaultData(fieldsList, dataList)
         self.closeConnection()
         return dataList
 
@@ -130,9 +238,10 @@ class LteDataQuery:
         typeHeader["serving"][0] = self.timeFilter
         dataList.append(typeHeader["serving"])
 
-        queryString = """SELECT lcm.lte_earfcn_1, lcm.lte_band_1, lcm.lte_physical_cell_id_1, lcm.lte_inst_rsrp_1,
+        queryString = """SELECT lcm.lte_earfcn_1, lsci.lte_serv_cell_info_band, lsci.lte_serv_cell_info_pci, lcm.lte_inst_rsrp_1,
                         lcm.lte_inst_rsrq_1
                         FROM lte_cell_meas as lcm
+                        LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
                         %s
                         ORDER BY lcm.time DESC
                         LIMIT 1""" % (
@@ -171,23 +280,21 @@ class LteDataQuery:
             )
             query = QSqlQuery()
             query.exec_(queryString)
-            rowCount = query.record().count()
-            if rowCount > 0:
-                while query.next():
-                    if query.value(0):
-                        if neighbor == 1:
-                            dataList.append(typeHeader["neigh"])
-                        neighCell = [
-                            "",
-                            query.value(0),
-                            query.value(1),
-                            query.value(2),
-                            query.value(3),
-                            query.value(4),
-                        ]
-                        dataList.append(neighCell)
-                    else:
-                        break
+            while query.next():
+                if query.value(0):
+                    if neighbor == 1:
+                        dataList.append(typeHeader["neigh"])
+                    neighCell = [
+                        "",
+                        query.value(0),
+                        query.value(1),
+                        query.value(2),
+                        query.value(3),
+                        query.value(4),
+                    ]
+                    dataList.append(neighCell)
+                else:
+                    break
             else:
                 dataList.append(emptyRow)
         self.closeConnection()
@@ -263,15 +370,12 @@ class LteDataQuery:
         )
         query = QSqlQuery()
         query.exec_(queryString)
-        rowCount = query.record().count()
-        if rowCount > 0:
-
-            while query.next():
-                for field in range(len(pdschFields)):
-                    if query.value(field):
-                        dataList.append([pdschFields[field], query.value(field)])
-                    else:
-                        dataList.append([pdschFields[field], ""])
+        while query.next():
+            for field in range(len(pdschFields)):
+                if query.value(field):
+                    dataList.append([pdschFields[field], query.value(field)])
+                else:
+                    dataList.append([pdschFields[field], ""])
         self.closeConnection()
         return dataList
 
@@ -318,23 +422,18 @@ class LteDataQuery:
             )
             query = QSqlQuery()
             query.exec_(queryString)
-            rowCount = query.record().count()
-            if rowCount > 0:
-                while query.next():
-                    if query.value(0):
-                        if bearer == 1:
-                            dataList.append(
-                                ["Mode", "Type", "RB-ID", "Index", "TP Mbps"]
-                            )
-                        dataList.append(
-                            [
-                                query.value(0),
-                                query.value(1),
-                                query.value(2),
-                                query.value(3),
-                                query.value(4),
-                            ]
-                        )
+            while query.next():
+                if bearer == 1:
+                    dataList.append(["Mode", "Type", "RB-ID", "Index", "TP Mbps"])
+                dataList.append(
+                    [
+                        query.value(0),
+                        query.value(1),
+                        query.value(2),
+                        query.value(3),
+                        query.value(4),
+                    ]
+                )
         self.closeConnection()
         return dataList
 
@@ -380,34 +479,30 @@ class LteDataQuery:
         )
         query = QSqlQuery()
         query.exec_(queryString)
-        rowCount = query.record().count()
-        if rowCount > 0:
-            while query.next():
-                for field in range(len(volteFields)):
-                    if field == 0:
-                        dataList.append([volteFields[field], self.timeFilter])
-                    else:
-                        if query.value(field):
-                            dataList.append([volteFields[field], query.value(field)])
-                        else:
-                            dataList.append([volteFields[field], ""])
-            if len(dataList) == 0:
-                for field in range(len(volteFields)):
-                    if field == 0:
-                        dataList.append([volteFields[field], self.timeFilter])
+        while query.next():
+            for field in range(len(volteFields)):
+                if field == 0:
+                    dataList.append([volteFields[field], self.timeFilter])
+                else:
+                    if query.value(field):
+                        dataList.append([volteFields[field], query.value(field)])
                     else:
                         dataList.append([volteFields[field], ""])
+        if len(dataList) == 0:
+            for field in range(len(volteFields)):
+                if field == 0:
+                    dataList.append([volteFields[field], self.timeFilter])
+                else:
+                    dataList.append([volteFields[field], ""])
         self.closeConnection()
         return dataList
 
-    def defaultData(self, fieldsList):
+    def defaultData(self, fieldsList, dataList):
         fieldCount = len(fieldsList)
         if fieldCount > 0:
-            dataList = []
             for index in range(fieldCount):
                 columnName = fieldsList[index]
-                value = ""
-                dataList.append([columnName, value, "", ""])
+                dataList.append([columnName, "", "", ""])
             return dataList
 
     def openConnection(self):

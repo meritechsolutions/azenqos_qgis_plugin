@@ -27,7 +27,8 @@ class CdmaEvdoQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
         query = QSqlQuery()
-        queryString = """SELECT time, cdma_cell_pn, cdma_ecio, cdma_rx_power, cdma_tx_power, cdma_fer, cdma_channel, cdma_band_class, cdma_n_aset_cells                   FROM cdma
+        queryString = """SELECT time, cdma_cell_pn, cdma_ecio, cdma_rx_power, cdma_tx_power, cdma_fer, cdma_channel, cdma_band_class, cdma_n_aset_cells
+                        FROM cdma
                         %s
                         ORDER BY time DESC
                         LIMIT 1""" % (
@@ -68,14 +69,9 @@ class CdmaEvdoQuery:
             )
             query = QSqlQuery()
             query.exec_(queryString)
-            rowCount = query.record().count()
-            if rowCount > 0:
-                while query.next():
-                    if query.value(0):
-                        neighCell = ["", query.value(0), query.value(1), query.value(2)]
-                        dataList.append(neighCell)
-                    else:
-                        break
+            while query.next():
+                neighCell = ["", query.value(0), query.value(1), query.value(2)]
+                dataList.append(neighCell)
             else:
                 dataList.append(["", "", "", ""])
         self.closeConnection()

@@ -380,6 +380,11 @@ class AzenqosDialog(QDialog):
         self.importDatabaseBtn.setGeometry(QtCore.QRect(300, 140, 181, 32))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
+        # Map tool Button
+        self.maptool = QPushButton(AzenqosDialog)
+        self.maptool.setGeometry(QtCore.QRect(300, 180, 181, 32))
+        self.maptool.setObjectName("maptool")
+
         # Filter Button
         # self.filterBtn = QPushButton(AzenqosDialog)
         # self.filterBtn.setGeometry(QtCore.QRect(300, 190, 181, 32))
@@ -390,6 +395,7 @@ class AzenqosDialog(QDialog):
 
         timeSlider.valueChanged.connect(self.timeChange)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
+        self.maptool.clicked.connect(self.setMapTool)
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -405,6 +411,14 @@ class AzenqosDialog(QDialog):
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
+        self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
+        
+        # icon_path = ":/plugins/azenqos_plugin/crosshair.png"
+        # pixmap = QPixmap(icon_path)
+        # ButtonIcon = QIcon(pixmap)
+        # self.maptool.setIcon(ButtonIcon)
+        # self.maptool.setIconSize(pixmap.rect().size())
+
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
         self.speedLabel.setText(_translate("AzenqosDialog", "Speed:"))
@@ -542,6 +556,12 @@ class AzenqosDialog(QDialog):
         self.playSpeed.setDisabled(True)
         self.timeSliderThread.changeValue.connect(self.setTimeValue)
         self.timeSliderThread.start()
+
+    def setMapTool(self):
+        self.clickTool = QgsMapToolEmitPoint(self.canvas)
+        self.canvas.setMapTool(self.clickTool)
+        self.clickTool.canvasClicked.connect(self.clickCanvas)
+
 
     def pauseTime(self):
         global isSliderPlay

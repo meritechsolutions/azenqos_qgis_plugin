@@ -578,8 +578,6 @@ class AzenqosDialog(QDialog):
         selectedTime = None
         clearAllSelectedFeatures()
 
-        # self.canvas.setCenter(point)
-
         if layer.type() == layer.VectorLayer:
             if layer.featureCount() == 0:
                 # There are no features - skip
@@ -612,9 +610,8 @@ class AzenqosDialog(QDialog):
                 timeSlider.setValue(timeSliderValue)
                 timeSlider.update()
 
-            # self.canvas.zoomToSelected()
-
             self.canvas.refreshAllLayers()
+
 
     def clickCanvasWorker(self, point, button):
         worker = Worker(self.clickCanvas(point, button))

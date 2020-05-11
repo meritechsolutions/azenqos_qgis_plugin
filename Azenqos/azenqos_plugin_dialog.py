@@ -644,6 +644,11 @@ class AzenqosDialog(QDialog):
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
+        self.timeSliderThread.set(value)
+        currentTimestamp = timestampValue
+        currentDateTimeString = "%s" % (
+            datetime.datetime.fromtimestamp(currentTimestamp)
+        )
         if len(openedWindows) > 0:
             for window in openedWindows:
                 if not window.title in linechartWindowname:
@@ -658,11 +663,7 @@ class AzenqosDialog(QDialog):
             QgsMessageLog.logMessage("[-- have tableList --]")
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
-        self.timeSliderThread.set(value)
-        currentTimestamp = timestampValue
-        currentDateTimeString = "%s" % (
-            datetime.datetime.fromtimestamp(currentTimestamp)
-        )
+
 
     # def threadComplete(self):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
@@ -2750,7 +2751,7 @@ class QuitTask(QgsTask):
         self.exception = None
 
     def run(self):
-        # ptvsd.debug_this_thread()
+        #ptvsd.debug_this_thread()
         QgsMessageLog.logMessage(
             "[-- Start Removing Dependencies --]", tag="Processing"
         )

@@ -2681,8 +2681,7 @@ class TimeSliderThread(QThread):
 class LayerTask(QgsTask):
     def __init__(self, desc, databasePath):
         QgsTask.__init__(self, desc)
-        self.uri = QgsDataSourceUri()
-        self.uri.setDatabase(databasePath)
+        self.dbPath = databasePath
         self.start_time = None
         self.desc = desc
         self.exception = None
@@ -2698,41 +2697,39 @@ class LayerTask(QgsTask):
             QgsMessageLog.logMessage("Invalid layer")
 
     def run(self):
-        # ptvsd.debug_this_thread()
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         global allLayers
         global vLayers
-        allLayers.sort(reverse=True)
-        for tableName in allLayers:
-            self.uri.setDataSource("", tableName, "geom")
-            vlayer = QgsVectorLayer(self.uri.uri(), tableName, "spatialite")
-            if vlayer:
-                symbol_renderer = vlayer.renderer()
-                if symbol_renderer:
-                    symbol = symbol_renderer.symbol()
-                    symbol.setColor(QColor(125, 139, 142))
-                    symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
-                    symbol.setSize(2.4)
-                iface.layerTreeView().refreshLayerSymbology(vlayer.id())
-                vlayer.triggerRepaint()
-                vLayers.append(vlayer)
-                vlayer = None
+
         return True
 
     def finished(self, result):
         global vLayers
         if result:
             self.addMapToQgis()
-            for vlayer in vLayers:
-                QgsProject.instance().addMapLayer(vlayer)
-                vlayer = None
+            uri = QgsDataSourceUri()
+            uri.setDatabase(self.dbPath)
+            allLayers.sort(reverse=True)
+            geom_column = "geom"
+            for tableName in allLayers:
+                uri.setDataSource("", tableName, geom_column)
+                vlayer = iface.addVectorLayer(uri.uri(), tableName, "spatialite")
+                if vlayer:
+                    symbol_renderer = vlayer.renderer()
+                    if symbol_renderer:
+                        symbol = symbol_renderer.symbol()
+                        symbol.setColor(QColor(125, 139, 142))
+                        symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
+                        symbol.setSize(2.4)
+                    iface.layerTreeView().refreshLayerSymbology(vlayer.id())
+                    vlayer.triggerRepaint()
+                    vlayer = None
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
             )
             QgsMessageLog.logMessage("[-- End add layers --]", tag="Processing")
-            self.uri.setDatabase("")
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(
@@ -2766,6 +2763,10 @@ class QuitTask(QgsTask):
         global azenqosDatabase
         global allLayers
         global vLayers
+        global h_list
+
+        for hi in h_list:
+            hi.hide()
 
         azenqosDatabase.close()
         QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
@@ -2792,7 +2793,7 @@ class QuitTask(QgsTask):
                 layer = None
 
             QgsProject.instance().reloadAllLayers()
-            # QgsProject.instance().clear()
+            QgsProject.instance().clear()
             allLayers = []
             vLayers = []
             # isSuccess = False

@@ -1,7 +1,6 @@
 from PyQt5.QtSql import QSql, QSqlDatabase, QSqlQuery
 import csv, inspect, os
 from zipfile import ZipFile
-from dataclasses import dataclass
 
 db = None
 elementData = []
@@ -125,7 +124,7 @@ class Utils:
             if len(file_list) > 0:
                 for f in file_list:
                     os.remove(file_folder_path + "/" + f)
-        except: 
+        except:
             return False
 
         return True

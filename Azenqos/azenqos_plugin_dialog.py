@@ -46,7 +46,6 @@ from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
-from .azq_maptool import AzenqosPointTool
 
 azenqosDatabase = None
 minTimeValue = None
@@ -75,7 +74,6 @@ linechartWindowname = [
 ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-vLayers = []
 
 
 def clearAllSelectedFeatures():
@@ -580,15 +578,13 @@ class AzenqosDialog(QDialog):
         selectedTime = None
         clearAllSelectedFeatures()
 
-        self.canvas.setCenter(point)
+        # self.canvas.setCenter(point)
 
         if layer.type() == layer.VectorLayer:
             if layer.featureCount() == 0:
                 # There are no features - skip
                 return
 
-            shortestDistance = float("inf")
-            closestFeatureId = -1
             # Loop through all features in the layer
             for f in layer.getFeatures():
                 distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
@@ -602,7 +598,7 @@ class AzenqosDialog(QDialog):
                 # Looks like no vector layers were found - do nothing
                 return
 
-                # Sort the layer information by shortest distance
+            # Sort the layer information by shortest distance
             layerData.sort(key=lambda element: element[2])
 
             for (layer, closestFeatureId, distance, time) in layerData:
@@ -615,6 +611,8 @@ class AzenqosDialog(QDialog):
                 timeSliderValue = sliderLength - (maxTimeValue - selectedTimestamp)
                 timeSlider.setValue(timeSliderValue)
                 timeSlider.update()
+
+            # self.canvas.zoomToSelected()
 
             self.canvas.refreshAllLayers()
 
@@ -2686,6 +2684,7 @@ class LayerTask(QgsTask):
         self.start_time = None
         self.desc = desc
         self.exception = None
+        self.vLayers = []
 
     def addMapToQgis(self):
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
@@ -2702,7 +2701,6 @@ class LayerTask(QgsTask):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         global allLayers
-        global vLayers
         allLayers.sort(reverse=True)
         for tableName in allLayers:
             self.uri.setDataSource("", tableName, "geom")
@@ -2716,15 +2714,14 @@ class LayerTask(QgsTask):
                     symbol.setSize(2.4)
                 iface.layerTreeView().refreshLayerSymbology(vlayer.id())
                 vlayer.triggerRepaint()
-                vLayers.append(vlayer)
+                self.vLayers.append(vlayer)
                 vlayer = None
         return True
 
     def finished(self, result):
-        global vLayers
         if result:
             self.addMapToQgis()
-            for vlayer in vLayers:
+            for vlayer in self.vLayers:
                 QgsProject.instance().addMapLayer(vlayer)
                 vlayer = None
             elapsed_time = time.time() - self.start_time
@@ -2733,6 +2730,7 @@ class LayerTask(QgsTask):
             )
             QgsMessageLog.logMessage("[-- End add layers --]", tag="Processing")
             self.uri.setDatabase("")
+            self.vLayers = []
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(
@@ -2765,7 +2763,6 @@ class QuitTask(QgsTask):
         self.start_time = time.time()
         global azenqosDatabase
         global allLayers
-        global vLayers
 
         azenqosDatabase.close()
         QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
@@ -2780,7 +2777,6 @@ class QuitTask(QgsTask):
     def finished(self, result):
         # ptvsd.debug_this_thread()
         global allLayers
-        global vLayers
         if result:
             project = QgsProject.instance()
             for (id_l, layer) in project.mapLayers().items():
@@ -2794,7 +2790,6 @@ class QuitTask(QgsTask):
             QgsProject.instance().reloadAllLayers()
             # QgsProject.instance().clear()
             allLayers = []
-            vLayers = []
             # isSuccess = False
             # while not isSuccess:
             #     time.sleep(0.5)

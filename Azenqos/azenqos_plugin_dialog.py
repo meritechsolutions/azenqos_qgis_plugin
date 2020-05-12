@@ -314,6 +314,11 @@ class AzenqosDialog(QDialog):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
+        self.canvas.renderComplete.connect(self.zoomToActiveLayer)
+
+    def zoomToActiveLayer(self):
+        iface.zoomToActiveLayer()
+        self.canvas.renderComplete.disconnect(self.zoomToActiveLayer)
 
     def selectChanged(self):
         global h_list
@@ -337,7 +342,8 @@ class AzenqosDialog(QDialog):
 
                 # write the object to the list
                 h_list.append(h)
-            iface.mapCanvas().refresh()
+        
+        iface.mapCanvas().refresh()
 
     def setupUi(self, AzenqosDialog):
         global timeSlider
@@ -368,7 +374,8 @@ class AzenqosDialog(QDialog):
         self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
         self.speedLabel.setObjectName("Speed")
         self.playSpeed = QLineEdit(AzenqosDialog)
-        self.onlyDouble = QDoubleValidator(float(0), float(20), 3, self.playSpeed)
+        self.onlyDouble = QDoubleValidator(0.0, 5.0 , 2, self.playSpeed)
+        self.onlyDouble.setNotation(QDoubleValidator.StandardNotation)
         self.playSpeed.setValidator(self.onlyDouble)
         self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
         self.playSpeed.setText("{:.2f}".format(1))
@@ -594,7 +601,7 @@ class AzenqosDialog(QDialog):
 
     def setPlaySpeed(self, value):
         global fastForwardValue, slowDownValue
-        value = float(value) if value != "" else float(1)
+        value = float(1) if value == "" else float(value)
         if value >= float(1):
             fastForwardValue = value
             slowDownValue = 1
@@ -760,8 +767,8 @@ class AzenqosDialog(QDialog):
             if layer is not None:
 
                 if len(selected_ids) > 0:
-                    clearAllSelectedFeatures()
-                    layer.selectByIds(selected_ids, QgsVectorLayer.AddToSelection)
+                    # clearAllSelectedFeatures()
+                    layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
                     # ext = layer.extent()
                     # xmin = ext.xMinimum()
                     # xmax = ext.xMaximum()
@@ -771,7 +778,6 @@ class AzenqosDialog(QDialog):
                     # iface.mapCanvas().setExtent(zoomRectangle)
                     # box = layer.boundingBoxOfSelected()
                     # iface.mapCanvas().setExtent(box)
-                    iface.mapCanvas().setSelectionColor(QColor("yellow"))
                     # iface.mapCanvas().zoomToSelected()
                     # iface.mapCanvas().zoomScale(5000.0)
                     # iface.mapCanvas().refresh()
@@ -2761,7 +2767,9 @@ class LayerTask(QgsTask):
                         symbol.setSize(2.4)
                     iface.layerTreeView().refreshLayerSymbology(vlayer.id())
                     vlayer.triggerRepaint()
-                    vlayer = None
+
+            iface.mapCanvas().setSelectionColor(QColor("yellow"))
+
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
@@ -2789,7 +2797,7 @@ class QuitTask(QgsTask):
         QgsTask.__init__(self, desc)
         self.start_time = None
         self.desc = desc
-        self.exception = None
+        self.exception = None        
 
     def run(self):
         QgsMessageLog.logMessage(

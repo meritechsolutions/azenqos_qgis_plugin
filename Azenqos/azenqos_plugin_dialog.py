@@ -596,7 +596,7 @@ class AzenqosDialog(QDialog):
         layerData = []
         layer = iface.activeLayer()
         selectedTime = None
-        clearAllSelectedFeatures()
+        # clearAllSelectedFeatures()
 
         if layer.type() == layer.VectorLayer:
             if layer.featureCount() == 0:
@@ -630,7 +630,7 @@ class AzenqosDialog(QDialog):
                 timeSlider.setValue(timeSliderValue)
                 timeSlider.update()
 
-            self.canvas.refreshAllLayers()
+            # self.canvas.refreshAllLayers()
 
 
     def clickCanvasWorker(self, point, button):

@@ -342,7 +342,7 @@ class AzenqosDialog(QDialog):
 
                 # write the object to the list
                 h_list.append(h)
-        
+
         iface.mapCanvas().refresh()
 
     def setupUi(self, AzenqosDialog):
@@ -374,7 +374,7 @@ class AzenqosDialog(QDialog):
         self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
         self.speedLabel.setObjectName("Speed")
         self.playSpeed = QLineEdit(AzenqosDialog)
-        self.onlyDouble = QDoubleValidator(0.0, 5.0 , 2, self.playSpeed)
+        self.onlyDouble = QDoubleValidator(0.0, 5.0, 2, self.playSpeed)
         self.onlyDouble.setNotation(QDoubleValidator.StandardNotation)
         self.playSpeed.setValidator(self.onlyDouble)
         self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
@@ -2797,7 +2797,7 @@ class QuitTask(QgsTask):
         QgsTask.__init__(self, desc)
         self.start_time = None
         self.desc = desc
-        self.exception = None        
+        self.exception = None
 
     def run(self):
         QgsMessageLog.logMessage(

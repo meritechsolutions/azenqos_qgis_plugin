@@ -2,9 +2,9 @@
 
 # Require Software:
 
-1. Python 3.6x (https://www.python.org/downloads/release/python-369/)
+1. Python 3.6x + (https://www.python.org/downloads/release/python-369/)
 2. PIP3
-3. QGIS 3.4.11 LTR (https://qgis.org/en/site/forusers/download.html)
+3. QGIS 3.x LTR (https://qgis.org/en/site/forusers/download.html)
 4. pyqtgraph (by PIP3)
 
 # Software Installation (for Windows)

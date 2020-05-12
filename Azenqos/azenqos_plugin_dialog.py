@@ -149,21 +149,42 @@ class Ui_DatabaseDialog(QDialog):
             _translate("DatabaseDialog", "Database path: ( .azm )")
         )
 
+    def clearCurrentProject(self):
+        global allLayers, h_list
+
+        for hi in h_list:
+            hi.hide()
+        h_list = []
+        clearAllSelectedFeatures()
+
+        project = QgsProject.instance()
+        for (id_l, layer) in project.mapLayers().items():
+            to_be_deleted = project.mapLayersByName(layer.name())[0]
+            project.removeMapLayer(to_be_deleted.id())
+            layer = None
+
+        QgsProject.instance().reloadAllLayers()
+        QgsProject.instance().clear()
+        allLayers = []
+
     def getfiles(self):
         fileName, _ = QFileDialog.getOpenFileName(
             self, "Single File", QtCore.QDir.rootPath(), "*.azm"
         )
         if fileName != "":
+            self.fileName = fileName
             self.dbPath.setText(fileName)
-            databasePath = Utils().unzipToFile(CURRENT_PATH, fileName)
-            self.databasePath = databasePath
         else:
             if self.dbPath.text() != "":
                 self.databasePath = self.dbPath.text()
 
     def checkDatabase(self):
         if self.dbPath.text() != "":
-            self.databasePath = CURRENT_PATH + "/file/azqdata.db"
+            if hasattr(self, "azenqosMainMenu") is True:
+                self.azenqosMainMenu.newImport = True
+                self.azenqosMainMenu.killMainWindow()
+                self.clearCurrentProject()
+            self.databasePath = Utils().unzipToFile(CURRENT_PATH, self.fileName)
             self.addDatabase()
             if not azenqosDatabase.open():
                 QtWidgets.QMessageBox.critical(
@@ -263,19 +284,21 @@ class Ui_DatabaseDialog(QDialog):
         sliderLength = round(sliderLength, 3)
 
     def reject(self):
-        # global openedWindows
+        global openedWindows
 
-        # if len(openedWindows) > 0:
-        #     for window in openedWindows:
-        #         window.close()
-        #         window.reject()
-        #         del window
+        if len(openedWindows) > 0:
+            for window in openedWindows:
+                window.close()
+                window.reject()
+                del window
+        QgsProject.removeAllMapLayers(QgsProject.instance())
         super().reject()
         # if azenqosDatabase:
         #     global azenqosDatabase
         #     azenqosDatabase.close()
         #     del azenqosDatabase
-
+        # self.destroy(True)
+        # del self
 
 
 class AzenqosDialog(QDialog):
@@ -283,6 +306,7 @@ class AzenqosDialog(QDialog):
         """Constructor."""
         super(AzenqosDialog, self).__init__(None)
         self.timeSliderThread = TimeSliderThread()
+        self.newImport = False
         self.posObjs = []
         self.posIds = []
         self.hilightList = []
@@ -649,8 +673,7 @@ class AzenqosDialog(QDialog):
                 self.classifySelectedItems(getParentNode, getChildNode)
 
     def importDatabase(self):
-        self.databaseDialog = Ui_DatabaseDialog()
-        self.databaseDialog.show()
+        self.databaseUi.show()
         # self.hide()
 
     def timeChange(self):
@@ -1994,22 +2017,33 @@ class AzenqosDialog(QDialog):
                 elif getChildNode == "Equipment Configuration":
                     pass
 
-    def reject(self):
-        reply = QMessageBox.question(
-            self,
-            "Quit Azenqos",
-            "Do you want to quit?",
-            QMessageBox.Yes,
-            QMessageBox.No,
-        )
+    def killMainWindow(self):
+        self.close()
+        self.destroy(True, True)
 
-        if reply == QMessageBox.Yes:
+        removeAzenqosGroup()
+        for mdiwindow in self.mdi.subWindowList():
+            mdiwindow.close()
+        self.mdi.close()
+
+    def reject(self):
+        reply = None
+        if self.newImport is False:
+            reply = QMessageBox.question(
+                self,
+                "Quit Azenqos",
+                "Do you want to quit?",
+                QMessageBox.Yes,
+                QMessageBox.No,
+            )
+
+        if reply == QMessageBox.Yes or self.newImport is True:
             self.pauseTime()
             self.timeSliderThread.exit()
             self.quitTask = QuitTask(u"Quiting Plugin")
             QgsApplication.taskManager().addTask(self.quitTask)
             # self.databaseUi.reject()
-            self.databaseUi.destroy(True, True)
+            # self.databaseUi.destroy(True, True)
             self.close()
             self.destroy(True, True)
 
@@ -2780,8 +2814,6 @@ class QuitTask(QgsTask):
 
         for hi in h_list:
             hi.hide()
-        h_list = []
-        clearAllSelectedFeatures()
 
         azenqosDatabase.close()
         QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())

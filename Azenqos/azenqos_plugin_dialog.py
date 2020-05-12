@@ -284,7 +284,7 @@ class Ui_DatabaseDialog(QDialog):
         sliderLength = round(sliderLength, 3)
 
     def reject(self):
-        
+
         super().reject()
         # if azenqosDatabase:
         #     global azenqosDatabase
@@ -426,7 +426,7 @@ class AzenqosDialog(QDialog):
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
-        
+
         # icon_path = ":/plugins/azenqos_plugin/crosshair.png"
         # pixmap = QPixmap(icon_path)
         # ButtonIcon = QIcon(pixmap)
@@ -576,7 +576,6 @@ class AzenqosDialog(QDialog):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
 
-
     def pauseTime(self):
         global isSliderPlay
         timeSlider.setEnabled(True)
@@ -646,7 +645,6 @@ class AzenqosDialog(QDialog):
 
             # self.canvas.refreshAllLayers()
 
-
     def clickCanvasWorker(self, point, button):
         worker = Worker(self.clickCanvas(point, button))
         threadpool.start(worker)
@@ -696,7 +694,6 @@ class AzenqosDialog(QDialog):
             QgsMessageLog.logMessage("[-- have tableList --]")
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
-
 
     # def threadComplete(self):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
@@ -2795,7 +2792,7 @@ class QuitTask(QgsTask):
         self.exception = None
 
     def run(self):
-        #ptvsd.debug_this_thread()
+        # ptvsd.debug_this_thread()
         QgsMessageLog.logMessage(
             "[-- Start Removing Dependencies --]", tag="Processing"
         )

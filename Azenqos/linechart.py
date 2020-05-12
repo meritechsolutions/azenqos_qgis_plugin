@@ -637,7 +637,7 @@ class Ui_LTE_Data_LCwidget(QWidget):
 
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
-        
+
         layout.addWidget(self.lte_datalc_GArea)
         layout.addWidget(self.lte_data_tableWidget)
 
@@ -852,9 +852,9 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
         )
         # self.wcdma_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
         self.wcdma_data_widget.setObjectName("wcdma_data_widget")
-        
+
         self.wcdma_datalc_GArea.setWidget(self.wcdma_data_widget)
-        
+
         layout.addWidget(self.wcdma_datalc_GArea)
         layout.addWidget(self.wcdma_data_tableWidget)
 
@@ -1309,44 +1309,44 @@ class Ui_GSM_Data_LCwidget(QWidget):
         self.gsm_data_tableWidget.setObjectName("gsm_data_tableWidget")
         self.gsm_data_tableWidget.setColumnCount(4)
         self.gsm_data_tableWidget.setRowCount(3)
-        
+
         item = QtWidgets.QTableWidgetItem()
         self.gsm_data_tableWidget.setVerticalHeaderItem(0, item)
-        
+
         item = QtWidgets.QTableWidgetItem()
         self.gsm_data_tableWidget.setVerticalHeaderItem(1, item)
-        
+
         item = QtWidgets.QTableWidgetItem()
         self.gsm_data_tableWidget.setVerticalHeaderItem(2, item)
-        
+
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
         self.gsm_data_tableWidget.setHorizontalHeaderItem(0, item)
-        
+
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
         self.gsm_data_tableWidget.setHorizontalHeaderItem(1, item)
-        
+
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
         self.gsm_data_tableWidget.setHorizontalHeaderItem(2, item)
-        
+
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
         self.gsm_data_tableWidget.setHorizontalHeaderItem(3, item)
-        
+
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.gsm_data_tableWidget.setItem(0, 0, item)
@@ -1362,7 +1362,7 @@ class Ui_GSM_Data_LCwidget(QWidget):
         item.setBackground(brush)
         self.gsm_data_tableWidget.setItem(0, 3, item)
         item = QtWidgets.QTableWidgetItem()
-        
+
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.gsm_data_tableWidget.setItem(1, 0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -1376,7 +1376,7 @@ class Ui_GSM_Data_LCwidget(QWidget):
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
         self.gsm_data_tableWidget.setItem(1, 3, item)
-        
+
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.gsm_data_tableWidget.setItem(2, 0, item)
@@ -1391,8 +1391,7 @@ class Ui_GSM_Data_LCwidget(QWidget):
         brush.setStyle(QtCore.Qt.SolidPattern)
         item.setBackground(brush)
         self.gsm_data_tableWidget.setItem(2, 3, item)
-        
-       
+
         self.gsm_data_tableWidget.horizontalHeader().setVisible(True)
         self.gsm_data_tableWidget.horizontalHeader().setHighlightSections(True)
         self.gsm_data_tableWidget.verticalHeader().setVisible(False)
@@ -1558,7 +1557,7 @@ class LineChart(QWidget):
         for row in range(len(Chart_datalist)):
             if np.isnan(Chart_datalist[row]):
                 Value = "-"
-            else: 
+            else:
                 Value = round(Chart_datalist[row], 3)
             self.tablewidget.item(row, 1).setText(str(Value))
 
@@ -1585,7 +1584,7 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1], connect='finite'
+                        x=list(self.xdict.keys()), y=data[1], connect="finite"
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -1602,7 +1601,12 @@ class LineChart(QWidget):
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
-            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
+            self.canvas.axes.setLimits(
+                xMin=min(list(self.xdict.keys())),
+                xMax=max(list(self.xdict.keys())),
+                minXRange=4,
+                maxXRange=10,
+            )
 
             # Call Event Function
             pick = [
@@ -1645,7 +1649,7 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1], connect='finite'
+                        x=list(self.xdict.keys()), y=data[1], connect="finite"
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -1662,8 +1666,12 @@ class LineChart(QWidget):
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
-            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
-
+            self.canvas.axes.setLimits(
+                xMin=min(list(self.xdict.keys())),
+                xMax=max(list(self.xdict.keys())),
+                minXRange=4,
+                maxXRange=10,
+            )
 
             # Call Event Function
             pick = [
@@ -1691,7 +1699,7 @@ class LineChart(QWidget):
         #     self.database,
         # )
         # self.result = ChartQuery.getData()
-        
+
         ChartQuery = LineChartQueryNew(self.database)
         self.result = ChartQuery.getWcdma()
         overallMax = []
@@ -1713,7 +1721,7 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1], connect='finite'
+                        x=list(self.xdict.keys()), y=data[1], connect="finite"
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -1730,8 +1738,12 @@ class LineChart(QWidget):
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
-            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
-
+            self.canvas.axes.setLimits(
+                xMin=min(list(self.xdict.keys())),
+                xMax=max(list(self.xdict.keys())),
+                minXRange=4,
+                maxXRange=10,
+            )
 
             # Call Event Function
             pick = [
@@ -1759,7 +1771,7 @@ class LineChart(QWidget):
         #     self.database,
         # )
         # self.result = ChartQuery.getData()
-        
+
         ChartQuery = LineChartQueryNew(self.database)
         self.result = ChartQuery.getWcdmaData()
         overallMax = []
@@ -1781,7 +1793,7 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1], connect='finite'
+                        x=list(self.xdict.keys()), y=data[1], connect="finite"
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -1798,8 +1810,12 @@ class LineChart(QWidget):
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
-            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
-
+            self.canvas.axes.setLimits(
+                xMin=min(list(self.xdict.keys())),
+                xMax=max(list(self.xdict.keys())),
+                minXRange=4,
+                maxXRange=10,
+            )
 
             # Call Event Function
             pick = [
@@ -1843,7 +1859,7 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1], connect='finite'
+                        x=list(self.xdict.keys()), y=data[1], connect="finite"
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -1860,8 +1876,12 @@ class LineChart(QWidget):
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
-            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
-
+            self.canvas.axes.setLimits(
+                xMin=min(list(self.xdict.keys())),
+                xMax=max(list(self.xdict.keys())),
+                minXRange=4,
+                maxXRange=10,
+            )
 
             # Call Event Function
             pick = [
@@ -1908,7 +1928,7 @@ class LineChart(QWidget):
             for data in self.result.items():
                 if data[0] != "time":
                     newline = self.canvas.axes.plot(
-                        x=list(self.xdict.keys()), y=data[1], connect='finite'
+                        x=list(self.xdict.keys()), y=data[1], connect="finite"
                     )
                     newline.curve.setClickable(True)
                     self.lines.append(newline)
@@ -1925,8 +1945,12 @@ class LineChart(QWidget):
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
-            self.canvas.axes.setLimits(xMin=min(list(self.xdict.keys())),xMax=max(list(self.xdict.keys())),minXRange=4,maxXRange=10)
-
+            self.canvas.axes.setLimits(
+                xMin=min(list(self.xdict.keys())),
+                xMax=max(list(self.xdict.keys())),
+                minXRange=4,
+                maxXRange=10,
+            )
 
             # Call Event Function
             pick = [

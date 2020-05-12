@@ -762,18 +762,18 @@ class AzenqosDialog(QDialog):
                 if len(selected_ids) > 0:
                     clearAllSelectedFeatures()
                     layer.selectByIds(selected_ids, QgsVectorLayer.AddToSelection)
-                    ext = layer.extent()
-                    xmin = ext.xMinimum()
-                    xmax = ext.xMaximum()
-                    ymin = ext.yMinimum()
-                    ymax = ext.yMaximum()
-                    zoomRectangle = QgsRectangle(xmin, ymin, xmax, ymax)
-                    iface.mapCanvas().setExtent(zoomRectangle)
-                    box = layer.boundingBoxOfSelected()
-                    iface.mapCanvas().setExtent(box)
+                    # ext = layer.extent()
+                    # xmin = ext.xMinimum()
+                    # xmax = ext.xMaximum()
+                    # ymin = ext.yMinimum()
+                    # ymax = ext.yMaximum()
+                    # zoomRectangle = QgsRectangle(xmin, ymin, xmax, ymax)
+                    # iface.mapCanvas().setExtent(zoomRectangle)
+                    # box = layer.boundingBoxOfSelected()
+                    # iface.mapCanvas().setExtent(box)
                     iface.mapCanvas().setSelectionColor(QColor("yellow"))
-                    iface.mapCanvas().zoomToSelected()
-                    iface.mapCanvas().zoomScale(5000.0)
+                    # iface.mapCanvas().zoomToSelected()
+                    # iface.mapCanvas().zoomScale(5000.0)
                     # iface.mapCanvas().refresh()
                 self.maxPosId = self.currentMaxPosId
 
@@ -2792,7 +2792,6 @@ class QuitTask(QgsTask):
         self.exception = None
 
     def run(self):
-        # ptvsd.debug_this_thread()
         QgsMessageLog.logMessage(
             "[-- Start Removing Dependencies --]", tag="Processing"
         )
@@ -2801,9 +2800,6 @@ class QuitTask(QgsTask):
         global allLayers
         global vLayers
         global h_list
-
-        for hi in h_list:
-            hi.hide()
 
         azenqosDatabase.close()
         QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
@@ -2816,14 +2812,12 @@ class QuitTask(QgsTask):
         return True
 
     def finished(self, result):
-        # ptvsd.debug_this_thread()
         global allLayers
         if result:
             project = QgsProject.instance()
             for (id_l, layer) in project.mapLayers().items():
-                source = layer.source()
-                dp = layer.dataProvider()
-                du = layer.dataUrl()
+                if layer.type() == layer.VectorLayer:
+                    layer.removeSelection()
                 to_be_deleted = project.mapLayersByName(layer.name())[0]
                 project.removeMapLayer(to_be_deleted.id())
                 layer = None
@@ -2839,10 +2833,6 @@ class QuitTask(QgsTask):
                     window.reject()
                     del window
             QgsProject.removeAllMapLayers(QgsProject.instance())
-            # isSuccess = False
-            # while not isSuccess:
-            #     time.sleep(0.5)
-            #     isSuccess = Utils().cleanupFile(CURRENT_PATH)
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"

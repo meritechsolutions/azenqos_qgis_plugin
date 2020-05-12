@@ -46,7 +46,6 @@ from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
-from .azq_maptool import AzenqosPointTool
 
 azenqosDatabase = None
 minTimeValue = None
@@ -75,7 +74,6 @@ linechartWindowname = [
 ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-vLayers = []
 
 
 def clearAllSelectedFeatures():
@@ -382,6 +380,11 @@ class AzenqosDialog(QDialog):
         self.importDatabaseBtn.setGeometry(QtCore.QRect(300, 140, 181, 32))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
+        # Map tool Button
+        self.maptool = QPushButton(AzenqosDialog)
+        self.maptool.setGeometry(QtCore.QRect(300, 180, 181, 32))
+        self.maptool.setObjectName("maptool")
+
         # Filter Button
         # self.filterBtn = QPushButton(AzenqosDialog)
         # self.filterBtn.setGeometry(QtCore.QRect(300, 190, 181, 32))
@@ -392,6 +395,7 @@ class AzenqosDialog(QDialog):
 
         timeSlider.valueChanged.connect(self.timeChange)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
+        self.maptool.clicked.connect(self.setMapTool)
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -407,6 +411,14 @@ class AzenqosDialog(QDialog):
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
+        self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
+        
+        # icon_path = ":/plugins/azenqos_plugin/crosshair.png"
+        # pixmap = QPixmap(icon_path)
+        # ButtonIcon = QIcon(pixmap)
+        # self.maptool.setIcon(ButtonIcon)
+        # self.maptool.setIconSize(pixmap.rect().size())
+
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
         self.speedLabel.setText(_translate("AzenqosDialog", "Speed:"))
@@ -545,6 +557,12 @@ class AzenqosDialog(QDialog):
         self.timeSliderThread.changeValue.connect(self.setTimeValue)
         self.timeSliderThread.start()
 
+    def setMapTool(self):
+        self.clickTool = QgsMapToolEmitPoint(self.canvas)
+        self.canvas.setMapTool(self.clickTool)
+        self.clickTool.canvasClicked.connect(self.clickCanvas)
+
+
     def pauseTime(self):
         global isSliderPlay
         timeSlider.setEnabled(True)
@@ -578,17 +596,13 @@ class AzenqosDialog(QDialog):
         layerData = []
         layer = iface.activeLayer()
         selectedTime = None
-        clearAllSelectedFeatures()
-
-        self.canvas.setCenter(point)
+        # clearAllSelectedFeatures()
 
         if layer.type() == layer.VectorLayer:
             if layer.featureCount() == 0:
                 # There are no features - skip
                 return
 
-            shortestDistance = float("inf")
-            closestFeatureId = -1
             # Loop through all features in the layer
             for f in layer.getFeatures():
                 distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
@@ -602,7 +616,7 @@ class AzenqosDialog(QDialog):
                 # Looks like no vector layers were found - do nothing
                 return
 
-                # Sort the layer information by shortest distance
+            # Sort the layer information by shortest distance
             layerData.sort(key=lambda element: element[2])
 
             for (layer, closestFeatureId, distance, time) in layerData:
@@ -616,7 +630,8 @@ class AzenqosDialog(QDialog):
                 timeSlider.setValue(timeSliderValue)
                 timeSlider.update()
 
-            self.canvas.refreshAllLayers()
+            # self.canvas.refreshAllLayers()
+
 
     def clickCanvasWorker(self, point, button):
         worker = Worker(self.clickCanvas(point, button))
@@ -649,6 +664,11 @@ class AzenqosDialog(QDialog):
         timestampValue = minTimeValue + value
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         self.timeEdit.setDateTime(sampledate)
+        self.timeSliderThread.set(value)
+        currentTimestamp = timestampValue
+        currentDateTimeString = "%s" % (
+            datetime.datetime.fromtimestamp(currentTimestamp)
+        )
         if len(openedWindows) > 0:
             for window in openedWindows:
                 if not window.title in linechartWindowname:
@@ -663,11 +683,7 @@ class AzenqosDialog(QDialog):
             QgsMessageLog.logMessage("[-- have tableList --]")
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
-        self.timeSliderThread.set(value)
-        currentTimestamp = timestampValue
-        currentDateTimeString = "%s" % (
-            datetime.datetime.fromtimestamp(currentTimestamp)
-        )
+
 
     # def threadComplete(self):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
@@ -2681,11 +2697,11 @@ class TimeSliderThread(QThread):
 class LayerTask(QgsTask):
     def __init__(self, desc, databasePath):
         QgsTask.__init__(self, desc)
-        self.uri = QgsDataSourceUri()
-        self.uri.setDatabase(databasePath)
+        self.dbPath = databasePath
         self.start_time = None
         self.desc = desc
         self.exception = None
+        self.vLayers = []
 
     def addMapToQgis(self):
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
@@ -2698,41 +2714,38 @@ class LayerTask(QgsTask):
             QgsMessageLog.logMessage("Invalid layer")
 
     def run(self):
-        # ptvsd.debug_this_thread()
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         global allLayers
         global vLayers
-        allLayers.sort(reverse=True)
-        for tableName in allLayers:
-            self.uri.setDataSource("", tableName, "geom")
-            vlayer = QgsVectorLayer(self.uri.uri(), tableName, "spatialite")
-            if vlayer:
-                symbol_renderer = vlayer.renderer()
-                if symbol_renderer:
-                    symbol = symbol_renderer.symbol()
-                    symbol.setColor(QColor(125, 139, 142))
-                    symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
-                    symbol.setSize(2.4)
-                iface.layerTreeView().refreshLayerSymbology(vlayer.id())
-                vlayer.triggerRepaint()
-                vLayers.append(vlayer)
-                vlayer = None
+
         return True
 
     def finished(self, result):
-        global vLayers
         if result:
             self.addMapToQgis()
-            for vlayer in vLayers:
-                QgsProject.instance().addMapLayer(vlayer)
-                vlayer = None
+            uri = QgsDataSourceUri()
+            uri.setDatabase(self.dbPath)
+            allLayers.sort(reverse=True)
+            geom_column = "geom"
+            for tableName in allLayers:
+                uri.setDataSource("", tableName, geom_column)
+                vlayer = iface.addVectorLayer(uri.uri(), tableName, "spatialite")
+                if vlayer:
+                    symbol_renderer = vlayer.renderer()
+                    if symbol_renderer:
+                        symbol = symbol_renderer.symbol()
+                        symbol.setColor(QColor(125, 139, 142))
+                        symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
+                        symbol.setSize(2.4)
+                    iface.layerTreeView().refreshLayerSymbology(vlayer.id())
+                    vlayer.triggerRepaint()
+                    vlayer = None
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
             )
             QgsMessageLog.logMessage("[-- End add layers --]", tag="Processing")
-            self.uri.setDatabase("")
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(
@@ -2758,7 +2771,7 @@ class QuitTask(QgsTask):
         self.exception = None
 
     def run(self):
-        # ptvsd.debug_this_thread()
+        #ptvsd.debug_this_thread()
         QgsMessageLog.logMessage(
             "[-- Start Removing Dependencies --]", tag="Processing"
         )
@@ -2766,6 +2779,10 @@ class QuitTask(QgsTask):
         global azenqosDatabase
         global allLayers
         global vLayers
+        global h_list
+
+        for hi in h_list:
+            hi.hide()
 
         azenqosDatabase.close()
         QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
@@ -2780,7 +2797,6 @@ class QuitTask(QgsTask):
     def finished(self, result):
         # ptvsd.debug_this_thread()
         global allLayers
-        global vLayers
         if result:
             project = QgsProject.instance()
             for (id_l, layer) in project.mapLayers().items():
@@ -2792,9 +2808,8 @@ class QuitTask(QgsTask):
                 layer = None
 
             QgsProject.instance().reloadAllLayers()
-            # QgsProject.instance().clear()
+            QgsProject.instance().clear()
             allLayers = []
-            vLayers = []
             # isSuccess = False
             # while not isSuccess:
             #     time.sleep(0.5)

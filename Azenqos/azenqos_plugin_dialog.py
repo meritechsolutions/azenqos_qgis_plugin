@@ -284,7 +284,7 @@ class Ui_DatabaseDialog(QDialog):
         sliderLength = round(sliderLength, 3)
 
     def reject(self):
-        
+
         super().reject()
         # if azenqosDatabase:
         #     global azenqosDatabase
@@ -342,7 +342,7 @@ class AzenqosDialog(QDialog):
 
                 # write the object to the list
                 h_list.append(h)
-        
+
         iface.mapCanvas().refresh()
 
     def setupUi(self, AzenqosDialog):
@@ -374,7 +374,7 @@ class AzenqosDialog(QDialog):
         self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
         self.speedLabel.setObjectName("Speed")
         self.playSpeed = QLineEdit(AzenqosDialog)
-        self.onlyDouble = QDoubleValidator(0.0, 5.0 , 2, self.playSpeed)
+        self.onlyDouble = QDoubleValidator(0.0, 5.0, 2, self.playSpeed)
         self.onlyDouble.setNotation(QDoubleValidator.StandardNotation)
         self.playSpeed.setValidator(self.onlyDouble)
         self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
@@ -433,7 +433,7 @@ class AzenqosDialog(QDialog):
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
-        
+
         # icon_path = ":/plugins/azenqos_plugin/crosshair.png"
         # pixmap = QPixmap(icon_path)
         # ButtonIcon = QIcon(pixmap)
@@ -583,7 +583,6 @@ class AzenqosDialog(QDialog):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
 
-
     def pauseTime(self):
         global isSliderPlay
         timeSlider.setEnabled(True)
@@ -653,7 +652,6 @@ class AzenqosDialog(QDialog):
 
             # self.canvas.refreshAllLayers()
 
-
     def clickCanvasWorker(self, point, button):
         worker = Worker(self.clickCanvas(point, button))
         threadpool.start(worker)
@@ -703,7 +701,6 @@ class AzenqosDialog(QDialog):
             QgsMessageLog.logMessage("[-- have tableList --]")
             worker = Worker(self.hilightFeature())
             threadpool.start(worker)
-
 
     # def threadComplete(self):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
@@ -2801,7 +2798,7 @@ class QuitTask(QgsTask):
         QgsTask.__init__(self, desc)
         self.start_time = None
         self.desc = desc
-        self.exception = None        
+        self.exception = None
 
     def run(self):
         QgsMessageLog.logMessage(

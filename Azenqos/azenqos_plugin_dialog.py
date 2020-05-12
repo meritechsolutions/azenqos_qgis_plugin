@@ -263,22 +263,19 @@ class Ui_DatabaseDialog(QDialog):
         sliderLength = round(sliderLength, 3)
 
     def reject(self):
-        global openedWindows
+        # global openedWindows
 
-        if len(openedWindows) > 0:
-            for window in openedWindows:
-                window.close()
-                window.reject()
-                del window
-        # super().reject()
-        QgsProject.removeAllMapLayers(QgsProject.instance())
-        removeAzenqosGroup()
+        # if len(openedWindows) > 0:
+        #     for window in openedWindows:
+        #         window.close()
+        #         window.reject()
+        #         del window
+        super().reject()
         # if azenqosDatabase:
         #     global azenqosDatabase
         #     azenqosDatabase.close()
         #     del azenqosDatabase
-        self.destroy(True)
-        del self
+
 
 
 class AzenqosDialog(QDialog):
@@ -596,7 +593,7 @@ class AzenqosDialog(QDialog):
         layerData = []
         layer = iface.activeLayer()
         selectedTime = None
-        # clearAllSelectedFeatures()
+        clearAllSelectedFeatures()
 
         if layer.type() == layer.VectorLayer:
             if layer.featureCount() == 0:
@@ -654,7 +651,7 @@ class AzenqosDialog(QDialog):
     def importDatabase(self):
         self.databaseDialog = Ui_DatabaseDialog()
         self.databaseDialog.show()
-        self.hide()
+        # self.hide()
 
     def timeChange(self):
         global currentTimestamp
@@ -2783,6 +2780,8 @@ class QuitTask(QgsTask):
 
         for hi in h_list:
             hi.hide()
+        h_list = []
+        clearAllSelectedFeatures()
 
         azenqosDatabase.close()
         QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())

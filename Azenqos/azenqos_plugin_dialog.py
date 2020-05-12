@@ -284,14 +284,7 @@ class Ui_DatabaseDialog(QDialog):
         sliderLength = round(sliderLength, 3)
 
     def reject(self):
-        global openedWindows
-
-        if len(openedWindows) > 0:
-            for window in openedWindows:
-                window.close()
-                window.reject()
-                del window
-        QgsProject.removeAllMapLayers(QgsProject.instance())
+        
         super().reject()
         # if azenqosDatabase:
         #     global azenqosDatabase
@@ -2841,6 +2834,14 @@ class QuitTask(QgsTask):
             QgsProject.instance().reloadAllLayers()
             QgsProject.instance().clear()
             allLayers = []
+
+            global openedWindows
+            if len(openedWindows) > 0:
+                for window in openedWindows:
+                    window.close()
+                    window.reject()
+                    del window
+            QgsProject.removeAllMapLayers(QgsProject.instance())
             # isSuccess = False
             # while not isSuccess:
             #     time.sleep(0.5)

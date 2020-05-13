@@ -2033,6 +2033,7 @@ class AzenqosDialog(QDialog):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
+            iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
             self.quitTask = QuitTask(u"Quiting Plugin")

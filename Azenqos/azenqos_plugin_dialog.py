@@ -314,7 +314,7 @@ class AzenqosDialog(QMainWindow):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
-        self.canvas.renderComplete.connect(self.zoomToActiveLayer)   
+        self.canvas.renderComplete.connect(self.zoomToActiveLayer)
 
     def zoomToActiveLayer(self):
         iface.zoomToActiveLayer()
@@ -347,11 +347,15 @@ class AzenqosDialog(QMainWindow):
 
     def setupToolBar(self):
         global timeSlider
+        self.toolbar.addWidget(self.importDatabaseBtn)
+        self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
         self.toolbar.addWidget(self.pauseButton)
-        self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(timeSlider)
-    
+        self.toolbar.addWidget(self.timeEdit)
+        self.toolbar.addWidget(self.speedLabel)
+        self.toolbar.addWidget(self.playSpeed)
+
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
@@ -360,7 +364,7 @@ class AzenqosDialog(QMainWindow):
         self.mdi = GroupArea()
         self.mdi.show()
         toolbar = self.addToolBar("toolbar")
-        self.toolbar = toolbar  
+        self.toolbar = toolbar
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
@@ -406,13 +410,13 @@ class AzenqosDialog(QMainWindow):
         self.setupPlayStopButton(AzenqosDialog)
 
         # Import Database Button
-        self.importDatabaseBtn = QPushButton(AzenqosDialog)
-        self.importDatabaseBtn.setGeometry(QtCore.QRect(300, 140, 181, 32))
+        self.importDatabaseBtn = QToolButton()
+        self.importDatabaseBtn.setIcon(self.style().standardIcon(QStyle.SP_DirIcon))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         # Map tool Button
-        self.maptool = QPushButton(AzenqosDialog)
-        self.maptool.setGeometry(QtCore.QRect(300, 180, 181, 32))
+        self.maptool = QToolButton()
+        self.maptool.setIcon(self.style().standardIcon(QStyle.SP_FileIcon))
         self.maptool.setObjectName("maptool")
 
         # Filter Button
@@ -2032,7 +2036,12 @@ class AzenqosDialog(QMainWindow):
             mdiwindow.close()
         self.mdi.close()
 
-    def closeEvent(self,event):
+    def removeToolBarActions(self):
+        actions = self.toolbar.actions()
+        for action in actions:
+            self.toolbar.removeAction(action)
+
+    def closeEvent(self, event):
         reply = None
         if self.newImport is False:
             reply = QMessageBox.question(
@@ -2044,10 +2053,11 @@ class AzenqosDialog(QMainWindow):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
+            event.accept()
             iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
-            self.toolbar.destroy(True)
+            self.removeToolBarActions()
             self.quitTask = QuitTask(u"Quiting Plugin")
             QgsApplication.taskManager().addTask(self.quitTask)
             # self.databaseUi.reject()
@@ -2076,6 +2086,8 @@ class AzenqosDialog(QMainWindow):
             #         window.close()
             #         window.reject()
             #         del window
+        else:
+            event.ignore()
 
 
 class GroupArea(QMdiArea):

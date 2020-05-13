@@ -24,7 +24,6 @@
 import datetime
 import threading
 import sys
-import ptvsd
 
 import pyqtgraph as pg
 import numpy as np

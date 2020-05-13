@@ -294,7 +294,7 @@ class Ui_DatabaseDialog(QDialog):
         # del self
 
 
-class AzenqosDialog(QDialog):
+class AzenqosDialog(QMainWindow):
     def __init__(self, databaseUi):
         """Constructor."""
         super(AzenqosDialog, self).__init__(None)
@@ -314,7 +314,7 @@ class AzenqosDialog(QDialog):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
-        self.canvas.renderComplete.connect(self.zoomToActiveLayer)
+        self.canvas.renderComplete.connect(self.zoomToActiveLayer)   
 
     def zoomToActiveLayer(self):
         iface.zoomToActiveLayer()
@@ -345,6 +345,13 @@ class AzenqosDialog(QDialog):
 
         iface.mapCanvas().refresh()
 
+    def setupToolBar(self):
+        global timeSlider
+        self.toolbar.addWidget(self.playButton)
+        self.toolbar.addWidget(self.pauseButton)
+        self.toolbar.addWidget(self.timeSliderLabel)
+        self.toolbar.addWidget(timeSlider)
+    
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
@@ -352,6 +359,8 @@ class AzenqosDialog(QDialog):
         self.setupTreeWidget(AzenqosDialog)
         self.mdi = GroupArea()
         self.mdi.show()
+        toolbar = self.addToolBar("toolbar")
+        self.toolbar = toolbar  
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
@@ -417,6 +426,7 @@ class AzenqosDialog(QDialog):
         timeSlider.valueChanged.connect(self.timeChange)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
         self.maptool.clicked.connect(self.setMapTool)
+        self.setupToolBar()
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -2022,7 +2032,7 @@ class AzenqosDialog(QDialog):
             mdiwindow.close()
         self.mdi.close()
 
-    def reject(self):
+    def closeEvent(self,event):
         reply = None
         if self.newImport is False:
             reply = QMessageBox.question(
@@ -2037,6 +2047,7 @@ class AzenqosDialog(QDialog):
             iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
+            self.toolbar.destroy(True)
             self.quitTask = QuitTask(u"Quiting Plugin")
             QgsApplication.taskManager().addTask(self.quitTask)
             # self.databaseUi.reject()

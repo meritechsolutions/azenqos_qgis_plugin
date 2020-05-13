@@ -1,3 +1,4 @@
+# Gitignore from Metamedia
 .vscode/launch.json
 .idea/*
 .vscode/settings.json

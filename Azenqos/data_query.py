@@ -28,7 +28,7 @@ class DataQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
         query = QSqlQuery()
-        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration, 
+        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration,
                         des.data_gsm_rlc_ul_throughput, des.data_gsm_rlc_dl_throughput,
                         des.data_egprs_dl_coding_scheme_index, des.data_egprs_ul_coding_scheme_index,
                         des.data_gprs_timeslot_used_dl, des.data_gprs_timeslot_used_ul,
@@ -373,7 +373,9 @@ class DataQuery:
                 )
                 query.exec_(queryString)
                 while query.next():
-                    dataList.append([name, query.value(0), query.value(1), query.value(2)])
+                    dataList.append(
+                        [name, query.value(0), query.value(1), query.value(2)]
+                    )
                 else:
                     dataList.append([name, "", "", ""])
             else:
@@ -382,7 +384,7 @@ class DataQuery:
         self.closeConnection()
         return dataList
 
-     def getGprsEdgeInformation(self):
+    def getGprsEdgeInformation(self):
         self.openConnection()
         dataList = []
         elementList = [
@@ -402,7 +404,7 @@ class DataQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
         query = QSqlQuery()
-        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration, 
+        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration,
                         des.data_gsm_rlc_ul_throughput, des.data_gsm_rlc_dl_throughput,
                         des.data_egprs_dl_coding_scheme_index, des.data_egprs_ul_coding_scheme_index,
                         des.data_gprs_timeslot_used_dl, des.data_gprs_timeslot_used_ul,
@@ -423,7 +425,7 @@ class DataQuery:
                     dataList.append([elementList[field], ""])
         self.closeConnection()
         return dataList
-    
+
     def getWifiActive(self):
         self.openConnection()
         dataList = []
@@ -438,7 +440,7 @@ class DataQuery:
             "Encryption",
             "Ch.",
             "Freq",
-            "ISP"
+            "ISP",
         ]
 
         if self.timeFilter:
@@ -470,25 +472,41 @@ class DataQuery:
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
-        
+
         for unit in range(maxUnits):
             unitNo = unit + 1
-            column = "time, wifi_scanned_bssid_%d, wifi_scanned_ssid_%d, wifi_scanned_freq_%d, wifi_scanned_channel_%d, wifi_scanned_level_%d, wifi_scanned_encryption_%d" % (unitNo, unitNo, unitNo, unitNo, unitNo, unitNo)
+            column = (
+                "time, wifi_scanned_bssid_%d, wifi_scanned_ssid_%d, wifi_scanned_freq_%d, wifi_scanned_channel_%d, wifi_scanned_level_%d, wifi_scanned_encryption_%d"
+                % (unitNo, unitNo, unitNo, unitNo, unitNo, unitNo)
+            )
             query = QSqlQuery()
             queryString = """SELECT %s
                             FROM wifi_scanned
                             %s
                             ORDER BY time DESC
-                            LIMIT 1""" % (column, condition)
+                            LIMIT 1""" % (
+                column,
+                condition,
+            )
             query.exec_(queryString)
             while query.next():
                 # data = []
                 # columnCount = query.record().count()
                 # for column in columnCount:
                 #     data.append(query.value(column))
-                dataList.append([query.value(0),query.value(1),query.value(2),query.value(3),query.value(4),query.value(5),query.value(6)])
+                dataList.append(
+                    [
+                        query.value(0),
+                        query.value(1),
+                        query.value(2),
+                        query.value(3),
+                        query.value(4),
+                        query.value(5),
+                        query.value(6),
+                    ]
+                )
             else:
-                dataList.append(["","","","","","",""])
+                dataList.append(["", "", "", "", "", "", ""])
         self.closeConnection()
         return dataList
 

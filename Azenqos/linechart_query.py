@@ -7,7 +7,7 @@ class LineChartQueryNew:
         self.result = dict()
         self.azenqosDatabase = azenqosDatabase
         self.selectField = []
-        self.yRange = [0.00,0.00]
+        self.yRange = [0.00, 0.00]
 
     def getGsm(self):
         self.selectField = ["time", "gsm_rxlev_sub_dbm", "gsm_rxqual_sub"]
@@ -248,12 +248,11 @@ class LineChartQueryNew:
 
     def closeConnection(self):
         self.azenqosDatabase.close()
-        
-    def findMinMax(self,minList,maxList):
-        yRange = [0.00,0.00]
+
+    def findMinMax(self, minList, maxList):
+        yRange = [0.00, 0.00]
         if len(minList) > 0:
             yRange[0] = min(minList)
         if len(maxList) > 0:
             yRange[1] = max(maxList)
         return yRange
-        

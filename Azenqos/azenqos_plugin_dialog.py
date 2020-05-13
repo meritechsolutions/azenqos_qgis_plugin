@@ -348,11 +348,14 @@ class AzenqosDialog(QMainWindow):
     def setupToolBar(self):
         global timeSlider
         self.toolbar.addWidget(self.importDatabaseBtn)
+        self.toolbar.addWidget(self.maptool)
+        self.toolbar.addSeparator()
         self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
         self.toolbar.addWidget(self.pauseButton)
         self.toolbar.addWidget(timeSlider)
         self.toolbar.addWidget(self.timeEdit)
+        self.toolbar.addSeparator()
         self.toolbar.addWidget(self.speedLabel)
         self.toolbar.addWidget(self.playSpeed)
 
@@ -362,13 +365,13 @@ class AzenqosDialog(QMainWindow):
         AzenqosDialog.resize(640, 480)
         self.setupTreeWidget(AzenqosDialog)
         self.mdi = GroupArea()
-        self.mdi.show()
+        self.setCentralWidget(self.mdi)
         toolbar = self.addToolBar("toolbar")
         self.toolbar = toolbar
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
-        timeSlider.setGeometry(QtCore.QRect(300, 56, 150, 22))
+        timeSlider.setMinimumWidth(100)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -390,7 +393,8 @@ class AzenqosDialog(QMainWindow):
         self.onlyDouble = QDoubleValidator(0.0, 5.0, 2, self.playSpeed)
         self.onlyDouble.setNotation(QDoubleValidator.StandardNotation)
         self.playSpeed.setValidator(self.onlyDouble)
-        self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
+        self.playSpeed.setMaximumWidth(50)
+        self.playSpeed.setFixedWidth(60)
         self.playSpeed.setText("{:.2f}".format(1))
         self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
@@ -416,13 +420,8 @@ class AzenqosDialog(QMainWindow):
 
         # Map tool Button
         self.maptool = QToolButton()
-        self.maptool.setIcon(self.style().standardIcon(QStyle.SP_FileIcon))
-        self.maptool.setObjectName("maptool")
-
-        # Filter Button
-        # self.filterBtn = QPushButton(AzenqosDialog)
-        # self.filterBtn.setGeometry(QtCore.QRect(300, 190, 181, 32))
-        # self.filterBtn.setObjectName("filterBtn")
+        self.maptool.setIcon(self.style().standardIcon(QStyle.SP_ArrowDown))
+        self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         self.retranslateUi(AzenqosDialog)
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
@@ -447,12 +446,6 @@ class AzenqosDialog(QMainWindow):
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
-
-        # icon_path = ":/plugins/azenqos_plugin/crosshair.png"
-        # pixmap = QPixmap(icon_path)
-        # ButtonIcon = QIcon(pixmap)
-        # self.maptool.setIcon(ButtonIcon)
-        # self.maptool.setIconSize(pixmap.rect().size())
 
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))

@@ -294,7 +294,7 @@ class Ui_DatabaseDialog(QDialog):
         # del self
 
 
-class AzenqosDialog(QDialog):
+class AzenqosDialog(QMainWindow):
     def __init__(self, databaseUi):
         """Constructor."""
         super(AzenqosDialog, self).__init__(None)
@@ -314,6 +314,11 @@ class AzenqosDialog(QDialog):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
+        self.canvas.renderComplete.connect(self.zoomToActiveLayer)   
+
+    def zoomToActiveLayer(self):
+        iface.zoomToActiveLayer()
+        self.canvas.renderComplete.disconnect(self.zoomToActiveLayer)
 
     def selectChanged(self):
         global h_list
@@ -337,8 +342,16 @@ class AzenqosDialog(QDialog):
 
                 # write the object to the list
                 h_list.append(h)
-            iface.mapCanvas().refresh()
 
+        iface.mapCanvas().refresh()
+
+    def setupToolBar(self):
+        global timeSlider
+        self.toolbar.addWidget(self.playButton)
+        self.toolbar.addWidget(self.pauseButton)
+        self.toolbar.addWidget(self.timeSliderLabel)
+        self.toolbar.addWidget(timeSlider)
+    
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
@@ -346,6 +359,8 @@ class AzenqosDialog(QDialog):
         self.setupTreeWidget(AzenqosDialog)
         self.mdi = GroupArea()
         self.mdi.show()
+        toolbar = self.addToolBar("toolbar")
+        self.toolbar = toolbar  
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
@@ -368,7 +383,8 @@ class AzenqosDialog(QDialog):
         self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
         self.speedLabel.setObjectName("Speed")
         self.playSpeed = QLineEdit(AzenqosDialog)
-        self.onlyDouble = QDoubleValidator(float(0), float(20), 3, self.playSpeed)
+        self.onlyDouble = QDoubleValidator(0.0, 5.0, 2, self.playSpeed)
+        self.onlyDouble.setNotation(QDoubleValidator.StandardNotation)
         self.playSpeed.setValidator(self.onlyDouble)
         self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
         self.playSpeed.setText("{:.2f}".format(1))
@@ -410,6 +426,7 @@ class AzenqosDialog(QDialog):
         timeSlider.valueChanged.connect(self.timeChange)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
         self.maptool.clicked.connect(self.setMapTool)
+        self.setupToolBar()
 
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -594,7 +611,7 @@ class AzenqosDialog(QDialog):
 
     def setPlaySpeed(self, value):
         global fastForwardValue, slowDownValue
-        value = float(value) if value != "" else float(1)
+        value = float(1) if value == "" else float(value)
         if value >= float(1):
             fastForwardValue = value
             slowDownValue = 1
@@ -760,20 +777,19 @@ class AzenqosDialog(QDialog):
             if layer is not None:
 
                 if len(selected_ids) > 0:
-                    clearAllSelectedFeatures()
-                    layer.selectByIds(selected_ids, QgsVectorLayer.AddToSelection)
-                    ext = layer.extent()
-                    xmin = ext.xMinimum()
-                    xmax = ext.xMaximum()
-                    ymin = ext.yMinimum()
-                    ymax = ext.yMaximum()
-                    zoomRectangle = QgsRectangle(xmin, ymin, xmax, ymax)
-                    iface.mapCanvas().setExtent(zoomRectangle)
-                    box = layer.boundingBoxOfSelected()
-                    iface.mapCanvas().setExtent(box)
-                    iface.mapCanvas().setSelectionColor(QColor("yellow"))
-                    iface.mapCanvas().zoomToSelected()
-                    iface.mapCanvas().zoomScale(5000.0)
+                    # clearAllSelectedFeatures()
+                    layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
+                    # ext = layer.extent()
+                    # xmin = ext.xMinimum()
+                    # xmax = ext.xMaximum()
+                    # ymin = ext.yMinimum()
+                    # ymax = ext.yMaximum()
+                    # zoomRectangle = QgsRectangle(xmin, ymin, xmax, ymax)
+                    # iface.mapCanvas().setExtent(zoomRectangle)
+                    # box = layer.boundingBoxOfSelected()
+                    # iface.mapCanvas().setExtent(box)
+                    # iface.mapCanvas().zoomToSelected()
+                    # iface.mapCanvas().zoomScale(5000.0)
                     # iface.mapCanvas().refresh()
                 self.maxPosId = self.currentMaxPosId
 
@@ -2016,7 +2032,7 @@ class AzenqosDialog(QDialog):
             mdiwindow.close()
         self.mdi.close()
 
-    def reject(self):
+    def closeEvent(self,event):
         reply = None
         if self.newImport is False:
             reply = QMessageBox.question(
@@ -2028,8 +2044,10 @@ class AzenqosDialog(QDialog):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
+            iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
+            self.toolbar.destroy(True)
             self.quitTask = QuitTask(u"Quiting Plugin")
             QgsApplication.taskManager().addTask(self.quitTask)
             # self.databaseUi.reject()
@@ -2761,7 +2779,9 @@ class LayerTask(QgsTask):
                         symbol.setSize(2.4)
                     iface.layerTreeView().refreshLayerSymbology(vlayer.id())
                     vlayer.triggerRepaint()
-                    vlayer = None
+
+            iface.mapCanvas().setSelectionColor(QColor("yellow"))
+
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
@@ -2792,7 +2812,6 @@ class QuitTask(QgsTask):
         self.exception = None
 
     def run(self):
-        # ptvsd.debug_this_thread()
         QgsMessageLog.logMessage(
             "[-- Start Removing Dependencies --]", tag="Processing"
         )
@@ -2801,9 +2820,6 @@ class QuitTask(QgsTask):
         global allLayers
         global vLayers
         global h_list
-
-        for hi in h_list:
-            hi.hide()
 
         azenqosDatabase.close()
         QSqlDatabase.removeDatabase(azenqosDatabase.connectionName())
@@ -2816,14 +2832,12 @@ class QuitTask(QgsTask):
         return True
 
     def finished(self, result):
-        # ptvsd.debug_this_thread()
         global allLayers
         if result:
             project = QgsProject.instance()
             for (id_l, layer) in project.mapLayers().items():
-                source = layer.source()
-                dp = layer.dataProvider()
-                du = layer.dataUrl()
+                if layer.type() == layer.VectorLayer:
+                    layer.removeSelection()
                 to_be_deleted = project.mapLayersByName(layer.name())[0]
                 project.removeMapLayer(to_be_deleted.id())
                 layer = None
@@ -2839,10 +2853,6 @@ class QuitTask(QgsTask):
                     window.reject()
                     del window
             QgsProject.removeAllMapLayers(QgsProject.instance())
-            # isSuccess = False
-            # while not isSuccess:
-            #     time.sleep(0.5)
-            #     isSuccess = Utils().cleanupFile(CURRENT_PATH)
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"

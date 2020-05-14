@@ -2785,8 +2785,17 @@ class TableWindow(QWidget):
                 str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
             ).timestamp()
         except Exception as e:
-            # avoid error warnings
-            timeCell = timeCell
+            # if current cell is not Time cell
+            headers = [item.lower() for item in self.tableHeader]
+            columnIndex = headers.index("time")
+            if not columnIndex == -1:
+                timeItem = item.siblingAtColumn(columnIndex)
+                cellContent = str(timeItem.data())
+                timeCell = datetime.datetime.strptime(
+                    str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
+                ).timestamp()
+            else:
+                timeCell = timeCell
         finally:
             if timeCell is not None:
                 sliderValue = timeCell - minTimeValue

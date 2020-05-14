@@ -117,7 +117,7 @@ class LteDataQuery:
                 queryString = """SELECT %s
                             FROM %s
                             %s
-                            ORDER BY lrrs.time DESC
+                            ORDER BY time DESC
                             LIMIT 1""" % (
                     column,
                     table,
@@ -126,12 +126,14 @@ class LteDataQuery:
                 query.exec_(queryString)
                 while query.next():
                     dataList.append(
-                        [name, query.value(0), query.value(1), query.value(2)]
+                        [
+                            name,
+                            query.value(0) or "",
+                            query.value(1) or "",
+                            query.value(2) or "",
+                        ]
                     )
-                else:
-                    dataList.append([name, "", "", ""])
-            else:
-                dataList.append([name, "", "", ""])
+
         fieldsList = [
             "Tx Power",
             "PUCCH TxPower (dBm)",
@@ -181,7 +183,7 @@ class LteDataQuery:
                             lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)',
                             '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI',
                             lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment',
-                             ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', '' as 'DedBearer QCI'"""
+                             ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', ad.lte_ded_eps_bearer_qci as 'DedBearer QCI'"""
 
         if self.timeFilter:
             condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
@@ -200,6 +202,7 @@ class LteDataQuery:
                         LEFT JOIN lte_emm_state les ON lcm.time = les.time
                         LEFT JOIN lte_sib1_info lsoi ON lcm.time = lsoi.time
                         LEFT JOIN lte_tdd_config ltc ON lcm.time = ltc.time
+                        LEFT JOIN activate_dedicated_eps_bearer_context_request_params ad ON lcm.time = ad.time
                         %s
                         ORDER BY lcm.time DESC LIMIT 1""" % (
             selectedColumns,
@@ -215,8 +218,6 @@ class LteDataQuery:
                 if query.value(index) != "":
                     value = query.value(index)
                 dataList.append([columnName, value, "", ""])
-        else:
-            dataList = self.defaultData(fieldsList, dataList)
         self.closeConnection()
         return dataList
 

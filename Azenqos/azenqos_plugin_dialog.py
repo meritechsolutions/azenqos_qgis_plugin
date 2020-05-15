@@ -691,7 +691,12 @@ class AzenqosDialog(QMainWindow):
         self.playSpeed.setValidator(self.onlyDouble)
         self.playSpeed.setMaximumWidth(50)
         self.playSpeed.setFixedWidth(60)
-        self.playSpeed.setText("{:.2f}".format(1))
+        if not slowDownValue == 1:
+            self.playSpeed.setText("{:.2f}".format(slowDownValue))
+        elif not fastForwardValue == 1:
+            self.playSpeed.setText("{:.2f}".format(fastForwardValue))
+        else:
+            self.playSpeed.setText("{:.2f}".format(1))
         self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
         # Datetime Textbox

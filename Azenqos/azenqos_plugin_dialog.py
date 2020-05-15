@@ -348,10 +348,19 @@ class AzenqosDialog(QMainWindow):
 
     def setupToolBar(self):
         global timeSlider
+        self.toolbar.setFloatable(False)
+        self.toolbar.setMovable(False)
+        self.toolbar.addWidget(self.importDatabaseBtn)
+        self.toolbar.addWidget(self.maptool)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
         self.toolbar.addWidget(self.pauseButton)
-        self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(timeSlider)
+        self.toolbar.addWidget(self.timeEdit)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.speedLabel)
+        self.toolbar.addWidget(self.playSpeed)
 
     def setupMenubar(self, AzenqosDialog):
         self.menubar = QMenuBar(AzenqosDialog)
@@ -520,6 +529,7 @@ class AzenqosDialog(QMainWindow):
         self.menuPresentation.addAction(self.menuSignaling.menuAction())
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuPresentation.menuAction())
+        self.menuPresentation.triggered.connect(self.selectPresentation)
 
         # translate for menubar
         _translate = QtCore.QCoreApplication.translate
@@ -531,65 +541,128 @@ class AzenqosDialog(QMainWindow):
         self.menuCDMA_EVDO.setTitle(_translate("AzenqosDialog", "CDMA/EVDO"))
         self.menuData.setTitle(_translate("AzenqosDialog", "Data"))
         self.menuSignaling.setTitle(_translate("AzenqosDialog", "Signaling"))
-        self.actionImport_log_azm.setText(_translate("AzenqosDialog", "Import log .azm"))
-        self.actionRadio_Parameters.setText(_translate("AzenqosDialog", "Radio Parameters"))
-        self.actionServing_Neighbors.setText(_translate("AzenqosDialog", "Serving + Neighbors"))
-        self.actionCurrent_Channel.setText(_translate("AzenqosDialog", "Current Channel"))
+        self.actionImport_log_azm.setText(
+            _translate("AzenqosDialog", "Import log .azm")
+        )
+        self.actionRadio_Parameters.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
+        self.actionServing_Neighbors.setText(
+            _translate("AzenqosDialog", "Serving + Neighbors")
+        )
+        self.actionCurrent_Channel.setText(
+            _translate("AzenqosDialog", "Current Channel")
+        )
         self.actionC_I.setText(_translate("AzenqosDialog", "C/I"))
         self.actionGSM_Line_Chart.setText(_translate("AzenqosDialog", "GSM Line Chart"))
-        self.actionActive_Monitored_Sets.setText(_translate("AzenqosDialog", "Active + Monitored Sets"))
-        self.actionRadio_Parameters_2.setText(_translate("AzenqosDialog", "Radio Parameters"))
-        self.actionActive_Set_List.setText(_translate("AzenqosDialog", "Active Set List"))
-        self.actionMonitoSet_List.setText(_translate("AzenqosDialog", "Monitored Set List"))
+        self.actionActive_Monitored_Sets.setText(
+            _translate("AzenqosDialog", "Active + Monitored Sets")
+        )
+        self.actionRadio_Parameters_2.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
+        self.actionActive_Set_List.setText(
+            _translate("AzenqosDialog", "Active Set List")
+        )
+        self.actionMonitoSet_List.setText(
+            _translate("AzenqosDialog", "Monitored Set List")
+        )
         self.actionBLER_Summary.setText(_translate("AzenqosDialog", "BLER Summary"))
-        self.actionBLER_Transport_Channel.setText(_translate("AzenqosDialog", "BLER / Transport Channel"))
+        self.actionBLER_Transport_Channel.setText(
+            _translate("AzenqosDialog", "BLER / Transport Channel")
+        )
         self.actionLine_Chart.setText(_translate("AzenqosDialog", "Line Chart"))
         self.actionBearers.setText(_translate("AzenqosDialog", "Bearers"))
-        self.actionPilot_Poluting_Cells.setText(_translate("AzenqosDialog", "Pilot Poluting Cells"))
-        self.actionActive_Monitored_Bar.setText(_translate("AzenqosDialog", "Active + Monitored Bar"))
+        self.actionPilot_Poluting_Cells.setText(
+            _translate("AzenqosDialog", "Pilot Poluting Cells")
+        )
+        self.actionActive_Monitored_Bar.setText(
+            _translate("AzenqosDialog", "Active + Monitored Bar")
+        )
         self.actionCM_GSM_Reports.setText(_translate("AzenqosDialog", "CM GSM Reports"))
         self.actionCM_GSM_Cells.setText(_translate("AzenqosDialog", "CM GSM Cells"))
         self.actionPilot_Analyzer.setText(_translate("AzenqosDialog", "Pilot Analyzer"))
-        self.actionRadio_Parameters_3.setText(_translate("AzenqosDialog", "Radio Parameters"))
-        self.actionServing_Neighbors_2.setText(_translate("AzenqosDialog", "Serving + Neighbors"))
-        self.actionPUCCH_PDSCH_Parameters.setText(_translate("AzenqosDialog", "PUCCH/PDSCH Parameters"))
+        self.actionRadio_Parameters_3.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
+        self.actionServing_Neighbors_2.setText(
+            _translate("AzenqosDialog", "Serving + Neighbors")
+        )
+        self.actionPUCCH_PDSCH_Parameters.setText(
+            _translate("AzenqosDialog", "PUCCH/PDSCH Parameters")
+        )
         self.actionLTE_Line_Chart.setText(_translate("AzenqosDialog", "LTE Line Chart"))
         self.actionLTE_RLC.setText(_translate("AzenqosDialog", "LTE RLC"))
         self.actionLTE_VoLTE.setText(_translate("AzenqosDialog", "LTE VoLTE"))
-        self.actionRadio_Parameters_4.setText(_translate("AzenqosDialog", "Radio Parameters"))
-        self.actionServing_Neighbors_3.setText(_translate("AzenqosDialog", "Serving + Neighbors"))
-        self.actionEVDO_Parameters.setText(_translate("AzenqosDialog", "EVDO Parameters"))
-        self.actionGSM_Data_Line_Chart.setText(_translate("AzenqosDialog", "GSM Data Line Chart"))
-        self.actionWCDMA_Data_Line_Chart.setText(_translate("AzenqosDialog", "WCDMA Data Line Chart"))
-        self.actionGPRS_EDGE_Information.setText(_translate("AzenqosDialog", "GPRS/EDGE Information"))
+        self.actionRadio_Parameters_4.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
+        self.actionServing_Neighbors_3.setText(
+            _translate("AzenqosDialog", "Serving + Neighbors")
+        )
+        self.actionEVDO_Parameters.setText(
+            _translate("AzenqosDialog", "EVDO Parameters")
+        )
+        self.actionGSM_Data_Line_Chart.setText(
+            _translate("AzenqosDialog", "GSM Data Line Chart")
+        )
+        self.actionWCDMA_Data_Line_Chart.setText(
+            _translate("AzenqosDialog", "WCDMA Data Line Chart")
+        )
+        self.actionGPRS_EDGE_Information.setText(
+            _translate("AzenqosDialog", "GPRS/EDGE Information")
+        )
         self.actionWeb_Browser.setText(_translate("AzenqosDialog", "Web Browser"))
-        self.actionHSDPA_HSPA_Statistics.setText(_translate("AzenqosDialog", "HSDPA/HSPA + Statistics"))
-        self.actionHSUPA_Statistics.setText(_translate("AzenqosDialog", "HSUPA Statistics"))
-        self.actionLTE_Data_Statistics.setText(_translate("AzenqosDialog", "LTE Data Statistics"))
-        self.actionLTE_Data_Line_Chart.setText(_translate("AzenqosDialog", "LTE Data Line Chart"))
-        self.actionWifi_Connected_AP.setText(_translate("AzenqosDialog", "Wifi Connected AP"))
-        self.actionWifi_Scanned_APs.setText(_translate("AzenqosDialog", "Wifi Scanned APs"))
+        self.actionHSDPA_HSPA_Statistics.setText(
+            _translate("AzenqosDialog", "HSDPA/HSPA + Statistics")
+        )
+        self.actionHSUPA_Statistics.setText(
+            _translate("AzenqosDialog", "HSUPA Statistics")
+        )
+        self.actionLTE_Data_Statistics.setText(
+            _translate("AzenqosDialog", "LTE Data Statistics")
+        )
+        self.actionLTE_Data_Line_Chart.setText(
+            _translate("AzenqosDialog", "LTE Data Line Chart")
+        )
+        self.actionWifi_Connected_AP.setText(
+            _translate("AzenqosDialog", "Wifi Connected AP")
+        )
+        self.actionWifi_Scanned_APs.setText(
+            _translate("AzenqosDialog", "Wifi Scanned APs")
+        )
         self.actionWifi_Graph.setText(_translate("AzenqosDialog", "Wifi Graph"))
         self.actionEvents.setText(_translate("AzenqosDialog", "Events"))
-        self.actionLayer_1_Messages.setText(_translate("AzenqosDialog", "Layer 1 Messages"))
-        self.actionLayer_3_Messages.setText(_translate("AzenqosDialog", "Layer 3 Messages"))
+        self.actionLayer_1_Messages.setText(
+            _translate("AzenqosDialog", "Layer 1 Messages")
+        )
+        self.actionLayer_3_Messages.setText(
+            _translate("AzenqosDialog", "Layer 3 Messages")
+        )
         self.actionBenchmark.setText(_translate("AzenqosDialog", "Benchmark"))
         self.actionMM_Reg_States.setText(_translate("AzenqosDialog", "MM Reg States"))
-        self.actionServing_System_Info.setText(_translate("AzenqosDialog", "Serving System Info"))
+        self.actionServing_System_Info.setText(
+            _translate("AzenqosDialog", "Serving System Info")
+        )
+
+    def selectPresentation(self, widget):
+        parent = widget.associatedWidgets()
+        if len(parent) > 0:
+            self.classifySelectedItems(parent[0].title(), widget.text())
 
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
-        self.setupTreeWidget(AzenqosDialog)
+        # self.setupTreeWidget(AzenqosDialog)
         self.mdi = GroupArea()
-        self.mdi.show()
+        self.setCentralWidget(self.mdi)
         toolbar = self.addToolBar("toolbar")
         self.toolbar = toolbar
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
-        timeSlider.setGeometry(QtCore.QRect(300, 56, 150, 22))
+        timeSlider.setMinimumWidth(100)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -611,7 +684,8 @@ class AzenqosDialog(QMainWindow):
         self.onlyDouble = QDoubleValidator(0.0, 5.0, 2, self.playSpeed)
         self.onlyDouble.setNotation(QDoubleValidator.StandardNotation)
         self.playSpeed.setValidator(self.onlyDouble)
-        self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
+        self.playSpeed.setMaximumWidth(50)
+        self.playSpeed.setFixedWidth(60)
         self.playSpeed.setText("{:.2f}".format(1))
         self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
@@ -631,19 +705,14 @@ class AzenqosDialog(QMainWindow):
         self.setupPlayStopButton(AzenqosDialog)
 
         # Import Database Button
-        self.importDatabaseBtn = QPushButton(AzenqosDialog)
-        self.importDatabaseBtn.setGeometry(QtCore.QRect(300, 140, 181, 32))
+        self.importDatabaseBtn = QToolButton()
+        self.importDatabaseBtn.setIcon(self.style().standardIcon(QStyle.SP_DirIcon))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         # Map tool Button
-        self.maptool = QPushButton(AzenqosDialog)
-        self.maptool.setGeometry(QtCore.QRect(300, 180, 181, 32))
-        self.maptool.setObjectName("maptool")
-
-        # Filter Button
-        # self.filterBtn = QPushButton(AzenqosDialog)
-        # self.filterBtn.setGeometry(QtCore.QRect(300, 190, 181, 32))
-        # self.filterBtn.setObjectName("filterBtn")
+        self.maptool = QToolButton()
+        self.maptool.setIcon(self.style().standardIcon(QStyle.SP_ArrowDown))
+        self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         self.retranslateUi(AzenqosDialog)
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
@@ -656,24 +725,18 @@ class AzenqosDialog(QMainWindow):
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
         AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos Main Menu"))
-        self.presentationTreeWidget.headerItem().setText(
-            0, _translate("AzenqosDialog", "Presentation")
-        )
-        __sortingEnabled = self.presentationTreeWidget.isSortingEnabled()
-        self.presentationTreeWidget.setSortingEnabled(False)
-        self.presentationTreeWidget.setSortingEnabled(__sortingEnabled)
+        # self.presentationTreeWidget.headerItem().setText(
+        #     0, _translate("AzenqosDialog", "Presentation")
+        # )
+        # __sortingEnabled = self.presentationTreeWidget.isSortingEnabled()
+        # self.presentationTreeWidget.setSortingEnabled(False)
+        # self.presentationTreeWidget.setSortingEnabled(__sortingEnabled)
         # self.configurationTreeWidget.headerItem().setText(
         #     0, _translate("AzenqosDialog", "Configuration"))
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
-
-        # icon_path = ":/plugins/azenqos_plugin/crosshair.png"
-        # pixmap = QPixmap(icon_path)
-        # ButtonIcon = QIcon(pixmap)
-        # self.maptool.setIcon(ButtonIcon)
-        # self.maptool.setIconSize(pixmap.rect().size())
 
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
@@ -2257,7 +2320,12 @@ class AzenqosDialog(QMainWindow):
             mdiwindow.close()
         self.mdi.close()
 
-    def closeEvent(self,event):
+    def removeToolBarActions(self):
+        actions = self.toolbar.actions()
+        for action in actions:
+            self.toolbar.removeAction(action)
+
+    def closeEvent(self, event):
         reply = None
         if self.newImport is False:
             reply = QMessageBox.question(
@@ -2269,10 +2337,11 @@ class AzenqosDialog(QMainWindow):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
+            event.accept()
             iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
-            self.toolbar.destroy(True)
+            self.removeToolBarActions()
             self.quitTask = QuitTask(u"Quiting Plugin")
             QgsApplication.taskManager().addTask(self.quitTask)
             # self.databaseUi.reject()
@@ -2301,6 +2370,8 @@ class AzenqosDialog(QMainWindow):
             #         window.close()
             #         window.reject()
             #         del window
+        else:
+            event.ignore()
 
 
 class GroupArea(QMdiArea):
@@ -2714,8 +2785,17 @@ class TableWindow(QWidget):
                 str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
             ).timestamp()
         except Exception as e:
-            # avoid error warnings
-            timeCell = timeCell
+            # if current cell is not Time cell
+            headers = [item.lower() for item in self.tableHeader]
+            columnIndex = headers.index("time")
+            if not columnIndex == -1:
+                timeItem = item.siblingAtColumn(columnIndex)
+                cellContent = str(timeItem.data())
+                timeCell = datetime.datetime.strptime(
+                    str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
+                ).timestamp()
+            else:
+                timeCell = timeCell
         finally:
             if timeCell is not None:
                 sliderValue = timeCell - minTimeValue
@@ -3075,7 +3155,7 @@ class QuitTask(QgsTask):
             if len(openedWindows) > 0:
                 for window in openedWindows:
                     window.close()
-                    window.reject()
+                    # window.reject()
                     del window
             QgsProject.removeAllMapLayers(QgsProject.instance())
             elapsed_time = time.time() - self.start_time

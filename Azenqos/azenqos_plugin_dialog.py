@@ -2467,6 +2467,7 @@ class TableWindow(QWidget):
         # Init table
         self.tableView = QTableView(self)
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
         self.filterHeader = FilterHeader(self.tableView)
@@ -2788,6 +2789,8 @@ class TableWindow(QWidget):
 
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
+        if self.tablename == "signalling":
+            item = item.siblingAtColumn(3)
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 
@@ -2881,7 +2884,8 @@ class DetailWidget(QDialog):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.textEdit = QTextEdit(self.detailText)
+        self.textEdit = QTextEdit()
+        self.textEdit.setPlainText(self.detailText)
         self.textEdit.setReadOnly(True)
         layout = QVBoxLayout(self)
         layout.addWidget(self.textEdit)
@@ -2910,7 +2914,7 @@ class TableModel(QAbstractTableModel):
             columns = len(self.headerLabels)
         return columns
 
-    def data(self, index, role):
+    def data(self, index, role=QtCore.Qt.DisplayRole):
         if not index.isValid():
             return QVariant()
         elif role != Qt.DisplayRole:

@@ -2915,14 +2915,12 @@ class TableModel(QAbstractTableModel):
         return columns
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
-        if not index.isValid():
-            return QVariant()
-        elif role != Qt.DisplayRole:
-            return QVariant()
-        if index:
+        if role == QtCore.Qt.DisplayRole:
             row = index.row()
             column = index.column()
-            return QVariant(self.dataSource[row][column])
+            return "{}".format(self.dataSource[row][column])
+        else:
+            return None
 
     def dataString(self, index):
         return self.dataSource[index.row()][index.column()]

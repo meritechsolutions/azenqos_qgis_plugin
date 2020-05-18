@@ -11,55 +11,124 @@ class GsmDataQuery:
     def getRadioParameters(self):
         self.openConnection()
         dataList = []
-        fieldsList = [
-            "Time",
-            "RxLev",
-            "RxQual",
-            "TA",
-            "RLT (Max)",
-            "RLT (Current)",
-            "DTX Used",
-            "TxPower",
-            "FER",
-        ]
         if self.timeFilter:
-            condition = "WHERE gcm.time <= '%s'" % (self.timeFilter)
-        selectedColumns = """gcm.time, gcm.gsm_rxlev_full_dbm || ' ' || gcm.gsm_rxlev_sub_dbm as gsm_rxlev, 
-                            gcm.gsm_rxqual_full || ' ' || gcm.gsm_rxqual_sub as gsm_rxqual, gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, 
-                            grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, gsm_fer"""
-        queryString = """SELECT %s
-                        FROM gsm_cell_meas gcm
-                        LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
-                        LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
-                        LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
-                        LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
-                        LEFT JOIN vocoder_info vi ON gcm.time = vi.time
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+            dataList.append(["Time", self.timeFilter, ""])
+        gcmFieldList = ["RxLev", "RxQual"]
+        gcmQueryString = """SELECT gsm_rxlev_full_dbm || ' ' || gsm_rxlev_sub_dbm as "RxLev",  gsm_rxqual_full || ' ' || gsm_rxqual_sub as "RxQual"
+                        FROM gsm_cell_meas
                         %s
-                        ORDER BY gcm.time DESC LIMIT 1""" % (
-            selectedColumns,
-            condition,
+                        ORDER BY time DESC LIMIT 1""" % (
+            condition
         )
-        query = QSqlQuery()
-        query.exec_(queryString)
-        fieldCount = len(selectedColumns.split(","))
-        while query.next():
-            for index in range(fieldCount):
-                columnName = fieldsList[index]
-                fullValue = query.value(index)
+        gcmQuery = QSqlQuery()
+        gcmQuery.exec_(gcmQueryString)
+        while gcmQuery.next():
+            for field in gcmFieldList:
+                fullValue = ""
                 subValue = ""
-                if columnName in ["RxLev", "RxQual"]:
-                    if query.value(index):
-                        splitValue = query.value(index).split(" ")
-                        fullValue = splitValue[0]
-                        subValue = splitValue[1]
-                dataList.append([columnName, fullValue, subValue])
-        else:
-            if len(dataList) == 0:
-                for index in range(fieldCount):
-                    columnName = fieldsList[index]
-                    fullValue = ""
-                    subValue = ""
-                    dataList.append([columnName, fullValue, subValue])
+                if field in ["RxLev", "RxQual"]:
+                    splitValue = gcmQuery.value(field).split(" ")
+                    fullValue = splitValue[0] or ""
+                    subValue = splitValue[1] or ""
+                else:
+                    fullValue = gcmQuery.value(field) or ""
+                dataList.append([field, fullValue, subValue])
+        if gcmQuery.size() == -1:
+            for field in gcmFieldList:
+                fullValue = ""
+                subValue = ""
+                dataList.append([field, fullValue, subValue])
+
+        elementDictList = [
+            {"element": "TA", "table": "gsm_tx_meas", "column": 'gsm_ta as "TA"'},
+            {
+                "element": "RLT (Max)",
+                "table": "gsm_rl_timeout_counter",
+                "column": 'gsm_radiolinktimeout_max as "RLT (Max)"',
+            },
+            {
+                "element": "RLT (Current)",
+                "table": "gsm_rlt_counter",
+                "column": 'gsm_radiolinktimeout_current as "RLT (Current)"',
+            },
+            {
+                "element": "DTX Used",
+                "table": "gsm_rr_measrep_params",
+                "column": 'gsm_dtxused as "DTX Used"',
+            },
+            {
+                "element": "TxPower",
+                "table": "gsm_tx_meas",
+                "column": 'gsm_txpower as "TxPower"',
+            },
+            {"element": "FER", "table": "vocoder_info", "column": 'gsm_fer as "FER"'},
+        ]
+        for dic in elementDictList:
+            element = dic["element"]
+            column = dic["column"]
+            table = dic["table"]
+            if element and column and table:
+                queryString = """SELECT %s
+                                FROM %s
+                                %s
+                                ORDER BY time DESC
+                                LIMIT 1""" % (
+                    column,
+                    table,
+                    condition,
+                )
+                query = QSqlQuery()
+                query.exec_(queryString)
+                while query.next():
+                    dataList.append([element, query.value(element), ""])
+                if query.size() == -1:
+                    dataList.append([element, "", ""])
+
+        # fieldsList = [
+        #     "TA",
+        #     "RLT (Max)",
+        #     "RLT (Current)",
+        #     "DTX Used",
+        #     "TxPower",
+        #     "FER",
+        # ]
+
+        # selectedColumns = """gtm.gsm_ta, grtc.gsm_radiolinktimeout_max, 
+        #                     grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, vi.gsm_fer"""
+        # queryString = """SELECT %s
+        #                 FROM gsm_cell_meas gcm
+        #                 LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
+        #                 LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
+        #                 LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
+        #                 LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
+        #                 LEFT JOIN vocoder_info vi ON gcm.time = vi.time
+        #                 %s
+        #                 ORDER BY gcm.time DESC LIMIT 1""" % (
+        #     selectedColumns,
+        #     condition,
+        # )
+        # query = QSqlQuery()
+        # query.exec_(queryString)
+        # fieldCount = len(selectedColumns.split(","))
+        # while query.next():
+        #     for index in range(fieldCount):
+        #         columnName = fieldsList[index]
+        #         fullValue = query.value(index) or ""
+        #         subValue = ""
+        #         if columnName in ["RxLev", "RxQual"]:
+        #             if query.value(index):
+        #                 splitValue = query.value(index).split(" ")
+        #                 fullValue = splitValue[0] or ""
+        #                 subValue = splitValue[1] or ""
+        #         dataList.append([columnName, fullValue, subValue])
+        # else:
+        #     if len(dataList) == 0:
+        #         for index in range(fieldCount):
+        #             columnName = fieldsList[index]
+        #             fullValue = ""
+        #             subValue = ""
+        #             dataList.append([columnName, fullValue, subValue])
         self.closeConnection()
         return dataList
 

@@ -47,6 +47,7 @@ from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
 
+mostFeaturesLayer = None
 azenqosDatabase = None
 minTimeValue = None
 maxTimeValue = None
@@ -323,14 +324,18 @@ class AzenqosDialog(QMainWindow):
 
     def selectChanged(self):
         global h_list
+        for hi in h_list:
+            hi.hide()
+        h_list = []
         layer = iface.activeLayer()
 
+        # layer = QgsProject.instance().mapLayersByName(layerName)[0]
         if layer.type() == layer.VectorLayer:
             # remove all highlight objects
-            for hi in h_list:
-                hi.hide()
+            # for hi in h_list:
+            #     hi.hide()
 
-            h_list = []
+            # h_list = []
 
             # create highlight geometries for selected objects
             for i in layer.selectedFeatures():
@@ -348,10 +353,19 @@ class AzenqosDialog(QMainWindow):
 
     def setupToolBar(self):
         global timeSlider
+        self.toolbar.setFloatable(False)
+        self.toolbar.setMovable(False)
+        self.toolbar.addWidget(self.importDatabaseBtn)
+        self.toolbar.addWidget(self.maptool)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
         self.toolbar.addWidget(self.pauseButton)
-        self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(timeSlider)
+        self.toolbar.addWidget(self.timeEdit)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.speedLabel)
+        self.toolbar.addWidget(self.playSpeed)
 
     def setupMenubar(self, AzenqosDialog):
         self.menubar = QMenuBar(AzenqosDialog)
@@ -520,6 +534,7 @@ class AzenqosDialog(QMainWindow):
         self.menuPresentation.addAction(self.menuSignaling.menuAction())
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuPresentation.menuAction())
+        self.menuPresentation.triggered.connect(self.selectPresentation)
 
         # translate for menubar
         _translate = QtCore.QCoreApplication.translate
@@ -531,65 +546,128 @@ class AzenqosDialog(QMainWindow):
         self.menuCDMA_EVDO.setTitle(_translate("AzenqosDialog", "CDMA/EVDO"))
         self.menuData.setTitle(_translate("AzenqosDialog", "Data"))
         self.menuSignaling.setTitle(_translate("AzenqosDialog", "Signaling"))
-        self.actionImport_log_azm.setText(_translate("AzenqosDialog", "Import log .azm"))
-        self.actionRadio_Parameters.setText(_translate("AzenqosDialog", "Radio Parameters"))
-        self.actionServing_Neighbors.setText(_translate("AzenqosDialog", "Serving + Neighbors"))
-        self.actionCurrent_Channel.setText(_translate("AzenqosDialog", "Current Channel"))
+        self.actionImport_log_azm.setText(
+            _translate("AzenqosDialog", "Import log .azm")
+        )
+        self.actionRadio_Parameters.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
+        self.actionServing_Neighbors.setText(
+            _translate("AzenqosDialog", "Serving + Neighbors")
+        )
+        self.actionCurrent_Channel.setText(
+            _translate("AzenqosDialog", "Current Channel")
+        )
         self.actionC_I.setText(_translate("AzenqosDialog", "C/I"))
         self.actionGSM_Line_Chart.setText(_translate("AzenqosDialog", "GSM Line Chart"))
-        self.actionActive_Monitored_Sets.setText(_translate("AzenqosDialog", "Active + Monitored Sets"))
-        self.actionRadio_Parameters_2.setText(_translate("AzenqosDialog", "Radio Parameters"))
-        self.actionActive_Set_List.setText(_translate("AzenqosDialog", "Active Set List"))
-        self.actionMonitoSet_List.setText(_translate("AzenqosDialog", "Monitored Set List"))
+        self.actionActive_Monitored_Sets.setText(
+            _translate("AzenqosDialog", "Active + Monitored Sets")
+        )
+        self.actionRadio_Parameters_2.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
+        self.actionActive_Set_List.setText(
+            _translate("AzenqosDialog", "Active Set List")
+        )
+        self.actionMonitoSet_List.setText(
+            _translate("AzenqosDialog", "Monitored Set List")
+        )
         self.actionBLER_Summary.setText(_translate("AzenqosDialog", "BLER Summary"))
-        self.actionBLER_Transport_Channel.setText(_translate("AzenqosDialog", "BLER / Transport Channel"))
+        self.actionBLER_Transport_Channel.setText(
+            _translate("AzenqosDialog", "BLER / Transport Channel")
+        )
         self.actionLine_Chart.setText(_translate("AzenqosDialog", "Line Chart"))
         self.actionBearers.setText(_translate("AzenqosDialog", "Bearers"))
-        self.actionPilot_Poluting_Cells.setText(_translate("AzenqosDialog", "Pilot Poluting Cells"))
-        self.actionActive_Monitored_Bar.setText(_translate("AzenqosDialog", "Active + Monitored Bar"))
+        self.actionPilot_Poluting_Cells.setText(
+            _translate("AzenqosDialog", "Pilot Poluting Cells")
+        )
+        self.actionActive_Monitored_Bar.setText(
+            _translate("AzenqosDialog", "Active + Monitored Bar")
+        )
         self.actionCM_GSM_Reports.setText(_translate("AzenqosDialog", "CM GSM Reports"))
         self.actionCM_GSM_Cells.setText(_translate("AzenqosDialog", "CM GSM Cells"))
         self.actionPilot_Analyzer.setText(_translate("AzenqosDialog", "Pilot Analyzer"))
-        self.actionRadio_Parameters_3.setText(_translate("AzenqosDialog", "Radio Parameters"))
-        self.actionServing_Neighbors_2.setText(_translate("AzenqosDialog", "Serving + Neighbors"))
-        self.actionPUCCH_PDSCH_Parameters.setText(_translate("AzenqosDialog", "PUCCH/PDSCH Parameters"))
+        self.actionRadio_Parameters_3.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
+        self.actionServing_Neighbors_2.setText(
+            _translate("AzenqosDialog", "Serving + Neighbors")
+        )
+        self.actionPUCCH_PDSCH_Parameters.setText(
+            _translate("AzenqosDialog", "PUCCH/PDSCH Parameters")
+        )
         self.actionLTE_Line_Chart.setText(_translate("AzenqosDialog", "LTE Line Chart"))
         self.actionLTE_RLC.setText(_translate("AzenqosDialog", "LTE RLC"))
         self.actionLTE_VoLTE.setText(_translate("AzenqosDialog", "LTE VoLTE"))
-        self.actionRadio_Parameters_4.setText(_translate("AzenqosDialog", "Radio Parameters"))
-        self.actionServing_Neighbors_3.setText(_translate("AzenqosDialog", "Serving + Neighbors"))
-        self.actionEVDO_Parameters.setText(_translate("AzenqosDialog", "EVDO Parameters"))
-        self.actionGSM_Data_Line_Chart.setText(_translate("AzenqosDialog", "GSM Data Line Chart"))
-        self.actionWCDMA_Data_Line_Chart.setText(_translate("AzenqosDialog", "WCDMA Data Line Chart"))
-        self.actionGPRS_EDGE_Information.setText(_translate("AzenqosDialog", "GPRS/EDGE Information"))
+        self.actionRadio_Parameters_4.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
+        self.actionServing_Neighbors_3.setText(
+            _translate("AzenqosDialog", "Serving + Neighbors")
+        )
+        self.actionEVDO_Parameters.setText(
+            _translate("AzenqosDialog", "EVDO Parameters")
+        )
+        self.actionGSM_Data_Line_Chart.setText(
+            _translate("AzenqosDialog", "GSM Data Line Chart")
+        )
+        self.actionWCDMA_Data_Line_Chart.setText(
+            _translate("AzenqosDialog", "WCDMA Data Line Chart")
+        )
+        self.actionGPRS_EDGE_Information.setText(
+            _translate("AzenqosDialog", "GPRS/EDGE Information")
+        )
         self.actionWeb_Browser.setText(_translate("AzenqosDialog", "Web Browser"))
-        self.actionHSDPA_HSPA_Statistics.setText(_translate("AzenqosDialog", "HSDPA/HSPA + Statistics"))
-        self.actionHSUPA_Statistics.setText(_translate("AzenqosDialog", "HSUPA Statistics"))
-        self.actionLTE_Data_Statistics.setText(_translate("AzenqosDialog", "LTE Data Statistics"))
-        self.actionLTE_Data_Line_Chart.setText(_translate("AzenqosDialog", "LTE Data Line Chart"))
-        self.actionWifi_Connected_AP.setText(_translate("AzenqosDialog", "Wifi Connected AP"))
-        self.actionWifi_Scanned_APs.setText(_translate("AzenqosDialog", "Wifi Scanned APs"))
+        self.actionHSDPA_HSPA_Statistics.setText(
+            _translate("AzenqosDialog", "HSDPA/HSPA + Statistics")
+        )
+        self.actionHSUPA_Statistics.setText(
+            _translate("AzenqosDialog", "HSUPA Statistics")
+        )
+        self.actionLTE_Data_Statistics.setText(
+            _translate("AzenqosDialog", "LTE Data Statistics")
+        )
+        self.actionLTE_Data_Line_Chart.setText(
+            _translate("AzenqosDialog", "LTE Data Line Chart")
+        )
+        self.actionWifi_Connected_AP.setText(
+            _translate("AzenqosDialog", "Wifi Connected AP")
+        )
+        self.actionWifi_Scanned_APs.setText(
+            _translate("AzenqosDialog", "Wifi Scanned APs")
+        )
         self.actionWifi_Graph.setText(_translate("AzenqosDialog", "Wifi Graph"))
         self.actionEvents.setText(_translate("AzenqosDialog", "Events"))
-        self.actionLayer_1_Messages.setText(_translate("AzenqosDialog", "Layer 1 Messages"))
-        self.actionLayer_3_Messages.setText(_translate("AzenqosDialog", "Layer 3 Messages"))
+        self.actionLayer_1_Messages.setText(
+            _translate("AzenqosDialog", "Layer 1 Messages")
+        )
+        self.actionLayer_3_Messages.setText(
+            _translate("AzenqosDialog", "Layer 3 Messages")
+        )
         self.actionBenchmark.setText(_translate("AzenqosDialog", "Benchmark"))
         self.actionMM_Reg_States.setText(_translate("AzenqosDialog", "MM Reg States"))
-        self.actionServing_System_Info.setText(_translate("AzenqosDialog", "Serving System Info"))
+        self.actionServing_System_Info.setText(
+            _translate("AzenqosDialog", "Serving System Info")
+        )
+
+    def selectPresentation(self, widget):
+        parent = widget.associatedWidgets()
+        if len(parent) > 0:
+            self.classifySelectedItems(parent[0].title(), widget.text())
 
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
-        self.setupTreeWidget(AzenqosDialog)
+        # self.setupTreeWidget(AzenqosDialog)
         self.mdi = GroupArea()
-        self.mdi.show()
+        self.setCentralWidget(self.mdi)
         toolbar = self.addToolBar("toolbar")
         self.toolbar = toolbar
 
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
-        timeSlider.setGeometry(QtCore.QRect(300, 56, 150, 22))
+        timeSlider.setMinimumWidth(100)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -611,8 +689,14 @@ class AzenqosDialog(QMainWindow):
         self.onlyDouble = QDoubleValidator(0.0, 5.0, 2, self.playSpeed)
         self.onlyDouble.setNotation(QDoubleValidator.StandardNotation)
         self.playSpeed.setValidator(self.onlyDouble)
-        self.playSpeed.setGeometry(QtCore.QRect(540, 82, 40, 22))
-        self.playSpeed.setText("{:.2f}".format(1))
+        self.playSpeed.setMaximumWidth(50)
+        self.playSpeed.setFixedWidth(60)
+        if not slowDownValue == 1:
+            self.playSpeed.setText("{:.2f}".format(slowDownValue))
+        elif not fastForwardValue == 1:
+            self.playSpeed.setText("{:.2f}".format(fastForwardValue))
+        else:
+            self.playSpeed.setText("{:.2f}".format(1))
         self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
         # Datetime Textbox
@@ -631,19 +715,14 @@ class AzenqosDialog(QMainWindow):
         self.setupPlayStopButton(AzenqosDialog)
 
         # Import Database Button
-        self.importDatabaseBtn = QPushButton(AzenqosDialog)
-        self.importDatabaseBtn.setGeometry(QtCore.QRect(300, 140, 181, 32))
+        self.importDatabaseBtn = QToolButton()
+        self.importDatabaseBtn.setIcon(self.style().standardIcon(QStyle.SP_DirIcon))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         # Map tool Button
-        self.maptool = QPushButton(AzenqosDialog)
-        self.maptool.setGeometry(QtCore.QRect(300, 180, 181, 32))
-        self.maptool.setObjectName("maptool")
-
-        # Filter Button
-        # self.filterBtn = QPushButton(AzenqosDialog)
-        # self.filterBtn.setGeometry(QtCore.QRect(300, 190, 181, 32))
-        # self.filterBtn.setObjectName("filterBtn")
+        self.maptool = QToolButton()
+        self.maptool.setIcon(self.style().standardIcon(QStyle.SP_ArrowDown))
+        self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         self.retranslateUi(AzenqosDialog)
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
@@ -656,24 +735,18 @@ class AzenqosDialog(QMainWindow):
     def retranslateUi(self, AzenqosDialog):
         _translate = QtCore.QCoreApplication.translate
         AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos Main Menu"))
-        self.presentationTreeWidget.headerItem().setText(
-            0, _translate("AzenqosDialog", "Presentation")
-        )
-        __sortingEnabled = self.presentationTreeWidget.isSortingEnabled()
-        self.presentationTreeWidget.setSortingEnabled(False)
-        self.presentationTreeWidget.setSortingEnabled(__sortingEnabled)
+        # self.presentationTreeWidget.headerItem().setText(
+        #     0, _translate("AzenqosDialog", "Presentation")
+        # )
+        # __sortingEnabled = self.presentationTreeWidget.isSortingEnabled()
+        # self.presentationTreeWidget.setSortingEnabled(False)
+        # self.presentationTreeWidget.setSortingEnabled(__sortingEnabled)
         # self.configurationTreeWidget.headerItem().setText(
         #     0, _translate("AzenqosDialog", "Configuration"))
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
-
-        # icon_path = ":/plugins/azenqos_plugin/crosshair.png"
-        # pixmap = QPixmap(icon_path)
-        # ButtonIcon = QIcon(pixmap)
-        # self.maptool.setIcon(ButtonIcon)
-        # self.maptool.setIconSize(pixmap.rect().size())
 
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
@@ -849,41 +922,42 @@ class AzenqosDialog(QMainWindow):
 
     def clickCanvas(self, point, button):
         layerData = []
-        layer = iface.activeLayer()
         selectedTime = None
         clearAllSelectedFeatures()
 
-        if layer.type() == layer.VectorLayer:
-            if layer.featureCount() == 0:
-                # There are no features - skip
-                return
+        for layerName in tableList:
+            layer = QgsProject.instance().mapLayersByName(layerName)[0]
+            if layer.type() == layer.VectorLayer:
+                if layer.featureCount() == 0:
+                    # There are no features - skip
+                    continue
 
-            # Loop through all features in the layer
-            for f in layer.getFeatures():
-                distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
-                if distance != -1.0 and distance <= 0.001:
-                    closestFeatureId = f.id()
-                    time = layer.getFeature(closestFeatureId).attribute("time")
-                    info = (layer, closestFeatureId, distance, time)
-                    layerData.append(info)
+                # Loop through all features in the layer
+                for f in layer.getFeatures():
+                    distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
+                    if distance != -1.0 and distance <= 0.001:
+                        closestFeatureId = f.id()
+                        time = layer.getFeature(closestFeatureId).attribute("time")
+                        info = (layer, closestFeatureId, distance, time)
+                        layerData.append(info)
 
-            if not len(layerData) > 0:
-                # Looks like no vector layers were found - do nothing
-                return
+        if not len(layerData) > 0:
+            # Looks like no vector layers were found - do nothing
+            return
 
-            # Sort the layer information by shortest distance
-            layerData.sort(key=lambda element: element[2])
+        # Sort the layer information by shortest distance
+        layerData.sort(key=lambda element: element[2])
 
-            for (layer, closestFeatureId, distance, time) in layerData:
-                layer.select(closestFeatureId)
-                selectedTime = time
-                break
+        for (layer, closestFeatureId, distance, time) in layerData:
+            # layer.select(closestFeatureId)
+            selectedTime = time
+            break
 
-            selectedTimestamp = datetimeStringtoTimestamp(selectedTime)
-            if selectedTimestamp:
-                timeSliderValue = sliderLength - (maxTimeValue - selectedTimestamp)
-                timeSlider.setValue(timeSliderValue)
-                timeSlider.update()
+        selectedTimestamp = datetimeStringtoTimestamp(selectedTime)
+        if selectedTimestamp:
+            timeSliderValue = sliderLength - (maxTimeValue - selectedTimestamp)
+            timeSlider.setValue(timeSliderValue)
+            timeSlider.update()
 
             # self.canvas.refreshAllLayers()
 
@@ -953,9 +1027,9 @@ class AzenqosDialog(QMainWindow):
         azenqosDatabase.open()
         # start_time = time.time()
         QgsMessageLog.logMessage("tables: " + str(tableList))
+        self.posObjs = []
+        self.posIds = []
         for tableName in tableList:
-            self.posObjs = []
-            self.posIds = []
             query = QSqlQuery()
             queryString = (
                 "SELECT posid FROM %s WHERE time <= '%s' AND geom IS NOT NULL ORDER BY time DESC LIMIT 1"
@@ -983,7 +1057,12 @@ class AzenqosDialog(QMainWindow):
                     break
 
             layer = QgsProject.instance().mapLayersByName(layerName)[0]
-            layerFeatures = layer.getFeatures()
+            request = (
+                QgsFeatureRequest()
+                .setFilterExpression("posid = %s" % (self.currentMaxPosId))
+                .setFlags(QgsFeatureRequest.NoGeometry)
+            )
+            layerFeatures = layer.getFeatures(request)
             root = QgsProject.instance().layerTreeRoot()
             root.setHasCustomLayerOrder(True)
             order = root.customLayerOrder()
@@ -2257,7 +2336,12 @@ class AzenqosDialog(QMainWindow):
             mdiwindow.close()
         self.mdi.close()
 
-    def closeEvent(self,event):
+    def removeToolBarActions(self):
+        actions = self.toolbar.actions()
+        for action in actions:
+            self.toolbar.removeAction(action)
+
+    def closeEvent(self, event):
         reply = None
         if self.newImport is False:
             reply = QMessageBox.question(
@@ -2269,10 +2353,11 @@ class AzenqosDialog(QMainWindow):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
+            event.accept()
             iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
-            self.toolbar.destroy(True)
+            self.removeToolBarActions()
             self.quitTask = QuitTask(u"Quiting Plugin")
             QgsApplication.taskManager().addTask(self.quitTask)
             # self.databaseUi.reject()
@@ -2301,6 +2386,8 @@ class AzenqosDialog(QMainWindow):
             #         window.close()
             #         window.reject()
             #         del window
+        else:
+            event.ignore()
 
 
 class GroupArea(QMdiArea):
@@ -2318,9 +2405,7 @@ class TimeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = minTimeValue
         super().setMinimum(0)
-        self._max_int = int(str(maxTimeValue).replace(".", "")) - int(
-            str(minTimeValue).replace(".", "")
-        )
+        self._max_int = int(sliderLength * 1000)
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
@@ -2382,6 +2467,7 @@ class TableWindow(QWidget):
         # Init table
         self.tableView = QTableView(self)
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
         self.filterHeader = FilterHeader(self.tableView)
@@ -2674,10 +2760,10 @@ class TableWindow(QWidget):
                 self.setTableModel(self.dataList)
                 self.tableViewCount = self.tableView.model().rowCount()
 
-            if self.tablename and self.tablename != "":
-                global tableList
-                if not self.tablename in tableList:
-                    tableList.append(self.tablename)
+            # if self.tablename and self.tablename != "":
+            #     global tableList
+            #     if not self.tablename in tableList:
+            #         tableList.append(self.tablename)
 
     def hilightRow(self, sampledate):
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
@@ -2703,6 +2789,8 @@ class TableWindow(QWidget):
 
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
+        if self.tablename == "signalling":
+            item = item.siblingAtColumn(3)
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 
@@ -2714,8 +2802,20 @@ class TableWindow(QWidget):
                 str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
             ).timestamp()
         except Exception as e:
-            # avoid error warnings
-            timeCell = timeCell
+            # if current cell is not Time cell
+            headers = [item.lower() for item in self.tableHeader]
+            try:
+                columnIndex = headers.index("time")
+            except Exception as e2:
+                columnIndex = -1
+            if not columnIndex == -1:
+                timeItem = item.siblingAtColumn(columnIndex)
+                cellContent = str(timeItem.data())
+                timeCell = datetime.datetime.strptime(
+                    str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
+                ).timestamp()
+            else:
+                timeCell = timeCell
         finally:
             if timeCell is not None:
                 sliderValue = timeCell - minTimeValue
@@ -2745,8 +2845,8 @@ class TableWindow(QWidget):
         global tableList
         if self in openedWindows:
             openedWindows.remove(self)
-        if self.tablename and self.tablename in tableList:
-            tableList.remove(self.tablename)
+        # if self.tablename and self.tablename in tableList:
+        #     tableList.remove(self.tablename)
         self.close()
         del self
 
@@ -2784,7 +2884,8 @@ class DetailWidget(QDialog):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.textEdit = QTextEdit(self.detailText)
+        self.textEdit = QTextEdit()
+        self.textEdit.setPlainText(self.detailText)
         self.textEdit.setReadOnly(True)
         layout = QVBoxLayout(self)
         layout.addWidget(self.textEdit)
@@ -2813,15 +2914,13 @@ class TableModel(QAbstractTableModel):
             columns = len(self.headerLabels)
         return columns
 
-    def data(self, index, role):
-        if not index.isValid():
-            return QVariant()
-        elif role != Qt.DisplayRole:
-            return QVariant()
-        if index:
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:
             row = index.row()
             column = index.column()
-            return QVariant(self.dataSource[row][column])
+            return "{}".format(self.dataSource[row][column])
+        else:
+            return None
 
     def dataString(self, index):
         return self.dataSource[index.row()][index.column()]
@@ -2986,7 +3085,9 @@ class LayerTask(QgsTask):
         return True
 
     def finished(self, result):
+        global tableList, mostFeaturesLayer
         if result:
+            mostFeaturesLayer = None
             self.addMapToQgis()
             uri = QgsDataSourceUri()
             uri.setDatabase(self.dbPath)
@@ -2995,6 +3096,12 @@ class LayerTask(QgsTask):
             for tableName in allLayers:
                 uri.setDataSource("", tableName, geom_column)
                 vlayer = iface.addVectorLayer(uri.uri(), tableName, "spatialite")
+                features = vlayer.featureCount()
+                if mostFeaturesLayer is None:
+                    mostFeaturesLayer = (tableName, features)
+                elif features > mostFeaturesLayer[1]:
+                    mostFeaturesLayer = (tableName, features)
+
                 if vlayer:
                     symbol_renderer = vlayer.renderer()
                     if symbol_renderer:
@@ -3004,6 +3111,8 @@ class LayerTask(QgsTask):
                         symbol.setSize(2.4)
                     iface.layerTreeView().refreshLayerSymbology(vlayer.id())
                     vlayer.triggerRepaint()
+                    if not tableName in tableList:
+                        tableList.append(tableName)
 
             iface.mapCanvas().setSelectionColor(QColor("yellow"))
 
@@ -3057,7 +3166,7 @@ class QuitTask(QgsTask):
         return True
 
     def finished(self, result):
-        global allLayers
+        global allLayers, tableList
         if result:
             project = QgsProject.instance()
             for (id_l, layer) in project.mapLayers().items():
@@ -3070,12 +3179,13 @@ class QuitTask(QgsTask):
             QgsProject.instance().reloadAllLayers()
             QgsProject.instance().clear()
             allLayers = []
+            tableList = []
 
             global openedWindows
             if len(openedWindows) > 0:
                 for window in openedWindows:
                     window.close()
-                    window.reject()
+                    # window.reject()
                     del window
             QgsProject.removeAllMapLayers(QgsProject.instance())
             elapsed_time = time.time() - self.start_time

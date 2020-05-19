@@ -2511,7 +2511,7 @@ class TableWindow(QWidget):
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(True)
-        self.tableView.resizeColumnsToContents()
+        # self.tableView.resizeColumnsToContents()
 
     def specifyTablesHeader(self):
         if self.title is not None:

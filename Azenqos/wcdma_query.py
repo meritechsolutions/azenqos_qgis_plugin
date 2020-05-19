@@ -62,11 +62,10 @@ class WcdmaDataQuery:
                     )
                     query = QSqlQuery()
                     query.exec_(queryString)
-                    sizing = query.size()
-                    while query.next():
+                    if query.first():
                         for i in range(0, len(column.split(","))):
                             temp.append(query.value(i))
-                    if query.size() == -1:
+                    else:
                         for i in range(0, len(column.split(","))):
                             temp.append("")
                     # else:
@@ -220,7 +219,6 @@ class WcdmaDataQuery:
                     )
                     query = QSqlQuery()
                     query.exec_(queryString)
-                    size = query.size()
                     if query.next():
                         temp.append(query.value(element))
                     else:

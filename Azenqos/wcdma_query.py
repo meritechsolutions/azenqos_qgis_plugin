@@ -17,6 +17,7 @@ class WcdmaDataQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         for unit in range(maxUnits):
             temp = []
+            queryString = None
             unitNo = unit + 1
             # selectedColumns = (
             #     "wcc.wcdma_cellfile_matched_cellname_%d, wcc.wcdma_celltype_%d, wcc.wcdma_sc_%d, wcc.wcdma_ecio_%d, wcc.wcdma_rscp_%d, wcc.wcdma_cellfreq_%d, wcc.wcdma_cellfreq_%d"
@@ -26,37 +27,15 @@ class WcdmaDataQuery:
                 {
                     "element": "wcmc",
                     "table": "wcdma_cells_combined",
-                    "column": ("wcdma_cellfile_matched_cellname_%d as wcmc" % unitNo),
-                },
-                {
-                    "element": "wc",
-                    "table": "wcdma_cells_combined",
-                    "column": ("wcdma_celltype_%d as wc" % unitNo),
-                },
-                {
-                    "element": "ws",
-                    "table": "wcdma_cells_combined",
-                    "column": ("wcdma_sc_%d as ws" % unitNo),
-                },
-                {
-                    "element": "we",
-                    "table": "wcdma_cells_combined",
-                    "column": ("wcdma_ecio_%d as we" % unitNo),
-                },
-                {
-                    "element": "wr",
-                    "table": "wcdma_cells_combined",
-                    "column": ("wcdma_rscp_%d as wr" % unitNo),
-                },
-                {
-                    "element": "wcf",
-                    "table": "wcdma_cells_combined",
-                    "column": ("wcdma_cellfreq_%d as wcf" % unitNo),
+                    "column": (
+                        "wcdma_cellfile_matched_cellname_%d,wcdma_celltype_%d,wcdma_sc_%d,wcdma_ecio_%d,wcdma_rscp_%d,wcdma_cellfreq_%d"
+                        % (unitNo, unitNo, unitNo, unitNo, unitNo, unitNo)
+                    ),
                 },
                 {
                     "element": "wp",
                     "table": "wcdma_rrc_meas_events",
-                    "column": "wcdma_prevmeasevent as wp",
+                    "column": "wcdma_prevmeasevent ",
                 },
             ]
 
@@ -66,22 +45,47 @@ class WcdmaDataQuery:
                 column = dic["column"]
                 table = dic["table"]
                 if element and column and table:
-                    queryString = """SELECT %s
-                                    FROM %s
-                                    %s
-                                    ORDER BY time DESC
-                                    LIMIT 1""" % (
+                    # if queryString is None:
+                    queryString = """SELECT %s.*
+                                    FROM ( SELECT %s
+                                            FROM %s
+                                            %s
+                                            ORDER BY time DESC
+                                            LIMIT 1
+                                        ) %s
+                                    """ % (
+                        element,
                         column,
                         table,
                         condition,
+                        element,
                     )
                     query = QSqlQuery()
                     query.exec_(queryString)
-                    size = query.size()
-                    if query.next():
-                        temp.append(query.value(element))
-                    else:
-                        temp.append("")
+                    sizing = query.size()
+                    while query.next():
+                        for i in range(0, len(column.split(","))):
+                            temp.append(query.value(i))
+                    if query.size() == -1:
+                        for i in range(0, len(column.split(","))):
+                            temp.append("")
+                    # else:
+                    #     queryString += """ UNION ALL
+                    #                     SELECT %s.*
+                    #                     FROM ( SELECT %s
+                    #                             FROM %s
+                    #                             %s
+                    #                             ORDER BY time DESC
+                    #                             LIMIT 1
+                    #                         ) %s
+                    #                     """ % (
+                    #         element,
+                    #         column,
+                    #         table,
+                    #         condition,
+                    #         element
+                    #     )
+
             dataList.append(temp)
         self.closeConnection()
         return dataList

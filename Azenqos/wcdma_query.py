@@ -1,6 +1,4 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
-from PyQt5.QtCore import *
-from qgis.core import *
 
 
 class WcdmaDataQuery:
@@ -21,10 +19,6 @@ class WcdmaDataQuery:
             temp = []
             queryString = None
             unitNo = unit + 1
-            # selectedColumns = (
-            #     "wcc.wcdma_cellfile_matched_cellname_%d, wcc.wcdma_celltype_%d, wcc.wcdma_sc_%d, wcc.wcdma_ecio_%d, wcc.wcdma_rscp_%d, wcc.wcdma_cellfreq_%d, wcc.wcdma_cellfreq_%d"
-            #     % (unitNo, unitNo, unitNo, unitNo, unitNo, unitNo, unitNo)
-            # )
             elementDictList = [
                 {
                     "element": "wcmc",
@@ -108,71 +102,105 @@ class WcdmaDataQuery:
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
             dataList.append(["Time", self.timeFilter, ""])
+
         elementDictList = [
             {
-                "element": "Tx Power",
+                "name": "wtp",
+                "element": "Tx Power,Max Tx Power",
                 "table": "wcdma_tx_power",
-                "column": 'wcdma_txagc as "Tx Power"',
-            },
-            {
-                "element": "Max Tx Power",
-                "table": "wcdma_tx_power",
-                "column": 'wcdma_maxtxpwr as "Max Tx Power"',
-            },
-            {
-                "element": "RSSI",
-                "table": "wcdma_rx_power",
-                "column": 'wcdma_rssi as "RSSI"',
-            },
-            {"element": "SIR", "table": "wcdma_sir", "column": 'wcdma_sir as "SIR"'},
-            {
-                "element": "RRC State",
-                "table": "wcdma_rrc_state",
-                "column": 'wcdma_rrc_state as "RRC State"',
-            },
-            {
-                "element": "Speech Codec TX",
-                "table": "vocoder_info",
-                "column": 'gsm_speechcodectx as "Speech Codec TX"',
-            },
-            {
-                "element": "Speech Codec RX",
-                "table": "vocoder_info",
-                "column": 'gsm_speechcodecrx as "Speech Codec RX"',
-            },
-            {
-                "element": "Cell ID",
-                "table": "android_info_1sec",
-                "column": 'android_cellid as "Cell ID"',
-            },
-            {
-                "element": "RNC ID",
-                "table": "android_info_1sec",
-                "column": 'android_rnc_id as "RNC ID"',
-            },
+                "column": "wcdma_txagc,wcdma_maxtxpwr",
+                "join": [
+                    {
+                        "name": "wrp",
+                        "element": "RSSI",
+                        "table": "wcdma_rx_power",
+                        "column": "wcdma_rssi",
+                    },
+                    {
+                        "name": "ws",
+                        "element": "SIR",
+                        "table": "wcdma_sir",
+                        "column": "wcdma_sir",
+                    },
+                    {
+                        "name": "wrs",
+                        "element": "RRC State",
+                        "table": "wcdma_rrc_state",
+                        "column": "wcdma_rrc_state",
+                    },
+                    {
+                        "name": "vi",
+                        "element": "Speech Codec TX,Speech Codec RX",
+                        "table": "vocoder_info",
+                        "column": "gsm_speechcodectx,gsm_speechcodecrx",
+                    },
+                    {
+                        "name": "ai",
+                        "element": "Cell ID,RNC ID",
+                        "table": "android_info_1sec",
+                        "column": "android_cellid,android_rnc_id",
+                    },
+                ],
+            }
         ]
         for dic in elementDictList:
-            temp = None
+            temp = []
+            name = dic["name"]
             element = dic["element"]
-            column = dic["column"]
+            mainElement = dic["element"]
+            mainColumn = dic["column"]
+            subColumn = dic["column"]
             table = dic["table"]
-            if element and column and table:
+            join = None
+            joinString = ""
+            onString = ""
+            if not len(dic["join"]) == 0:
+                for join in dic["join"]:
+                    onString = """ON %s.row_num = %s.row_num""" % (name, join["name"],)
+                    joinString += """LEFT JOIN ( SELECT %s,1 as row_num 
+                                            FROM %s 
+                                            %s 
+                                            ORDER BY time DESC 
+                                            LIMIT 1 
+                                        ) %s
+                                        %s """ % (
+                        join["column"],
+                        join["table"],
+                        condition,
+                        join["name"],
+                        onString,
+                    )
+
+                    mainColumn += ",%s" % join["column"]
+                    mainElement += ",%s" % join["element"]
+
+            if element and mainColumn and table:
                 queryString = """SELECT %s
-                                FROM %s
-                                %s
-                                ORDER BY time DESC
-                                LIMIT 1""" % (
-                    column,
+                                FROM ( SELECT %s,1 as row_num
+                                        FROM %s 
+                                        %s 
+                                        ORDER BY time DESC 
+                                        LIMIT 1 
+                                    ) %s
+                                %s 
+                                """ % (
+                    mainColumn,
+                    subColumn,
                     table,
                     condition,
+                    name,
+                    joinString,
                 )
                 query = QSqlQuery()
                 query.exec_(queryString)
-                while query.next():
-                    temp = [element, query.value(element), ""]
-                if temp is None:
-                    temp = [element, "", ""]
-                dataList.append(temp)
+                elements = mainElement.split(",")
+                if query.first():
+                    for i in range(0, len(elements)):
+                        temp.append([elements[i], query.value(i), ""])
+                else:
+                    for elem in elements:
+                        temp.append([elem, "", ""])
+            dataList.extend(temp)
         self.closeConnection()
         return dataList
 
@@ -185,59 +213,84 @@ class WcdmaDataQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
         for unit in range(maxUnits):
             temp = []
+            queryString = None
             unitNo = unit + 1
-
+            # selectedColumns = (
+            #     "wcc.wcdma_cellfile_matched_cellname_%d, wcc.wcdma_celltype_%d, wcc.wcdma_sc_%d, wcc.wcdma_ecio_%d, wcc.wcdma_rscp_%d, wcc.wcdma_cellfreq_%d, wcc.wcdma_cellfreq_%d"
+            #     % (unitNo, unitNo, unitNo, unitNo, unitNo, unitNo, unitNo)
+            # )
             elementDictList = [
                 {
                     "element": "wcm",
                     "table": "wcdma_cell_meas",
-                    "column": ("wcdma_aset_cellfreq_%d as wcm" % unitNo),
-                },
-                {
-                    "element": "wap",
-                    "table": "wcdma_aset_full_list",
-                    "column": ("wcdma_activeset_psc_%d as wap" % unitNo),
-                },
-                {
-                    "element": "wac",
-                    "table": "wcdma_aset_full_list",
-                    "column": ("wcdma_activeset_cellposition_%d as wac" % unitNo),
-                },
-                {
-                    "element": "wact",
-                    "table": "wcdma_aset_full_list",
-                    "column": ("wcdma_activeset_celltpc_%d as wact" % unitNo),
-                },
-                {
-                    "element": "wad",
-                    "table": "wcdma_aset_full_list",
-                    "column": ("wcdma_activeset_diversity_%d as wad" % unitNo),
-                },
+                    "column": ("wcdma_aset_cellfreq_%d" % unitNo),
+                    "join": {
+                        "element": "wafl",
+                        "table": "wcdma_aset_full_list",
+                        "column": "wcdma_activeset_psc_%d,wcdma_activeset_cellposition_%d,wcdma_activeset_celltpc_%d,wcdma_activeset_diversity_%d"
+                        % (unitNo, unitNo, unitNo, unitNo),
+                    },
+                }
             ]
 
             temp.append(self.timeFilter)
             for dic in elementDictList:
                 element = dic["element"]
-                column = dic["column"]
+                mainColumn = dic["column"]
+                subColumn = dic["column"]
                 table = dic["table"]
-                if element and column and table:
+                join = None
+                joinString = ""
+                onString = ""
+                if dic["join"]:
+                    join = dic["join"]
+                    joinString = """JOIN ( SELECT %s,1 as row_num 
+                                          FROM %s 
+                                          %s 
+                                          ORDER BY time DESC 
+                                          LIMIT 1 
+                                        ) %s """ % (
+                        join["column"],
+                        join["table"],
+                        condition,
+                        join["element"],
+                    )
+                    onString = """ON %s.row_num = %s.row_num""" % (
+                        element,
+                        join["element"],
+                    )
+                    mainColumn += ",%s" % join["column"]
+
+                if element and mainColumn and table:
                     queryString = """SELECT %s
-                                    FROM %s
-                                    %s
-                                    ORDER BY time DESC
-                                    LIMIT 1""" % (
-                        column,
+                                    FROM ( SELECT %s,1 as row_num
+                                            FROM %s 
+                                            %s 
+                                            ORDER BY time DESC 
+                                            LIMIT 1 
+                                        ) %s 
+                                    %s 
+                                    %s 
+                                    """ % (
+                        mainColumn,
+                        subColumn,
                         table,
                         condition,
+                        element,
+                        joinString,
+                        onString,
                     )
                     query = QSqlQuery()
-                    query.exec_(queryString)
-                    if query.next():
-                        temp.append(query.value(element))
-                    else:
-                        temp.append("")
-            dataList.append(temp)
 
+                    query.exec_(queryString)
+                    if query.first():
+                        for i in range(0, len(mainColumn.split(","))):
+                            temp.append(query.value(i))
+                    else:
+                        for i in range(0, len(mainColumn.split(","))):
+                            temp.append("")
+
+            dataList.append(temp)
         self.closeConnection()
         return dataList
 

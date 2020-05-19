@@ -1,4 +1,6 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+from PyQt5.QtCore import *
+from qgis.core import *
 
 
 class WcdmaDataQuery:
@@ -31,59 +33,70 @@ class WcdmaDataQuery:
                         "wcdma_cellfile_matched_cellname_%d,wcdma_celltype_%d,wcdma_sc_%d,wcdma_ecio_%d,wcdma_rscp_%d,wcdma_cellfreq_%d"
                         % (unitNo, unitNo, unitNo, unitNo, unitNo, unitNo)
                     ),
-                },
-                {
-                    "element": "wp",
-                    "table": "wcdma_rrc_meas_events",
-                    "column": "wcdma_prevmeasevent ",
-                },
+                    "join": {
+                        "element": "wp",
+                        "table": "wcdma_rrc_meas_events",
+                        "column": "wcdma_prevmeasevent ",
+                    },
+                }
             ]
 
             temp.append(self.timeFilter)
             for dic in elementDictList:
                 element = dic["element"]
-                column = dic["column"]
+                mainColumn = dic["column"]
+                subColumn = dic["column"]
                 table = dic["table"]
-                if element and column and table:
-                    # if queryString is None:
-                    queryString = """SELECT %s.*
-                                    FROM ( SELECT %s
-                                            FROM %s
-                                            %s
-                                            ORDER BY time DESC
-                                            LIMIT 1
-                                        ) %s
-                                    """ % (
+                join = None
+                joinString = ""
+                onString = ""
+                if dic["join"]:
+                    join = dic["join"]
+                    joinString = """JOIN ( SELECT %s,1 as row_num 
+                                          FROM %s 
+                                          %s 
+                                          ORDER BY time DESC 
+                                          LIMIT 1 
+                                        ) %s """ % (
+                        join["column"],
+                        join["table"],
+                        condition,
+                        join["element"],
+                    )
+                    onString = """ON %s.row_num = %s.row_num""" % (
                         element,
-                        column,
+                        join["element"],
+                    )
+                    mainColumn += ",%s" % join["column"]
+
+                if element and mainColumn and table:
+                    queryString = """SELECT %s
+                                    FROM ( SELECT %s,1 as row_num
+                                            FROM %s 
+                                            %s 
+                                            ORDER BY time DESC 
+                                            LIMIT 1 
+                                        ) %s 
+                                    %s 
+                                    %s 
+                                    """ % (
+                        mainColumn,
+                        subColumn,
                         table,
                         condition,
                         element,
+                        joinString,
+                        onString,
                     )
                     query = QSqlQuery()
+
                     query.exec_(queryString)
                     if query.first():
-                        for i in range(0, len(column.split(","))):
+                        for i in range(0, len(mainColumn.split(","))):
                             temp.append(query.value(i))
                     else:
-                        for i in range(0, len(column.split(","))):
+                        for i in range(0, len(mainColumn.split(","))):
                             temp.append("")
-                    # else:
-                    #     queryString += """ UNION ALL
-                    #                     SELECT %s.*
-                    #                     FROM ( SELECT %s
-                    #                             FROM %s
-                    #                             %s
-                    #                             ORDER BY time DESC
-                    #                             LIMIT 1
-                    #                         ) %s
-                    #                     """ % (
-                    #         element,
-                    #         column,
-                    #         table,
-                    #         condition,
-                    #         element
-                    #     )
 
             dataList.append(temp)
         self.closeConnection()

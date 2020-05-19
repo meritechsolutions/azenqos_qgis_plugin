@@ -47,6 +47,7 @@ from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
 
+mostFeaturesLayer = None
 azenqosDatabase = None
 minTimeValue = None
 maxTimeValue = None
@@ -115,13 +116,13 @@ class Ui_DatabaseDialog(QDialog):
         DatabaseDialog.resize(540, 90)
         DatabaseDialog.setMaximumSize(QtCore.QSize(540, 90))
         self.browseButton = QtWidgets.QPushButton(DatabaseDialog)
-        self.browseButton.setGeometry(QtCore.QRect(420, 25, 113, 31))
+        self.browseButton.setGeometry(QtCore.QRect(454, 30, 80, 24))
         self.browseButton.setObjectName("browseButton")
         self.dbPath = QtWidgets.QLineEdit(DatabaseDialog)
-        self.dbPath.setGeometry(QtCore.QRect(10, 30, 400, 21))
+        self.dbPath.setGeometry(QtCore.QRect(10, 30, 438, 24))
         self.dbPath.setObjectName("dbPath")
         self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
-        self.buttonBox.setGeometry(QtCore.QRect(370, 56, 164, 32))
+        self.buttonBox.setGeometry(QtCore.QRect(370, 60, 164, 24))
         self.buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
@@ -323,14 +324,18 @@ class AzenqosDialog(QMainWindow):
 
     def selectChanged(self):
         global h_list
+        for hi in h_list:
+            hi.hide()
+        h_list = []
         layer = iface.activeLayer()
 
+        # layer = QgsProject.instance().mapLayersByName(layerName)[0]
         if layer.type() == layer.VectorLayer:
             # remove all highlight objects
-            for hi in h_list:
-                hi.hide()
+            # for hi in h_list:
+            #     hi.hide()
 
-            h_list = []
+            # h_list = []
 
             # create highlight geometries for selected objects
             for i in layer.selectedFeatures():
@@ -686,7 +691,12 @@ class AzenqosDialog(QMainWindow):
         self.playSpeed.setValidator(self.onlyDouble)
         self.playSpeed.setMaximumWidth(50)
         self.playSpeed.setFixedWidth(60)
-        self.playSpeed.setText("{:.2f}".format(1))
+        if not slowDownValue == 1:
+            self.playSpeed.setText("{:.2f}".format(slowDownValue))
+        elif not fastForwardValue == 1:
+            self.playSpeed.setText("{:.2f}".format(fastForwardValue))
+        else:
+            self.playSpeed.setText("{:.2f}".format(1))
         self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
         # Datetime Textbox
@@ -912,41 +922,42 @@ class AzenqosDialog(QMainWindow):
 
     def clickCanvas(self, point, button):
         layerData = []
-        layer = iface.activeLayer()
         selectedTime = None
         clearAllSelectedFeatures()
 
-        if layer.type() == layer.VectorLayer:
-            if layer.featureCount() == 0:
-                # There are no features - skip
-                return
+        for layerName in tableList:
+            layer = QgsProject.instance().mapLayersByName(layerName)[0]
+            if layer.type() == layer.VectorLayer:
+                if layer.featureCount() == 0:
+                    # There are no features - skip
+                    continue
 
-            # Loop through all features in the layer
-            for f in layer.getFeatures():
-                distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
-                if distance != -1.0 and distance <= 0.001:
-                    closestFeatureId = f.id()
-                    time = layer.getFeature(closestFeatureId).attribute("time")
-                    info = (layer, closestFeatureId, distance, time)
-                    layerData.append(info)
+                # Loop through all features in the layer
+                for f in layer.getFeatures():
+                    distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
+                    if distance != -1.0 and distance <= 0.001:
+                        closestFeatureId = f.id()
+                        time = layer.getFeature(closestFeatureId).attribute("time")
+                        info = (layer, closestFeatureId, distance, time)
+                        layerData.append(info)
 
-            if not len(layerData) > 0:
-                # Looks like no vector layers were found - do nothing
-                return
+        if not len(layerData) > 0:
+            # Looks like no vector layers were found - do nothing
+            return
 
-            # Sort the layer information by shortest distance
-            layerData.sort(key=lambda element: element[2])
+        # Sort the layer information by shortest distance
+        layerData.sort(key=lambda element: element[2])
 
-            for (layer, closestFeatureId, distance, time) in layerData:
-                layer.select(closestFeatureId)
-                selectedTime = time
-                break
+        for (layer, closestFeatureId, distance, time) in layerData:
+            # layer.select(closestFeatureId)
+            selectedTime = time
+            break
 
-            selectedTimestamp = datetimeStringtoTimestamp(selectedTime)
-            if selectedTimestamp:
-                timeSliderValue = sliderLength - (maxTimeValue - selectedTimestamp)
-                timeSlider.setValue(timeSliderValue)
-                timeSlider.update()
+        selectedTimestamp = datetimeStringtoTimestamp(selectedTime)
+        if selectedTimestamp:
+            timeSliderValue = sliderLength - (maxTimeValue - selectedTimestamp)
+            timeSlider.setValue(timeSliderValue)
+            timeSlider.update()
 
             # self.canvas.refreshAllLayers()
 
@@ -1016,9 +1027,9 @@ class AzenqosDialog(QMainWindow):
         azenqosDatabase.open()
         # start_time = time.time()
         QgsMessageLog.logMessage("tables: " + str(tableList))
+        self.posObjs = []
+        self.posIds = []
         for tableName in tableList:
-            self.posObjs = []
-            self.posIds = []
             query = QSqlQuery()
             queryString = (
                 "SELECT posid FROM %s WHERE time <= '%s' AND geom IS NOT NULL ORDER BY time DESC LIMIT 1"
@@ -1046,7 +1057,12 @@ class AzenqosDialog(QMainWindow):
                     break
 
             layer = QgsProject.instance().mapLayersByName(layerName)[0]
-            layerFeatures = layer.getFeatures()
+            request = (
+                QgsFeatureRequest()
+                .setFilterExpression("posid = %s" % (self.currentMaxPosId))
+                .setFlags(QgsFeatureRequest.NoGeometry)
+            )
+            layerFeatures = layer.getFeatures(request)
             root = QgsProject.instance().layerTreeRoot()
             root.setHasCustomLayerOrder(True)
             order = root.customLayerOrder()
@@ -2389,9 +2405,7 @@ class TimeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = minTimeValue
         super().setMinimum(0)
-        self._max_int = int(str(maxTimeValue).replace(".", "")) - int(
-            str(minTimeValue).replace(".", "")
-        )
+        self._max_int = int(sliderLength * 1000)
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
@@ -2453,6 +2467,7 @@ class TableWindow(QWidget):
         # Init table
         self.tableView = QTableView(self)
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
         self.filterHeader = FilterHeader(self.tableView)
@@ -2745,10 +2760,10 @@ class TableWindow(QWidget):
                 self.setTableModel(self.dataList)
                 self.tableViewCount = self.tableView.model().rowCount()
 
-            if self.tablename and self.tablename != "":
-                global tableList
-                if not self.tablename in tableList:
-                    tableList.append(self.tablename)
+            # if self.tablename and self.tablename != "":
+            #     global tableList
+            #     if not self.tablename in tableList:
+            #         tableList.append(self.tablename)
 
     def hilightRow(self, sampledate):
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
@@ -2774,6 +2789,8 @@ class TableWindow(QWidget):
 
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
+        if self.tablename == "signalling":
+            item = item.siblingAtColumn(3)
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 
@@ -2787,7 +2804,10 @@ class TableWindow(QWidget):
         except Exception as e:
             # if current cell is not Time cell
             headers = [item.lower() for item in self.tableHeader]
-            columnIndex = headers.index("time")
+            try:
+                columnIndex = headers.index("time")
+            except Exception as e2:
+                columnIndex = -1
             if not columnIndex == -1:
                 timeItem = item.siblingAtColumn(columnIndex)
                 cellContent = str(timeItem.data())
@@ -2825,8 +2845,8 @@ class TableWindow(QWidget):
         global tableList
         if self in openedWindows:
             openedWindows.remove(self)
-        if self.tablename and self.tablename in tableList:
-            tableList.remove(self.tablename)
+        # if self.tablename and self.tablename in tableList:
+        #     tableList.remove(self.tablename)
         self.close()
         del self
 
@@ -2864,7 +2884,8 @@ class DetailWidget(QDialog):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.textEdit = QTextEdit(self.detailText)
+        self.textEdit = QTextEdit()
+        self.textEdit.setPlainText(self.detailText)
         self.textEdit.setReadOnly(True)
         layout = QVBoxLayout(self)
         layout.addWidget(self.textEdit)
@@ -2893,15 +2914,13 @@ class TableModel(QAbstractTableModel):
             columns = len(self.headerLabels)
         return columns
 
-    def data(self, index, role):
-        if not index.isValid():
-            return QVariant()
-        elif role != Qt.DisplayRole:
-            return QVariant()
-        if index:
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:
             row = index.row()
             column = index.column()
-            return QVariant(self.dataSource[row][column])
+            return "{}".format(self.dataSource[row][column])
+        else:
+            return None
 
     def dataString(self, index):
         return self.dataSource[index.row()][index.column()]
@@ -3066,7 +3085,9 @@ class LayerTask(QgsTask):
         return True
 
     def finished(self, result):
+        global tableList, mostFeaturesLayer
         if result:
+            mostFeaturesLayer = None
             self.addMapToQgis()
             uri = QgsDataSourceUri()
             uri.setDatabase(self.dbPath)
@@ -3075,6 +3096,12 @@ class LayerTask(QgsTask):
             for tableName in allLayers:
                 uri.setDataSource("", tableName, geom_column)
                 vlayer = iface.addVectorLayer(uri.uri(), tableName, "spatialite")
+                features = vlayer.featureCount()
+                if mostFeaturesLayer is None:
+                    mostFeaturesLayer = (tableName, features)
+                elif features > mostFeaturesLayer[1]:
+                    mostFeaturesLayer = (tableName, features)
+
                 if vlayer:
                     symbol_renderer = vlayer.renderer()
                     if symbol_renderer:
@@ -3084,6 +3111,8 @@ class LayerTask(QgsTask):
                         symbol.setSize(2.4)
                     iface.layerTreeView().refreshLayerSymbology(vlayer.id())
                     vlayer.triggerRepaint()
+                    if not tableName in tableList:
+                        tableList.append(tableName)
 
             iface.mapCanvas().setSelectionColor(QColor("yellow"))
 
@@ -3137,7 +3166,7 @@ class QuitTask(QgsTask):
         return True
 
     def finished(self, result):
-        global allLayers
+        global allLayers, tableList
         if result:
             project = QgsProject.instance()
             for (id_l, layer) in project.mapLayers().items():
@@ -3150,6 +3179,7 @@ class QuitTask(QgsTask):
             QgsProject.instance().reloadAllLayers()
             QgsProject.instance().clear()
             allLayers = []
+            tableList = []
 
             global openedWindows
             if len(openedWindows) > 0:

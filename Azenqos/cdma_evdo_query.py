@@ -11,36 +11,63 @@ class CdmaEvdoQuery:
     def getRadioParameters(self):
         self.openConnection()
         dataList = []
-        cdmaFields = [
-            "Time",
-            "Active PN (Best)",
-            "Ec/Io",
-            "RX Power",
-            "TX Power",
-            "FER",
-            "Channel",
-            "Band class",
-            "N Active Set Cells",
-        ]
-
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
+            dataList.append(["Time", self.timeFilter, ""])
 
-        query = QSqlQuery()
-        queryString = """SELECT time, cdma_cell_pn, cdma_ecio, cdma_rx_power, cdma_tx_power, cdma_fer, cdma_channel, cdma_band_class, cdma_n_aset_cells
-                        FROM cdma
-                        %s
-                        ORDER BY time DESC
-                        LIMIT 1""" % (
-            condition
-        )
-        query.exec_(queryString)
-        while query.next():
-            for field in range(len(cdmaFields)):
-                if query.value(field):
-                    dataList.append([cdmaFields[field], query.value(field)])
+        elementDictList = [
+            {
+                "name": "cdma",
+                "element": "Active PN (Best), Ec/Io,RX Power,TX Power,FER,Channel,Band class,N Active Set Cells",
+                "table": "cdma",
+                "column": "cdma_aset_cell_pn, cdma_aset_ecio, cdma_rx_power, cdma_tx_power, cdma_fer, cdma_channel, cdma_band_class, cdma_n_aset_cells",
+            }
+        ]
+        for dic in elementDictList:
+            temp = []
+            name = dic["name"]
+            element = dic["element"]
+            mainElement = dic["element"]
+            mainColumn = dic["column"]
+            subColumn = dic["column"]
+            table = dic["table"]
+            join = None
+            joinString = ""
+            onString = ""
+
+            if element and mainColumn and table:
+                queryString = """SELECT %s
+                                FROM ( SELECT %s,1 as row_num
+                                        FROM %s 
+                                        %s 
+                                        ORDER BY time DESC 
+                                        LIMIT 1 
+                                    ) %s
+                                %s 
+                                """ % (
+                    mainColumn,
+                    subColumn,
+                    table,
+                    condition,
+                    name,
+                    joinString,
+                )
+                query = QSqlQuery()
+                query.exec_(queryString)
+                elements = mainElement.split(",")
+                if query.first():
+                    for i in range(0, len(elements)):
+                        temp.append(
+                            [
+                                elements[i],
+                                "" if str(query.value(i)) == "NULL" else query.value(i),
+                                "",
+                            ]
+                        )
                 else:
-                    dataList.append([cdmaFields[field], ""])
+                    for elem in elements:
+                        temp.append([elem, "", ""])
+            dataList.extend(temp)
         self.closeConnection()
         return dataList
 
@@ -57,6 +84,7 @@ class CdmaEvdoQuery:
         dataList.append([self.timeFilter, "", "", ""])
 
         for neighbor in range(1, MAX_NEIGHBORS):
+            row = []
             queryString = """SELECT cdma_cell_pn_%d, cdma_cell_ecio_%d, cdma_cell_type_%d
                             FROM cdma
                             %s
@@ -69,24 +97,33 @@ class CdmaEvdoQuery:
             )
             query = QSqlQuery()
             query.exec_(queryString)
-            while query.next():
-                neighCell = ["", query.value(0), query.value(1), query.value(2)]
-                dataList.append(neighCell)
+            if query.first():
+                for i in range(3):
+                    row.append("" if str(query.value(i)) == "NULL" else query.value(i))
             else:
-                dataList.append(["", "", "", ""])
+                row = ["", "", ""]
+
+            if not all(v == "" for v in row):
+                if len(dataList) == 0:
+                    row.insert(0, self.timeFilter)
+                else:
+                    row.insert(0, "")
+                dataList.append(row)
+        if len(dataList) == 0:
+            dataList.append([self.timeFilter, "", "", ""])
         self.closeConnection()
         return dataList
 
     def getEvdoParameters(self):
         self.openConnection()
         dataList = []
-        evdoFields = ["Time", "DRC", "PER", "", "SINR Per PN:", "PN", "SINR"]
+        evdoFields = ["DRC", "PER", "", "SINR Per PN:", "PN", "SINR"]
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
         query = QSqlQuery()
-        queryString = """SELECT time, cdma_evdo_drc, cdma_evdo_per, '' as empty1, '' as empty2, cdma_evdo_pn, cdma_evdo_sinr
+        queryString = """SELECT cdma_evdo_drc, cdma_evdo_per, '' as empty1, '' as empty2, '' as empty3, '' as empty4
                         FROM cdma
                         %s
                         ORDER BY time DESC
@@ -94,12 +131,18 @@ class CdmaEvdoQuery:
             condition
         )
         query.exec_(queryString)
-        while query.next():
+        if query.first():
             for field in range(len(evdoFields)):
-                if query.value(field):
+                if field == 0:
+                    dataList.append(["Time", self.timeFilter])
+
+                if not str(query.value(field)) == "NULL":
                     dataList.append([evdoFields[field], query.value(field)])
                 else:
                     dataList.append([evdoFields[field], ""])
+        else:
+            for field in evdoFields:
+                dataList.append([field, ""])
         self.closeConnection()
         return dataList
 

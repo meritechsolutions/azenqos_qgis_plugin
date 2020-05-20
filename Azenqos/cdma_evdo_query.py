@@ -104,10 +104,7 @@ class CdmaEvdoQuery:
                 row = ["", "", ""]
 
             if not all(v == "" for v in row):
-                if len(dataList) == 0:
-                    row.insert(0, self.timeFilter)
-                else:
-                    row.insert(0, "")
+                row.insert(0, "")
                 dataList.append(row)
         if len(dataList) == 0:
             dataList.append([self.timeFilter, "", "", ""])

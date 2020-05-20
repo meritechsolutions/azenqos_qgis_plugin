@@ -210,14 +210,14 @@ class LteDataQuery:
         query = QSqlQuery()
         query.exec_(queryString)
         if query.first():
-            for index in range(fieldsList):
+            for index in range(len(fieldsList)):
                 columnName = fieldsList[index]
                 value = ""
                 if query.value(index) != "":
                     value = query.value(index)
                 dataList.append([columnName, value, "", ""])
         else:
-            for index in range(fieldsList):
+            for index in range(len(fieldsList)):
                 columnName = fieldsList[index]
                 value = ""
                 dataList.append([columnName, value, "", ""])
@@ -405,9 +405,13 @@ class LteDataQuery:
             dataList.append(
                 ["DL TP(Mbps)", query.value("lte_rlc_dl_tp_mbps") or "", "", "", ""]
             )
-            dataList.append(["DL TP(Kbps)", query.value("lte_rlc_dl_tp") or "", "", "", ""])
+            dataList.append(
+                ["DL TP(Kbps)", query.value("lte_rlc_dl_tp") or "", "", "", ""]
+            )
             dataList.append(["Bearers:", "", "", "", ""])
-            dataList.append(["N Bearers", query.value("lte_rlc_n_bearers") or "", "", "", ""])
+            dataList.append(
+                ["N Bearers", query.value("lte_rlc_n_bearers") or "", "", "", ""]
+            )
         for bearer in range(1, maxBearers):
             bearerNo = bearer + 1
             queryString = """SELECT lte_rlc_per_rb_dl_rb_mode_%d, lte_rlc_per_rb_dl_rb_type_%d, lte_rlc_per_rb_dl_rb_id_%d, lte_rlc_per_rb_cfg_index_%d,

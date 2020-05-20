@@ -15,6 +15,7 @@ class WcdmaDataQuery:
         condition = ""
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
+        dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         for unit in range(maxUnits):
             temp = []
             queryString = None
@@ -91,13 +92,8 @@ class WcdmaDataQuery:
                             else:
                                 temp.append(query.value(i))
             if not all(v == "" for v in temp):
-                if len(dataList) == 0:
-                    temp.insert(0, self.timeFilter)
-                else:
-                    temp.insert(0, "")
+                temp.insert(0, "")
                 dataList.append(temp)
-        if len(dataList) == 0:
-            dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         self.closeConnection()
         return dataList
 
@@ -222,6 +218,7 @@ class WcdmaDataQuery:
         maxUnits = 3
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
+        dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         for unit in range(maxUnits):
             temp = []
             queryString = None
@@ -301,13 +298,8 @@ class WcdmaDataQuery:
                                 temp.append(query.value(i))
 
             if not all(v == "" for v in temp):
-                if len(dataList) == 0:
-                    temp.insert(0, self.timeFilter)
-                else:
-                    temp.insert(0, "")
+                temp.insert(0, "")
                 dataList.append(temp)
-        if len(dataList) == 0:
-            dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         self.closeConnection()
         return dataList
 
@@ -319,6 +311,7 @@ class WcdmaDataQuery:
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
+        dataList.append([self.timeFilter, "", "", "", ""])
         for unit in range(maxUnits):
             unitNo = unit + 1
             selectedColumns = (
@@ -337,9 +330,7 @@ class WcdmaDataQuery:
                 celposValue = "" if str(query.value(3)) == "NULL" else query.value(3)
                 diverValue = "" if str(query.value(4)) == "NULL" else query.value(4)
                 if unitNo == 1:
-                    dataList.append(
-                        [self.timeFilter, freqValue, pscValue, celposValue, diverValue]
-                    )
+                    dataList.append(["", freqValue, pscValue, celposValue, diverValue])
                 else:
                     if not all(
                         str(v) == ""

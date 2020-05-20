@@ -173,50 +173,53 @@ class LteDataQuery:
             "DedBearer QCI",
         ]
 
-        selectedColumns = """ltp.lte_tx_power as 'Tx Power', lpcti.lte_pucch_tx_power as 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power as 'PUSCH TxPower (dBm)',
-                            lft.lte_ta as 'TimingAdvance', lrti.lte_transmission_mode_l3 as 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state as 'LTE RRC State',
-                            les.lte_emm_state as 'LTE EMM State', les.lte_emm_substate as 'LTE EMM Substate', '____' as 'Modem ServCellInfo',
-                            lsci.lte_serv_cell_info_allowed_access as 'Allowed Access', lsci.lte_serv_cell_info_mcc as 'MCC', lsci.lte_serv_cell_info_mnc as 'MNC',
-                            lsci.lte_serv_cell_info_tac as 'TAC', lsci.lte_serv_cell_info_eci as 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id as 'eNodeB ID', lsci.lte_scc_derived_lci as 'LCI', 
-                            lsci.lte_serv_cell_info_pci as 'PCI', lsci.lte_scc_derived_eci as 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id as 'Derived SCC eNodeB ID',
-                            lsci.lte_scc_derived_lci as 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq as 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq as 'UL EARFCN',
-                            lsci.lte_serv_cell_info_dl_bandwidth_mhz as 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz as 'UL Bandwidth (Mhz)', '' as 'SCC DL Bandwidth (Mhz)',
-                            '____' as 'SIB1 info:', lsoi.lte_sib1_mcc as 'sib1 MCC', lsoi.lte_sib1_mnc as 'sib1 MNC', lsoi.lte_sib1_tac as 'sib1 TAC', lsoi.lte_sib1_eci as 'sib ECI',
-                            lsoi.lte_sib1_enb_id as 'sib1 eNBid', lsoi.lte_sib1_local_cell_id as 'sib1 LCI', '____' as 'TDD Config:', ltc.lte_tdd_config_subframe_assignment as 'SubframeAssignment',
-                             ltc.lte_tdd_config_special_subframe_pattern as 'SpclSubframePattern', ad.lte_ded_eps_bearer_qci as 'DedBearer QCI'"""
-
-        if self.timeFilter:
-            condition = "WHERE lcm.time <= '%s'" % (self.timeFilter)
-
-        queryString = """SELECT %s
-                        FROM lte_cell_meas lcm
-                        LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
-                        LEFT JOIN lte_l1_dl_tp lldt ON lcm.time = lldt.time
-                        LEFT JOIN lte_cqi lc ON lcm.time = lc.time
-                        LEFT JOIN lte_tx_power ltp ON lcm.time = ltp.time
-                        LEFT JOIN lte_pucch_tx_info lpcti ON lcm.time = lpcti.time
-                        LEFT JOIN lte_pusch_tx_info lpsti ON lcm.time = lpsti.time
-                        LEFT JOIN lte_frame_timing lft ON lcm.time = lft.time
-                        LEFT JOIN lte_rrc_transmode_info lrti ON lcm.time = lrti.time
-                        LEFT JOIN lte_rrc_state lrs ON lcm.time = lrs.time
-                        LEFT JOIN lte_emm_state les ON lcm.time = les.time
-                        LEFT JOIN lte_sib1_info lsoi ON lcm.time = lsoi.time
-                        LEFT JOIN lte_tdd_config ltc ON lcm.time = ltc.time
-                        LEFT JOIN activate_dedicated_eps_bearer_context_request_params ad ON lcm.time = ad.time
-                        %s
-                        ORDER BY lcm.time DESC LIMIT 1""" % (
-            selectedColumns,
-            condition,
+        queryString = """SELECT ltp.lte_tx_power AS 'Tx Power', lpcti.lte_pucch_tx_power AS 'PUCCH TxPower (dBm)', lpsti.lte_pusch_tx_power AS 'PUSCH TxPower (dBm)',
+                                lft.lte_ta AS 'TimingAdvance', lrti.lte_transmission_mode_l3 AS 'Transmission Mode (RRC-tm)', lrs.lte_rrc_state AS 'LTE RRC State',
+                                les.lte_emm_state AS 'LTE EMM State', les.lte_emm_substate AS 'LTE EMM Substate', '____' AS 'Modem ServCellInfo',
+                                lsci.lte_serv_cell_info_allowed_access AS 'Allowed Access', lsci.lte_serv_cell_info_mcc AS 'MCC', lsci.lte_serv_cell_info_mnc AS 'MNC',
+                                lsci.lte_serv_cell_info_tac AS 'TAC', lsci.lte_serv_cell_info_eci AS 'Cell ID (ECI)', lsci.lte_serv_cell_info_enb_id AS 'eNodeB ID', lsci.lte_scc_derived_lci AS 'LCI',
+                                lsci.lte_serv_cell_info_pci AS 'PCI', lsci.lte_scc_derived_eci AS 'Derviced SCC ECI', lsci.lte_scc_derived_enb_id AS 'Derived SCC eNodeB ID',
+                                lsci.lte_scc_derived_lci AS 'Derived SCC LCI', lsci.lte_serv_cell_info_dl_freq AS 'DL EARFCN', lsci.lte_serv_cell_info_ul_freq AS 'UL EARFCN',
+                                lsci.lte_serv_cell_info_dl_bandwidth_mhz AS 'DL Bandwidth (Mhz)', lsci.lte_serv_cell_info_ul_bandwidth_mhz AS 'UL Bandwidth (Mhz)', lsci.lte_scc_dl_bandwidth_1 AS 'SCC DL Bandwidth (Mhz)',
+                                '____' AS 'SIB1 info:', lsoi.lte_sib1_mcc AS 'sib1 MCC', lsoi.lte_sib1_mnc AS 'sib1 MNC', lsoi.lte_sib1_tac AS 'sib1 TAC', lsoi.lte_sib1_eci AS 'sib ECI',
+                                lsoi.lte_sib1_enb_id AS 'sib1 eNBid', lsoi.lte_sib1_local_cell_id AS 'sib1 LCI', '____' AS 'TDD Config:', ltc.lte_tdd_config_subframe_assignment AS 'SubframeAssignment',
+                                ltc.lte_tdd_config_special_subframe_pattern AS 'SpclSubframePattern', ad.lte_ded_eps_bearer_qci AS 'DedBearer QCI'
+                        FROM (SELECT lte_tx_power FROM lte_tx_power WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS ltp,
+                        (SELECT * FROM lte_serv_cell_info WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS lsci,
+                        (SELECT lte_pucch_tx_power FROM lte_pucch_tx_info WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS lpcti,
+                        (SELECT lte_pusch_tx_power FROM lte_pusch_tx_info WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS lpsti,
+                        (SELECT lte_ta FROM lte_frame_timing WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS lft,
+                        (SELECT lte_transmission_mode_l3 FROM lte_rrc_transmode_info WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS lrti,
+                        (SELECT lte_rrc_state FROM lte_rrc_state WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS lrs,
+                        (SELECT lte_emm_state, lte_emm_substate FROM lte_emm_state WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS les,
+                        (SELECT * FROM lte_sib1_info WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS lsoi,
+                        (SELECT lte_tdd_config_subframe_assignment, lte_tdd_config_special_subframe_pattern FROM lte_tdd_config WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS ltc,
+                        (SELECT lte_ded_eps_bearer_qci FROM activate_dedicated_eps_bearer_context_request_params WHERE time <= '%s'  ORDER BY time DESC LIMIT 1) AS ad""" % (
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
+            self.timeFilter,
         )
         query = QSqlQuery()
         query.exec_(queryString)
-        fieldCount = len(selectedColumns.split(","))
-        while query.next():
-            for index in range(fieldCount):
+        if query.first():
+            for index in range(fieldsList):
                 columnName = fieldsList[index]
                 value = ""
                 if query.value(index) != "":
                     value = query.value(index)
+                dataList.append([columnName, value, "", ""])
+        else:
+            for index in range(fieldsList):
+                columnName = fieldsList[index]
+                value = ""
                 dataList.append([columnName, value, "", ""])
         self.closeConnection()
         return dataList
@@ -239,25 +242,31 @@ class LteDataQuery:
         typeHeader["serving"][0] = self.timeFilter
         dataList.append(typeHeader["serving"])
 
-        queryString = """SELECT lcm.lte_earfcn_1, lsci.lte_serv_cell_info_band, lsci.lte_serv_cell_info_pci, lcm.lte_inst_rsrp_1,
-                        lcm.lte_inst_rsrq_1
-                        FROM lte_cell_meas as lcm
-                        LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
-                        %s
-                        ORDER BY lcm.time DESC
-                        LIMIT 1""" % (
-            condition
+        # queryString = """SELECT lcm.lte_earfcn_1, lsci.lte_serv_cell_info_band, lsci.lte_serv_cell_info_pci, lcm.lte_inst_rsrp_1,
+        #                 lcm.lte_inst_rsrq_1
+        #                 FROM lte_cell_meas AS lcm
+        #                 LEFT JOIN lte_serv_cell_info lsci ON lcm.time = lsci.time
+        #                 %s
+        #                 ORDER BY lcm.time DESC
+        #                 LIMIT 1""" % (
+        #     condition
+        # )
+        queryString = """SELECT lcm.lte_earfcn_1, lsci.lte_serv_cell_info_band, lsci.lte_serv_cell_info_pci, lcm.lte_inst_rsrp_1,lcm.lte_inst_rsrq_1
+                        FROM (SELECT lte_earfcn_1, lte_inst_rsrp_1, lte_inst_rsrq_1 FROM lte_cell_meas WHERE time <= '%s' ORDER BY time DESC LIMIT 1) lcm,
+                        (SELECT lte_serv_cell_info_band,lte_serv_cell_info_pci FROM lte_serv_cell_info WHERE time <= '%s' ORDER BY time DESC LIMIT 1) lsci""" % (
+            self.timeFilter,
+            self.timeFilter,
         )
         query = QSqlQuery()
         query.exec_(queryString)
-        while query.next():
+        if query.first():
             servingCell = [
                 "",
-                query.value(0),
-                query.value(1),
-                query.value(2),
-                query.value(3),
-                query.value(4),
+                query.value(0) or "",
+                query.value(1) or "",
+                query.value(2) or "",
+                query.value(3) or "",
+                query.value(4) or "",
             ]
             dataList.append(servingCell)
 
@@ -266,24 +275,25 @@ class LteDataQuery:
             condition = "WHERE lnm.time <= '%s'" % (self.timeFilter)
 
         for neighbor in range(1, MAX_NEIGHBORS):
+            neighborNo = neighbor + 1
             queryString = """SELECT lnm.lte_neigh_earfcn_%d, lnm.lte_neigh_band_%d, lnm.lte_neigh_physical_cell_id_%d, lnm.lte_neigh_rsrp_%d,
                             lnm.lte_neigh_rsrq_%d
-                            FROM lte_neigh_meas as lnm
+                            FROM lte_neigh_meas AS lnm
                             %s
                             ORDER BY lnm.time DESC
                             LIMIT 1""" % (
-                neighbor,
-                neighbor,
-                neighbor,
-                neighbor,
-                neighbor,
+                neighborNo,
+                neighborNo,
+                neighborNo,
+                neighborNo,
+                neighborNo,
                 condition,
             )
             query = QSqlQuery()
             query.exec_(queryString)
-            while query.next():
+            if query.first():
                 if query.value(0):
-                    if neighbor == 1:
+                    if neighborNo == 1:
                         dataList.append(typeHeader["neigh"])
                     neighCell = [
                         "",
@@ -296,8 +306,6 @@ class LteDataQuery:
                     dataList.append(neighCell)
                 else:
                     break
-            else:
-                dataList.append(emptyRow)
         self.closeConnection()
         return dataList
 
@@ -340,7 +348,7 @@ class LteDataQuery:
 
         dataList.append(["Time", self.timeFilter])
 
-        queryString = """SELECT '' as header, lte_cqi_cw0_1, lte_cqi_cw1_1, lte_cqi_n_subbands_1, lte_rank_indication_1
+        queryString = """SELECT '' AS header, lte_cqi_cw0_1, lte_cqi_cw1_1, lte_cqi_n_subbands_1, lte_rank_indication_1
                         FROM lte_cqi
                         %s
                         ORDER BY time DESC
@@ -349,14 +357,11 @@ class LteDataQuery:
         )
         query = QSqlQuery()
         query.exec_(queryString)
-        while query.next():
+        if query.first():
             for field in range(len(pucchFields)):
-                if query.value(field):
-                    dataList.append([pucchFields[field], query.value(field)])
-                else:
-                    dataList.append([pucchFields[field], ""])
+                dataList.append([pucchFields[field], query.value(field) or ""])
 
-        queryString = """SELECT '' as pdsch, lte_pdsch_serving_cell_id_1, lte_pdsch_rnti_id_1, lte_pdsch_rnti_type_1,
+        queryString = """SELECT '' AS pdsch, lte_pdsch_serving_cell_id_1, lte_pdsch_rnti_id_1, lte_pdsch_rnti_type_1,
                         lte_pdsch_serving_n_tx_antennas_1, lte_pdsch_serving_n_rx_antennas_1,
                         lte_pdsch_transmission_mode_current_1, lte_pdsch_spatial_rank_1,
                         lte_pdsch_rb_allocation_slot0_1, lte_pdsch_rb_allocation_slot1_1,
@@ -371,12 +376,9 @@ class LteDataQuery:
         )
         query = QSqlQuery()
         query.exec_(queryString)
-        while query.next():
+        if query.first():
             for field in range(len(pdschFields)):
-                if query.value(field):
-                    dataList.append([pdschFields[field], query.value(field)])
-                else:
-                    dataList.append([pdschFields[field], ""])
+                dataList.append([pdschFields[field], query.value(field) or ""])
         self.closeConnection()
         return dataList
 
@@ -399,40 +401,40 @@ class LteDataQuery:
         )
         query = QSqlQuery()
         query.exec_(queryString)
-        while query.next():
-
+        if query.first():
             dataList.append(
-                ["DL TP(Mbps)", query.value("lte_rlc_dl_tp_mbps"), "", "", ""]
+                ["DL TP(Mbps)", query.value("lte_rlc_dl_tp_mbps") or "", "", "", ""]
             )
-            dataList.append(["DL TP(Kbps)", query.value("lte_rlc_dl_tp"), "", "", ""])
+            dataList.append(["DL TP(Kbps)", query.value("lte_rlc_dl_tp") or "", "", "", ""])
             dataList.append(["Bearers:", "", "", "", ""])
-            dataList.append(["N Bearers", query.value("lte_rlc_n_bearers"), "", "", ""])
+            dataList.append(["N Bearers", query.value("lte_rlc_n_bearers") or "", "", "", ""])
         for bearer in range(1, maxBearers):
+            bearerNo = bearer + 1
             queryString = """SELECT lte_rlc_per_rb_dl_rb_mode_%d, lte_rlc_per_rb_dl_rb_type_%d, lte_rlc_per_rb_dl_rb_id_%d, lte_rlc_per_rb_cfg_index_%d,
                             lte_rlc_per_rb_dl_tp_%d
                             FROM lte_rlc_stats
                             %s
                             ORDER BY time DESC
                             LIMIT 1""" % (
-                bearer,
-                bearer,
-                bearer,
-                bearer,
-                bearer,
+                bearerNo,
+                bearerNo,
+                bearerNo,
+                bearerNo,
+                bearerNo,
                 condition,
             )
             query = QSqlQuery()
             query.exec_(queryString)
             while query.next():
-                if bearer == 1:
+                if bearerNo == 1:
                     dataList.append(["Mode", "Type", "RB-ID", "Index", "TP Mbps"])
                 dataList.append(
                     [
-                        query.value(0),
-                        query.value(1),
-                        query.value(2),
-                        query.value(3),
-                        query.value(4),
+                        query.value(0) or "",
+                        query.value(1) or "",
+                        query.value(2) or "",
+                        query.value(3) or "",
+                        query.value(4) or "",
                     ]
                 )
         self.closeConnection()
@@ -466,12 +468,12 @@ class LteDataQuery:
         if self.timeFilter:
             condition = "WHERE lvs.time <= '%s'" % (self.timeFilter)
 
-        queryString = """SELECT lvs.time, '' as codec, vi.gsm_speechcodecrx, vi.gsm_speechcodectx, '' as delay_interval,
-                        vi.vocoder_amr_audio_packet_delay_avg, lvs.lte_volte_rtp_pkt_delay_avg, '' as rtcp_sr_params,
-                        lvs.lte_volte_rtp_round_trip_time, '' as rtcp_jitter_dl, lvs.lte_volte_rtp_jitter_dl,
-                        lvs.lte_volte_rtp_jitter_dl_millis, '' as rtcp_jitter_ul, lte_volte_rtp_jitter_ul, lte_volte_rtp_jitter_ul_millis,
-                        '' as rtcp_sr_packet_loss, lte_volte_rtp_packet_loss_rate_dl, lte_volte_rtp_packet_loss_rate_ul
-                        FROM lte_volte_stats as lvs
+        queryString = """SELECT lvs.time, '' AS codec, vi.gsm_speechcodecrx, vi.gsm_speechcodectx, '' AS delay_interval,
+                        vi.vocoder_amr_audio_packet_delay_avg, lvs.lte_volte_rtp_pkt_delay_avg, '' AS rtcp_sr_params,
+                        lvs.lte_volte_rtp_round_trip_time, '' AS rtcp_jitter_dl, lvs.lte_volte_rtp_jitter_dl,
+                        lvs.lte_volte_rtp_jitter_dl_millis, '' AS rtcp_jitter_ul, lte_volte_rtp_jitter_ul, lte_volte_rtp_jitter_ul_millis,
+                        '' AS rtcp_sr_packet_loss, lte_volte_rtp_packet_loss_rate_dl, lte_volte_rtp_packet_loss_rate_ul
+                        FROM lte_volte_stats AS lvs
                         LEFT JOIN vocoder_info vi ON lvs.time = vi.time
                         %s
                         ORDER BY lvs.time DESC

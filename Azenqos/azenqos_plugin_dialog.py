@@ -116,13 +116,13 @@ class Ui_DatabaseDialog(QDialog):
         DatabaseDialog.resize(540, 90)
         DatabaseDialog.setMaximumSize(QtCore.QSize(540, 90))
         self.browseButton = QtWidgets.QPushButton(DatabaseDialog)
-        self.browseButton.setGeometry(QtCore.QRect(420, 25, 113, 31))
+        self.browseButton.setGeometry(QtCore.QRect(454, 30, 80, 24))
         self.browseButton.setObjectName("browseButton")
         self.dbPath = QtWidgets.QLineEdit(DatabaseDialog)
-        self.dbPath.setGeometry(QtCore.QRect(10, 30, 400, 21))
+        self.dbPath.setGeometry(QtCore.QRect(10, 30, 438, 24))
         self.dbPath.setObjectName("dbPath")
         self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
-        self.buttonBox.setGeometry(QtCore.QRect(370, 56, 164, 32))
+        self.buttonBox.setGeometry(QtCore.QRect(370, 60, 164, 24))
         self.buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )

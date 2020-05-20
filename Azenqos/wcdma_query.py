@@ -35,7 +35,6 @@ class WcdmaDataQuery:
                 }
             ]
 
-            temp.append(self.timeFilter)
             for dic in elementDictList:
                 element = dic["element"]
                 mainColumn = dic["column"]
@@ -87,12 +86,15 @@ class WcdmaDataQuery:
                     query.exec_(queryString)
                     if query.first():
                         for i in range(0, len(mainColumn.split(","))):
-                            temp.append(query.value(i))
-                    else:
-                        for i in range(0, len(mainColumn.split(","))):
-                            temp.append("")
-
-            dataList.append(temp)
+                            if str(query.value(i)) == "NULL":
+                                temp.append("")
+                            else:
+                                temp.append(query.value(i))
+            if not all(v == "" for v in temp):
+                temp.insert(0, self.timeFilter)
+                dataList.append(temp)
+        if len(dataList) == 0:
+            dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         self.closeConnection()
         return dataList
 
@@ -233,7 +235,6 @@ class WcdmaDataQuery:
                 }
             ]
 
-            temp.append(self.timeFilter)
             for dic in elementDictList:
                 element = dic["element"]
                 mainColumn = dic["column"]
@@ -285,12 +286,16 @@ class WcdmaDataQuery:
                     query.exec_(queryString)
                     if query.first():
                         for i in range(0, len(mainColumn.split(","))):
-                            temp.append(query.value(i))
-                    else:
-                        for i in range(0, len(mainColumn.split(","))):
-                            temp.append("")
+                            if str(query.value(i)) == "NULL":
+                                temp.append("")
+                            else:
+                                temp.append(query.value(i))
 
-            dataList.append(temp)
+            if not all(v == "" for v in temp):
+                temp.insert(0, self.timeFilter)
+                dataList.append(temp)
+        if len(dataList) == 0:
+            dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         self.closeConnection()
         return dataList
 

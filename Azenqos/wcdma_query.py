@@ -91,7 +91,10 @@ class WcdmaDataQuery:
                             else:
                                 temp.append(query.value(i))
             if not all(v == "" for v in temp):
-                temp.insert(0, self.timeFilter)
+                if len(dataList) == 0:
+                    temp.insert(0, self.timeFilter)
+                else:
+                    temp.insert(0, "")
                 dataList.append(temp)
         if len(dataList) == 0:
             dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
@@ -198,7 +201,13 @@ class WcdmaDataQuery:
                 elements = mainElement.split(",")
                 if query.first():
                     for i in range(0, len(elements)):
-                        temp.append([elements[i], query.value(i), ""])
+                        temp.append(
+                            [
+                                elements[i],
+                                "" if str(query.value(i)) == "NULL" else query.value(i),
+                                "",
+                            ]
+                        )
                 else:
                     for elem in elements:
                         temp.append([elem, "", ""])
@@ -292,7 +301,10 @@ class WcdmaDataQuery:
                                 temp.append(query.value(i))
 
             if not all(v == "" for v in temp):
-                temp.insert(0, self.timeFilter)
+                if len(dataList) == 0:
+                    temp.insert(0, self.timeFilter)
+                else:
+                    temp.insert(0, "")
                 dataList.append(temp)
         if len(dataList) == 0:
             dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
@@ -320,16 +332,22 @@ class WcdmaDataQuery:
             query = QSqlQuery()
             query.exec_(queryString)
             while query.next():
-                freqValue = query.value(1)
-                pscValue = query.value(2)
-                celposValue = query.value(3)
-                diverValue = query.value(4)
+                freqValue = "" if str(query.value(1)) == "NULL" else query.value(1)
+                pscValue = "" if str(query.value(2)) == "NULL" else query.value(2)
+                celposValue = "" if str(query.value(3)) == "NULL" else query.value(3)
+                diverValue = "" if str(query.value(4)) == "NULL" else query.value(4)
                 if unitNo == 1:
                     dataList.append(
                         [self.timeFilter, freqValue, pscValue, celposValue, diverValue]
                     )
                 else:
-                    dataList.append(["", freqValue, pscValue, celposValue, diverValue])
+                    if not all(
+                        str(v) == ""
+                        for v in [freqValue, pscValue, celposValue, diverValue]
+                    ):
+                        dataList.append(
+                            ["", freqValue, pscValue, celposValue, diverValue]
+                        )
             else:
                 if len(dataList) == 0:
                     dataList.append([self.timeFilter, "", "", "", "", ""])
@@ -365,7 +383,12 @@ class WcdmaDataQuery:
             blerCalWindowSize = query.value(2)
             blerNTransportChannels = query.value(3)
             for field in range(1, len(fieldsList)):
-                dataList.append([fieldsList[field], query.value(field)])
+                dataList.append(
+                    [
+                        fieldsList[field],
+                        "" if str(query.value(field)) == "NULL" else query.value(field),
+                    ]
+                )
         else:
             if len(dataList) == 0:
                 dataList.append(["Time", self.timeFilter])
@@ -398,9 +421,11 @@ class WcdmaDataQuery:
             query = QSqlQuery()
             query.exec_(queryString)
             while query.next():
-                dataList.append(
-                    [query.value(0), query.value(1), query.value(2), query.value(3)]
-                )
+                row = []
+                for i in range(4):
+                    row.append("" if str(query.value(i)) == "NULL" else query.value(i))
+                if not all(str(v) == "" for v in row):
+                    dataList.append(row)
             else:
                 if len(dataList) == 0:
                     dataList.append(["", "", "", ""])
@@ -435,8 +460,11 @@ class WcdmaDataQuery:
                 if bearerNo == 1:
                     row[0] = query.value(0)
                 for index in range(1, len(row)):
-                    row[index] = query.value(index)
-                dataList.append(row)
+                    row[index] = (
+                        "" if str(query.value(index)) == "NULL" else query.value(index)
+                    )
+                if not all(str(v) == "" for v in row):
+                    dataList.append(row)
             else:
                 if len(dataList) == 0:
                     dataList.append(["", "", "", ""])
@@ -468,11 +496,14 @@ class WcdmaDataQuery:
             while query.next():
                 row = ["", "", "", "", ""]
                 if pollutionNo == 1:
-                    row[0] = query.value(0)
-                    row[1] = query.value(1)
+                    row[0] = "" if str(query.value(0)) == "NULL" else query.value(0)
+                    row[1] = "" if str(query.value(1)) == "NULL" else query.value(1)
                 for index in range(2, len(row)):
-                    row[index] = query.value(index)
-                dataList.append(row)
+                    row[index] = (
+                        "" if str(query.value(index)) == "NULL" else query.value(index)
+                    )
+                if not all(str(v) == "" for v in row):
+                    dataList.append(row)
 
         self.closeConnection()
         return dataList
@@ -500,7 +531,11 @@ class WcdmaDataQuery:
             query = QSqlQuery()
             query.exec_(queryString)
             while query.next():
-                dataList.append([query.value(0), query.value(1), query.value(2)])
+                row = []
+                for i in range(3):
+                    row.append("" if str(query.value(i)) == "NULL" else query.value(i))
+                if not all(str(v) == "" for v in row):
+                    dataList.append(row)
             else:
                 if len(dataList) == 0:
                     dataList.append(["", "", ""])
@@ -524,15 +559,11 @@ class WcdmaDataQuery:
         query = QSqlQuery()
         query.exec_(queryString)
         while query.next():
-            dataList.append(
-                [
-                    query.value(0),
-                    query.value(1),
-                    query.value(2),
-                    query.value(3),
-                    query.value(4),
-                ]
-            )
+            row = []
+            for i in range(5):
+                row.append("" if str(query.value(i)) == "NULL" else query.value(i))
+            if not all(str(v) == "" for v in row):
+                dataList.append(row)
         else:
             dataList.append([self.timeFilter, "", "", "", ""])
         self.closeConnection()

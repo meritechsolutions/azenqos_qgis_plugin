@@ -15,30 +15,29 @@ class GsmDataQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
             dataList.append(["Time", self.timeFilter, ""])
         gcmFieldList = ["RxLev", "RxQual"]
-        gcmQueryString = """SELECT gsm_rxlev_full_dbm || ' ' || gsm_rxlev_sub_dbm as "RxLev",  gsm_rxqual_full || ' ' || gsm_rxqual_sub as "RxQual"
-                        FROM gsm_cell_meas
-                        %s
-                        ORDER BY time DESC LIMIT 1""" % (
-            condition
+        gcmQueryString = (
+            """SELECT gsm_rxlev_full_dbm || ' ' || gsm_rxlev_sub_dbm as "RxLev", gsm_rxqual_full || ' ' || gsm_rxqual_sub as "RxQual" FROM gsm_cell_meas %s ORDER BY time DESC LIMIT 1"""
+            % (condition)
         )
         gcmQuery = QSqlQuery()
-        gcmQuery.exec_(gcmQueryString)
-        while gcmQuery.next():
-            for field in gcmFieldList:
-                fullValue = ""
-                subValue = ""
-                if field in ["RxLev", "RxQual"]:
-                    splitValue = str(gcmQuery.value(field)).split(" ")
-                    fullValue = splitValue[0] or ""
-                    subValue = splitValue[1] or ""
-                else:
-                    fullValue = gcmQuery.value(field) or ""
-                dataList.append([field, fullValue, subValue])
-        if gcmQuery.size() == -1:
-            for field in gcmFieldList:
-                fullValue = ""
-                subValue = ""
-                dataList.append([field, fullValue, subValue])
+        queryStatus = gcmQuery.exec_(gcmQueryString)
+        if queryStatus:
+            hasData = gcmQuery.first()
+            if hasData:
+                for field in gcmFieldList:
+                    fullValue = ""
+                    subValue = ""
+                    if field in ["RxLev", "RxQual"]:
+                        if gcmQuery.value(field):
+                            splitValue = gcmQuery.value(field).split(" ")
+                            fullValue = splitValue[0] or ""
+                            subValue = splitValue[1] or ""
+                    dataList.append([field, fullValue, subValue])
+            else:
+                for field in gcmFieldList:
+                    fullValue = ""
+                    subValue = ""
+                    dataList.append([field, fullValue, subValue])
 
         elementDictList = [
             {"element": "TA", "table": "gsm_tx_meas", "column": 'gsm_ta as "TA"'},
@@ -79,56 +78,13 @@ class GsmDataQuery:
                     condition,
                 )
                 query = QSqlQuery()
-                query.exec_(queryString)
-                while query.next():
-                    dataList.append([element, query.value(element), ""])
-                if query.size() == -1:
-                    dataList.append([element, "", ""])
-
-        # fieldsList = [
-        #     "TA",
-        #     "RLT (Max)",
-        #     "RLT (Current)",
-        #     "DTX Used",
-        #     "TxPower",
-        #     "FER",
-        # ]
-
-        # selectedColumns = """gtm.gsm_ta, grtc.gsm_radiolinktimeout_max,
-        #                     grc.gsm_radiolinktimeout_current, grmp.gsm_dtxused, gtm.gsm_txpower, vi.gsm_fer"""
-        # queryString = """SELECT %s
-        #                 FROM gsm_cell_meas gcm
-        #                 LEFT JOIN gsm_rlt_counter grc ON gcm.time = grc.time
-        #                 LEFT JOIN gsm_rl_timeout_counter grtc ON gcm.time = grtc.time
-        #                 LEFT JOIN gsm_tx_meas gtm ON gcm.time = gtm.time
-        #                 LEFT JOIN gsm_rr_measrep_params grmp ON gcm.time = grmp.time
-        #                 LEFT JOIN vocoder_info vi ON gcm.time = vi.time
-        #                 %s
-        #                 ORDER BY gcm.time DESC LIMIT 1""" % (
-        #     selectedColumns,
-        #     condition,
-        # )
-        # query = QSqlQuery()
-        # query.exec_(queryString)
-        # fieldCount = len(selectedColumns.split(","))
-        # while query.next():
-        #     for index in range(fieldCount):
-        #         columnName = fieldsList[index]
-        #         fullValue = query.value(index) or ""
-        #         subValue = ""
-        #         if columnName in ["RxLev", "RxQual"]:
-        #             if query.value(index):
-        #                 splitValue = query.value(index).split(" ")
-        #                 fullValue = splitValue[0] or ""
-        #                 subValue = splitValue[1] or ""
-        #         dataList.append([columnName, fullValue, subValue])
-        # else:
-        #     if len(dataList) == 0:
-        #         for index in range(fieldCount):
-        #             columnName = fieldsList[index]
-        #             fullValue = ""
-        #             subValue = ""
-        #             dataList.append([columnName, fullValue, subValue])
+                queryStatus = query.exec_(queryString)
+                if queryStatus:
+                    hasData = query.first()
+                    value = ""
+                    if query.value(element):
+                        value = query.value(element)
+                    dataList.append([element, value, ""])
         self.closeConnection()
         return dataList
 
@@ -162,13 +118,16 @@ class GsmDataQuery:
             condition,
         )
         query = QSqlQuery()
-        query.exec_(queryString)
-        while query.next():
+        queryStatus = query.exec_(queryString)
+        if queryStatus:
+            query.first()
+            rowData = []
             for x in range(len(fieldsList)):
                 if query.value(x):
-                    dataList.append(query.value(x))
+                    rowData.append(query.value(x))
                 else:
-                    dataList.append("")
+                    rowData.append("")
+            dataList.append(rowData)
         self.closeConnection()
         return dataList
 
@@ -178,55 +137,110 @@ class GsmDataQuery:
         dataList = []
         condition = ""
         gsmFields = [
-            "Cellname",
-            "CGI",
-            "Channel type",
-            "Sub channel number",
-            "Mobile Allocation Index Offset (MAIO)",
-            "Hopping Sequence Number (HSN)",
-            "Cipering Algorithm",
-            "MS Power Control Level",
-            "Channel Mode",
-            "Speech Codec TX",
-            "Speech Codec RX",
-            "Hopping Channel",
-            "Hopping Frequencies",
-            "ARFCN BCCH",
-            "ARFCN TCH",
-            "Time slot",
+            {
+                "element": "Cellname",
+                "column": 'gsm_cellfile_matched_cellname as "Cellname"',
+                "table": "gsm_cell_meas",
+            },
+            {"element": "CGI", "column": 'gsm_cgi as "CGI"', "table": "gsm_cell_meas"},
+            {
+                "element": "Channel type",
+                "column": 'gsm_channeltype as "Channel type"',
+                "table": "gsm_rr_chan_desc",
+            },
+            {
+                "element": "Sub channel number",
+                "column": 'gsm_subchannelnumber as "Sub channel number"',
+                "table": "gsm_rr_subchan",
+            },
+            {
+                "element": "Mobile Allocation Index Offset (MAIO)",
+                "column": 'gsm_maio as "Mobile Allocation Index Offset (MAIO)"',
+                "table": "gsm_rr_chan_desc",
+            },
+            {
+                "element": "Hopping Sequence Number (HSN)",
+                "column": 'gsm_hsn as "Hopping Sequence Number (HSN)"',
+                "table": "gsm_rr_chan_desc",
+            },
+            {
+                "element": "Cipering Algorithm",
+                "column": 'gsm_cipheringalgorithm as "Cipering Algorithm"',
+                "table": "gsm_rr_cipher_alg",
+            },
+            {
+                "element": "MS Power Control Level",
+                "column": 'gsm_ms_powercontrollevel as "MS Power Control Level"',
+                "table": "gsm_rr_power_ctrl",
+            },
+            {
+                "element": "Channel Mode",
+                "column": 'gsm_channelmode as "Channel Mode"',
+                "table": "gsm_chan_mode",
+            },
+            {
+                "element": "Speech Codec TX",
+                "column": 'gsm_speechcodectx as "Speech Codec TX"',
+                "table": "vocoder_info",
+            },
+            {
+                "element": "Speech Codec RX",
+                "column": 'gsm_speechcodecrx as "Speech Codec RX"',
+                "table": "vocoder_info",
+            },
+            {
+                "element": "Hopping Channel",
+                "column": 'gsm_hoppingchannel as "Hopping Channel"',
+                "table": "gsm_rr_chan_desc",
+            },
+            {
+                "element": "Hopping Frequencies",
+                "column": 'gsm_hoppingfrequencies as "Hopping Frequencies"',
+                "table": "gsm_hopping_list",
+            },
+            {
+                "element": "ARFCN BCCH",
+                "column": 'gsm_arfcn_bcch as "ARFCN BCCH"',
+                "table": "gsm_cell_meas",
+            },
+            {
+                "element": "ARFCN TCH",
+                "column": 'gsm_arfcn_tch as "ARFCN TCH"',
+                "table": "gsm_rr_chan_desc",
+            },
+            {
+                "element": "Time slot",
+                "column": 'gsm_timeslot as "Time slot"',
+                "table": "gsm_rr_chan_desc",
+            },
         ]
 
         if self.timeFilter:
-            condition = "WHERE gcm.time <= '%s'" % (self.timeFilter)
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
             dateString = "%s" % (self.timeFilter)
 
         dataList.append(["Time", self.timeFilter])
+        for dic in gsmFields:
+            element = dic["element"]
+            column = dic["column"]
+            table = dic["table"]
+            if element and column and table:
+                queryString = """ SELECT %s
+                                FROM %s
+                                %s
+                                ORDER BY time DESC
+                                LIMIT 1 """ % (
+                    column,
+                    table,
+                    condition,
+                )
+                query = QSqlQuery()
+                queryStatus = query.exec_(queryString)
+                if queryStatus:
+                    firstRow = query.first()
+                    value = query.value(element) or ""
+                    dataList.append([element, value])
 
-        queryString = """SELECT gcm.gsm_cellfile_matched_cellname, gcm.gsm_cgi, grcd.gsm_channeltype, grs.gsm_subchannelnumber,
-                        grcd.gsm_maio, grcd.gsm_hsn, grca.gsm_cipheringalgorithm, grpc.gsm_ms_powercontrollevel, gchm.gsm_channelmode,
-                        vi.gsm_speechcodectx, vi.gsm_speechcodecrx, grcd.gsm_hoppingchannel, ghl.gsm_hoppingfrequencies, gcm.gsm_arfcn_bcch,
-                        grcd.gsm_arfcn_tch
-                        FROM gsm_cell_meas gcm
-                        INNER JOIN gsm_rr_chan_desc grcd ON gcm.time = grcd.time
-                        INNER JOIN gsm_rr_subchan grs ON grs.time = gcm.time
-                        INNER JOIN gsm_rr_cipher_alg grca ON grca.time = gcm.time
-                        INNER JOIN gsm_rr_power_ctrl grpc ON grpc.time = gcm.time
-                        INNER JOIN gsm_chan_mode gchm ON gchm.time = gcm.time
-                        INNER JOIN vocoder_info vi ON vi.time = gcm.time
-                        INNER JOIN gsm_hopping_list ghl ON ghl.time = gcm.time
-                        %s
-                        ORDER BY time DESC
-                        LIMIT 1""" % (
-            condition
-        )
-        query = QSqlQuery()
-        query.exec_(queryString)
-        while query.next():
-            for field in range(len(gsmFields)):
-                if query.value(field):
-                    dataList.append([gsmFields[field], query.value(field)])
-                else:
-                    dataList.append([gsmFields[field], ""])
         self.closeConnection()
         return dataList
 
@@ -252,29 +266,25 @@ class GsmDataQuery:
 
             dataList.append(["Worst", query.value("gsm_coi_worst"), ""])
             dataList.append(["Avg", query.value("gsm_coi_avg"), ""])
+
         for unit in range(1, maxUnits):
-            queryString = """SELECT gsm_coi_arfcn_%d, gsm_coi_%d
+            column = "gsm_coi_arfcn_%s, gsm_coi_%s" % (unit, unit)
+            queryString = """SELECT %s
                             FROM gsm_coi_per_chan
                             %s
                             ORDER BY time DESC
                             LIMIT 1""" % (
-                unit,
-                unit,
+                column,
                 condition,
             )
             query = QSqlQuery()
-            query.exec_(queryString)
-            rowCount = query.record().count()
-            if rowCount > 0:
-                while query.next():
-                    if query.value(0):
-                        dataList.append(
-                            [
-                                "",
-                                query.value("gsm_coi_arfcn_" + str(unit)),
-                                query.value("gsm_coi_" + str(unit)),
-                            ]
-                        )
+            queryStatus = query.exec_(queryString)
+            if queryStatus:
+                firstRow = query.first()
+                if query.value(0) or query.value(1):
+                    dataList.append(
+                        ["", query.value(0) or "", query.value(1) or "",]
+                    )
         self.closeConnection()
         return dataList
 

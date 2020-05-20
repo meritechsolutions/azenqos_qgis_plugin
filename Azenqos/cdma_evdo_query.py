@@ -85,7 +85,7 @@ class CdmaEvdoQuery:
 
         for neighbor in range(1, MAX_NEIGHBORS):
             row = []
-            queryString = """SELECT cdma_cell_pn_%d, cdma_cell_ecio_%d, cdma_cell_type_%d
+            queryString = """SELECT cdma_cell_pn_%d, cdma_ecio_%d, cdma_cell_type_%d
                             FROM cdma
                             %s
                             ORDER BY time DESC

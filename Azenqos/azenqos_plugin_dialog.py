@@ -65,13 +65,12 @@ allLayers = []
 tableList = []
 h_list = []
 linechartWindowname = [
-    "GSM_Line Chart",
+    "GSM_GSM Line Chart",
     "WCDMA_Line Chart",
     "LTE_LTE Line Chart",
     "Data_GSM Data Line Chart",
     "Data_WCDMA Data Line Chart",
     "Data_LTE Data Line Chart",
-    "WCDMA_Pilot Analyzer",
 ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -2848,8 +2847,9 @@ class TableWindow(QWidget):
     def closeEvent(self, QCloseEvent):
         global openedWindows
         global tableList
-        if self in openedWindows:
-            openedWindows.remove(self)
+        indices = [i for i, x in enumerate(openedWindows) if x == self]
+        for index in indices:
+            openedWindows.pop(index)
         # if self.tablename and self.tablename in tableList:
         #     tableList.remove(self.tablename)
         self.close()

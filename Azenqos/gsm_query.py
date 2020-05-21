@@ -92,7 +92,6 @@ class GsmDataQuery:
         self.openConnection()
         dataList = []
         fieldsList = [
-            "Time",
             "Cellname",
             "LAC",
             "BSIC",
@@ -103,31 +102,98 @@ class GsmDataQuery:
             "C31",
             "C32",
         ]
-        selectedColumns = "gcm.time, gcm.gsm_cellfile_matched_cellname, gsci.gsm_lac, gcm.gsm_bsic, gcm.gsm_arfcn_bcch, gcm.gsm_rxlev_full_dbm, gcm.gsm_c1, gcm.gsm_c2, gcm.gsm_c31, gcm.gsm_c32"
+        selectedColumns = " gsm_cellfile_matched_cellname, gsm_lac, gsm_bsic, gsm_arfcn_bcch, gsm_rxlev_full_dbm, gsm_c1, gsm_c2, gsm_c31, gsm_c32"
         condition = ""
         if self.timeFilter:
-            condition = "WHERE gcm.time <= '%s'" % (self.timeFilter)
-        queryString = """ SELECT %s
-                        FROM gsm_cell_meas gcm
-                        LEFT JOIN gsm_serv_cell_info gsci ON gcm.time = gsci.time
-                        %s
-                        ORDER BY gcm.time DESC
-                        LIMIT 1
-                        """ % (
-            selectedColumns,
-            condition,
-        )
-        query = QSqlQuery()
-        queryStatus = query.exec_(queryString)
-        if queryStatus:
-            query.first()
-            rowData = []
-            for x in range(len(fieldsList)):
-                if query.value(x):
-                    rowData.append(query.value(x))
+            condition = "WHERE time <= '%s'" % (self.timeFilter)
+        dataList.append([self.timeFilter, "", "", "", "", "", "", "", "", ""])
+        temp = []
+        queryString = None
+        elementDictList = [
+            {
+                "element": "Cellname",
+                "name": "gcm",
+                "table": "gsm_cell_meas",
+                "column": "gsm_cellfile_matched_cellname",
+                "join": [
+                    {
+                        "element": "LAC",
+                        "name": "gsci",
+                        "table": "gsm_serv_cell_info",
+                        "column": "gsm_lac ",
+                    },
+                    {
+                        "element": "BSIC,ARFCN,RxLev,C1,C2,C31,C32",
+                        "name": "gcm2",
+                        "table": "gsm_cell_meas",
+                        "column": "gsm_bsic, gsm_arfcn_bcch, gsm_rxlev_full_dbm, gsm_c1, gsm_c2, gsm_c31, gsm_c32 ",
+                    },
+                ],
+            }
+        ]
+
+        for dic in elementDictList:
+            temp = []
+            name = dic["name"]
+            element = dic["element"]
+            mainElement = dic["element"]
+            mainColumn = dic["column"]
+            subColumn = dic["column"]
+            table = dic["table"]
+            join = None
+            joinString = ""
+            onString = ""
+            if not len(dic["join"]) == 0:
+                for join in dic["join"]:
+                    onString = """ON %s.row_num = %s.row_num""" % (name, join["name"],)
+                    joinString += """LEFT JOIN ( SELECT %s,1 as row_num 
+                                            FROM %s 
+                                            %s 
+                                            ORDER BY time DESC 
+                                            LIMIT 1 
+                                        ) %s
+                                        %s """ % (
+                        join["column"],
+                        join["table"],
+                        condition,
+                        join["name"],
+                        onString,
+                    )
+
+                    mainColumn += ",%s" % join["column"]
+                    mainElement += ",%s" % join["element"]
+
+            if element and mainColumn and table:
+                queryString = """SELECT %s
+                                FROM ( SELECT %s,1 as row_num
+                                        FROM %s 
+                                        %s 
+                                        ORDER BY time DESC 
+                                        LIMIT 1 
+                                    ) %s
+                                %s 
+                                """ % (
+                    mainColumn,
+                    subColumn,
+                    table,
+                    condition,
+                    name,
+                    joinString,
+                )
+                query = QSqlQuery()
+                query.exec_(queryString)
+                elements = mainElement.split(",")
+                if query.first():
+                    for i in range(0, len(elements)):
+                        temp.append(
+                            "" if str(query.value(i)) == "NULL" else query.value(i)
+                        )
                 else:
-                    rowData.append("")
-            dataList.append(rowData)
+                    for elem in elements:
+                        temp.append("")
+            if not all(v == "" for v in temp):
+                temp.insert(0, "")
+                dataList.append(temp)
         self.closeConnection()
         return dataList
 

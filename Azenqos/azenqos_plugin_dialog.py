@@ -24,7 +24,7 @@
 import datetime
 import threading
 import sys
-import ptvsd
+import os
 
 import pyqtgraph as pg
 import numpy as np
@@ -720,8 +720,10 @@ class AzenqosDialog(QMainWindow):
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         # Map tool Button
+        dirname = os.path.dirname(__file__)
+        resourcePath = os.path.join(dirname, "res", "crosshair.png")
         self.maptool = QToolButton()
-        self.maptool.setIcon(self.style().standardIcon(QStyle.SP_ArrowDown))
+        self.maptool.setIcon(QIcon(QPixmap(resourcePath)))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
         self.retranslateUi(AzenqosDialog)

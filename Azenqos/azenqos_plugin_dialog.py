@@ -926,7 +926,10 @@ class AzenqosDialog(QMainWindow):
         clearAllSelectedFeatures()
 
         for layerName in tableList:
-            layer = QgsProject.instance().mapLayersByName(layerName)[0]
+            layerList = QgsProject.instance().mapLayersByName(layerName)
+            if len(layerList) == 0:
+                continue
+            layer = layerList[0]
             if layer.type() == layer.VectorLayer:
                 if layer.featureCount() == 0:
                     # There are no features - skip

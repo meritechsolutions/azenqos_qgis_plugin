@@ -368,7 +368,7 @@ class WcdmaDataQuery:
         )
         query = QSqlQuery()
         query.exec_(queryString)
-        while query.next():
+        if query.first():
             dataList.append(["Time", self.timeFilter])
             blerAvg = query.value(1)
             blerCalWindowSize = query.value(2)
@@ -411,7 +411,7 @@ class WcdmaDataQuery:
             )
             query = QSqlQuery()
             query.exec_(queryString)
-            while query.next():
+            if query.first():
                 row = []
                 for i in range(4):
                     row.append("" if str(query.value(i)) == "NULL" else query.value(i))

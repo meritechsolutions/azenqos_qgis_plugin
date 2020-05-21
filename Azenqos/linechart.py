@@ -1597,7 +1597,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
+            self.canvas.axes.setYRange(np.nanmin(overallMin), np.nanmax(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1662,7 +1662,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
+            self.canvas.axes.setYRange(np.nanmin(overallMin), np.nanmax(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1734,7 +1734,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
+            self.canvas.axes.setYRange(np.nanmin(overallMin), np.nanmax(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1806,7 +1806,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
+            self.canvas.axes.setYRange(np.nanmin(overallMin), np.nanmax(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1872,7 +1872,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
+            self.canvas.axes.setYRange(np.nanmin(overallMin), np.nanmax(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1941,7 +1941,7 @@ class LineChart(QWidget):
                 )
 
             # Scale Editing
-            self.canvas.axes.setYRange(min(overallMin), max(overallMax))
+            self.canvas.axes.setYRange(np.nanmin(overallMin), np.nanmax(overallMax))
             self.canvas.axes.setXRange(
                 list(self.xdict.keys())[0], list(self.xdict.keys())[4]
             )
@@ -1998,6 +1998,8 @@ class LineChart(QWidget):
                     Chart_datalist.append(dict_item[1][currentTimeindex])
             for row in range(len(Chart_datalist)):
                 Value = round(Chart_datalist[row], 3)
+                if np.isnan(Chart_datalist[row]):
+                    Value = "-"
                 self.tablewidget.item(row, 1).setText(str(Value))
 
     def resizeEvent(self, QResizeEvent):

@@ -1885,13 +1885,29 @@ class AzenqosDialog(QMainWindow):
                     self.gprs_info.show()
                     openedWindows.append(tableWidget)
 
-            # elif child == "Web Browser":
-            #     if hasattr(self, 'web_browser') is False:
-            #         self.gprs_info = TableWindow(self, windowName)
-            #     openedWindows.append(self.gprs_info)
-            #     #self.mdi.addSubWindow(self.gprs_info)
-            #     self.gprs_info.show()
-            #     self.gprs_info.activateWindow()
+            elif child == "Web Browser":
+                tableWidget = None
+                if hasattr(self, "web_browser") is True:
+                    tableWindow = self.web_browser.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.web_browser, windowName)
+                        openedWindows.append(tableWidget)
+
+                    if self.web_browser not in subwindowList:
+                        self.web_browser = QMdiSubWindow(self.mdi)
+                        self.mdi.addSubWindow(self.web_browser)
+
+                    if tableWidget:
+                        self.web_browser.setWidget(tableWidget)
+                    self.web_browser.show()
+                else:
+                    # create new subwindow
+                    self.web_browser = QMdiSubWindow(self.mdi)
+                    tableWidget = TableWindow(self.web_browser, windowName)
+                    self.web_browser.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.web_browser)
+                    self.web_browser.show()
+                    openedWindows.append(tableWidget)
 
             elif child == "HSDPA/HSPA + Statistics":
                 tableWidget = None

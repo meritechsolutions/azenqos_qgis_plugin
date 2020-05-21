@@ -20,7 +20,7 @@ class CdmaEvdoQuery:
                 "name": "cdma",
                 "element": "Active PN (Best), Ec/Io,RX Power,TX Power,FER,Channel,Band class,N Active Set Cells",
                 "table": "cdma",
-                "column": "cdma_aset_cell_pn, cdma_aset_ecio, cdma_rx_power, cdma_tx_power, cdma_fer, cdma_channel, cdma_band_class, cdma_n_aset_cells",
+                "column": "cdma_cell_pn_1, cdma_ecio_1, cdma_rx_power, cdma_tx_power, cdma_fer, cdma_channel, cdma_band_class, cdma_n_aset_cells",
             }
         ]
         for dic in elementDictList:
@@ -113,33 +113,57 @@ class CdmaEvdoQuery:
 
     def getEvdoParameters(self):
         self.openConnection()
+        MAX_EVDO = 6
         dataList = []
-        evdoFields = ["DRC", "PER", "", "SINR Per PN:", "PN", "SINR"]
+        evdoFields = ["DRC", "PER", "", "SINR Per PN:"]
+        evdoExtend = ["PN", "SINR"]
 
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
         query = QSqlQuery()
-        queryString = """SELECT cdma_evdo_drc, cdma_evdo_per, '' as empty1, '' as empty2, '' as empty3, '' as empty4
+        evdoQueryString = ""
+        for i in range(MAX_EVDO):
+            evdoQueryString += ",cdma_evdo_pn_%d, cdma_evdo_sinr_%d" % (i + 1, i + 1)
+
+        queryString = """SELECT cdma_evdo_drc, cdma_evdo_per, '' as empty1, '' as empty2 %s
                         FROM cdma
                         %s
                         ORDER BY time DESC
                         LIMIT 1""" % (
-            condition
+            evdoQueryString,
+            condition,
         )
         query.exec_(queryString)
+        dataList.append(["Time", self.timeFilter])
         if query.first():
+            extraHeaderRow = []
+            extraRow = []
             for field in range(len(evdoFields)):
-                if field == 0:
-                    dataList.append(["Time", self.timeFilter])
-
                 if not str(query.value(field)) == "NULL":
                     dataList.append([evdoFields[field], query.value(field)])
                 else:
                     dataList.append([evdoFields[field], ""])
+            for field in range(len(evdoExtend)):
+                extraHeaderRow.append(evdoExtend[field])
+            dataList.append(extraHeaderRow)
+            for extendField in range(MAX_EVDO * 2):
+                fieldIndex = (len(evdoFields) - 1) + extendField
+                if not str(query.value(fieldIndex)) == "NULL":
+                    extraRow.append(query.value(fieldIndex))
+                else:
+                    extraRow.append("")
+                if len(extraRow) >= 2:
+                    if not all(v == "" for v in extraRow):
+                        dataList.append(extraRow)
+                    extraRow = []
         else:
+            extraHeaderRow = []
             for field in evdoFields:
                 dataList.append([field, ""])
+            for field in range(len(evdoExtend)):
+                extraHeaderRow.append(evdoExtend[field])
+            dataList.append(extraHeaderRow)
         self.closeConnection()
         return dataList
 

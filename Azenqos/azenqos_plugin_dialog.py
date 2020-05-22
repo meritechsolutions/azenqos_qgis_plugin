@@ -392,6 +392,8 @@ class AzenqosDialog(QMainWindow):
 
         self.actionImport_log_azm = QAction(AzenqosDialog)
         self.actionImport_log_azm.setObjectName("actionImport_log_azm")
+        self.actionExit = QAction(AzenqosDialog)
+        self.actionExit.setObjectName("actionExit")
         self.actionRadio_Parameters = QAction(AzenqosDialog)
         self.actionRadio_Parameters.setObjectName("actionRadio_Parameters")
         self.actionServing_Neighbors = QAction(AzenqosDialog)
@@ -481,6 +483,7 @@ class AzenqosDialog(QMainWindow):
         self.actionServing_System_Info = QAction(AzenqosDialog)
         self.actionServing_System_Info.setObjectName("actionServing_System_Info")
         self.menuFile.addAction(self.actionImport_log_azm)
+        self.menuFile.addAction(self.actionExit)
         self.menuGSM.addAction(self.actionRadio_Parameters)
         self.menuGSM.addAction(self.actionServing_Neighbors)
         self.menuGSM.addAction(self.actionCurrent_Channel)
@@ -534,6 +537,7 @@ class AzenqosDialog(QMainWindow):
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuPresentation.menuAction())
         self.menuPresentation.triggered.connect(self.selectPresentation)
+        self.menuFile.triggered.connect(self.selectFileAction)
 
         # translate for menubar
         _translate = QtCore.QCoreApplication.translate
@@ -548,6 +552,7 @@ class AzenqosDialog(QMainWindow):
         self.actionImport_log_azm.setText(
             _translate("AzenqosDialog", "Import log .azm")
         )
+        self.actionExit.setText(_translate("AzenqosDialog", "Exit"))
         self.actionRadio_Parameters.setText(
             _translate("AzenqosDialog", "Radio Parameters")
         )
@@ -654,6 +659,13 @@ class AzenqosDialog(QMainWindow):
         if len(parent) > 0:
             self.classifySelectedItems(parent[0].title(), widget.text())
 
+    def selectFileAction(self, widget):
+        option = widget.objectName()
+        if option == "actionExit":
+            self.close()
+        elif option == "actionImport_log_azm":
+            self.importDatabase()
+
     def setupUi(self, AzenqosDialog):
         global timeSlider
         AzenqosDialog.setObjectName("AzenqosDialog")
@@ -667,6 +679,7 @@ class AzenqosDialog(QMainWindow):
         # Time Slider
         timeSlider = TimeSlider(AzenqosDialog)
         timeSlider.setMinimumWidth(100)
+        timeSlider.setMaximumWidth(360)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -2373,7 +2386,8 @@ class AzenqosDialog(QMainWindow):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
-            event.accept()
+            if event:
+                event.accept()
             iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()

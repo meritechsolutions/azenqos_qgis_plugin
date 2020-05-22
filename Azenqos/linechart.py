@@ -1965,7 +1965,7 @@ class LineChart(QWidget):
         timeString = dateString.split(" ")[1][:8]
         # timeString = '00:19:18'
         if len(self.Time) > 0:
-            currentTimeindex = 0
+            currentTimeindex = None
             recentTimeindex = 0
             for timeItem in self.Time:
                 time_without_ms = timeItem[:8]
@@ -1995,11 +1995,19 @@ class LineChart(QWidget):
             for dict_item in self.result.items():
                 keyStr = dict_item[0]
                 if not keyStr.endswith("time"):
-                    Chart_datalist.append(dict_item[1][currentTimeindex])
+                    if currentTimeindex is not None:
+                        Chart_datalist.append(dict_item[1][currentTimeindex])
+                    else:
+                        Chart_datalist.append("-")
             for row in range(len(Chart_datalist)):
-                Value = round(Chart_datalist[row], 3)
-                if np.isnan(Chart_datalist[row]):
-                    Value = "-"
+                Value = Chart_datalist[row]
+                try:
+                    float(Value)
+                    Value = round(Value, 3)
+                    if np.isnan(Value):
+                        Value = "-"
+                except ValueError:
+                    Value = Value
                 self.tablewidget.item(row, 1).setText(str(Value))
 
     def resizeEvent(self, QResizeEvent):

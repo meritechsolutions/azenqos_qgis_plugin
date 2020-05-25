@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import pyqtgraph as pg
 import numpy as np
+import datetime
 from .globalutils import Utils
 from .linechart_query import LineChartQueryNew
 
@@ -1604,8 +1605,8 @@ class LineChart(QWidget):
             self.canvas.axes.setLimits(
                 xMin=min(list(self.xdict.keys())),
                 xMax=max(list(self.xdict.keys())),
-                minXRange=4,
-                maxXRange=10,
+                minXRange=5,
+                maxXRange=5,
             )
 
             # Call Event Function
@@ -1669,8 +1670,8 @@ class LineChart(QWidget):
             self.canvas.axes.setLimits(
                 xMin=min(list(self.xdict.keys())),
                 xMax=max(list(self.xdict.keys())),
-                minXRange=4,
-                maxXRange=10,
+                minXRange=5,
+                maxXRange=5,
             )
 
             # Call Event Function
@@ -1741,8 +1742,8 @@ class LineChart(QWidget):
             self.canvas.axes.setLimits(
                 xMin=min(list(self.xdict.keys())),
                 xMax=max(list(self.xdict.keys())),
-                minXRange=4,
-                maxXRange=10,
+                minXRange=5,
+                maxXRange=5,
             )
 
             # Call Event Function
@@ -1813,8 +1814,8 @@ class LineChart(QWidget):
             self.canvas.axes.setLimits(
                 xMin=min(list(self.xdict.keys())),
                 xMax=max(list(self.xdict.keys())),
-                minXRange=4,
-                maxXRange=10,
+                minXRange=5,
+                maxXRange=5,
             )
 
             # Call Event Function
@@ -1879,8 +1880,8 @@ class LineChart(QWidget):
             self.canvas.axes.setLimits(
                 xMin=min(list(self.xdict.keys())),
                 xMax=max(list(self.xdict.keys())),
-                minXRange=4,
-                maxXRange=10,
+                minXRange=5,
+                maxXRange=5,
             )
 
             # Call Event Function
@@ -1948,8 +1949,8 @@ class LineChart(QWidget):
             self.canvas.axes.setLimits(
                 xMin=min(list(self.xdict.keys())),
                 xMax=max(list(self.xdict.keys())),
-                minXRange=4,
-                maxXRange=10,
+                minXRange=5,
+                maxXRange=5,
             )
 
             # Call Event Function
@@ -1961,23 +1962,43 @@ class LineChart(QWidget):
     def moveLineChart(self, sampledate):
         # For pyqtgraph-----------------------------------------------
         # Shift Part
-        dateString = str(sampledate)
-        timeString = dateString.split(" ")[1][:8]
+        indexList = []
+        timeDiffList = []
+        # dateString = str(sampledate)
+        # timeString = dateString.split(" ")[1][:8]
+        currentTimestamp = sampledate.timestamp()
         # timeString = '00:19:18'
         if len(self.Time) > 0:
             currentTimeindex = None
             recentTimeindex = 0
-            for timeItem in self.Time:
-                time_without_ms = timeItem[:8]
+            for index, timeItem in enumerate(self.Time):
+                currentDatetime = self.Date[index] + " " + timeItem
+                # time_without_ms = timeItem[:8]
+                timestamp = datetime.datetime.strptime(
+                    currentDatetime, "%Y-%m-%d %H:%M:%S.%f"
+                ).timestamp()
+                if timestamp <= currentTimestamp:
+                    indexList.append(index)
+                    timeDiffList.append(abs(currentTimestamp - timestamp))
                 # if time_without_ms == timeString:
-                if time_without_ms == timeString:
-                    if self.Time.index(timeItem) + 4 < len(self.Time):
-                        currentTimeindex = self.Time.index(timeItem)
-                        self.canvas.axes.setXRange(
-                            list(self.xdict.keys())[currentTimeindex],
-                            list(self.xdict.keys())[currentTimeindex + 4],
-                        )
-                        break
+
+            if not len(timeDiffList) == 0:
+                if indexList[timeDiffList.index(min(timeDiffList))] <= (
+                    len(self.Time) - 1
+                ):
+                    currentTimeindex = indexList[timeDiffList.index(min(timeDiffList))]
+                    if currentTimeindex + 4 >= (len(self.Time) - 1):
+                        currentTimeindex = (len(self.Time) - 1) - 4
+                    self.canvas.axes.setXRange(
+                        list(self.xdict.keys())[currentTimeindex],
+                        list(self.xdict.keys())[currentTimeindex + 4],
+                    )
+            else:
+                currentTimeindex = 0
+                self.canvas.axes.setXRange(
+                    list(self.xdict.keys())[currentTimeindex],
+                    list(self.xdict.keys())[currentTimeindex + 4],
+                )
                 # if time_without_ms > timeString:
                 #     index = self.Time.index(timeItem) - 1
                 #     if self.Time.index(timeItem) + 4 < len(self.Time):

@@ -54,15 +54,19 @@ class SignalingDataQuery:
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             symbolValue = query.value(symbolField)
-            detailStrValue = query.value(detailField).split(",")
-            if detailStrValue[0].startswith("LTE") == True:
-                detailStrValue = "LTE RRC"
-            else:
-                detailStrValue = ""
-            if detailStrValue != "":
-                dataList.append(
-                    [timeValue, symbolValue, "MS1", detailStrValue, nameValue, ""]
-                )
+            detailStrValue = query.value(detailField)
+            # detailStrValue = query.value(detailField).split(",")
+            # if detailStrValue[0].startswith("LTE") == True:
+            #     detailStrValue = "LTE RRC"
+            # else:
+            #     detailStrValue = ""
+            # if detailStrValue != "":
+            #     dataList.append(
+            #         [timeValue, symbolValue, "MS1", detailStrValue, nameValue, ""]
+            #     )
+            dataList.append(
+                [timeValue, symbolValue, "MS1", detailStrValue, nameValue, ""]
+            )
         self.closeConnection()
         return dataList
 

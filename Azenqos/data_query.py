@@ -28,7 +28,7 @@ class DataQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
         query = QSqlQuery()
-        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration,
+        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration, 
                         des.data_gsm_rlc_ul_throughput, des.data_gsm_rlc_dl_throughput,
                         des.data_egprs_dl_coding_scheme_index, des.data_egprs_ul_coding_scheme_index,
                         des.data_gprs_timeslot_used_dl, des.data_gprs_timeslot_used_ul,
@@ -404,7 +404,7 @@ class DataQuery:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
         query = QSqlQuery()
-        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration,
+        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration, 
                         des.data_gsm_rlc_ul_throughput, des.data_gsm_rlc_dl_throughput,
                         des.data_egprs_dl_coding_scheme_index, des.data_egprs_ul_coding_scheme_index,
                         des.data_gprs_timeslot_used_dl, des.data_gprs_timeslot_used_ul,

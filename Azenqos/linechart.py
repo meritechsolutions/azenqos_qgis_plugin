@@ -1983,7 +1983,7 @@ class LineChart(QWidget):
                 # if time_without_ms == timeString:
 
             if not len(timeDiffList) == 0:
-                if indexList[timeDiffList.index(min(timeDiffList))] < (
+                if indexList[timeDiffList.index(min(timeDiffList))] <= (
                     len(self.Time) - 1
                 ):
                     currentTimeindex = indexList[timeDiffList.index(min(timeDiffList))]
@@ -1993,6 +1993,12 @@ class LineChart(QWidget):
                         list(self.xdict.keys())[currentTimeindex],
                         list(self.xdict.keys())[currentTimeindex + 4],
                     )
+            else:
+                currentTimeindex = 0
+                self.canvas.axes.setXRange(
+                    list(self.xdict.keys())[currentTimeindex],
+                    list(self.xdict.keys())[currentTimeindex + 4],
+                )
                 # if time_without_ms > timeString:
                 #     index = self.Time.index(timeItem) - 1
                 #     if self.Time.index(timeItem) + 4 < len(self.Time):

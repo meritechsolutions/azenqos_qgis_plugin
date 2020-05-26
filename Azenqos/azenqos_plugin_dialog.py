@@ -2396,30 +2396,14 @@ class AzenqosDialog(QMainWindow):
             QgsApplication.taskManager().addTask(self.quitTask)
             # self.databaseUi.reject()
             # self.databaseUi.destroy(True, True)
-            self.close()
-            self.destroy(True, True)
-
+            # self.close()
+            # self.destroy(True, True)
             # super().reject()
             removeAzenqosGroup()
             for mdiwindow in self.mdi.subWindowList():
                 mdiwindow.close()
             self.mdi.close()
-
-            # layers = QgsProject.instance().mapLayers()
-            # for layer in layers:
-            #     QgsProject.instance().removeMapLayer(layer)
-
-            # del self.databaseUi
-            # del self
-            # sys.exit(0)
-
             QgsMessageLog.logMessage("Close App")
-
-            # if len(openedWindows) > 0:
-            #     for window in openedWindows:
-            #         window.close()
-            #         window.reject()
-            #         del window
         else:
             event.ignore()
 
@@ -3222,6 +3206,7 @@ class QuitTask(QgsTask):
                     window.close()
                     # window.reject()
                     del window
+                openedWindows = []
             QgsProject.removeAllMapLayers(QgsProject.instance())
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(

@@ -747,6 +747,7 @@ class AzenqosDialog(QMainWindow):
         self.setupToolBar()
 
     def retranslateUi(self, AzenqosDialog):
+        global timeSlider
         _translate = QtCore.QCoreApplication.translate
         AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos Main Menu"))
         # self.presentationTreeWidget.headerItem().setText(
@@ -760,7 +761,43 @@ class AzenqosDialog(QMainWindow):
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
-        self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
+        self.importDatabaseBtn.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Browse/Import Logs</b><br> Browse and import selected <i>.azm</i> log file",
+            )
+        )
+        self.maptool.setText(_translate("AzenqosDialog", "Map Selection Tool"))
+        self.maptool.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Map Selection Tool</b><br> Use to <i>select</i> feature on map",
+            )
+        )
+        self.playButton.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Play</b><br> <i>Start</i> or <i>Resume</i> time playing",
+            )
+        )
+        self.pauseButton.setToolTip(
+            _translate("AzenqosDialog", "<b>Pause</b><br> <i>Pause</i> time playing")
+        )
+        timeSlider.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Time Bar</b><br> <i>Drag</i> to adjust current time",
+            )
+        )
+        self.menubar.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                """<b>File</b><br> - Import .azm log <br> - Exit Azenqos <br><br>
+                                            <b>Presentation</b><br> Select and open presentation window <br>
+                                            <i>e.g. Signaling->Events, WCDMA->Line Chart, etc.</i><br>""",
+            )
+        )
+        # self.menuFile.setToolTipsVisible(True)
 
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))

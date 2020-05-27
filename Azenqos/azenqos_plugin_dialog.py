@@ -747,6 +747,7 @@ class AzenqosDialog(QMainWindow):
         self.setupToolBar()
 
     def retranslateUi(self, AzenqosDialog):
+        global timeSlider
         _translate = QtCore.QCoreApplication.translate
         AzenqosDialog.setWindowTitle(_translate("AzenqosDialog", "Azenqos Main Menu"))
         # self.presentationTreeWidget.headerItem().setText(
@@ -760,7 +761,43 @@ class AzenqosDialog(QMainWindow):
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
-        self.maptool.setText(_translate("AzenqosDialog", "Selection Map Tool "))
+        self.importDatabaseBtn.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Browse/Import Logs</b><br> Browse and import selected <i>.azm</i> log file",
+            )
+        )
+        self.maptool.setText(_translate("AzenqosDialog", "Map Selection Tool"))
+        self.maptool.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Map Selection Tool</b><br> Use to <i>select</i> feature on map",
+            )
+        )
+        self.playButton.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Play</b><br> <i>Start</i> or <i>Resume</i> time playing",
+            )
+        )
+        self.pauseButton.setToolTip(
+            _translate("AzenqosDialog", "<b>Pause</b><br> <i>Pause</i> time playing")
+        )
+        timeSlider.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Time Bar</b><br> <i>Drag</i> to adjust current time",
+            )
+        )
+        self.menubar.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                """<b>File</b><br> - Import .azm log <br> - Exit Azenqos <br><br>
+                                            <b>Presentation</b><br> Select and open presentation window <br>
+                                            <i>e.g. Signaling->Events, WCDMA->Line Chart, etc.</i><br>""",
+            )
+        )
+        # self.menuFile.setToolTipsVisible(True)
 
         # self.filterBtn.setText(_translate("AzenqosDialog", "Filter"))
         self.timeSliderLabel.setText(_translate("AzenqosDialog", "Time:"))
@@ -2396,30 +2433,14 @@ class AzenqosDialog(QMainWindow):
             QgsApplication.taskManager().addTask(self.quitTask)
             # self.databaseUi.reject()
             # self.databaseUi.destroy(True, True)
-            self.close()
-            self.destroy(True, True)
-
+            # self.close()
+            # self.destroy(True, True)
             # super().reject()
             removeAzenqosGroup()
             for mdiwindow in self.mdi.subWindowList():
                 mdiwindow.close()
             self.mdi.close()
-
-            # layers = QgsProject.instance().mapLayers()
-            # for layer in layers:
-            #     QgsProject.instance().removeMapLayer(layer)
-
-            # del self.databaseUi
-            # del self
-            # sys.exit(0)
-
             QgsMessageLog.logMessage("Close App")
-
-            # if len(openedWindows) > 0:
-            #     for window in openedWindows:
-            #         window.close()
-            #         window.reject()
-            #         del window
         else:
             event.ignore()
 
@@ -2858,21 +2879,33 @@ class TableWindow(QWidget):
 
     def findCurrentRow(self):
         startRange = 0
+        indexList = []
+        timeDiffList = []
 
         if self.currentRow and isSliderPlay == True:
             startRange = self.currentRow
 
-        for row in range(startRange, self.tableViewCount):
+        for row in range(0, self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
-            if value and index:
-                if value >= self.dateString:
-                    if isSliderPlay == True:
-                        self.tableView.selectRow(self.currentRow)
-                    else:
-                        self.tableView.selectRow(row - 1)
-                    self.currentRow = row - 1
-                    break
+            currentTimestamp = datetime.datetime.strptime(
+                self.dateString, "%Y-%m-%d %H:%M:%S.%f"
+            ).timestamp()
+            timestamp = datetime.datetime.strptime(
+                value, "%Y-%m-%d %H:%M:%S.%f"
+            ).timestamp()
+            if timestamp <= currentTimestamp:
+                indexList.append(row)
+                timeDiffList.append(abs(currentTimestamp - timestamp))
+
+        if not len(timeDiffList) == 0:
+            if indexList[timeDiffList.index(min(timeDiffList))] < self.tableViewCount:
+                currentTimeindex = indexList[timeDiffList.index(min(timeDiffList))]
+                self.tableView.selectRow(currentTimeindex)
+        else:
+            currentTimeindex = 0
+            self.tableView.selectRow(currentTimeindex)
+        self.currentRow = currentTimeindex
 
     def closeEvent(self, QCloseEvent):
         global openedWindows
@@ -3222,6 +3255,7 @@ class QuitTask(QgsTask):
                     window.close()
                     # window.reject()
                     del window
+                openedWindows = []
             QgsProject.removeAllMapLayers(QgsProject.instance())
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(

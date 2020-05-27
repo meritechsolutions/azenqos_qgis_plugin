@@ -2879,21 +2879,33 @@ class TableWindow(QWidget):
 
     def findCurrentRow(self):
         startRange = 0
+        indexList = []
+        timeDiffList = []
 
         if self.currentRow and isSliderPlay == True:
             startRange = self.currentRow
 
-        for row in range(startRange, self.tableViewCount):
+        for row in range(0, self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
-            if value and index:
-                if value >= self.dateString:
-                    if isSliderPlay == True:
-                        self.tableView.selectRow(self.currentRow)
-                    else:
-                        self.tableView.selectRow(row - 1)
-                    self.currentRow = row - 1
-                    break
+            currentTimestamp = datetime.datetime.strptime(
+                self.dateString, "%Y-%m-%d %H:%M:%S.%f"
+            ).timestamp()
+            timestamp = datetime.datetime.strptime(
+                value, "%Y-%m-%d %H:%M:%S.%f"
+            ).timestamp()
+            if timestamp <= currentTimestamp:
+                indexList.append(row)
+                timeDiffList.append(abs(currentTimestamp - timestamp))
+
+        if not len(timeDiffList) == 0:
+            if indexList[timeDiffList.index(min(timeDiffList))] < self.tableViewCount:
+                currentTimeindex = indexList[timeDiffList.index(min(timeDiffList))]
+                self.tableView.selectRow(currentTimeindex)
+        else:
+            currentTimeindex = 0
+            self.tableView.selectRow(currentTimeindex)
+        self.currentRow = currentTimeindex
 
     def closeEvent(self, QCloseEvent):
         global openedWindows

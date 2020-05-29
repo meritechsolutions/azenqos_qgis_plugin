@@ -1,5 +1,5 @@
 from PyQt5.QtSql import QSql, QSqlDatabase, QSqlQuery
-import csv, inspect, os
+import csv, inspect, os, datetime
 from zipfile import ZipFile
 
 db = None
@@ -138,6 +138,15 @@ class Utils:
         if db:
             if db.isOpen():
                 db.close()
+
+    def datetimeStringtoTimestamp(datetimeString: str):
+        try:
+            element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+            timestamp = datetime.datetime.timestamp(element)
+            return timestamp
+        except Exception as ex:
+            print(ex)
+            return False
 
 
 # todo: dynamic data query object

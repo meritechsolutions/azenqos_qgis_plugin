@@ -2039,6 +2039,15 @@ class LineChart(QWidget):
         datalabelY = int((height * 0.11) - 20)
         # self.datelabel.move(QPoint(datalabelX, datalabelY))
 
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
+
 
 class LineChartQuery:
     def __init__(self, fieldArr, tableName, conditionStr, azenqosDatabase):

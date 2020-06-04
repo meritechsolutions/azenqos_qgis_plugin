@@ -700,11 +700,12 @@ class AzenqosDialog(QMainWindow):
         self.pauseButton.clicked.connect(self.pauseTime)
 
     def startPlaytimeThread(self):
-        gc.isSliderPlay = True
-        self.playButton.setDisabled(True)
-        self.playSpeed.setDisabled(True)
-        self.timeSliderThread.changeValue.connect(self.setTimeValue)
-        self.timeSliderThread.start()
+        if self.timeSliderThread.getCurrentValue() < gc.sliderLength:
+            gc.isSliderPlay = True
+            self.playButton.setDisabled(True)
+            self.playSpeed.setDisabled(True)
+            self.timeSliderThread.changeValue.connect(self.setTimeValue)
+            self.timeSliderThread.start()
 
     def setMapTool(self):
         self.clickTool = QgsMapToolEmitPoint(self.canvas)
@@ -722,7 +723,7 @@ class AzenqosDialog(QMainWindow):
     def setTimeValue(self, value):
         gc.timeSlider.setValue(value)
         gc.timeSlider.update()
-        if value == gc.sliderLength:
+        if value >= gc.sliderLength:
             self.pauseTime()
 
     def setPlaySpeed(self, value):

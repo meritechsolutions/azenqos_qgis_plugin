@@ -77,6 +77,9 @@ class timeSliderThread(QThread):
     def run(self):
         self.playTime()
 
+    def getCurrentValue(self):
+        return self.currentSliderValue
+
     def playTime(self):
         gc.timeSlider.setDisabled(True)
         sleeptime = 1 / gc.fastForwardValue

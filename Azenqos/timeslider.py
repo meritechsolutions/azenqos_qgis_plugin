@@ -78,34 +78,51 @@ class timeSliderThread(QThread):
         self.playTime()
 
     def getCurrentValue(self):
-        return self.currentSliderValue
+        if self.currentSliderValue:
+            return self.currentSliderValue
+        else:
+            return 0
 
     def playTime(self):
         gc.timeSlider.setDisabled(True)
-        sleeptime = 1 / gc.fastForwardValue
+        timeskip = 0
+        if float(1 / gc.fastForwardValue) >= 0.25:
+            sleeptime = 1 / gc.fastForwardValue
+        else:
+            sleeptime = 0.25
+            timeskip = (gc.fastForwardValue - (1 / sleeptime)) * sleeptime
+
         # gc.isSliderPlay = True
         if gc.isSliderPlay:
             if self.currentSliderValue:
                 for x in np.arange(
-                    self.currentSliderValue, gc.sliderLength, (1 * gc.slowDownValue)
+                    self.currentSliderValue,
+                    gc.sliderLength,
+                    ((1 * gc.slowDownValue) + timeskip),
                 ):
                     if not gc.isSliderPlay:
                         break
                     else:
                         time.sleep(sleeptime)
-                        value = gc.timeSlider.value() + (1 * gc.slowDownValue)
+                        value = gc.timeSlider.value() + (
+                            (1 * gc.slowDownValue) + timeskip
+                        )
                         self.changeValue.emit(value)
 
                     if x >= gc.sliderLength:
                         gc.isSliderPlay = False
                         break
             else:
-                for x in np.arange(0, gc.sliderLength, (1 * gc.slowDownValue)):
+                for x in np.arange(
+                    0, gc.sliderLength, ((1 * gc.slowDownValue) + timeskip)
+                ):
                     if not gc.isSliderPlay:
                         break
                     else:
                         time.sleep(sleeptime)
-                        value = gc.timeSlider.value() + (1 * gc.slowDownValue)
+                        value = gc.timeSlider.value() + (
+                            (1 * gc.slowDownValue) + timeskip
+                        )
                         self.changeValue.emit(value)
 
                     if x >= gc.sliderLength:

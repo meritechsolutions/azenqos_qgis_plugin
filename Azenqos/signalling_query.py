@@ -44,17 +44,19 @@ class SignalingDataQuery:
     def getLayerThreeMessages(self):
         self.openConnection()
         query = QSqlQuery()
-        query.exec_("SELECT time, name, symbol, detail_str FROM signalling")
+        query.exec_("SELECT time, name, symbol, protocol, detail_str FROM signalling")
         timeField = query.record().indexOf("time")
         nameField = query.record().indexOf("name")
         symbolField = query.record().indexOf("symbol")
         detailField = query.record().indexOf("detail_str")
+        protocolField = query.record().indexOf("protocol")
         dataList = []
         while query.next():
             timeValue = query.value(timeField)
             nameValue = query.value(nameField)
             symbolValue = query.value(symbolField)
             detailStrValue = query.value(detailField)
+            protocolValue = query.value(protocolField)
             # detailStrValue = query.value(detailField).split(",")
             # if detailStrValue[0].startswith("LTE") == True:
             #     detailStrValue = "LTE RRC"
@@ -65,7 +67,14 @@ class SignalingDataQuery:
             #         [timeValue, symbolValue, "MS1", detailStrValue, nameValue, ""]
             #     )
             dataList.append(
-                [timeValue, symbolValue, "MS1", detailStrValue, nameValue, ""]
+                [
+                    timeValue,
+                    symbolValue,
+                    "MS1",
+                    protocolValue,
+                    nameValue,
+                    detailStrValue,
+                ]
             )
         self.closeConnection()
         return dataList

@@ -312,7 +312,7 @@ class TableWindow(QWidget):
                     gc.azenqosDatabase, gc.currentDateTimeString
                 ).getLayerOneMessages()
             elif self.title == "Signaling_Layer 3 Messages":
-                self.tableHeader = ["Time", "", "Eq.", "", "Name", "Info."]
+                self.tableHeader = ["Time", "", "Eq.", "Protocol", "Name", "Detail"]
                 self.tablename = "signalling"
                 self.dataList = SignalingDataQuery(
                     gc.azenqosDatabase, gc.currentDateTimeString
@@ -376,7 +376,7 @@ class TableWindow(QWidget):
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
         if self.tablename == "signalling":
-            item = item.siblingAtColumn(3)
+            item = item.siblingAtColumn(5)
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 

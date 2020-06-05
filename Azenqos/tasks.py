@@ -26,8 +26,8 @@ class LayerTask(QgsTask):
         self.vLayers = []
 
     def addMapToQgis(self):
-        urlWithParams = ""
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
+        urlWithParams = "type=xyz&url=http://ms.longdo.com/mmmap/img.php?zoom%3D%7Bz%7D%26x%3D%7Bx%7D%26y%3D%7By%7D%26mode%3Dicons%26key%3D93842be739d77f83f6b31c57ae56887f%26proj%3Depsg3857%26HD%3D1&zmax=18&zmin=0"
         rlayer = QgsRasterLayer(urlWithParams, "Street map", "wms")
         if rlayer.isValid():
             QgsProject.instance().addMapLayer(rlayer)

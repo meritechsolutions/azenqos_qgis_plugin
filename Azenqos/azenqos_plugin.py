@@ -30,7 +30,7 @@ from PyQt5 import *
 from .resources import *
 
 # Import the code for the dialog
-from .azenqos_plugin_dialog import Ui_DatabaseDialog
+from .import_db_dialog import Ui_DatabaseDialog
 import os.path
 
 

@@ -167,13 +167,19 @@ class Utils:
             pass
 
         if loadedEntities:
+            loadedTimestamp = None
             for window in loadedEntities["windows"]:
                 name = window.split("_")
                 dialog.classifySelectedItems(name[0], name[1])
 
-            loadedTimestamp = float(loadedEntities["timestamp"])
-            if loadedTimestamp >= gc.minTimeValue and loadedTimestamp <= gc.maxTimeValue:
-                gc.timeSlider.setValue(loadedTimestamp - gc.minTimeValue)
+            try:
+                loadedTimestamp = float(loadedEntities["timestamp"])
+            except:
+                pass
+                
+            if loadedTimestamp is not None:
+                if loadedTimestamp >= gc.minTimeValue and loadedTimestamp <= gc.maxTimeValue:
+                    gc.timeSlider.setValue(loadedTimestamp - gc.minTimeValue)
 
         f.close()
         return False

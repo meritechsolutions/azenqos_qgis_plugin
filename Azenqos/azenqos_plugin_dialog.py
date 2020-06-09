@@ -775,7 +775,7 @@ class AzenqosDialog(QMainWindow):
             selectedTime = time
             break
 
-        selectedTimestamp = Utils.datetimeStringtoTimestamp(selectedTime)
+        selectedTimestamp = Utils().datetimeStringtoTimestamp(selectedTime)
         if selectedTimestamp:
             timeSliderValue = gc.sliderLength - (gc.maxTimeValue - selectedTimestamp)
             gc.timeSlider.setValue(timeSliderValue)

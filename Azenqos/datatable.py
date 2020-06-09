@@ -419,7 +419,7 @@ class TableWindow(QWidget):
         for row in range(0, self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
-            if Utils.datetimeStringtoTimestamp(value):
+            if Utils().datetimeStringtoTimestamp(value):
                 gc.currentTimestamp = datetime.datetime.strptime(
                     self.dateString, "%Y-%m-%d %H:%M:%S.%f"
                 ).timestamp()

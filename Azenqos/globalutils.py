@@ -176,9 +176,12 @@ class Utils:
                 loadedTimestamp = float(loadedEntities["timestamp"])
             except:
                 pass
-                
+
             if loadedTimestamp is not None:
-                if loadedTimestamp >= gc.minTimeValue and loadedTimestamp <= gc.maxTimeValue:
+                if (
+                    loadedTimestamp >= gc.minTimeValue
+                    and loadedTimestamp <= gc.maxTimeValue
+                ):
                     gc.timeSlider.setValue(loadedTimestamp - gc.minTimeValue)
 
         f.close()

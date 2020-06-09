@@ -177,7 +177,7 @@ class Utils:
             if db.isOpen():
                 db.close()
 
-    def datetimeStringtoTimestamp(datetimeString: str):
+    def datetimeStringtoTimestamp(self, datetimeString: str):
         try:
             element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
             timestamp = datetime.datetime.timestamp(element)

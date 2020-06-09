@@ -136,34 +136,45 @@ class Utils:
     def saveState(self, currentPath):
         file_path = currentPath + "/save.azs"
         with open(file_path, "w") as f:
+            saveEntities = {}
             winList = []
             for window in gc.openedWindows:
                 winList.append(str(window.title))
-            jsonString = json.dumps(winList)
+
+            saveEntities["windows"] = winList
+            saveEntities["timestamp"] = gc.currentTimestamp
+            jsonString = json.dumps(saveEntities)
             binString = " ".join(format(x, "b") for x in bytearray(jsonString, "utf-8"))
             f.write(binString)
         return True
 
     def loadState(self, currentPath, dialog):
-        loadedString = None
+        textString = ""
+        loadedEntities = None
         file_path = currentPath + "/save.azs"
         if not os.path.exists(file_path):
             return False
 
         f = io.open(file_path, mode="r")
         text = f.read()
-        text = text.split(" ")
-        textString = bytearray([int(x, 2) for x in text]).decode()
-        loadedWindows = None
+
+        if text:
+            text = text.split(" ")
+            textString = bytearray([int(x, 2) for x in text]).decode()
         try:
-            loadedWindows = json.loads(textString)
+            loadedEntities = json.loads(textString)
         except:
             pass
 
-        if loadedWindows:
-            for window in loadedWindows:
+        if loadedEntities:
+            for window in loadedEntities["windows"]:
                 name = window.split("_")
                 dialog.classifySelectedItems(name[0], name[1])
+
+            loadedTimestamp = float(loadedEntities["timestamp"])
+            if loadedTimestamp >= gc.minTimeValue and loadedTimestamp <= gc.maxTimeValue:
+                gc.timeSlider.setValue(loadedTimestamp - gc.minTimeValue)
+
         f.close()
         return False
 

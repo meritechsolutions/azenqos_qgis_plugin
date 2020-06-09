@@ -14,6 +14,7 @@ from PyQt5.QtGui import *
 from qgis.core import *
 from qgis.utils import *
 from qgis.gui import *
+from .globalutils import Utils
 
 
 class LayerTask(QgsTask):
@@ -38,7 +39,6 @@ class LayerTask(QgsTask):
     def run(self):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
-
         return True
 
     def finished(self, result):
@@ -95,11 +95,12 @@ class LayerTask(QgsTask):
 
 
 class QuitTask(QgsTask):
-    def __init__(self, desc):
+    def __init__(self, desc, azenqosMain):
         QgsTask.__init__(self, desc)
         self.start_time = None
         self.desc = desc
         self.exception = None
+        self.azqMain = azenqosMain
 
     def run(self):
         QgsMessageLog.logMessage(
@@ -113,32 +114,13 @@ class QuitTask(QgsTask):
         for name in names:
             QSqlDatabase.database(name).close()
             QSqlDatabase.removeDatabase(name)
-        del gc.azenqosDatabase
+
+        gc.azenqosDatabase = None
 
         return True
 
     def finished(self, result):
         if result:
-            project = QgsProject.instance()
-            for (id_l, layer) in project.mapLayers().items():
-                if layer.type() == layer.VectorLayer:
-                    layer.removeSelection()
-                to_be_deleted = project.mapLayersByName(layer.name())[0]
-                project.removeMapLayer(to_be_deleted.id())
-                layer = None
-
-            QgsProject.instance().reloadAllLayers()
-            QgsProject.instance().clear()
-            gc.allLayers = []
-            gc.tableList = []
-
-            if len(gc.openedWindows) > 0:
-                for window in gc.openedWindows:
-                    window.close()
-                    # window.reject()
-                    del window
-                gc.openedWindows = []
-            QgsProject.removeAllMapLayers(QgsProject.instance())
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
@@ -146,6 +128,8 @@ class QuitTask(QgsTask):
             QgsMessageLog.logMessage(
                 "[-- End Removing Dependencies --]", tag="Processing"
             )
+            if self.azqMain.newImport is False:
+                self.azqMain.databaseUi.removeMainMenu()
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(

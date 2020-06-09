@@ -2188,24 +2188,41 @@ class AzenqosDialog(QMainWindow):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
-            if event:
-                event.accept()
+            saving = Utils().saveState(gc.CURRENT_PATH)
             iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
             self.removeToolBarActions()
-            self.quitTask = QuitTask(u"Quiting Plugin")
+            self.quitTask = QuitTask(u"Quiting Plugin", self)
             QgsApplication.taskManager().addTask(self.quitTask)
-            # self.databaseUi.reject()
-            # self.databaseUi.destroy(True, True)
-            # self.close()
-            # self.destroy(True, True)
-            # super().reject()
+
+            # Begin removing layer (which cause db issue)
+            project = QgsProject.instance()
+            for (id_l, layer) in project.mapLayers().items():
+                if layer.type() == layer.VectorLayer:
+                    layer.removeSelection()
+                to_be_deleted = project.mapLayersByName(layer.name())[0]
+                project.removeMapLayer(to_be_deleted.id())
+                layer = None
+
+            QgsProject.instance().reloadAllLayers()
+            QgsProject.instance().clear()
+            gc.allLayers = []
+            gc.tableList = []
+
+            if len(gc.openedWindows) > 0:
+                for window in gc.openedWindows:
+                    window.close()
+                gc.openedWindows = []
+            QgsProject.removeAllMapLayers(QgsProject.instance())
+            # End removing layer
+
             removeAzenqosGroup()
             for mdiwindow in self.mdi.subWindowList():
                 mdiwindow.close()
             self.mdi.close()
             QgsMessageLog.logMessage("Close App")
+            event.accept()
         else:
             event.ignore()
 
@@ -2314,6 +2331,7 @@ class Ui_DatabaseDialog(QDialog):
                 self.azenqosMainMenu.show()
                 self.azenqosMainMenu.raise_()
                 self.azenqosMainMenu.activateWindow()
+                self.loading = Utils().loadState(gc.CURRENT_PATH, self.azenqosMainMenu)
         else:
             QtWidgets.QMessageBox.critical(
                 None,
@@ -2382,9 +2400,14 @@ class Ui_DatabaseDialog(QDialog):
         gc.sliderLength = gc.maxTimeValue - gc.minTimeValue
         gc.sliderLength = round(gc.sliderLength, 3)
 
+    def removeMainMenu(self):
+        if hasattr(self, "azenqosMainMenu") is True:
+            del self.azenqosMainMenu
+
     def reject(self):
 
         super().reject()
+
         # if gc.azenqosDatabase:
         #     global gc.azenqosDatabase
         #     gc.azenqosDatabase.close()

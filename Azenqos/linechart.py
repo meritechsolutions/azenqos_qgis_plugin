@@ -9,6 +9,11 @@ import numpy as np
 import datetime
 from .globalutils import Utils
 from .linechart_query import LineChartQueryNew
+import sys, os
+
+# Adding folder path
+sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
+import global_config as gc
 
 
 class Ui_LTE_LCwidget(QWidget):
@@ -246,6 +251,15 @@ class Ui_LTE_LCwidget(QWidget):
     def moveChart(self, sampledate):
         self.lte_widget.moveLineChart(sampledate)
 
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
+
 
 # WCDMA Line Chart UI
 class Ui_WCDMA_LCwidget(QWidget):
@@ -469,6 +483,15 @@ class Ui_WCDMA_LCwidget(QWidget):
     def moveChart(self, sampledate):
         self.wcdma_widget.moveLineChart(sampledate)
 
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
+
 
 # LTE Data Line Chart UI
 class Ui_LTE_Data_LCwidget(QWidget):
@@ -688,6 +711,15 @@ class Ui_LTE_Data_LCwidget(QWidget):
 
     def moveChart(self, sampledate):
         self.lte_data_widget.moveLineChart(sampledate)
+
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
 
 
 # WCDMA Data Line Chart UI
@@ -915,6 +947,15 @@ class Ui_WCDMA_Data_LCwidget(QWidget):
     def moveChart(self, sampledate):
         self.wcdma_data_widget.moveLineChart(sampledate)
 
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
+
 
 # WCDMA Pilot Analyzer Line Chart
 class Ui_WCDMA_PA_LCwidget(QWidget):
@@ -1108,6 +1149,15 @@ class Ui_WCDMA_PA_LCwidget(QWidget):
     def moveChart(self, sampledate):
         self.pa_widget.moveLineChart(sampledate)
 
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
+
 
 # GSM Line Chart UI
 class Ui_GSM_LCwidget(QWidget):
@@ -1271,6 +1321,15 @@ class Ui_GSM_LCwidget(QWidget):
 
     def moveChart(self, sampledate):
         self.gsm_widget.moveLineChart(sampledate)
+
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
 
 
 # GSM Data Line Chart UI
@@ -1472,6 +1531,15 @@ class Ui_GSM_Data_LCwidget(QWidget):
 
     def moveChart(self, sampledate):
         self.gsm_widget.moveLineChart(sampledate)
+
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
 
 
 # Class For Line Chart

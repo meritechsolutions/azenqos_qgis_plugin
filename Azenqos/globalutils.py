@@ -1,6 +1,10 @@
 from PyQt5.QtSql import QSql, QSqlDatabase, QSqlQuery
-import csv, inspect, os, datetime
+import csv, inspect, os, sys, datetime, json, io
 from zipfile import ZipFile
+
+# Adding folder path
+sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
+import global_config as gc
 
 db = None
 elementData = []
@@ -128,6 +132,37 @@ class Utils:
             return False
 
         return True
+
+    def saveState(self, currentPath):
+        file_path = currentPath + "/save.azs"
+        with open(file_path, "w") as f:
+            winList = []
+            for window in gc.openedWindows:
+                winList.append(str(window.title))
+            jsonString = json.dumps(winList)
+            f.write(jsonString)
+        return True
+
+    def loadState(self, currentPath, dialog):
+        loadedString = None
+        file_path = currentPath + "/save.azs"
+        if not os.path.exists(file_path):
+            return False
+
+        f = io.open(file_path, mode="r")
+        text = f.read()
+        loadedWindows = None
+        try:
+            loadedWindows = json.loads(text)
+        except:
+            pass
+
+        if loadedWindows:
+            for window in loadedWindows:
+                name = window.split("_")
+                dialog.classifySelectedItems(name[0], name[1])
+        f.close()
+        return False
 
     def openConnection(self, db: QSqlDatabase):
         if db:

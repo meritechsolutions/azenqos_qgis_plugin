@@ -140,7 +140,8 @@ class Utils:
             for window in gc.openedWindows:
                 winList.append(str(window.title))
             jsonString = json.dumps(winList)
-            f.write(jsonString)
+            binString = " ".join(format(x, "b") for x in bytearray(jsonString, "utf-8"))
+            f.write(binString)
         return True
 
     def loadState(self, currentPath, dialog):
@@ -151,9 +152,11 @@ class Utils:
 
         f = io.open(file_path, mode="r")
         text = f.read()
+        text = text.split(" ")
+        textString = bytearray([int(x, 2) for x in text]).decode()
         loadedWindows = None
         try:
-            loadedWindows = json.loads(text)
+            loadedWindows = json.loads(textString)
         except:
             pass
 

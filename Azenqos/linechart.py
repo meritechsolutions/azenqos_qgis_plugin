@@ -1614,7 +1614,10 @@ class LineChart(QWidget):
     # Show Data In Table
     def get_table_data(self, event):
         Chart_datalist = []
-        mousePoint = self.canvas.axes.vb.mapSceneToView(event.pos())
+        try:
+            mousePoint = self.canvas.axes.vb.mapSceneToView(event.pos())
+        except:
+            return False
         x, y = round(mousePoint.x()), mousePoint.y()
         dataIndex = None
 

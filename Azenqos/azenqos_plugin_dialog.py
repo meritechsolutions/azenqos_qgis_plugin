@@ -2212,6 +2212,7 @@ class AzenqosDialog(QMainWindow):
         else:
             event.ignore()
 
+
 class GroupArea(QMdiArea):
     def __init__(self):
         super().__init__()

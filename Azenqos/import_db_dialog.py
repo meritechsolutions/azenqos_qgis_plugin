@@ -17,7 +17,7 @@ from .globalutils import Utils
 from .tasks import *
 from .timeslider import *
 from .datatable import *
-from .azenqos_plugin_dialog import AzenqosDialog
+from .azenqos_plugin_dialog import *  # AzenqosDialog, clearAllSelectedFeatures
 
 
 class Ui_DatabaseDialog(QDialog):

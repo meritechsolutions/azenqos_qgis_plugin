@@ -1,5 +1,4 @@
 import os
-from PyQt5 import QtCore
 from PyQt5.QtCore import *
 
 mostFeaturesLayer = None

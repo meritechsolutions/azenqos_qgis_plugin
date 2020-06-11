@@ -126,6 +126,8 @@ class AzenqosDialog(QMainWindow):
     def setupToolBar(self):
         self.toolbar.setFloatable(False)
         self.toolbar.setMovable(False)
+        self.toolbar.addWidget(self.loadBtn)
+        self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.importDatabaseBtn)
         self.toolbar.addWidget(self.maptool)
         self.toolbar.addSeparator()
@@ -446,6 +448,7 @@ class AzenqosDialog(QMainWindow):
         self.setCentralWidget(self.mdi)
         toolbar = self.addToolBar("toolbar")
         self.toolbar = toolbar
+        dirname = os.path.dirname(__file__)
 
         # Time Slider
         gc.timeSlider = timeSlider(AzenqosDialog)
@@ -500,11 +503,22 @@ class AzenqosDialog(QMainWindow):
 
         # Import Database Button
         self.importDatabaseBtn = QToolButton()
-        self.importDatabaseBtn.setIcon(self.style().standardIcon(QStyle.SP_DirIcon))
+        self.importDatabaseBtn.setIcon(
+            QIcon(QPixmap(os.path.join(dirname, "res", "import.png")))
+        )
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
+        # Load Button
+        self.loadBtn = QToolButton()
+        self.loadBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "folder.png"))))
+        self.loadBtn.setObjectName("loadBtn")
+
+        # Save Button
+        self.saveBtn = QToolButton()
+        self.saveBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "save.png"))))
+        self.saveBtn.setObjectName("saveBtn")
+
         # Map tool Button
-        dirname = os.path.dirname(__file__)
         resourcePath = os.path.join(dirname, "res", "crosshair.png")
         self.maptool = QToolButton()
         self.maptool.setIcon(QIcon(QPixmap(resourcePath)))
@@ -514,6 +528,8 @@ class AzenqosDialog(QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
 
         gc.timeSlider.valueChanged.connect(self.timeChange)
+        self.loadBtn.clicked.connect(self.loadFile)
+        self.saveBtn.clicked.connect(self.saveFile)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
         self.maptool.clicked.connect(self.setMapTool)
         self.setupToolBar()
@@ -531,6 +547,20 @@ class AzenqosDialog(QMainWindow):
         #     0, _translate("AzenqosDialog", "Configuration"))
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
+        self.loadBtn.setText(_translate("AzenqosDialog", "Load"))
+        self.loadBtn.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Load</b><br> Browse and load workspace from <i>.azs</i> save file",
+            )
+        )
+        self.saveBtn.setText(_translate("AzenqosDialog", "Save"))
+        self.saveBtn.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Save</b><br> Browse and save current workspace to <i>.azs</i> save file",
+            )
+        )
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         self.importDatabaseBtn.setToolTip(
             _translate(
@@ -2161,6 +2191,26 @@ class AzenqosDialog(QMainWindow):
         actions = self.toolbar.actions()
         for action in actions:
             self.toolbar.removeAction(action)
+
+    def loadFile(self):
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Open Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
+        )
+        if fileName != "":
+            if len(gc.openedWindows) > 0:
+                for window in gc.openedWindows:
+                    window.close()
+                for mdiwindow in self.mdi.subWindowList():
+                    mdiwindow.close()
+                gc.openedWindows = []
+            Utils().loadStateFromFile(fileName, self)
+
+    def saveFile(self):
+        fileName, _ = QFileDialog.getSaveFileName(
+            self, "Save Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
+        )
+        if fileName != "":
+            Utils().saveStateToFile(fileName)
 
     def closeEvent(self, event):
         reply = None

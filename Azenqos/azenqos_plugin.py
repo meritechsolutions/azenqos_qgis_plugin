@@ -161,7 +161,9 @@ class Azenqos:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ":/plugins/azenqos_plugin/icon.png"
+        dirname = os.path.dirname(__file__)
+        # icon_path = ":/plugins/azenqos_plugin/icon.png"
+        icon_path = os.path.join(dirname, "icon.png")
         self.add_action(
             icon_path,
             text=self.tr(u"Azenqos Log"),

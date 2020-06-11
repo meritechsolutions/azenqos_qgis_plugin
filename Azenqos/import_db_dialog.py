@@ -26,6 +26,8 @@ class Ui_DatabaseDialog(QDialog):
         self.setupUi(self)
 
     def setupUi(self, DatabaseDialog):
+        dirname = os.path.dirname(__file__)
+        DatabaseDialog.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         DatabaseDialog.setObjectName("DatabaseDialog")
         DatabaseDialog.setWindowModality(QtCore.Qt.ApplicationModal)
         DatabaseDialog.resize(540, 90)

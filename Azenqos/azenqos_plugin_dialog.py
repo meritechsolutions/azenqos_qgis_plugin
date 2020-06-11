@@ -449,6 +449,7 @@ class AzenqosDialog(QMainWindow):
         toolbar = self.addToolBar("toolbar")
         self.toolbar = toolbar
         dirname = os.path.dirname(__file__)
+        AzenqosDialog.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
 
         # Time Slider
         gc.timeSlider = timeSlider(AzenqosDialog)

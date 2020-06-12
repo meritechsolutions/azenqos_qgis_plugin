@@ -742,7 +742,7 @@ class AzenqosDialog(QMainWindow):
     def setMapTool(self):
         self.clickTool = QgsMapToolEmitPoint(self.canvas)
         self.canvas.setMapTool(self.clickTool)
-        self.clickTool.canvasClicked.connect(self.clickCanvas)
+        self.clickTool.canvasClicked.connect(self.clickCanvasWorker)
 
     def pauseTime(self):
         gc.timeSlider.setEnabled(True)

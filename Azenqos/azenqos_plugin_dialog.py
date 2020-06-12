@@ -126,6 +126,8 @@ class AzenqosDialog(QMainWindow):
     def setupToolBar(self):
         self.toolbar.setFloatable(False)
         self.toolbar.setMovable(False)
+        self.toolbar.addWidget(self.loadBtn)
+        self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.importDatabaseBtn)
         self.toolbar.addWidget(self.maptool)
         self.toolbar.addSeparator()
@@ -446,6 +448,8 @@ class AzenqosDialog(QMainWindow):
         self.setCentralWidget(self.mdi)
         toolbar = self.addToolBar("toolbar")
         self.toolbar = toolbar
+        dirname = os.path.dirname(__file__)
+        AzenqosDialog.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
 
         # Time Slider
         gc.timeSlider = timeSlider(AzenqosDialog)
@@ -500,11 +504,22 @@ class AzenqosDialog(QMainWindow):
 
         # Import Database Button
         self.importDatabaseBtn = QToolButton()
-        self.importDatabaseBtn.setIcon(self.style().standardIcon(QStyle.SP_DirIcon))
+        self.importDatabaseBtn.setIcon(
+            QIcon(QPixmap(os.path.join(dirname, "res", "import.png")))
+        )
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
+        # Load Button
+        self.loadBtn = QToolButton()
+        self.loadBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "folder.png"))))
+        self.loadBtn.setObjectName("loadBtn")
+
+        # Save Button
+        self.saveBtn = QToolButton()
+        self.saveBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "save.png"))))
+        self.saveBtn.setObjectName("saveBtn")
+
         # Map tool Button
-        dirname = os.path.dirname(__file__)
         resourcePath = os.path.join(dirname, "res", "crosshair.png")
         self.maptool = QToolButton()
         self.maptool.setIcon(QIcon(QPixmap(resourcePath)))
@@ -514,6 +529,8 @@ class AzenqosDialog(QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
 
         gc.timeSlider.valueChanged.connect(self.timeChange)
+        self.loadBtn.clicked.connect(self.loadFile)
+        self.saveBtn.clicked.connect(self.saveFile)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
         self.maptool.clicked.connect(self.setMapTool)
         self.setupToolBar()
@@ -531,6 +548,20 @@ class AzenqosDialog(QMainWindow):
         #     0, _translate("AzenqosDialog", "Configuration"))
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
+        self.loadBtn.setText(_translate("AzenqosDialog", "Load"))
+        self.loadBtn.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Load</b><br> Browse and load workspace from <i>.azs</i> save file",
+            )
+        )
+        self.saveBtn.setText(_translate("AzenqosDialog", "Save"))
+        self.saveBtn.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Save</b><br> Browse and save current workspace to <i>.azs</i> save file",
+            )
+        )
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         self.importDatabaseBtn.setToolTip(
             _translate(
@@ -775,7 +806,7 @@ class AzenqosDialog(QMainWindow):
             selectedTime = time
             break
 
-        selectedTimestamp = Utils.datetimeStringtoTimestamp(selectedTime)
+        selectedTimestamp = Utils().datetimeStringtoTimestamp(selectedTime)
         if selectedTimestamp:
             timeSliderValue = gc.sliderLength - (gc.maxTimeValue - selectedTimestamp)
             gc.timeSlider.setValue(timeSliderValue)
@@ -889,7 +920,6 @@ class AzenqosDialog(QMainWindow):
             root.setCustomLayerOrder(order)
             iface.setActiveLayer(layer)
             QgsMessageLog.logMessage("layer name: " + str(layerName))
-            # layer.selectionChanged.connect(self.test)
 
             for feature in layerFeatures:
                 posid = feature["posid"]
@@ -898,22 +928,9 @@ class AzenqosDialog(QMainWindow):
             QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
 
             if layer is not None:
-
                 if len(selected_ids) > 0:
-                    # clearAllSelectedFeatures()
                     layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
-                    # ext = layer.extent()
-                    # xmin = ext.xMinimum()
-                    # xmax = ext.xMaximum()
-                    # ymin = ext.yMinimum()
-                    # ymax = ext.yMaximum()
-                    # zoomRectangle = QgsRectangle(xmin, ymin, xmax, ymax)
-                    # iface.mapCanvas().setExtent(zoomRectangle)
-                    # box = layer.boundingBoxOfSelected()
-                    # iface.mapCanvas().setExtent(box)
-                    # iface.mapCanvas().zoomToSelected()
-                    # iface.mapCanvas().zoomScale(5000.0)
-                    # iface.mapCanvas().refresh()
+
                 self.maxPosId = self.currentMaxPosId
 
     def classifySelectedItems(self, parent, child):
@@ -2176,6 +2193,26 @@ class AzenqosDialog(QMainWindow):
         for action in actions:
             self.toolbar.removeAction(action)
 
+    def loadFile(self):
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Open Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
+        )
+        if fileName != "":
+            if len(gc.openedWindows) > 0:
+                for window in gc.openedWindows:
+                    window.close()
+                for mdiwindow in self.mdi.subWindowList():
+                    mdiwindow.close()
+                gc.openedWindows = []
+            Utils().loadStateFromFile(fileName, self)
+
+    def saveFile(self):
+        fileName, _ = QFileDialog.getSaveFileName(
+            self, "Save Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
+        )
+        if fileName != "":
+            Utils().saveStateToFile(fileName)
+
     def closeEvent(self, event):
         reply = None
         if self.newImport is False:
@@ -2188,209 +2225,43 @@ class AzenqosDialog(QMainWindow):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
-            if event:
-                event.accept()
+            saving = Utils().saveState(gc.CURRENT_PATH)
             iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
             self.removeToolBarActions()
-            self.quitTask = QuitTask(u"Quiting Plugin")
+            self.quitTask = QuitTask(u"Quiting Plugin", self)
             QgsApplication.taskManager().addTask(self.quitTask)
-            # self.databaseUi.reject()
-            # self.databaseUi.destroy(True, True)
-            # self.close()
-            # self.destroy(True, True)
-            # super().reject()
+
+            # Begin removing layer (which cause db issue)
+            project = QgsProject.instance()
+            for (id_l, layer) in project.mapLayers().items():
+                if layer.type() == layer.VectorLayer:
+                    layer.removeSelection()
+                to_be_deleted = project.mapLayersByName(layer.name())[0]
+                project.removeMapLayer(to_be_deleted.id())
+                layer = None
+
+            QgsProject.instance().reloadAllLayers()
+            QgsProject.instance().clear()
+            gc.allLayers = []
+            gc.tableList = []
+
+            if len(gc.openedWindows) > 0:
+                for window in gc.openedWindows:
+                    window.close()
+                gc.openedWindows = []
+            QgsProject.removeAllMapLayers(QgsProject.instance())
+            # End removing layer
+
             removeAzenqosGroup()
             for mdiwindow in self.mdi.subWindowList():
                 mdiwindow.close()
             self.mdi.close()
             QgsMessageLog.logMessage("Close App")
+            event.accept()
         else:
             event.ignore()
-
-
-class Ui_DatabaseDialog(QDialog):
-    def __init__(self):
-        super(Ui_DatabaseDialog, self).__init__()
-        self.setupUi(self)
-
-    def setupUi(self, DatabaseDialog):
-        DatabaseDialog.setObjectName("DatabaseDialog")
-        DatabaseDialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        DatabaseDialog.resize(540, 90)
-        DatabaseDialog.setMaximumSize(QtCore.QSize(540, 90))
-        self.browseButton = QtWidgets.QPushButton(DatabaseDialog)
-        self.browseButton.setGeometry(QtCore.QRect(454, 30, 80, 24))
-        self.browseButton.setObjectName("browseButton")
-        self.dbPath = QtWidgets.QLineEdit(DatabaseDialog)
-        self.dbPath.setGeometry(QtCore.QRect(10, 30, 438, 24))
-        self.dbPath.setObjectName("dbPath")
-        self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
-        self.buttonBox.setGeometry(QtCore.QRect(370, 60, 164, 24))
-        self.buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
-        )
-        self.buttonBox.setObjectName("buttonBox")
-        self.dbPathLabel = QtWidgets.QLabel(DatabaseDialog)
-        self.dbPathLabel.setGeometry(QtCore.QRect(10, 10, 181, 16))
-        self.dbPathLabel.setObjectName("dbPathLabel")
-
-        self.retranslateUi(DatabaseDialog)
-        QtCore.QMetaObject.connectSlotsByName(DatabaseDialog)
-
-        self.browseButton.clicked.connect(self.getfiles)
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
-            self.checkDatabase
-        )
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(
-            self.reject
-        )
-
-    def retranslateUi(self, DatabaseDialog):
-        _translate = QtCore.QCoreApplication.translate
-        DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos"))
-        self.browseButton.setText(_translate("DatabaseDialog", "Browse.."))
-        self.dbPathLabel.setText(
-            _translate("DatabaseDialog", "Database path: ( .azm )")
-        )
-
-    def clearCurrentProject(self):
-
-        for hi in gc.h_list:
-            hi.hide()
-        gc.h_list = []
-        clearAllSelectedFeatures()
-
-        project = QgsProject.instance()
-        for (id_l, layer) in project.mapLayers().items():
-            to_be_deleted = project.mapLayersByName(layer.name())[0]
-            project.removeMapLayer(to_be_deleted.id())
-            layer = None
-
-        QgsProject.instance().reloadAllLayers()
-        QgsProject.instance().clear()
-        gc.allLayers = []
-
-    def getfiles(self):
-        fileName, _ = QFileDialog.getOpenFileName(
-            self, "Single File", QtCore.QDir.rootPath(), "*.azm"
-        )
-        if fileName != "":
-            self.fileName = fileName
-            self.dbPath.setText(fileName)
-        else:
-            if self.dbPath.text() != "":
-                self.databasePath = self.dbPath.text()
-
-    def checkDatabase(self):
-        if self.dbPath.text() != "":
-            if hasattr(self, "azenqosMainMenu") is True:
-                self.azenqosMainMenu.newImport = True
-                self.azenqosMainMenu.killMainWindow()
-                self.clearCurrentProject()
-            self.databasePath = Utils().unzipToFile(gc.CURRENT_PATH, self.fileName)
-            self.addDatabase()
-            if not gc.azenqosDatabase.open():
-                QtWidgets.QMessageBox.critical(
-                    None,
-                    "Cannot open database",
-                    "Unable to establish a database connection.\n"
-                    "This example needs SQLite support. Please read "
-                    "the Qt SQL driver documentation for information how "
-                    "to build it.\n\n"
-                    "Click Cancel to exit.",
-                    QtWidgets.QMessageBox.Cancel,
-                )
-                return False
-            else:
-                self.getLayersFromDb()
-                # if hasattr(self, "layerTask") is False:
-                self.layerTask = LayerTask(u"Add layers", self.databasePath)
-                QgsApplication.taskManager().addTask(self.layerTask)
-                self.getTimeForSlider()
-                self.hide()
-                self.azenqosMainMenu = AzenqosDialog(self)
-                self.azenqosMainMenu.show()
-                self.azenqosMainMenu.raise_()
-                self.azenqosMainMenu.activateWindow()
-        else:
-            QtWidgets.QMessageBox.critical(
-                None,
-                "Cannot open database",
-                "Unable to establish a database connection.\n" "Click Cancel to exit.",
-                QtWidgets.QMessageBox.Cancel,
-            )
-            return False
-
-    def getTimeForSlider(self):
-        dataList = []
-        gc.azenqosDatabase.open()
-        subQuery = QSqlQuery()
-        queryString = "SELECT log_start_time, log_end_time FROM logs"
-        subQuery.exec_(queryString)
-        while subQuery.next():
-            if subQuery.value(0).strip() and subQuery.value(1).strip():
-                startTime = subQuery.value(0)
-                endTime = subQuery.value(1)
-        gc.azenqosDatabase.close()
-
-        try:
-            gc.minTimeValue = datetime.datetime.strptime(
-                str(startTime), "%Y-%m-%d %H:%M:%S.%f"
-            ).timestamp()
-            gc.maxTimeValue = datetime.datetime.strptime(
-                str(endTime), "%Y-%m-%d %H:%M:%S.%f"
-            ).timestamp()
-            gc.currentDateTimeString = "%s" % (
-                datetime.datetime.fromtimestamp(gc.minTimeValue)
-            )
-        except:
-            QtWidgets.QMessageBox.critical(
-                None,
-                "Cannot open database",
-                "Unable to establish a database connection.\n"
-                "This example needs SQLite support. Please read "
-                "the Qt SQL driver documentation for information how "
-                "to build it.\n\n"
-                "Click Cancel to exit.",
-                QtWidgets.QMessageBox.Cancel,
-            )
-            return False
-        self.setIncrementValue()
-
-    def addDatabase(self):
-        gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
-        gc.azenqosDatabase.setDatabaseName(self.databasePath)
-
-    def getLayersFromDb(self):
-        gc.azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "select tbl_name from sqlite_master where sql LIKE '%\"geom\"%' and type = 'table' order by tbl_name"
-        query.exec_(queryString)
-        while query.next():
-            tableName = query.value(0)
-            subQueryString = "select count(*) from %s" % (tableName)
-            subQuery = QSqlQuery()
-            subQuery.exec_(subQueryString)
-            while subQuery.next():
-                if int(subQuery.value(0)) > 0:
-                    gc.allLayers.append(tableName)
-        gc.azenqosDatabase.close()
-
-    def setIncrementValue(self):
-        gc.sliderLength = gc.maxTimeValue - gc.minTimeValue
-        gc.sliderLength = round(gc.sliderLength, 3)
-
-    def reject(self):
-
-        super().reject()
-        # if gc.azenqosDatabase:
-        #     global gc.azenqosDatabase
-        #     gc.azenqosDatabase.close()
-        #     del gc.azenqosDatabase
-        # self.destroy(True)
-        # del self
 
 
 class GroupArea(QMdiArea):

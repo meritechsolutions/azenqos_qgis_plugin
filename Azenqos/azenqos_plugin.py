@@ -30,7 +30,7 @@ from PyQt5 import *
 from .resources import *
 
 # Import the code for the dialog
-from .azenqos_plugin_dialog import Ui_DatabaseDialog
+from .import_db_dialog import Ui_DatabaseDialog
 import os.path
 
 
@@ -161,7 +161,9 @@ class Azenqos:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ":/plugins/azenqos_plugin/icon.png"
+        dirname = os.path.dirname(__file__)
+        # icon_path = ":/plugins/azenqos_plugin/icon.png"
+        icon_path = os.path.join(dirname, "icon.png")
         self.add_action(
             icon_path,
             text=self.tr(u"Azenqos Log"),

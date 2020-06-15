@@ -26,7 +26,7 @@ from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
-from customize_properties import PropertiesWindow
+from .customize_properties import *
 
 
 class TableWindow(QWidget):
@@ -368,6 +368,7 @@ class TableWindow(QWidget):
         item1 = menu.addAction(u"Customize")
         action = menu.exec_(self.mapToGlobal(pos))
         if action == item1:
+            self.properties_window.setupUi()
             self.properties_window.show()
 
     def hilightRow(self, sampledate):

@@ -26,6 +26,7 @@ from .lte_query import LteDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
+from customize_properties import PropertiesWindow
 
 
 class TableWindow(QWidget):
@@ -44,6 +45,11 @@ class TableWindow(QWidget):
         self.tableViewCount = 0
         self.parentWindow = parent
         self.setupUi()
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.generateMenu)
+        self.properties_window = PropertiesWindow(
+            self, gc.azenqosDatabase, self.dataList
+        )
 
     def setupUi(self):
         self.setObjectName(self.title)
@@ -350,6 +356,19 @@ class TableWindow(QWidget):
             #     global gc.tableList
             #     if not self.tablename in gc.tableList:
             #         gc.tableList.append(self.tablename)
+
+    # def mousePressEvent(self, QMouseEvent):
+    #     if QMouseEvent.button() == Qt.LeftButton:
+    #         pass
+    #     elif QMouseEvent.button() == Qt.RightButton:
+    #         self.generateMenu
+
+    def generateMenu(self, pos):
+        menu = QMenu()
+        item1 = menu.addAction(u"Customize")
+        action = menu.exec_(self.mapToGlobal(pos))
+        if action == item1:
+            self.properties_window.show()
 
     def hilightRow(self, sampledate):
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")

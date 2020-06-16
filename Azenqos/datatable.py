@@ -40,6 +40,7 @@ class TableWindow(QWidget):
         self.width = 640
         self.height = 480
         self.dataList = []
+        self.customData = []
         self.currentRow = 0
         self.dateString = ""
         self.tableViewCount = 0
@@ -360,6 +361,10 @@ class TableWindow(QWidget):
                 ).getDebugAndroidEvent()
 
             if self.dataList is not None:
+                for customItem in self.customData:
+                    self.dataList[customItem["row"]][customItem["column"]] = customItem[
+                        "text"
+                    ]
                 self.setTableModel(self.dataList)
                 self.tableViewCount = self.tableView.model().rowCount()
 
@@ -382,6 +387,8 @@ class TableWindow(QWidget):
         item1 = menu.addAction(u"Customize")
         action = menu.exec_(self.mapToGlobal(pos))
         if action == item1:
+            self.properties_window.tempCustom = self.customData
+            self.properties_window.data_set = self.dataList
             self.properties_window.setupUi()
             self.properties_window.setupComboBox()
             self.properties_window.show()

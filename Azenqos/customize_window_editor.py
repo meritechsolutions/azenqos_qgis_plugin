@@ -294,10 +294,12 @@ class CellSetting(QWidget):
             customElements.append("")
 
         elif self.rbText.isChecked():
+            # self.previous_window.data_set[self.row][self.column] = self.leText.text()
             customElements.append(self.leText.text())
 
         if len(customElements) > 0:
             result = ",".join(customElements)
             self.selected_item.setText(0, result)
 
+        # self.previous_window.main_window.customData.append({"row":self.row, "column":self.column,"text":result})
         self.close()

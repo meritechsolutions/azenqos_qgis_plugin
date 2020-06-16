@@ -30,6 +30,7 @@ class PropertiesWindow(QWidget):
         self.parentCurrentSelect = None
         self.setupUi()
         self.setupComboBox()
+        self.tempCustom = []
 
     def setupUi(self):
         self.setObjectName("Properties")
@@ -159,6 +160,7 @@ class PropertiesWindow(QWidget):
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.setHeaderHidden(True)
         self.treeWidget.currentItemChanged.connect(self.onClickTreeItem)
+        self.treeWidget.itemChanged.connect(self.changeTreeWidgetItem)
         self.treeWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.treeWidget.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         header = self.treeWidget.header()
@@ -255,7 +257,28 @@ class PropertiesWindow(QWidget):
         )
         self.cell_setting.show()
 
+    def changeTreeWidgetItem(self, data, col):
+        previousCustom = next(
+            (
+                x
+                for x in self.tempCustom
+                if x["row"] == self.currentRowSelect - 1
+                and x["column"] == self.currentColumnSelect - 1
+            ),
+            None,
+        )
+        if previousCustom:
+            self.tempCustom.remove(previousCustom)
+        self.tempCustom.append(
+            {
+                "row": self.currentRowSelect - 1,
+                "column": self.currentColumnSelect - 1,
+                "text": data.text(col),
+            }
+        )
+
     def changeTreeWidget(self):
+
         headers = []
 
         self.header = QTreeWidgetItem(self.treeWidget, ["Header"])
@@ -265,7 +288,7 @@ class PropertiesWindow(QWidget):
                 header_name = self.main_window.tableHeader[column]
             except:
                 header_name = '""'
-            QTreeWidgetItem(self.header, [header_name])
+            headerItem = QTreeWidgetItem(self.header, [header_name])
             headers.append(header_name)
 
         rows = []
@@ -274,7 +297,7 @@ class PropertiesWindow(QWidget):
             rowItem = QTreeWidgetItem(self.treeWidget, [str("Row %i") % (row + 1)])
             for column in range(self.currentColumnLength):
                 try:
-                    column_name = str(self.main_window.dataList[row][column])
+                    column_name = str(self.data_set[row][column])
                     if not column_name:
                         column_name = '""'
                 except:
@@ -282,6 +305,8 @@ class PropertiesWindow(QWidget):
                 item = QTreeWidgetItem(rowItem, [column_name])
                 columnlist.append(column_name)
             rows.append(columnlist)
+
+        # self.data_set = self.getDataSet()
 
     def getHeaders(self):
         headerTable = []
@@ -335,6 +360,7 @@ class PropertiesWindow(QWidget):
             self.main_window.setTableSize(tableSize)
             self.main_window.updateTable()
 
+        self.main_window.customData = self.tempCustom
         self.close()
 
 

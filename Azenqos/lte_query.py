@@ -124,7 +124,7 @@ class LteDataQuery:
                     condition,
                 )
                 query.exec_(queryString)
-                while query.next():
+                if query.first():
                     dataList.append(
                         [
                             name,
@@ -132,6 +132,10 @@ class LteDataQuery:
                             query.value(1) or "",
                             query.value(2) or "",
                         ]
+                    )
+                else:
+                    dataList.append(
+                        [name, "", "", "",]
                     )
 
         fieldsList = [
@@ -213,8 +217,10 @@ class LteDataQuery:
             for index in range(len(fieldsList)):
                 columnName = fieldsList[index]
                 value = ""
-                if query.value(index) != "":
+                try:
                     value = query.value(index)
+                except:
+                    value = ""
                 dataList.append([columnName, value, "", ""])
         else:
             for index in range(len(fieldsList)):

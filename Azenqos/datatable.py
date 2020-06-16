@@ -97,6 +97,9 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
+    def updateTable(self):
+        self.setTableModel(self.dataList)
+
     def setTableModel(self, dataList):
         self.tableModel = TableModel(dataList, self.tableHeader, self)
         self.proxyModel = SortFilterProxyModel(self)
@@ -104,6 +107,14 @@ class TableWindow(QWidget):
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(True)
         # self.tableView.resizeColumnsToContents()
+
+    def setDataSet(self, data_set: list):
+        self.dataList = data_set
+
+    def setTableSize(self, sizelist: list):
+        if sizelist:
+            self.rowCount = sizelist[0]
+            self.columnCount = sizelist[1]
 
     def specifyTablesHeader(self):
         if self.title is not None:
@@ -363,12 +374,16 @@ class TableWindow(QWidget):
     #     elif QMouseEvent.button() == Qt.RightButton:
     #         self.generateMenu
 
+    def setHeader(self, headers):
+        self.tableHeader = headers
+
     def generateMenu(self, pos):
         menu = QMenu()
         item1 = menu.addAction(u"Customize")
         action = menu.exec_(self.mapToGlobal(pos))
         if action == item1:
             self.properties_window.setupUi()
+            self.properties_window.setupComboBox()
             self.properties_window.show()
 
     def hilightRow(self, sampledate):

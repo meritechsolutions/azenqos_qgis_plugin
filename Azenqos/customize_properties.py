@@ -8,8 +8,8 @@ from customize_window_editor import CellSetting
 from worker import Worker
 import globalutils
 
-MAX_COLUMNS = 10
-MAX_ROWS = 10
+MAX_COLUMNS = 50
+MAX_ROWS = 1000
 
 
 class PropertiesWindow(QWidget):
@@ -36,7 +36,7 @@ class PropertiesWindow(QWidget):
         self.setFixedSize(360, 360)
         self.setMouseTracking(False)
         self.verticalLayoutWidget = QWidget(self)
-        self.verticalLayoutWidget.setGeometry(QRect(0, 0, 360, 300))
+        self.verticalLayoutWidget.setGeometry(QRect(0, 0, 360, 320))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.verticalLayout = QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(10, 20, 10, 10)
@@ -58,7 +58,7 @@ class PropertiesWindow(QWidget):
         self.setupContentTab()
 
         self.buttonBox = QDialogButtonBox(self)
-        self.buttonBox.setGeometry(QRect(13, 310, 331, 32))
+        self.buttonBox.setGeometry(QRect(13, 320, 331, 32))
         self.buttonBox.setStandardButtons(QDialogButtonBox.Ok | QDialogButtonBox.Close)
         self.buttonBox.setCenterButtons(False)
         self.buttonBox.setObjectName("buttonBox")
@@ -129,6 +129,8 @@ class PropertiesWindow(QWidget):
         sizePolicy.setHeightForWidth(self.cbRows.sizePolicy().hasHeightForWidth())
         self.cbRows.setSizePolicy(sizePolicy)
         self.cbRows.setObjectName("cbRows")
+        self.cbRows.setStyleSheet("QComboBox { combobox-popup: 0; }")
+        self.cbRows.setMaxVisibleItems(5)
         self.formLayout.setWidget(4, QFormLayout.FieldRole, self.cbRows)
 
         self.lblColumns = QLabel(self.formLayoutWidget)
@@ -143,6 +145,8 @@ class PropertiesWindow(QWidget):
         self.cbColumns.setSizePolicy(sizePolicy)
         self.cbColumns.setLayoutDirection(Qt.LeftToRight)
         self.cbColumns.setObjectName("cbColumns")
+        self.cbColumns.setStyleSheet("QComboBox { combobox-popup: 0; }")
+        self.cbColumns.setMaxVisibleItems(5)
         self.formLayout.setWidget(5, QFormLayout.FieldRole, self.cbColumns)
         self.tabWidget.addTab(self.Table, "")
 
@@ -183,20 +187,19 @@ class PropertiesWindow(QWidget):
     def setupComboBox(self):
         self.cbColumns.clear()
         for column in range(MAX_COLUMNS):
-            if column == 0:
-                self.cbColumns.addItem("")
-            else:
-                self.cbColumns.addItem(str(column))
+            self.cbColumns.addItem(str(column + 1))
 
         self.cbRows.clear()
         for row in range(MAX_ROWS):
-            if row == 0:
-                self.cbRows.addItem("")
-            else:
-                self.cbRows.addItem(str(row))
+            self.cbRows.addItem(str(row + 1))
 
         self.cbColumns.currentTextChanged.connect(self.onChangeColumns)
         self.cbRows.currentTextChanged.connect(self.onChangeRows)
+
+        self.cbColumns.setCurrentText(
+            str(self.main_window.tableModel.columnCount(self))
+        )
+        self.cbRows.setCurrentText(str(self.main_window.tableModel.rowCount(self)))
 
     def onChangeColumns(self, value):
         self.treeWidget.clear()
@@ -256,8 +259,12 @@ class PropertiesWindow(QWidget):
         headers = []
 
         self.header = QTreeWidgetItem(self.treeWidget, ["Header"])
+
         for column in range(self.currentColumnLength):
-            header_name = '""'
+            try:
+                header_name = self.main_window.tableHeader[column]
+            except:
+                header_name = '""'
             QTreeWidgetItem(self.header, [header_name])
             headers.append(header_name)
 
@@ -266,8 +273,13 @@ class PropertiesWindow(QWidget):
             columnlist = []
             rowItem = QTreeWidgetItem(self.treeWidget, [str("Row %i") % (row + 1)])
             for column in range(self.currentColumnLength):
-                column_name = "Column %i" % (column + 1)
-                item = QTreeWidgetItem(rowItem, [str("Column %i") % (column + 1)])
+                try:
+                    column_name = str(self.main_window.dataList[row][column])
+                    if not column_name:
+                        column_name = '""'
+                except:
+                    column_name = '""'
+                item = QTreeWidgetItem(rowItem, [column_name])
                 columnlist.append(column_name)
             rows.append(columnlist)
 
@@ -285,16 +297,18 @@ class PropertiesWindow(QWidget):
             row = toplevel_index
             row_item = self.treeWidget.topLevelItem(toplevel_index)
             children_count = row_item.childCount()
+            sub_data = []
             for child_index in range(0, children_count):
-                sub_data = []
                 column = child_index + 1
                 text = row_item.child(child_index).text(0)
-                sub_data = text.split(",")
-                sub_data.append(row)
-                sub_data.append(column)
-                data.append(sub_data)
-                # print(data)
-                # ['table','value']
+                if text == '""':
+                    sub_data += [""]
+                else:
+                    sub_data += text.split(",")
+
+            data.append(sub_data)
+            # print(data)
+            # ['table','value']
         return data
 
     def setDatabase(self, database):

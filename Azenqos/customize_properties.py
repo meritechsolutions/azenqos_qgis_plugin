@@ -13,12 +13,13 @@ MAX_ROWS = 1000
 
 
 class PropertiesWindow(QWidget):
-    def __init__(self, main_window=None, database=None, data_set=None):
+    def __init__(self, main_window=None, database=None, data_set=None, headers=None):
         super().__init__(None)
 
         self.main_window = main_window
         self.db = database
         self.data_set = data_set
+        self.headers = headers
 
         self.previousColumnLength = 1
         self.previousRowLength = 1
@@ -31,6 +32,7 @@ class PropertiesWindow(QWidget):
         self.setupUi()
         self.setupComboBox()
         self.tempCustom = []
+        self.tempHeader = []
 
     def setupUi(self):
         self.setObjectName("Properties")
@@ -207,12 +209,14 @@ class PropertiesWindow(QWidget):
         self.treeWidget.clear()
         if value:
             self.currentColumnLength = int(value)
+            self.main_window.columns = int(value)
             self.changeTreeWidget()
 
     def onChangeRows(self, value):
         self.treeWidget.clear()
         if value:
             self.currentRowLength = int(value)
+            self.main_window.rows = int(value)
             self.changeTreeWidget()
 
     def onClickTreeItem(self, current, previous):
@@ -258,24 +262,29 @@ class PropertiesWindow(QWidget):
         self.cell_setting.show()
 
     def changeTreeWidgetItem(self, data, col):
-        previousCustom = next(
-            (
-                x
-                for x in self.tempCustom
-                if x["row"] == self.currentRowSelect - 1
-                and x["column"] == self.currentColumnSelect - 1
-            ),
-            None,
-        )
-        if previousCustom:
-            self.tempCustom.remove(previousCustom)
-        self.tempCustom.append(
-            {
-                "row": self.currentRowSelect - 1,
-                "column": self.currentColumnSelect - 1,
-                "text": data.text(col),
-            }
-        )
+        if self.parentName == "Header":
+            self.headers = self.getHeaders()
+
+        else:
+            previousCustom = next(
+                (
+                    x
+                    for x in self.tempCustom
+                    if x["row"] == self.currentRowSelect - 1
+                    and x["column"] == self.currentColumnSelect - 1
+                ),
+                None,
+            )
+            if previousCustom:
+                self.tempCustom.remove(previousCustom)
+            self.tempCustom.append(
+                {
+                    "row": self.currentRowSelect - 1,
+                    "column": self.currentColumnSelect - 1,
+                    "text": data.text(col),
+                }
+            )
+            self.data_set = self.getDataSet()
 
     def changeTreeWidget(self):
 
@@ -285,7 +294,9 @@ class PropertiesWindow(QWidget):
 
         for column in range(self.currentColumnLength):
             try:
-                header_name = self.main_window.tableHeader[column]
+                header_name = self.headers[column]
+                if header_name == "":
+                    header_name = '""'
             except:
                 header_name = '""'
             headerItem = QTreeWidgetItem(self.header, [header_name])
@@ -312,7 +323,10 @@ class PropertiesWindow(QWidget):
         headerTable = []
         headerCount = self.header.childCount()
         for header in range(0, headerCount):
-            headerTable.append(self.header.child(header).text(0))
+            text = self.header.child(header).text(0)
+            if text == '""':
+                text = ""
+            headerTable.append(text)
         return headerTable
 
     def getDataSet(self):
@@ -346,6 +360,9 @@ class PropertiesWindow(QWidget):
 
         headers = self.getHeaders()
         if headers:
+            for x in headers:
+                if x == '""':
+                    x = ""
             self.main_window.setHeader(headers)
 
         data_set = self.getDataSet()

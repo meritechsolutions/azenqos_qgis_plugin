@@ -33,6 +33,10 @@ class TableWindow(QWidget):
     def __init__(self, parent, windowName):
         super().__init__(parent)
         self.title = windowName
+        self.rows = 0
+        self.columns = 0
+        self.fetchRows = 0
+        self.fetchColumns = 0
         self.tablename = ""
         self.tableHeader = None
         self.left = 10
@@ -41,6 +45,7 @@ class TableWindow(QWidget):
         self.height = 480
         self.dataList = []
         self.customData = []
+        self.customHeader = []
         self.currentRow = 0
         self.dateString = ""
         self.tableViewCount = 0
@@ -49,7 +54,7 @@ class TableWindow(QWidget):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.generateMenu)
         self.properties_window = PropertiesWindow(
-            self, gc.azenqosDatabase, self.dataList
+            self, gc.azenqosDatabase, self.dataList, self.tableHeader
         )
 
     def setupUi(self):
@@ -102,11 +107,55 @@ class TableWindow(QWidget):
         self.setTableModel(self.dataList)
 
     def setTableModel(self, dataList):
+        if self.rows and self.columns:
+
+            if len(dataList) >= self.rows:
+                if self.rows < self.fetchRows:
+                    self.fetchRows = self.rows
+
+                dataList = dataList[: self.fetchRows]
+
+            while len(dataList) < self.rows:
+                dataList.append([])
+
+            for dataRow in dataList:
+                if len(dataRow) >= self.columns:
+                    if self.columns < self.fetchColumns:
+                        self.fetchColumns = self.columns
+                    dataRow = dataRow[: self.fetchColumns]
+                while len(dataRow) < self.columns:
+                    dataRow.append("")
+
+            if len(self.tableHeader) >= self.columns:
+                self.tableHeader = self.tableHeader[: self.columns]
+            else:
+                while len(self.tableHeader) < self.columns:
+                    self.tableHeader.append("")
+                # self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
+
+        for customItem in self.customData:
+            try:
+                dataList[customItem["row"]][customItem["column"]] = customItem["text"]
+            except:
+                self.customData.remove(customItem)
+
+        if self.customHeader:
+            self.tableHeader = self.customHeader
+
+        self.dataList = dataList
         self.tableModel = TableModel(dataList, self.tableHeader, self)
         self.proxyModel = SortFilterProxyModel(self)
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(True)
+
+        if not self.rows:
+            self.rows = self.tableModel.rowCount(self)
+            self.fetchRows = self.rows
+
+        if not self.columns:
+            self.columns = self.tableModel.columnCount(self)
+            self.fetchColumns = self.columns
         # self.tableView.resizeColumnsToContents()
 
     def setDataSet(self, data_set: list):
@@ -361,10 +410,6 @@ class TableWindow(QWidget):
                 ).getDebugAndroidEvent()
 
             if self.dataList is not None:
-                for customItem in self.customData:
-                    self.dataList[customItem["row"]][customItem["column"]] = customItem[
-                        "text"
-                    ]
                 self.setTableModel(self.dataList)
                 self.tableViewCount = self.tableView.model().rowCount()
 
@@ -380,7 +425,10 @@ class TableWindow(QWidget):
     #         self.generateMenu
 
     def setHeader(self, headers):
-        self.tableHeader = headers
+        # self.tableHeader = headers
+        self.customHeader = headers
+        self.updateTable()
+        # self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
 
     def generateMenu(self, pos):
         menu = QMenu()
@@ -388,7 +436,9 @@ class TableWindow(QWidget):
         action = menu.exec_(self.mapToGlobal(pos))
         if action == item1:
             self.properties_window.tempCustom = self.customData
+            self.properties_window.tempHeader = self.customHeader
             self.properties_window.data_set = self.dataList
+            self.properties_window.headers = self.tableHeader
             self.properties_window.setupUi()
             self.properties_window.setupComboBox()
             self.properties_window.show()

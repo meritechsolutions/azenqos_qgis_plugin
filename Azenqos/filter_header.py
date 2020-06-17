@@ -18,7 +18,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
         for key, regex in self.filters.items():
             ix = self.sourceModel().index(source_row, key, source_parent)
             if ix.isValid():
-                if regex.indexIn(self.sourceModel().dataString(ix)) == -1:
+                if regex.indexIn(str(self.sourceModel().dataString(ix))) == -1:
                     return False
         return True
 

@@ -85,7 +85,7 @@ class TableWindow(QWidget):
             self.tableView.verticalHeader().sizeHint().width()
         )
         if self.tableHeader and len(self.tableHeader) > 0:
-            self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
+            self.filterHeader.setFilterBoxes(gc.maxColumns, self)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)

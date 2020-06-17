@@ -3,13 +3,16 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtSql import QSqlQuery
 import sys
+import os
+
+# Adding folder path
+sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
+
+import global_config as gc
 from cell_content_header import HeaderContent
 from customize_window_editor import CellSetting
 from worker import Worker
 import globalutils
-
-MAX_COLUMNS = 50
-MAX_ROWS = 1000
 
 
 class PropertiesWindow(QWidget):
@@ -190,11 +193,11 @@ class PropertiesWindow(QWidget):
 
     def setupComboBox(self):
         self.cbColumns.clear()
-        for column in range(MAX_COLUMNS):
+        for column in range(gc.maxColumns):
             self.cbColumns.addItem(str(column + 1))
 
         self.cbRows.clear()
-        for row in range(MAX_ROWS):
+        for row in range(gc.maxRows):
             self.cbRows.addItem(str(row + 1))
 
         self.cbColumns.currentTextChanged.connect(self.onChangeColumns)

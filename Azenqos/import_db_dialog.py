@@ -82,7 +82,7 @@ class Ui_DatabaseDialog(QDialog):
 
         QgsProject.instance().reloadAllLayers()
         QgsProject.instance().clear()
-        gc.allLayers = []
+        gc.tableList = []
 
     def getfiles(self):
         fileName, _ = QFileDialog.getOpenFileName(
@@ -188,7 +188,7 @@ class Ui_DatabaseDialog(QDialog):
             subQuery.exec_(subQueryString)
             while subQuery.next():
                 if int(subQuery.value(0)) > 0:
-                    gc.allLayers.append(tableName)
+                    gc.tableList.append(tableName)
         gc.azenqosDatabase.close()
 
     def setIncrementValue(self):

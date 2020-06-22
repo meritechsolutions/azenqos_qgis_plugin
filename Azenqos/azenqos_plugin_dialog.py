@@ -25,6 +25,7 @@ import datetime
 import threading
 import sys
 import os
+import csv
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -81,6 +82,7 @@ class AzenqosDialog(QMainWindow):
         self.currentMaxPosId = 0
         self.setupMenubar(self)
         self.setupUi(self)
+        self.initializeSchema()
         self.raise_()
         self.activateWindow()
         self.databaseUi = databaseUi
@@ -90,6 +92,35 @@ class AzenqosDialog(QMainWindow):
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
         self.canvas.renderComplete.connect(self.zoomToActiveLayer)
+        QgsProject.instance().layersAdded.connect(self.renamingLayers)
+        QgsProject.instance().layersRemoved.connect(self.removeLayers)
+
+    def initializeSchema(self):
+        dirname = os.path.dirname(__file__)
+        fileDir = os.path.join(dirname, "element_info_list.csv")
+        with open(fileDir, "r") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                gc.schemaList.append(
+                    {
+                        "name": row[9],
+                        "column": row[1],
+                        "table": row[3],
+                        "max_args": row[8],
+                    }
+                )
+
+    def renamingLayers(self, layers):
+        for layer in layers:
+            name = layer.name().split(" ")
+            if name[0] == "azqdata":
+                layer.setName(" ".join(name[1:]))
+                gc.activeLayers.append(" ".join(name[1:]))
+
+    def removeLayers(self, layers):
+        pass
+        # for layer in layers:
+        #     gc.activeLayers.remove(layer.name())
 
     def zoomToActiveLayer(self):
         iface.zoomToActiveLayer()
@@ -742,7 +773,7 @@ class AzenqosDialog(QMainWindow):
     def setMapTool(self):
         self.clickTool = QgsMapToolEmitPoint(self.canvas)
         self.canvas.setMapTool(self.clickTool)
-        self.clickTool.canvasClicked.connect(self.clickCanvasWorker)
+        self.clickTool.canvasClicked.connect(self.clickCanvas)
 
     def pauseTime(self):
         gc.timeSlider.setEnabled(True)
@@ -775,11 +806,18 @@ class AzenqosDialog(QMainWindow):
         selectedTime = None
         clearAllSelectedFeatures()
 
-        for layerName in gc.tableList:
-            layerList = QgsProject.instance().mapLayersByName(layerName)
-            if len(layerList) == 0:
+        for layerName in gc.activeLayers:
+            layer = None
+            root = QgsProject.instance().layerTreeRoot()
+            layers = root.findLayers()
+            for la in layers:
+                if la.name() == layerName:
+                    layer = la.layer()
+                    break
+
+            if not layer:
                 continue
-            layer = layerList[0]
+
             if layer.type() == layer.VectorLayer:
                 if layer.featureCount() == 0:
                     # There are no features - skip
@@ -787,8 +825,15 @@ class AzenqosDialog(QMainWindow):
 
                 # Loop through all features in the layer
                 for f in layer.getFeatures():
-                    distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
-                    if distance != -1.0 and distance <= 0.001:
+                    distance = -1.0
+
+                    if f.geometry():
+                        featurePoint = f.geometry().asPoint()
+                        featurePoint = self.canvas.getCoordinateTransform().toMapCoordinates(
+                            featurePoint.x(), featurePoint.y()
+                        )
+                        distance = featurePoint.distance(point)
+                    if distance != -1.0:
                         closestFeatureId = f.id()
                         time = layer.getFeature(closestFeatureId).attribute("time")
                         info = (layer, closestFeatureId, distance, time)
@@ -806,13 +851,15 @@ class AzenqosDialog(QMainWindow):
             selectedTime = time
             break
 
-        selectedTimestamp = Utils().datetimeStringtoTimestamp(selectedTime)
+        selectedTimestamp = Utils().datetimeStringtoTimestamp(
+            selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")
+        )
         if selectedTimestamp:
             timeSliderValue = gc.sliderLength - (gc.maxTimeValue - selectedTimestamp)
             gc.timeSlider.setValue(timeSliderValue)
             gc.timeSlider.update()
 
-            # self.canvas.refreshgc.allLayers()
+            # self.canvas.refreshgc.tableList()
 
     def clickCanvasWorker(self, point, button):
         worker = Worker(self.clickCanvas(point, button))
@@ -856,7 +903,7 @@ class AzenqosDialog(QMainWindow):
         # text = "[--" + str(len(gc.tableList) + "--]"
         # QgsMessageLog.logMessage(text)
 
-        if len(gc.tableList) > 0:
+        if len(gc.activeLayers) > 0:
             QgsMessageLog.logMessage("[-- have gc.tableList --]")
             worker = Worker(self.hilightFeature())
             gc.threadpool.start(worker)
@@ -879,7 +926,7 @@ class AzenqosDialog(QMainWindow):
         QgsMessageLog.logMessage("tables: " + str(gc.tableList))
         self.posObjs = []
         self.posIds = []
-        for tableName in gc.tableList:
+        for tableName in gc.activeLayers:
             query = QSqlQuery()
             queryString = (
                 "SELECT posid FROM %s WHERE time <= '%s' AND geom IS NOT NULL ORDER BY time DESC LIMIT 1"
@@ -899,39 +946,47 @@ class AzenqosDialog(QMainWindow):
         if self.posIds:
             selected_ids = []
             layerName = None
+            layer = None
             # start_time = time.time()
-            self.currentMaxPosId = max(self.posIds)
-            for obj in self.posObjs:
-                if obj.get("posid") == self.currentMaxPosId:
-                    layerName = obj.get("table")
-                    break
+            try:
+                self.currentMaxPosId = max(self.posIds)
+                for obj in self.posObjs:
+                    if obj.get("posid") == self.currentMaxPosId:
+                        layerName = obj.get("table")
+                        break
 
-            layer = QgsProject.instance().mapLayersByName(layerName)[0]
-            request = (
-                QgsFeatureRequest()
-                .setFilterExpression("posid = %s" % (self.currentMaxPosId))
-                .setFlags(QgsFeatureRequest.NoGeometry)
-            )
-            layerFeatures = layer.getFeatures(request)
-            root = QgsProject.instance().layerTreeRoot()
-            root.setHasCustomLayerOrder(True)
-            order = root.customLayerOrder()
-            order.insert(0, order.pop(order.index(layer)))  # vlayer to the top
-            root.setCustomLayerOrder(order)
-            iface.setActiveLayer(layer)
-            QgsMessageLog.logMessage("layer name: " + str(layerName))
+                root = QgsProject.instance().layerTreeRoot()
+                layers = root.findLayers()
+                for la in layers:
+                    if la.name() == layerName:
+                        layer = la.layer()
+                request = (
+                    QgsFeatureRequest()
+                    .setFilterExpression("posid = %s" % (self.currentMaxPosId))
+                    .setFlags(QgsFeatureRequest.NoGeometry)
+                )
+                layerFeatures = layer.getFeatures(request)
+                root = QgsProject.instance().layerTreeRoot()
+                root.setHasCustomLayerOrder(True)
+                order = root.customLayerOrder()
+                order.insert(0, order.pop(order.index(layer)))  # vlayer to the top
+                root.setCustomLayerOrder(order)
+                iface.setActiveLayer(layer)
+                QgsMessageLog.logMessage("layer name: " + str(layerName))
 
-            for feature in layerFeatures:
-                posid = feature["posid"]
-                if self.currentMaxPosId == posid:
-                    selected_ids.append(feature.id())
-            QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
+                for feature in layerFeatures:
+                    posid = feature["posid"]
+                    if self.currentMaxPosId == posid:
+                        selected_ids.append(feature.id())
+                QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
 
-            if layer is not None:
-                if len(selected_ids) > 0:
-                    layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
+                if layer is not None:
+                    if len(selected_ids) > 0:
+                        layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
 
-                self.maxPosId = self.currentMaxPosId
+                    self.maxPosId = self.currentMaxPosId
+            except:
+                pass
 
     def classifySelectedItems(self, parent, child):
         windowName = parent + "_" + child
@@ -2244,8 +2299,8 @@ class AzenqosDialog(QMainWindow):
 
             QgsProject.instance().reloadAllLayers()
             QgsProject.instance().clear()
-            gc.allLayers = []
             gc.tableList = []
+            gc.activeLayers = []
 
             if len(gc.openedWindows) > 0:
                 for window in gc.openedWindows:

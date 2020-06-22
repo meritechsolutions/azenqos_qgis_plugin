@@ -93,6 +93,7 @@ class AzenqosDialog(QMainWindow):
         self.canvas.selectionChanged.connect(self.selectChanged)
         self.canvas.renderComplete.connect(self.zoomToActiveLayer)
         QgsProject.instance().layersAdded.connect(self.renamingLayers)
+        # QgsProject.instance().layerWasAdded.connect(self.zoomToActiveLayer)
         QgsProject.instance().layersRemoved.connect(self.removeLayers)
 
     def initializeSchema(self):
@@ -111,19 +112,44 @@ class AzenqosDialog(QMainWindow):
                 )
 
     def renamingLayers(self, layers):
+
+        # Configure layers data source + rename layers
+        uri = QgsDataSourceUri()
+        uri.setDatabase(self.databaseUi.databasePath)
+        geom_column = "geom"
         for layer in layers:
             name = layer.name().split(" ")
             if name[0] == "azqdata":
                 layer.setName(" ".join(name[1:]))
                 gc.activeLayers.append(" ".join(name[1:]))
+                uri.setDataSource("", " ".join(name[1:]), geom_column)
+                layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
+
+        # self.zoomToActiveLayer()
 
     def removeLayers(self, layers):
         pass
         # for layer in layers:
         #     gc.activeLayers.remove(layer.name())
 
-    def zoomToActiveLayer(self):
-        iface.zoomToActiveLayer()
+    def zoomToActiveLayer(self, layers):
+
+        root = QgsProject.instance().layerTreeRoot()
+        groups = root.findGroups()
+        if len(groups) > 0:
+            extent = QgsRectangle()
+            extent.setMinimal()
+
+            for child in groups[0].children():
+                if isinstance(child, QgsLayerTreeLayer):
+                    extent.combineExtentWith(child.layer().extent())
+
+            iface.mapCanvas().setExtent(extent)
+            iface.mapCanvas().refresh()
+
+        else:
+            iface.zoomToActiveLayer()
+
         self.canvas.renderComplete.disconnect(self.zoomToActiveLayer)
 
     def selectChanged(self):
@@ -818,6 +844,27 @@ class AzenqosDialog(QMainWindow):
             if not layer:
                 continue
 
+            # if layer.type() == layer.VectorLayer:
+            #     if layer.featureCount() == 0:
+            #         # There are no features - skip
+            #         continue
+
+            #     # Loop through all features in the layer
+            #     for f in layer.getFeatures():
+            #         distance = -1.0
+
+            #         if f.geometry():
+            #             featurePoint = f.geometry().asPoint()
+            #             featurePoint = self.canvas.getCoordinateTransform().toMapCoordinates(
+            #                 featurePoint.x(), featurePoint.y()
+            #             )
+            #             distance = featurePoint.distance(point)
+            #         if distance != -1.0 and distance <= 0.005:
+            #             closestFeatureId = f.id()
+            #             time = layer.getFeature(closestFeatureId).attribute("time")
+            #             info = (layer, closestFeatureId, distance, time)
+            #             layerData.append(info)
+
             if layer.type() == layer.VectorLayer:
                 if layer.featureCount() == 0:
                     # There are no features - skip
@@ -825,15 +872,8 @@ class AzenqosDialog(QMainWindow):
 
                 # Loop through all features in the layer
                 for f in layer.getFeatures():
-                    distance = -1.0
-
-                    if f.geometry():
-                        featurePoint = f.geometry().asPoint()
-                        featurePoint = self.canvas.getCoordinateTransform().toMapCoordinates(
-                            featurePoint.x(), featurePoint.y()
-                        )
-                        distance = featurePoint.distance(point)
-                    if distance != -1.0:
+                    distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
+                    if distance != -1.0 and distance <= 0.001:
                         closestFeatureId = f.id()
                         time = layer.getFeature(closestFeatureId).attribute("time")
                         info = (layer, closestFeatureId, distance, time)
@@ -851,9 +891,12 @@ class AzenqosDialog(QMainWindow):
             selectedTime = time
             break
 
-        selectedTimestamp = Utils().datetimeStringtoTimestamp(
-            selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")
-        )
+        try:
+            selectedTimestamp = Utils().datetimeStringtoTimestamp(
+                selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")
+            )
+        except:
+            selectedTimestamp = Utils().datetimeStringtoTimestamp(selectedTime)
         if selectedTimestamp:
             timeSliderValue = gc.sliderLength - (gc.maxTimeValue - selectedTimestamp)
             gc.timeSlider.setValue(timeSliderValue)

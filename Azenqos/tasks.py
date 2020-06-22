@@ -49,7 +49,12 @@ class LayerTask(QgsTask):
             uri.setDatabase(self.dbPath)
             gc.tableList.sort(reverse=True)
             geom_column = "geom"
-            vlayer = iface.addVectorLayer(self.dbPath, "None", "ogr")
+            vlayer = iface.addVectorLayer(self.dbPath, None, "ogr")
+
+            # Setting CRS
+            my_crs = QgsCoordinateReferenceSystem(4326)
+            QgsProject.instance().setCrs(my_crs)
+
             # vlayer
             # for tableName in gc.tableList:
             #     uri.setDataSource("", tableName, geom_column)
@@ -69,8 +74,8 @@ class LayerTask(QgsTask):
             #             symbol.setSize(2.4)
             #         iface.layerTreeView().refreshLayerSymbology(vlayer.id())
             #         vlayer.triggerRepaint()
-            #         # if not tableName in gc.tableList:
-            #         #     gc.tableList.append(tableName)
+            #         if not tableName in gc.activeLayers:
+            #             gc.activeLayers.append(tableName)
 
             # iface.mapCanvas().setSelectionColor(QColor("yellow"))
 

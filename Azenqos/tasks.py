@@ -36,6 +36,24 @@ class LayerTask(QgsTask):
         else:
             QgsMessageLog.logMessage("Invalid layer")
 
+    def zoomToActiveLayer(self):
+        root = QgsProject.instance().layerTreeRoot()
+        groups = root.findGroups()
+        if len(groups) > 0:
+            extent = QgsRectangle()
+            extent.setMinimal()
+
+            for child in groups[0].children():
+                if isinstance(child, QgsLayerTreeLayer):
+                    extent.combineExtentWith(child.layer().extent())
+
+            iface.mapCanvas().setExtent(extent)
+            iface.mapCanvas().refresh()
+
+        else:
+            iface.zoomToActiveLayer()
+            iface.mapCanvas().refresh()
+
     def run(self):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
@@ -54,6 +72,8 @@ class LayerTask(QgsTask):
             # Setting CRS
             my_crs = QgsCoordinateReferenceSystem(4326)
             QgsProject.instance().setCrs(my_crs)
+
+            self.zoomToActiveLayer()
 
             # vlayer
             # for tableName in gc.tableList:

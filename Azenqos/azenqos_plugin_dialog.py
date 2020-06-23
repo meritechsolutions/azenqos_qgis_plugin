@@ -91,9 +91,7 @@ class AzenqosDialog(QMainWindow):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
-        self.canvas.renderComplete.connect(self.zoomToActiveLayer)
         QgsProject.instance().layersAdded.connect(self.renamingLayers)
-        # QgsProject.instance().layerWasAdded.connect(self.zoomToActiveLayer)
         QgsProject.instance().layersRemoved.connect(self.removeLayers)
 
     def initializeSchema(self):
@@ -131,26 +129,6 @@ class AzenqosDialog(QMainWindow):
         pass
         # for layer in layers:
         #     gc.activeLayers.remove(layer.name())
-
-    def zoomToActiveLayer(self, layers):
-
-        root = QgsProject.instance().layerTreeRoot()
-        groups = root.findGroups()
-        if len(groups) > 0:
-            extent = QgsRectangle()
-            extent.setMinimal()
-
-            for child in groups[0].children():
-                if isinstance(child, QgsLayerTreeLayer):
-                    extent.combineExtentWith(child.layer().extent())
-
-            iface.mapCanvas().setExtent(extent)
-            iface.mapCanvas().refresh()
-
-        else:
-            iface.zoomToActiveLayer()
-
-        self.canvas.renderComplete.disconnect(self.zoomToActiveLayer)
 
     def selectChanged(self):
         for hi in gc.h_list:

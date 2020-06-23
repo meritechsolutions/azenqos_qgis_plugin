@@ -118,10 +118,26 @@ class AzenqosDialog(QMainWindow):
         for layer in layers:
             name = layer.name().split(" ")
             if name[0] == "azqdata":
+
+                # Handle duplicate layers
+                if " ".join(name[1:]) in gc.activeLayers:
+                    toBeRemoved = QgsProject.instance().mapLayersByName(
+                        " ".join(name[1:])
+                    )
+                    if len(toBeRemoved) > 0:
+                        QgsProject.instance().removeMapLayer(toBeRemoved[0])
+                        gc.activeLayers.remove(" ".join(name[1:]))
+
+                # Setting up layer data source
                 layer.setName(" ".join(name[1:]))
                 gc.activeLayers.append(" ".join(name[1:]))
                 uri.setDataSource("", " ".join(name[1:]), geom_column)
                 layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
+
+        root = QgsProject.instance().layerTreeRoot()
+        treeGroups = root.findGroups()
+        treeLayers = root.findLayers()
+        pass
 
         # self.zoomToActiveLayer()
 
@@ -131,20 +147,16 @@ class AzenqosDialog(QMainWindow):
         #     gc.activeLayers.remove(layer.name())
 
     def selectChanged(self):
-        for hi in gc.h_list:
-            hi.hide()
+        if gc.h_list:
+            for hi in gc.h_list:
+                hi.hide()
         gc.h_list = []
         layer = iface.activeLayer()
 
         # layer = QgsProject.instance().mapLayersByName(layerName)[0]
+        if not layer:
+            return False
         if layer.type() == layer.VectorLayer:
-            # remove all highlight objects
-            # for hi in gc.h_list:
-            #     hi.hide()
-
-            # gc.h_list = []
-
-            # create highlight geometries for selected objects
             for i in layer.selectedFeatures():
                 h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
 
@@ -165,6 +177,8 @@ class AzenqosDialog(QMainWindow):
         self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.importDatabaseBtn)
         self.toolbar.addWidget(self.maptool)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.layerSelect)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
@@ -560,12 +574,20 @@ class AzenqosDialog(QMainWindow):
         self.maptool.setIcon(QIcon(QPixmap(resourcePath)))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
+        # Layer Select Button
+        self.layerSelect = QToolButton()
+        self.layerSelect.setIcon(
+            QIcon(QPixmap(os.path.join(dirname, "res", "layer.png")))
+        )
+        self.layerSelect.setObjectName("layerBtn")
+
         self.retranslateUi(AzenqosDialog)
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
 
         gc.timeSlider.valueChanged.connect(self.timeChange)
         self.loadBtn.clicked.connect(self.loadFile)
         self.saveBtn.clicked.connect(self.saveFile)
+        self.layerSelect.clicked.connect(self.selectLayer)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
         self.maptool.clicked.connect(self.setMapTool)
         self.setupToolBar()
@@ -778,6 +800,13 @@ class AzenqosDialog(QMainWindow):
         self.clickTool = QgsMapToolEmitPoint(self.canvas)
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
+
+    def selectLayer(self):
+        vlayer = iface.addVectorLayer(self.databaseUi.databasePath, None, "ogr")
+
+        # Setting CRS
+        my_crs = QgsCoordinateReferenceSystem(4326)
+        QgsProject.instance().setCrs(my_crs)
 
     def pauseTime(self):
         gc.timeSlider.setEnabled(True)

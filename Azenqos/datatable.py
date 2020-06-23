@@ -51,11 +51,11 @@ class TableWindow(QWidget):
         self.tableViewCount = 0
         self.parentWindow = parent
         self.setupUi()
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.generateMenu)
-        self.properties_window = PropertiesWindow(
-            self, gc.azenqosDatabase, self.dataList, self.tableHeader
-        )
+        # self.setContextMenuPolicy(Qt.CustomContextMenu)
+        # self.customContextMenuRequested.connect(self.generateMenu)
+        # self.properties_window = PropertiesWindow(
+        #     self, gc.azenqosDatabase, self.dataList, self.tableHeader
+        # )
 
     def setupUi(self):
         self.setObjectName(self.title)

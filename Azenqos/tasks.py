@@ -39,19 +39,20 @@ class LayerTask(QgsTask):
     def zoomToActiveLayer(self):
         root = QgsProject.instance().layerTreeRoot()
         groups = root.findGroups()
+        extent = QgsRectangle()
+        extent.setMinimal()
         if len(groups) > 0:
-            extent = QgsRectangle()
-            extent.setMinimal()
-
             for child in groups[0].children():
                 if isinstance(child, QgsLayerTreeLayer):
                     extent.combineExtentWith(child.layer().extent())
+        else:
+            layers = root.findLayers()
+            for child in layers:
+                if isinstance(child, QgsLayerTreeLayer):
+                    if child.layer().type() == QgsMapLayerType.VectorLayer:
+                        extent.combineExtentWith(child.layer().extent())
 
             iface.mapCanvas().setExtent(extent)
-            iface.mapCanvas().refresh()
-
-        else:
-            iface.zoomToActiveLayer()
             iface.mapCanvas().refresh()
 
     def run(self):

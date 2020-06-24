@@ -92,7 +92,8 @@ class AzenqosDialog(QMainWindow):
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
         QgsProject.instance().layersAdded.connect(self.renamingLayers)
-        QgsProject.instance().layersRemoved.connect(self.removeLayers)
+        root = QgsProject.instance().layerTreeRoot()
+        root.addedChildren.connect(self.mergeLayerGroup)
 
     def initializeSchema(self):
         dirname = os.path.dirname(__file__)
@@ -114,6 +115,8 @@ class AzenqosDialog(QMainWindow):
         # Configure layers data source + rename layers
         uri = QgsDataSourceUri()
         uri.setDatabase(self.databaseUi.databasePath)
+        root = QgsProject.instance().layerTreeRoot()
+        treeGroups = root.findGroups()
         geom_column = "geom"
         for layer in layers:
             name = layer.name().split(" ")
@@ -134,17 +137,29 @@ class AzenqosDialog(QMainWindow):
                 uri.setDataSource("", " ".join(name[1:]), geom_column)
                 layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
 
-        root = QgsProject.instance().layerTreeRoot()
-        treeGroups = root.findGroups()
-        treeLayers = root.findLayers()
+                # Force adding layer to root node
+                # cloneLayer = layer.clone()
+                # root.insertChildNode(0, cloneLayer)
         pass
 
         # self.zoomToActiveLayer()
 
-    def removeLayers(self, layers):
+    def mergeLayerGroup(self, node, iFrom=None, iTo=None):
+        if type(node) is QgsLayerTreeGroup:
+            rootNode = QgsProject.instance().layerTreeRoot()
+            treeGroups = rootNode.findGroups()
+            layerOrder = rootNode.customLayerOrder()
+            if len(treeGroups) > 0:
+                for group in treeGroups:
+                    groupLayers = group.findLayers()
+                    for gl in groupLayers:
+                        cloneLayer = gl.clone()
+                        rootNode.insertChildNode(0, cloneLayer)
+                    group.removeAllChildren()
+            if len(gc.activeLayers) + 1 == len(layerOrder):
+                rootNode.removeChildrenGroupWithoutLayers()
+
         pass
-        # for layer in layers:
-        #     gc.activeLayers.remove(layer.name())
 
     def selectChanged(self):
         if gc.h_list:

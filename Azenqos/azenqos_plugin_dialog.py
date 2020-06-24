@@ -94,6 +94,7 @@ class AzenqosDialog(QMainWindow):
         QgsProject.instance().layersAdded.connect(self.renamingLayers)
         root = QgsProject.instance().layerTreeRoot()
         root.addedChildren.connect(self.mergeLayerGroup)
+        QgsProject.instance().layerWillBeRemoved.connect(self.removingTreeLayer)
 
     def initializeSchema(self):
         dirname = os.path.dirname(__file__)
@@ -160,6 +161,13 @@ class AzenqosDialog(QMainWindow):
                 rootNode.removeChildrenGroupWithoutLayers()
 
         pass
+
+    def removingTreeLayer(self, id):
+        try:
+            layer = QgsProject.instance().mapLayer(id)
+            gc.activeLayers.remove(layer.name())
+        except:
+            pass
 
     def selectChanged(self):
         if gc.h_list:

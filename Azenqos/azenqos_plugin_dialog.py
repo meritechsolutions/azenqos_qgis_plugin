@@ -25,6 +25,7 @@ import datetime
 import threading
 import sys
 import os
+import csv
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -81,6 +82,7 @@ class AzenqosDialog(QMainWindow):
         self.currentMaxPosId = 0
         self.setupMenubar(self)
         self.setupUi(self)
+        self.initializeSchema()
         self.raise_()
         self.activateWindow()
         self.databaseUi = databaseUi
@@ -89,27 +91,95 @@ class AzenqosDialog(QMainWindow):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
         self.canvas.selectionChanged.connect(self.selectChanged)
-        self.canvas.renderComplete.connect(self.zoomToActiveLayer)
+        QgsProject.instance().layersAdded.connect(self.renamingLayers)
+        root = QgsProject.instance().layerTreeRoot()
+        root.addedChildren.connect(self.mergeLayerGroup)
+        QgsProject.instance().layerWillBeRemoved.connect(self.removingTreeLayer)
 
-    def zoomToActiveLayer(self):
-        iface.zoomToActiveLayer()
-        self.canvas.renderComplete.disconnect(self.zoomToActiveLayer)
+    def initializeSchema(self):
+        dirname = os.path.dirname(__file__)
+        fileDir = os.path.join(dirname, "element_info_list.csv")
+        with open(fileDir, "r") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                gc.schemaList.append(
+                    {
+                        "name": row[9],
+                        "column": row[1],
+                        "table": row[3],
+                        "max_args": row[8],
+                    }
+                )
+
+    def renamingLayers(self, layers):
+
+        # Configure layers data source + rename layers
+        uri = QgsDataSourceUri()
+        uri.setDatabase(self.databaseUi.databasePath)
+        root = QgsProject.instance().layerTreeRoot()
+        treeGroups = root.findGroups()
+        geom_column = "geom"
+        for layer in layers:
+            name = layer.name().split(" ")
+            if name[0] == "azqdata":
+
+                # Handle duplicate layers
+                if " ".join(name[1:]) in gc.activeLayers:
+                    toBeRemoved = QgsProject.instance().mapLayersByName(
+                        " ".join(name[1:])
+                    )
+                    if len(toBeRemoved) > 0:
+                        QgsProject.instance().removeMapLayer(toBeRemoved[0])
+                        gc.activeLayers.remove(" ".join(name[1:]))
+
+                # Setting up layer data source
+                layer.setName(" ".join(name[1:]))
+                gc.activeLayers.append(" ".join(name[1:]))
+                uri.setDataSource("", " ".join(name[1:]), geom_column)
+                layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
+
+                # Force adding layer to root node
+                # cloneLayer = layer.clone()
+                # root.insertChildNode(0, cloneLayer)
+        pass
+
+        # self.zoomToActiveLayer()
+
+    def mergeLayerGroup(self, node, iFrom=None, iTo=None):
+        if type(node) is QgsLayerTreeGroup:
+            rootNode = QgsProject.instance().layerTreeRoot()
+            treeGroups = rootNode.findGroups()
+            layerOrder = rootNode.customLayerOrder()
+            if len(treeGroups) > 0:
+                for group in treeGroups:
+                    groupLayers = group.findLayers()
+                    for gl in groupLayers:
+                        cloneLayer = gl.clone()
+                        rootNode.insertChildNode(0, cloneLayer)
+                    group.removeAllChildren()
+            if len(gc.activeLayers) + 1 == len(layerOrder):
+                rootNode.removeChildrenGroupWithoutLayers()
+
+        pass
+
+    def removingTreeLayer(self, id):
+        try:
+            layer = QgsProject.instance().mapLayer(id)
+            gc.activeLayers.remove(layer.name())
+        except:
+            pass
 
     def selectChanged(self):
-        for hi in gc.h_list:
-            hi.hide()
+        if gc.h_list:
+            for hi in gc.h_list:
+                hi.hide()
         gc.h_list = []
         layer = iface.activeLayer()
 
         # layer = QgsProject.instance().mapLayersByName(layerName)[0]
+        if not layer:
+            return False
         if layer.type() == layer.VectorLayer:
-            # remove all highlight objects
-            # for hi in gc.h_list:
-            #     hi.hide()
-
-            # gc.h_list = []
-
-            # create highlight geometries for selected objects
             for i in layer.selectedFeatures():
                 h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
 
@@ -126,8 +196,12 @@ class AzenqosDialog(QMainWindow):
     def setupToolBar(self):
         self.toolbar.setFloatable(False)
         self.toolbar.setMovable(False)
+        self.toolbar.addWidget(self.loadBtn)
+        self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.importDatabaseBtn)
         self.toolbar.addWidget(self.maptool)
+        self.toolbar.addSeparator()
+        self.toolbar.addWidget(self.layerSelect)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
@@ -446,6 +520,8 @@ class AzenqosDialog(QMainWindow):
         self.setCentralWidget(self.mdi)
         toolbar = self.addToolBar("toolbar")
         self.toolbar = toolbar
+        dirname = os.path.dirname(__file__)
+        AzenqosDialog.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
 
         # Time Slider
         gc.timeSlider = timeSlider(AzenqosDialog)
@@ -500,20 +576,41 @@ class AzenqosDialog(QMainWindow):
 
         # Import Database Button
         self.importDatabaseBtn = QToolButton()
-        self.importDatabaseBtn.setIcon(self.style().standardIcon(QStyle.SP_DirIcon))
+        self.importDatabaseBtn.setIcon(
+            QIcon(QPixmap(os.path.join(dirname, "res", "import.png")))
+        )
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
+        # Load Button
+        self.loadBtn = QToolButton()
+        self.loadBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "folder.png"))))
+        self.loadBtn.setObjectName("loadBtn")
+
+        # Save Button
+        self.saveBtn = QToolButton()
+        self.saveBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "save.png"))))
+        self.saveBtn.setObjectName("saveBtn")
+
         # Map tool Button
-        dirname = os.path.dirname(__file__)
         resourcePath = os.path.join(dirname, "res", "crosshair.png")
         self.maptool = QToolButton()
         self.maptool.setIcon(QIcon(QPixmap(resourcePath)))
         self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
+        # Layer Select Button
+        self.layerSelect = QToolButton()
+        self.layerSelect.setIcon(
+            QIcon(QPixmap(os.path.join(dirname, "res", "layer.png")))
+        )
+        self.layerSelect.setObjectName("layerBtn")
+
         self.retranslateUi(AzenqosDialog)
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
 
         gc.timeSlider.valueChanged.connect(self.timeChange)
+        self.loadBtn.clicked.connect(self.loadFile)
+        self.saveBtn.clicked.connect(self.saveFile)
+        self.layerSelect.clicked.connect(self.selectLayer)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
         self.maptool.clicked.connect(self.setMapTool)
         self.setupToolBar()
@@ -531,6 +628,20 @@ class AzenqosDialog(QMainWindow):
         #     0, _translate("AzenqosDialog", "Configuration"))
         # self.configurationTreeWidget.setSortingEnabled(False)
         # self.configurationTreeWidget.setSortingEnabled(__sortingEnabled)
+        self.loadBtn.setText(_translate("AzenqosDialog", "Load"))
+        self.loadBtn.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Load</b><br> Browse and load workspace from <i>.azs</i> save file",
+            )
+        )
+        self.saveBtn.setText(_translate("AzenqosDialog", "Save"))
+        self.saveBtn.setToolTip(
+            _translate(
+                "AzenqosDialog",
+                "<b>Save</b><br> Browse and save current workspace to <i>.azs</i> save file",
+            )
+        )
         self.importDatabaseBtn.setText(_translate("AzenqosDialog", "Import Database"))
         self.importDatabaseBtn.setToolTip(
             _translate(
@@ -713,6 +824,13 @@ class AzenqosDialog(QMainWindow):
         self.canvas.setMapTool(self.clickTool)
         self.clickTool.canvasClicked.connect(self.clickCanvas)
 
+    def selectLayer(self):
+        vlayer = iface.addVectorLayer(self.databaseUi.databasePath, None, "ogr")
+
+        # Setting CRS
+        my_crs = QgsCoordinateReferenceSystem(4326)
+        QgsProject.instance().setCrs(my_crs)
+
     def pauseTime(self):
         gc.timeSlider.setEnabled(True)
         self.playButton.setEnabled(True)
@@ -744,11 +862,39 @@ class AzenqosDialog(QMainWindow):
         selectedTime = None
         clearAllSelectedFeatures()
 
-        for layerName in gc.tableList:
-            layerList = QgsProject.instance().mapLayersByName(layerName)
-            if len(layerList) == 0:
+        for layerName in gc.activeLayers:
+            layer = None
+            root = QgsProject.instance().layerTreeRoot()
+            layers = root.findLayers()
+            for la in layers:
+                if la.name() == layerName:
+                    layer = la.layer()
+                    break
+
+            if not layer:
                 continue
-            layer = layerList[0]
+
+            # if layer.type() == layer.VectorLayer:
+            #     if layer.featureCount() == 0:
+            #         # There are no features - skip
+            #         continue
+
+            #     # Loop through all features in the layer
+            #     for f in layer.getFeatures():
+            #         distance = -1.0
+
+            #         if f.geometry():
+            #             featurePoint = f.geometry().asPoint()
+            #             featurePoint = self.canvas.getCoordinateTransform().toMapCoordinates(
+            #                 featurePoint.x(), featurePoint.y()
+            #             )
+            #             distance = featurePoint.distance(point)
+            #         if distance != -1.0 and distance <= 0.005:
+            #             closestFeatureId = f.id()
+            #             time = layer.getFeature(closestFeatureId).attribute("time")
+            #             info = (layer, closestFeatureId, distance, time)
+            #             layerData.append(info)
+
             if layer.type() == layer.VectorLayer:
                 if layer.featureCount() == 0:
                     # There are no features - skip
@@ -775,13 +921,18 @@ class AzenqosDialog(QMainWindow):
             selectedTime = time
             break
 
-        selectedTimestamp = Utils.datetimeStringtoTimestamp(selectedTime)
+        try:
+            selectedTimestamp = Utils().datetimeStringtoTimestamp(
+                selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")
+            )
+        except:
+            selectedTimestamp = Utils().datetimeStringtoTimestamp(selectedTime)
         if selectedTimestamp:
             timeSliderValue = gc.sliderLength - (gc.maxTimeValue - selectedTimestamp)
             gc.timeSlider.setValue(timeSliderValue)
             gc.timeSlider.update()
 
-            # self.canvas.refreshgc.allLayers()
+            # self.canvas.refreshgc.tableList()
 
     def clickCanvasWorker(self, point, button):
         worker = Worker(self.clickCanvas(point, button))
@@ -825,7 +976,7 @@ class AzenqosDialog(QMainWindow):
         # text = "[--" + str(len(gc.tableList) + "--]"
         # QgsMessageLog.logMessage(text)
 
-        if len(gc.tableList) > 0:
+        if len(gc.activeLayers) > 0:
             QgsMessageLog.logMessage("[-- have gc.tableList --]")
             worker = Worker(self.hilightFeature())
             gc.threadpool.start(worker)
@@ -848,7 +999,7 @@ class AzenqosDialog(QMainWindow):
         QgsMessageLog.logMessage("tables: " + str(gc.tableList))
         self.posObjs = []
         self.posIds = []
-        for tableName in gc.tableList:
+        for tableName in gc.activeLayers:
             query = QSqlQuery()
             queryString = (
                 "SELECT posid FROM %s WHERE time <= '%s' AND geom IS NOT NULL ORDER BY time DESC LIMIT 1"
@@ -868,53 +1019,47 @@ class AzenqosDialog(QMainWindow):
         if self.posIds:
             selected_ids = []
             layerName = None
+            layer = None
             # start_time = time.time()
-            self.currentMaxPosId = max(self.posIds)
-            for obj in self.posObjs:
-                if obj.get("posid") == self.currentMaxPosId:
-                    layerName = obj.get("table")
-                    break
+            try:
+                self.currentMaxPosId = max(self.posIds)
+                for obj in self.posObjs:
+                    if obj.get("posid") == self.currentMaxPosId:
+                        layerName = obj.get("table")
+                        break
 
-            layer = QgsProject.instance().mapLayersByName(layerName)[0]
-            request = (
-                QgsFeatureRequest()
-                .setFilterExpression("posid = %s" % (self.currentMaxPosId))
-                .setFlags(QgsFeatureRequest.NoGeometry)
-            )
-            layerFeatures = layer.getFeatures(request)
-            root = QgsProject.instance().layerTreeRoot()
-            root.setHasCustomLayerOrder(True)
-            order = root.customLayerOrder()
-            order.insert(0, order.pop(order.index(layer)))  # vlayer to the top
-            root.setCustomLayerOrder(order)
-            iface.setActiveLayer(layer)
-            QgsMessageLog.logMessage("layer name: " + str(layerName))
-            # layer.selectionChanged.connect(self.test)
+                root = QgsProject.instance().layerTreeRoot()
+                layers = root.findLayers()
+                for la in layers:
+                    if la.name() == layerName:
+                        layer = la.layer()
+                request = (
+                    QgsFeatureRequest()
+                    .setFilterExpression("posid = %s" % (self.currentMaxPosId))
+                    .setFlags(QgsFeatureRequest.NoGeometry)
+                )
+                layerFeatures = layer.getFeatures(request)
+                root = QgsProject.instance().layerTreeRoot()
+                root.setHasCustomLayerOrder(True)
+                order = root.customLayerOrder()
+                order.insert(0, order.pop(order.index(layer)))  # vlayer to the top
+                root.setCustomLayerOrder(order)
+                iface.setActiveLayer(layer)
+                QgsMessageLog.logMessage("layer name: " + str(layerName))
 
-            for feature in layerFeatures:
-                posid = feature["posid"]
-                if self.currentMaxPosId == posid:
-                    selected_ids.append(feature.id())
-            QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
+                for feature in layerFeatures:
+                    posid = feature["posid"]
+                    if self.currentMaxPosId == posid:
+                        selected_ids.append(feature.id())
+                QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
 
-            if layer is not None:
+                if layer is not None:
+                    if len(selected_ids) > 0:
+                        layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
 
-                if len(selected_ids) > 0:
-                    # clearAllSelectedFeatures()
-                    layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
-                    # ext = layer.extent()
-                    # xmin = ext.xMinimum()
-                    # xmax = ext.xMaximum()
-                    # ymin = ext.yMinimum()
-                    # ymax = ext.yMaximum()
-                    # zoomRectangle = QgsRectangle(xmin, ymin, xmax, ymax)
-                    # iface.mapCanvas().setExtent(zoomRectangle)
-                    # box = layer.boundingBoxOfSelected()
-                    # iface.mapCanvas().setExtent(box)
-                    # iface.mapCanvas().zoomToSelected()
-                    # iface.mapCanvas().zoomScale(5000.0)
-                    # iface.mapCanvas().refresh()
-                self.maxPosId = self.currentMaxPosId
+                    self.maxPosId = self.currentMaxPosId
+            except:
+                pass
 
     def classifySelectedItems(self, parent, child):
         windowName = parent + "_" + child
@@ -930,7 +1075,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.gsm_rdp_window not in subwindowList:
-                        self.gsm_rdp_window = QMdiSubWindow(self.mdi)
+                        self.gsm_rdp_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.gsm_rdp_window)
 
                     if tableWidget:
@@ -938,7 +1083,7 @@ class AzenqosDialog(QMainWindow):
                     self.gsm_rdp_window.show()
                 else:
                     # create new subwindow
-                    self.gsm_rdp_window = QMdiSubWindow(self.mdi)
+                    self.gsm_rdp_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.gsm_rdp_window, windowName)
                     self.gsm_rdp_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.gsm_rdp_window)
@@ -953,7 +1098,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.gsm_sn_window not in subwindowList:
-                        self.gsm_sn_window = QMdiSubWindow(self.mdi)
+                        self.gsm_sn_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.gsm_sn_window)
 
                     if tableWidget:
@@ -961,7 +1106,7 @@ class AzenqosDialog(QMainWindow):
                     self.gsm_sn_window.show()
                 else:
                     # create new subwindow
-                    self.gsm_sn_window = QMdiSubWindow(self.mdi)
+                    self.gsm_sn_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.gsm_sn_window, windowName)
                     self.gsm_sn_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.gsm_sn_window)
@@ -976,7 +1121,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.gsm_cc_window not in subwindowList:
-                        self.gsm_cc_window = QMdiSubWindow(self.mdi)
+                        self.gsm_cc_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.gsm_cc_window)
 
                     if tableWidget:
@@ -984,7 +1129,7 @@ class AzenqosDialog(QMainWindow):
                     self.gsm_cc_window.show()
                 else:
                     # create new subwindow
-                    self.gsm_cc_window = QMdiSubWindow(self.mdi)
+                    self.gsm_cc_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.gsm_cc_window, windowName)
                     self.gsm_cc_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.gsm_cc_window)
@@ -999,7 +1144,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.gsm_ci_window not in subwindowList:
-                        self.gsm_ci_window = QMdiSubWindow(self.mdi)
+                        self.gsm_ci_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.gsm_ci_window)
 
                     if tableWidget:
@@ -1007,7 +1152,7 @@ class AzenqosDialog(QMainWindow):
                     self.gsm_ci_window.show()
                 else:
                     # create new subwindow
-                    self.gsm_ci_window = QMdiSubWindow(self.mdi)
+                    self.gsm_ci_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.gsm_ci_window, windowName)
                     self.gsm_ci_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.gsm_ci_window)
@@ -1027,7 +1172,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(linechartWidget)
 
                     if self.gsm_lc_window not in subwindowList:
-                        self.gsm_lc_window = QMdiSubWindow(self.mdi)
+                        self.gsm_lc_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.gsm_lc_window)
 
                     if linechartWidget:
@@ -1035,7 +1180,7 @@ class AzenqosDialog(QMainWindow):
                     self.gsm_lc_window.show()
                 else:
                     # create new subwindow
-                    self.gsm_lc_window = QMdiSubWindow(self.mdi)
+                    self.gsm_lc_window = SubWindowArea(self.mdi)
                     linechartWidget = Ui_GSM_LCwidget(
                         self, windowName, gc.azenqosDatabase
                     )
@@ -1052,7 +1197,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.gsm_ec_window not in subwindowList:
-                        self.gsm_ec_window = QMdiSubWindow(self.mdi)
+                        self.gsm_ec_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.gsm_ec_window)
 
                     if tableWidget:
@@ -1060,7 +1205,7 @@ class AzenqosDialog(QMainWindow):
                     self.gsm_ec_window.show()
                 else:
                     # create new subwindow
-                    self.gsm_ec_window = QMdiSubWindow(self.mdi)
+                    self.gsm_ec_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.gsm_ec_window, windowName)
                     self.gsm_ec_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.gsm_ec_window)
@@ -1077,7 +1222,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_ams_window not in subwindowList:
-                        self.wcdma_ams_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_ams_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_ams_window)
 
                     if tableWidget:
@@ -1085,7 +1230,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_ams_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_ams_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_ams_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_ams_window, windowName)
                     self.wcdma_ams_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_ams_window)
@@ -1101,7 +1246,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_rp_window not in subwindowList:
-                        self.wcdma_rp_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_rp_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_rp_window)
 
                     if tableWidget:
@@ -1109,7 +1254,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_rp_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_rp_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_rp_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_rp_window, windowName)
                     self.wcdma_rp_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_rp_window)
@@ -1125,7 +1270,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_asl_window not in subwindowList:
-                        self.wcdma_asl_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_asl_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_asl_window)
 
                     if tableWidget:
@@ -1133,7 +1278,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_asl_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_asl_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_asl_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_asl_window, windowName)
                     self.wcdma_asl_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_asl_window)
@@ -1149,7 +1294,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_msl_window not in subwindowList:
-                        self.wcdma_msl_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_msl_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_msl_window)
 
                     if tableWidget:
@@ -1157,7 +1302,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_msl_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_msl_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_msl_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_msl_window, windowName)
                     self.wcdma_msl_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_msl_window)
@@ -1173,7 +1318,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_bler_window not in subwindowList:
-                        self.wcdma_bler_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_bler_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_bler_window)
 
                     if tableWidget:
@@ -1181,7 +1326,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_bler_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_bler_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_bler_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_bler_window, windowName)
                     self.wcdma_bler_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_bler_window)
@@ -1197,7 +1342,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_blertc_window not in subwindowList:
-                        self.wcdma_blertc_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_blertc_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_blertc_window)
 
                     if tableWidget:
@@ -1205,7 +1350,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_blertc_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_blertc_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_blertc_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_blertc_window, windowName)
                     self.wcdma_blertc_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_blertc_window)
@@ -1225,7 +1370,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(linechartWidget)
 
                     if self.wcdma_lc_window not in subwindowList:
-                        self.wcdma_lc_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_lc_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_lc_window)
 
                     if linechartWidget:
@@ -1233,7 +1378,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_lc_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_lc_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_lc_window = SubWindowArea(self.mdi)
                     linechartWidget = Ui_WCDMA_LCwidget(
                         self, windowName, gc.azenqosDatabase
                     )
@@ -1251,7 +1396,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_bearer_window not in subwindowList:
-                        self.wcdma_bearer_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_bearer_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_bearer_window)
 
                     if tableWidget:
@@ -1259,7 +1404,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_bearer_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_bearer_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_bearer_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_bearer_window, windowName)
                     self.wcdma_bearer_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_bearer_window)
@@ -1275,7 +1420,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_ppc_window not in subwindowList:
-                        self.wcdma_ppc_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_ppc_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_ppc_window)
 
                     if tableWidget:
@@ -1283,7 +1428,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_ppc_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_ppc_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_ppc_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_ppc_window, windowName)
                     self.wcdma_ppc_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_ppc_window)
@@ -1299,7 +1444,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_amb_window not in subwindowList:
-                        self.wcdma_amb_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_amb_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_amb_window)
 
                     if tableWidget:
@@ -1307,7 +1452,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_amb_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_amb_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_amb_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_amb_window, windowName)
                     self.wcdma_amb_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_amb_window)
@@ -1323,7 +1468,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_report_window not in subwindowList:
-                        self.wcdma_report_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_report_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_report_window)
 
                     if tableWidget:
@@ -1331,7 +1476,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_report_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_report_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_report_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_report_window, windowName)
                     self.wcdma_report_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_report_window)
@@ -1347,7 +1492,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_cells_window not in subwindowList:
-                        self.wcdma_cells_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_cells_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_cells_window)
 
                     if tableWidget:
@@ -1355,7 +1500,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_cells_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_cells_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_cells_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_cells_window, windowName)
                     self.wcdma_cells_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_cells_window)
@@ -1373,7 +1518,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wcdma_analyzer_window not in subwindowList:
-                        self.wcdma_analyzer_window = QMdiSubWindow(self.mdi)
+                        self.wcdma_analyzer_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_analyzer_window)
 
                     if tableWidget:
@@ -1381,7 +1526,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_analyzer_window.show()
                 else:
                     # create new subwindow
-                    self.wcdma_analyzer_window = QMdiSubWindow(self.mdi)
+                    self.wcdma_analyzer_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wcdma_analyzer_window, windowName)
                     self.wcdma_analyzer_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_analyzer_window)
@@ -1398,7 +1543,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.lte_param_window not in subwindowList:
-                        self.lte_param_window = QMdiSubWindow(self.mdi)
+                        self.lte_param_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.lte_param_window)
 
                     if tableWidget:
@@ -1406,7 +1551,7 @@ class AzenqosDialog(QMainWindow):
                     self.lte_param_window.show()
                 else:
                     # create new subwindow
-                    self.lte_param_window = QMdiSubWindow(self.mdi)
+                    self.lte_param_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.lte_param_window, windowName)
                     self.lte_param_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.lte_param_window)
@@ -1422,7 +1567,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.lte_sn_window not in subwindowList:
-                        self.lte_sn_window = QMdiSubWindow(self.mdi)
+                        self.lte_sn_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.lte_sn_window)
 
                     if tableWidget:
@@ -1430,7 +1575,7 @@ class AzenqosDialog(QMainWindow):
                     self.lte_sn_window.show()
                 else:
                     # create new subwindow
-                    self.lte_sn_window = QMdiSubWindow(self.mdi)
+                    self.lte_sn_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.lte_sn_window, windowName)
                     self.lte_sn_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.lte_sn_window)
@@ -1446,7 +1591,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.lte_ppparam_window not in subwindowList:
-                        self.lte_ppparam_window = QMdiSubWindow(self.mdi)
+                        self.lte_ppparam_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.lte_ppparam_window)
 
                     if tableWidget:
@@ -1454,7 +1599,7 @@ class AzenqosDialog(QMainWindow):
                     self.lte_ppparam_window.show()
                 else:
                     # create new subwindow
-                    self.lte_ppparam_window = QMdiSubWindow(self.mdi)
+                    self.lte_ppparam_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.lte_ppparam_window, windowName)
                     self.lte_ppparam_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.lte_ppparam_window)
@@ -1477,7 +1622,7 @@ class AzenqosDialog(QMainWindow):
                         widget.show()
 
                     if self.lte_lc_window not in subwindowList:
-                        self.lte_lc_window = QMdiSubWindow(self.mdi)
+                        self.lte_lc_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.lte_lc_window)
 
                     if widget:
@@ -1485,7 +1630,7 @@ class AzenqosDialog(QMainWindow):
                     self.lte_lc_window.show()
                 else:
                     # create new subwindow
-                    self.lte_lc_window = QMdiSubWindow(self.mdi)
+                    self.lte_lc_window = SubWindowArea(self.mdi)
                     widget = Ui_LTE_LCwidget(
                         self.lte_lc_window, windowName, gc.azenqosDatabase
                     )
@@ -1503,7 +1648,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(widget)
 
                     if self.lte_rlc_window not in subwindowList:
-                        self.lte_rlc_window = QMdiSubWindow(self.mdi)
+                        self.lte_rlc_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.lte_rlc_window)
 
                     if widget:
@@ -1511,7 +1656,7 @@ class AzenqosDialog(QMainWindow):
                     self.lte_rlc_window.show()
                 else:
                     # create new subwindow
-                    self.lte_rlc_window = QMdiSubWindow(self.mdi)
+                    self.lte_rlc_window = SubWindowArea(self.mdi)
                     widget = TableWindow(self.lte_rlc_window, windowName)
                     self.lte_rlc_window.setWidget(widget)
                     self.mdi.addSubWindow(self.lte_rlc_window)
@@ -1527,7 +1672,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(widget)
 
                     if self.lte_volte_window not in subwindowList:
-                        self.lte_volte_window = QMdiSubWindow(self.mdi)
+                        self.lte_volte_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.lte_volte_window)
 
                     if widget:
@@ -1535,7 +1680,7 @@ class AzenqosDialog(QMainWindow):
                     self.lte_volte_window.show()
                 else:
                     # create new subwindow
-                    self.lte_volte_window = QMdiSubWindow(self.mdi)
+                    self.lte_volte_window = SubWindowArea(self.mdi)
                     widget = TableWindow(self.lte_volte_window, windowName)
                     self.lte_volte_window.setWidget(widget)
                     self.mdi.addSubWindow(self.lte_volte_window)
@@ -1552,7 +1697,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.cdma_rp_window not in subwindowList:
-                        self.cdma_rp_window = QMdiSubWindow(self.mdi)
+                        self.cdma_rp_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.cdma_rp_window)
 
                     if tableWidget:
@@ -1560,7 +1705,7 @@ class AzenqosDialog(QMainWindow):
                     self.cdma_rp_window.show()
                 else:
                     # create new subwindow
-                    self.cdma_rp_window = QMdiSubWindow(self.mdi)
+                    self.cdma_rp_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.cdma_rp_window, windowName)
                     self.cdma_rp_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.cdma_rp_window)
@@ -1576,7 +1721,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.cdma_sn_window not in subwindowList:
-                        self.cdma_sn_window = QMdiSubWindow(self.mdi)
+                        self.cdma_sn_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.cdma_sn_window)
 
                     if tableWidget:
@@ -1584,7 +1729,7 @@ class AzenqosDialog(QMainWindow):
                     self.cdma_sn_window.show()
                 else:
                     # create new subwindow
-                    self.cdma_sn_window = QMdiSubWindow(self.mdi)
+                    self.cdma_sn_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.cdma_sn_window, windowName)
                     self.cdma_sn_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.cdma_sn_window)
@@ -1600,7 +1745,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.cdma_evdo_window not in subwindowList:
-                        self.cdma_evdo_window = QMdiSubWindow(self.mdi)
+                        self.cdma_evdo_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.cdma_evdo_window)
 
                     if tableWidget:
@@ -1608,7 +1753,7 @@ class AzenqosDialog(QMainWindow):
                     self.cdma_evdo_window.show()
                 else:
                     # create new subwindow
-                    self.cdma_evdo_window = QMdiSubWindow(self.mdi)
+                    self.cdma_evdo_window = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.cdma_evdo_window, windowName)
                     self.cdma_evdo_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.cdma_evdo_window)
@@ -1629,7 +1774,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(linechartWidget)
 
                     if self.gsm_data_lc not in subwindowList:
-                        self.gsm_data_lc = QMdiSubWindow(self.mdi)
+                        self.gsm_data_lc = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.gsm_data_lc)
 
                     if linechartWidget:
@@ -1637,7 +1782,7 @@ class AzenqosDialog(QMainWindow):
                     self.gsm_data_lc.show()
                 else:
                     # create new subwindow
-                    self.gsm_data_lc = QMdiSubWindow(self.mdi)
+                    self.gsm_data_lc = SubWindowArea(self.mdi)
                     linechartWidget = Ui_GSM_Data_LCwidget(
                         self, windowName, gc.azenqosDatabase
                     )
@@ -1659,7 +1804,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(linechartWidget)
 
                     if self.wcdma_data_lc not in subwindowList:
-                        self.wcdma_data_lc = QMdiSubWindow(self.mdi)
+                        self.wcdma_data_lc = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wcdma_data_lc)
 
                     if linechartWidget:
@@ -1667,7 +1812,7 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_data_lc.show()
                 else:
                     # create new subwindow
-                    self.wcdma_data_lc = QMdiSubWindow(self.mdi)
+                    self.wcdma_data_lc = SubWindowArea(self.mdi)
                     linechartWidget = Ui_WCDMA_Data_LCwidget(
                         self, windowName, gc.azenqosDatabase
                     )
@@ -1685,7 +1830,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.gprs_info not in subwindowList:
-                        self.gprs_info = QMdiSubWindow(self.mdi)
+                        self.gprs_info = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.gprs_info)
 
                     if tableWidget:
@@ -1693,7 +1838,7 @@ class AzenqosDialog(QMainWindow):
                     self.gprs_info.show()
                 else:
                     # create new subwindow
-                    self.gprs_info = QMdiSubWindow(self.mdi)
+                    self.gprs_info = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.gprs_info, windowName)
                     self.gprs_info.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.gprs_info)
@@ -1709,7 +1854,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.web_browser not in subwindowList:
-                        self.web_browser = QMdiSubWindow(self.mdi)
+                        self.web_browser = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.web_browser)
 
                     if tableWidget:
@@ -1717,7 +1862,7 @@ class AzenqosDialog(QMainWindow):
                     self.web_browser.show()
                 else:
                     # create new subwindow
-                    self.web_browser = QMdiSubWindow(self.mdi)
+                    self.web_browser = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.web_browser, windowName)
                     self.web_browser.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.web_browser)
@@ -1733,7 +1878,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.hsdpa_stat not in subwindowList:
-                        self.hsdpa_stat = QMdiSubWindow(self.mdi)
+                        self.hsdpa_stat = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.hsdpa_stat)
 
                     if tableWidget:
@@ -1741,7 +1886,7 @@ class AzenqosDialog(QMainWindow):
                     self.hsdpa_stat.show()
                 else:
                     # create new subwindow
-                    self.hsdpa_stat = QMdiSubWindow(self.mdi)
+                    self.hsdpa_stat = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.hsdpa_stat, windowName)
                     self.hsdpa_stat.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.hsdpa_stat)
@@ -1757,7 +1902,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.hsupa_stat not in subwindowList:
-                        self.hsupa_stat = QMdiSubWindow(self.mdi)
+                        self.hsupa_stat = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.hsupa_stat)
 
                     if tableWidget:
@@ -1765,7 +1910,7 @@ class AzenqosDialog(QMainWindow):
                     self.hsupa_stat.show()
                 else:
                     # create new subwindow
-                    self.hsupa_stat = QMdiSubWindow(self.mdi)
+                    self.hsupa_stat = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.hsupa_stat, windowName)
                     self.hsupa_stat.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.hsupa_stat)
@@ -1781,7 +1926,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.lte_data_stat not in subwindowList:
-                        self.lte_data_stat = QMdiSubWindow(self.mdi)
+                        self.lte_data_stat = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.lte_data_stat)
 
                     if tableWidget:
@@ -1789,7 +1934,7 @@ class AzenqosDialog(QMainWindow):
                     self.lte_data_stat.show()
                 else:
                     # create new subwindow
-                    self.lte_data_stat = QMdiSubWindow(self.mdi)
+                    self.lte_data_stat = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.lte_data_stat, windowName)
                     self.lte_data_stat.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.lte_data_stat)
@@ -1809,7 +1954,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(linechartWidget)
 
                     if self.lte_data_lc not in subwindowList:
-                        self.lte_data_lc = QMdiSubWindow(self.mdi)
+                        self.lte_data_lc = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.lte_data_lc)
 
                     if linechartWidget:
@@ -1817,7 +1962,7 @@ class AzenqosDialog(QMainWindow):
                     self.lte_data_lc.show()
                 else:
                     # create new subwindow
-                    self.lte_data_lc = QMdiSubWindow(self.mdi)
+                    self.lte_data_lc = SubWindowArea(self.mdi)
                     linechartWidget = Ui_LTE_Data_LCwidget(
                         self, windowName, gc.azenqosDatabase
                     )
@@ -1835,7 +1980,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wifi_connected_ap not in subwindowList:
-                        self.wifi_connected_ap = QMdiSubWindow(self.mdi)
+                        self.wifi_connected_ap = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wifi_connected_ap)
 
                     if tableWidget:
@@ -1843,7 +1988,7 @@ class AzenqosDialog(QMainWindow):
                     self.wifi_connected_ap.show()
                 else:
                     # create new subwindow
-                    self.wifi_connected_ap = QMdiSubWindow(self.mdi)
+                    self.wifi_connected_ap = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wifi_connected_ap, windowName)
                     self.wifi_connected_ap.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wifi_connected_ap)
@@ -1859,7 +2004,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wifi_scanned_ap not in subwindowList:
-                        self.wifi_scanned_ap = QMdiSubWindow(self.mdi)
+                        self.wifi_scanned_ap = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wifi_scanned_ap)
 
                     if tableWidget:
@@ -1867,7 +2012,7 @@ class AzenqosDialog(QMainWindow):
                     self.wifi_scanned_ap.show()
                 else:
                     # create new subwindow
-                    self.wifi_scanned_ap = QMdiSubWindow(self.mdi)
+                    self.wifi_scanned_ap = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wifi_scanned_ap, windowName)
                     self.wifi_scanned_ap.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wifi_scanned_ap)
@@ -1883,7 +2028,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(tableWidget)
 
                     if self.wifi_graph not in subwindowList:
-                        self.wifi_graph = QMdiSubWindow(self.mdi)
+                        self.wifi_graph = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.wifi_graph)
 
                     if tableWidget:
@@ -1891,7 +2036,7 @@ class AzenqosDialog(QMainWindow):
                     self.wifi_graph.show()
                 else:
                     # create new subwindow
-                    self.wifi_graph = QMdiSubWindow(self.mdi)
+                    self.wifi_graph = SubWindowArea(self.mdi)
                     tableWidget = TableWindow(self.wifi_graph, windowName)
                     self.wifi_graph.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wifi_graph)
@@ -1908,7 +2053,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(events_widget)
 
                     if self.events_window not in subwindowList:
-                        self.events_window = QMdiSubWindow(self.mdi)
+                        self.events_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.events_window)
 
                     if events_widget:
@@ -1917,7 +2062,7 @@ class AzenqosDialog(QMainWindow):
 
                 else:
                     # create new subwindow
-                    self.events_window = QMdiSubWindow(self.mdi)
+                    self.events_window = SubWindowArea(self.mdi)
                     events_widget = TableWindow(self.events_window, windowName)
                     self.events_window.setWidget(events_widget)
                     self.mdi.addSubWindow(self.events_window)
@@ -1935,7 +2080,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(layer_one_widget)
 
                     if self.layer_one_messages not in subwindowList:
-                        self.layer_one_messages = QMdiSubWindow(self.mdi)
+                        self.layer_one_messages = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.layer_one_messages)
 
                     if layer_one_widget:
@@ -1944,7 +2089,7 @@ class AzenqosDialog(QMainWindow):
 
                 else:
                     # create new subwindow
-                    self.layer_one_messages = QMdiSubWindow(self.mdi)
+                    self.layer_one_messages = SubWindowArea(self.mdi)
                     layer_one_widget = TableWindow(self.layer_one_messages, windowName)
                     self.layer_one_messages.setWidget(layer_one_widget)
                     self.mdi.addSubWindow(self.layer_one_messages)
@@ -1969,7 +2114,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(layer_three_widget)
 
                     if self.layer_three_messages not in subwindowList:
-                        self.layer_three_messages = QMdiSubWindow(self.mdi)
+                        self.layer_three_messages = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.layer_three_messages)
 
                     if layer_three_widget:
@@ -1978,7 +2123,7 @@ class AzenqosDialog(QMainWindow):
 
                 else:
                     # create new subwindow
-                    self.layer_three_messages = QMdiSubWindow(self.mdi)
+                    self.layer_three_messages = SubWindowArea(self.mdi)
                     layer_three_widget = TableWindow(
                         self.layer_three_messages, windowName
                     )
@@ -2003,7 +2148,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(benchmark_widget)
 
                     if self.benchmark not in subwindowList:
-                        self.benchmark = QMdiSubWindow(self.mdi)
+                        self.benchmark = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.benchmark)
 
                     if benchmark_widget:
@@ -2013,7 +2158,7 @@ class AzenqosDialog(QMainWindow):
 
                 else:
                     # create new subwindow
-                    self.benchmark = QMdiSubWindow(self.mdi)
+                    self.benchmark = SubWindowArea(self.mdi)
                     benchmark_widget = TableWindow(self.benchmark, windowName)
                     self.benchmark.setWidget(benchmark_widget)
                     self.mdi.addSubWindow(self.benchmark)
@@ -2036,7 +2181,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(mm_widget)
 
                     if self.mm_reg_states not in subwindowList:
-                        self.mm_reg_states = QMdiSubWindow(self.mdi)
+                        self.mm_reg_states = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.mm_reg_states)
 
                     if mm_widget:
@@ -2046,7 +2191,7 @@ class AzenqosDialog(QMainWindow):
 
                 else:
                     # create new subwindow
-                    self.mm_reg_states = QMdiSubWindow(self.mdi)
+                    self.mm_reg_states = SubWindowArea(self.mdi)
                     mm_widget = TableWindow(self.mm_reg_states, windowName)
                     self.mm_reg_states.setWidget(mm_widget)
                     self.mdi.addSubWindow(self.mm_reg_states)
@@ -2071,7 +2216,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(serving_system_widget)
 
                     if self.serving_system_info not in subwindowList:
-                        self.serving_system_info = QMdiSubWindow(self.mdi)
+                        self.serving_system_info = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.serving_system_info)
 
                     if serving_system_widget:
@@ -2081,7 +2226,7 @@ class AzenqosDialog(QMainWindow):
 
                 else:
                     # create new subwindow
-                    self.serving_system_info = QMdiSubWindow(self.mdi)
+                    self.serving_system_info = SubWindowArea(self.mdi)
                     serving_system_widget = TableWindow(
                         self.serving_system_info, windowName
                     )
@@ -2106,7 +2251,7 @@ class AzenqosDialog(QMainWindow):
                         gc.openedWindows.append(debug_event_widget)
 
                     if self.debug_event not in subwindowList:
-                        self.debug_event = QMdiSubWindow(self.mdi)
+                        self.debug_event = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.debug_event)
                     if debug_event_widget:
                         self.debug_event.setWidget(debug_event_widget)
@@ -2115,7 +2260,7 @@ class AzenqosDialog(QMainWindow):
 
                 else:
                     # create new subwindow
-                    self.debug_event = QMdiSubWindow(self.mdi)
+                    self.debug_event = SubWindowArea(self.mdi)
                     debug_event_widget = TableWindow(self.debug_event, windowName)
                     self.debug_event.setWidget(debug_event_widget)
                     self.mdi.addSubWindow(self.debug_event)
@@ -2176,6 +2321,26 @@ class AzenqosDialog(QMainWindow):
         for action in actions:
             self.toolbar.removeAction(action)
 
+    def loadFile(self):
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Open Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
+        )
+        if fileName != "":
+            if len(gc.openedWindows) > 0:
+                for window in gc.openedWindows:
+                    window.close()
+                for mdiwindow in self.mdi.subWindowList():
+                    mdiwindow.close()
+                gc.openedWindows = []
+            Utils().loadStateFromFile(fileName, self)
+
+    def saveFile(self):
+        fileName, _ = QFileDialog.getSaveFileName(
+            self, "Save Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
+        )
+        if fileName != "":
+            Utils().saveStateToFile(fileName)
+
     def closeEvent(self, event):
         reply = None
         if self.newImport is False:
@@ -2188,209 +2353,43 @@ class AzenqosDialog(QMainWindow):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
-            if event:
-                event.accept()
+            saving = Utils().saveState(gc.CURRENT_PATH)
             iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
             self.removeToolBarActions()
-            self.quitTask = QuitTask(u"Quiting Plugin")
+            self.quitTask = QuitTask(u"Quiting Plugin", self)
             QgsApplication.taskManager().addTask(self.quitTask)
-            # self.databaseUi.reject()
-            # self.databaseUi.destroy(True, True)
-            # self.close()
-            # self.destroy(True, True)
-            # super().reject()
+
+            # Begin removing layer (which cause db issue)
+            project = QgsProject.instance()
+            for (id_l, layer) in project.mapLayers().items():
+                if layer.type() == layer.VectorLayer:
+                    layer.removeSelection()
+                to_be_deleted = project.mapLayersByName(layer.name())[0]
+                project.removeMapLayer(to_be_deleted.id())
+                layer = None
+
+            QgsProject.instance().reloadAllLayers()
+            QgsProject.instance().clear()
+            gc.tableList = []
+            gc.activeLayers = []
+
+            if len(gc.openedWindows) > 0:
+                for window in gc.openedWindows:
+                    window.close()
+                gc.openedWindows = []
+            QgsProject.removeAllMapLayers(QgsProject.instance())
+            # End removing layer
+
             removeAzenqosGroup()
             for mdiwindow in self.mdi.subWindowList():
                 mdiwindow.close()
             self.mdi.close()
             QgsMessageLog.logMessage("Close App")
+            event.accept()
         else:
             event.ignore()
-
-
-class Ui_DatabaseDialog(QDialog):
-    def __init__(self):
-        super(Ui_DatabaseDialog, self).__init__()
-        self.setupUi(self)
-
-    def setupUi(self, DatabaseDialog):
-        DatabaseDialog.setObjectName("DatabaseDialog")
-        DatabaseDialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        DatabaseDialog.resize(540, 90)
-        DatabaseDialog.setMaximumSize(QtCore.QSize(540, 90))
-        self.browseButton = QtWidgets.QPushButton(DatabaseDialog)
-        self.browseButton.setGeometry(QtCore.QRect(454, 30, 80, 24))
-        self.browseButton.setObjectName("browseButton")
-        self.dbPath = QtWidgets.QLineEdit(DatabaseDialog)
-        self.dbPath.setGeometry(QtCore.QRect(10, 30, 438, 24))
-        self.dbPath.setObjectName("dbPath")
-        self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
-        self.buttonBox.setGeometry(QtCore.QRect(370, 60, 164, 24))
-        self.buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
-        )
-        self.buttonBox.setObjectName("buttonBox")
-        self.dbPathLabel = QtWidgets.QLabel(DatabaseDialog)
-        self.dbPathLabel.setGeometry(QtCore.QRect(10, 10, 181, 16))
-        self.dbPathLabel.setObjectName("dbPathLabel")
-
-        self.retranslateUi(DatabaseDialog)
-        QtCore.QMetaObject.connectSlotsByName(DatabaseDialog)
-
-        self.browseButton.clicked.connect(self.getfiles)
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
-            self.checkDatabase
-        )
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(
-            self.reject
-        )
-
-    def retranslateUi(self, DatabaseDialog):
-        _translate = QtCore.QCoreApplication.translate
-        DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos"))
-        self.browseButton.setText(_translate("DatabaseDialog", "Browse.."))
-        self.dbPathLabel.setText(
-            _translate("DatabaseDialog", "Database path: ( .azm )")
-        )
-
-    def clearCurrentProject(self):
-
-        for hi in gc.h_list:
-            hi.hide()
-        gc.h_list = []
-        clearAllSelectedFeatures()
-
-        project = QgsProject.instance()
-        for (id_l, layer) in project.mapLayers().items():
-            to_be_deleted = project.mapLayersByName(layer.name())[0]
-            project.removeMapLayer(to_be_deleted.id())
-            layer = None
-
-        QgsProject.instance().reloadAllLayers()
-        QgsProject.instance().clear()
-        gc.allLayers = []
-
-    def getfiles(self):
-        fileName, _ = QFileDialog.getOpenFileName(
-            self, "Single File", QtCore.QDir.rootPath(), "*.azm"
-        )
-        if fileName != "":
-            self.fileName = fileName
-            self.dbPath.setText(fileName)
-        else:
-            if self.dbPath.text() != "":
-                self.databasePath = self.dbPath.text()
-
-    def checkDatabase(self):
-        if self.dbPath.text() != "":
-            if hasattr(self, "azenqosMainMenu") is True:
-                self.azenqosMainMenu.newImport = True
-                self.azenqosMainMenu.killMainWindow()
-                self.clearCurrentProject()
-            self.databasePath = Utils().unzipToFile(gc.CURRENT_PATH, self.fileName)
-            self.addDatabase()
-            if not gc.azenqosDatabase.open():
-                QtWidgets.QMessageBox.critical(
-                    None,
-                    "Cannot open database",
-                    "Unable to establish a database connection.\n"
-                    "This example needs SQLite support. Please read "
-                    "the Qt SQL driver documentation for information how "
-                    "to build it.\n\n"
-                    "Click Cancel to exit.",
-                    QtWidgets.QMessageBox.Cancel,
-                )
-                return False
-            else:
-                self.getLayersFromDb()
-                # if hasattr(self, "layerTask") is False:
-                self.layerTask = LayerTask(u"Add layers", self.databasePath)
-                QgsApplication.taskManager().addTask(self.layerTask)
-                self.getTimeForSlider()
-                self.hide()
-                self.azenqosMainMenu = AzenqosDialog(self)
-                self.azenqosMainMenu.show()
-                self.azenqosMainMenu.raise_()
-                self.azenqosMainMenu.activateWindow()
-        else:
-            QtWidgets.QMessageBox.critical(
-                None,
-                "Cannot open database",
-                "Unable to establish a database connection.\n" "Click Cancel to exit.",
-                QtWidgets.QMessageBox.Cancel,
-            )
-            return False
-
-    def getTimeForSlider(self):
-        dataList = []
-        gc.azenqosDatabase.open()
-        subQuery = QSqlQuery()
-        queryString = "SELECT log_start_time, log_end_time FROM logs"
-        subQuery.exec_(queryString)
-        while subQuery.next():
-            if subQuery.value(0).strip() and subQuery.value(1).strip():
-                startTime = subQuery.value(0)
-                endTime = subQuery.value(1)
-        gc.azenqosDatabase.close()
-
-        try:
-            gc.minTimeValue = datetime.datetime.strptime(
-                str(startTime), "%Y-%m-%d %H:%M:%S.%f"
-            ).timestamp()
-            gc.maxTimeValue = datetime.datetime.strptime(
-                str(endTime), "%Y-%m-%d %H:%M:%S.%f"
-            ).timestamp()
-            gc.currentDateTimeString = "%s" % (
-                datetime.datetime.fromtimestamp(gc.minTimeValue)
-            )
-        except:
-            QtWidgets.QMessageBox.critical(
-                None,
-                "Cannot open database",
-                "Unable to establish a database connection.\n"
-                "This example needs SQLite support. Please read "
-                "the Qt SQL driver documentation for information how "
-                "to build it.\n\n"
-                "Click Cancel to exit.",
-                QtWidgets.QMessageBox.Cancel,
-            )
-            return False
-        self.setIncrementValue()
-
-    def addDatabase(self):
-        gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
-        gc.azenqosDatabase.setDatabaseName(self.databasePath)
-
-    def getLayersFromDb(self):
-        gc.azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "select tbl_name from sqlite_master where sql LIKE '%\"geom\"%' and type = 'table' order by tbl_name"
-        query.exec_(queryString)
-        while query.next():
-            tableName = query.value(0)
-            subQueryString = "select count(*) from %s" % (tableName)
-            subQuery = QSqlQuery()
-            subQuery.exec_(subQueryString)
-            while subQuery.next():
-                if int(subQuery.value(0)) > 0:
-                    gc.allLayers.append(tableName)
-        gc.azenqosDatabase.close()
-
-    def setIncrementValue(self):
-        gc.sliderLength = gc.maxTimeValue - gc.minTimeValue
-        gc.sliderLength = round(gc.sliderLength, 3)
-
-    def reject(self):
-
-        super().reject()
-        # if gc.azenqosDatabase:
-        #     global gc.azenqosDatabase
-        #     gc.azenqosDatabase.close()
-        #     del gc.azenqosDatabase
-        # self.destroy(True)
-        # del self
 
 
 class GroupArea(QMdiArea):
@@ -2399,3 +2398,10 @@ class GroupArea(QMdiArea):
 
     def closeEvent(self, QCloseEvent):
         self.closeAllSubWindows()
+
+
+class SubWindowArea(QMdiSubWindow):
+    def __init__(self, item):
+        super().__init__(item)
+        dirname = os.path.dirname(__file__)
+        self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))

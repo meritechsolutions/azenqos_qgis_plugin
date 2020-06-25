@@ -1,7 +1,10 @@
 import os
-from PyQt5 import QtCore
 from PyQt5.QtCore import *
 
+maxColumns = 50
+maxRows = 1000
+schemaList = []
+activeLayers = []
 mostFeaturesLayer = None
 azenqosDatabase = None
 minTimeValue = None

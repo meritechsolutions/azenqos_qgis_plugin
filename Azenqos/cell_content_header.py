@@ -8,6 +8,7 @@ class HeaderContent(QWidget):
     def __init__(self, item=None):
         super().__init__(None)
         self.treeItem = item
+        self.headerName = self.treeItem.text(0)
         self.setupUi()
 
     def setupUi(self):
@@ -32,8 +33,7 @@ class HeaderContent(QWidget):
         self.lblName.setObjectName("lblName")
         self.formLayout.setWidget(0, QFormLayout.LabelRole, self.lblName)
 
-        self.leName = QLineEdit(self.formLayoutWidget)
-        self.leName.text
+        self.leName = QLineEdit(self.headerName, self.formLayoutWidget)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -61,6 +61,7 @@ class HeaderContent(QWidget):
         _translate = QCoreApplication.translate
         self.setWindowTitle(_translate("HeaderContent", "Form"))
         self.lblName.setText(_translate("HeaderContent", "Name"))
+        # self.leName.setText(self.treeItem.text(0))
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.headerTab),
             _translate("HeaderContent", "Header"),

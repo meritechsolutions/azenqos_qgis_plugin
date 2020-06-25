@@ -1,6 +1,10 @@
 from PyQt5.QtSql import QSql, QSqlDatabase, QSqlQuery
-import csv, inspect, os, datetime
+import csv, inspect, os, sys, datetime, json, io
 from zipfile import ZipFile
+
+# Adding folder path
+sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
+import global_config as gc
 
 db = None
 elementData = []
@@ -129,6 +133,114 @@ class Utils:
 
         return True
 
+    def saveState(self, currentPath):
+        file_path = currentPath + "/save.azs"
+        with open(file_path, "w") as f:
+            saveEntities = {}
+            winList = []
+            for window in gc.openedWindows:
+                winList.append(str(window.title))
+
+            saveEntities["windows"] = winList
+            saveEntities["timestamp"] = gc.currentTimestamp
+            jsonString = json.dumps(saveEntities)
+            binString = " ".join(format(x, "b") for x in bytearray(jsonString, "utf-8"))
+            f.write(binString)
+        return True
+
+    def saveStateToFile(self, currentPath):
+        file_path = currentPath
+        with open(file_path, "w") as f:
+            saveEntities = {}
+            winList = []
+            for window in gc.openedWindows:
+                winList.append(str(window.title))
+
+            saveEntities["windows"] = winList
+            saveEntities["timestamp"] = gc.currentTimestamp
+            jsonString = json.dumps(saveEntities)
+            binString = " ".join(format(x, "b") for x in bytearray(jsonString, "utf-8"))
+            f.write(binString)
+        return True
+
+    def loadState(self, currentPath, dialog):
+        textString = ""
+        loadedEntities = None
+        file_path = currentPath + "/save.azs"
+        if not os.path.exists(file_path):
+            return False
+
+        f = io.open(file_path, mode="r")
+        text = f.read()
+
+        if text:
+            text = text.split(" ")
+            textString = bytearray([int(x, 2) for x in text]).decode()
+        try:
+            loadedEntities = json.loads(textString)
+        except:
+            pass
+
+        if loadedEntities:
+            loadedTimestamp = None
+            for window in loadedEntities["windows"]:
+                name = window.split("_")
+                dialog.classifySelectedItems(name[0], name[1])
+
+            try:
+                loadedTimestamp = float(loadedEntities["timestamp"])
+            except:
+                pass
+
+            if loadedTimestamp is not None:
+                if (
+                    loadedTimestamp >= gc.minTimeValue
+                    and loadedTimestamp <= gc.maxTimeValue
+                ):
+                    gc.timeSlider.setValue(loadedTimestamp - gc.minTimeValue)
+
+        f.close()
+        return False
+
+    def loadStateFromFile(self, currentPath, dialog):
+        textString = ""
+        loadedEntities = None
+        file_path = currentPath
+        if not os.path.exists(file_path):
+            return False
+
+        f = io.open(file_path, mode="r")
+        text = f.read()
+
+        if text:
+            text = text.split(" ")
+            textString = bytearray([int(x, 2) for x in text]).decode()
+        try:
+            loadedEntities = json.loads(textString)
+        except:
+            pass
+
+        if loadedEntities:
+            loadedTimestamp = None
+            for window in loadedEntities["windows"]:
+                name = window.split("_")
+                dialog.classifySelectedItems(name[0], name[1])
+
+            try:
+                loadedTimestamp = float(loadedEntities["timestamp"])
+            except:
+                pass
+
+            if loadedTimestamp is not None:
+                if (
+                    loadedTimestamp >= gc.minTimeValue
+                    and loadedTimestamp <= gc.maxTimeValue
+                ):
+                    gc.timeSlider.setValue(loadedTimestamp - gc.minTimeValue)
+
+        f.close()
+        return False
+
     def openConnection(self, db: QSqlDatabase):
         if db:
             if not db.isOpen():
@@ -139,7 +251,7 @@ class Utils:
             if db.isOpen():
                 db.close()
 
-    def datetimeStringtoTimestamp(datetimeString: str):
+    def datetimeStringtoTimestamp(self, datetimeString: str):
         try:
             element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
             timestamp = datetime.datetime.timestamp(element)

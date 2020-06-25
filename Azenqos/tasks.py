@@ -14,6 +14,7 @@ from PyQt5.QtGui import *
 from qgis.core import *
 from qgis.utils import *
 from qgis.gui import *
+from .globalutils import Utils
 
 
 class LayerTask(QgsTask):
@@ -35,10 +36,28 @@ class LayerTask(QgsTask):
         else:
             QgsMessageLog.logMessage("Invalid layer")
 
+    def zoomToActiveLayer(self):
+        root = QgsProject.instance().layerTreeRoot()
+        groups = root.findGroups()
+        extent = QgsRectangle()
+        extent.setMinimal()
+        if len(groups) > 0:
+            for child in groups[0].children():
+                if isinstance(child, QgsLayerTreeLayer):
+                    extent.combineExtentWith(child.layer().extent())
+        else:
+            layers = root.findLayers()
+            for child in layers:
+                if isinstance(child, QgsLayerTreeLayer):
+                    if child.layer().type() == QgsMapLayerType.VectorLayer:
+                        extent.combineExtentWith(child.layer().extent())
+
+            iface.mapCanvas().setExtent(extent)
+            iface.mapCanvas().refresh()
+
     def run(self):
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
-
         return True
 
     def finished(self, result):
@@ -47,30 +66,39 @@ class LayerTask(QgsTask):
             self.addMapToQgis()
             uri = QgsDataSourceUri()
             uri.setDatabase(self.dbPath)
-            gc.allLayers.sort(reverse=True)
+            gc.tableList.sort(reverse=True)
             geom_column = "geom"
-            for tableName in gc.allLayers:
-                uri.setDataSource("", tableName, geom_column)
-                vlayer = iface.addVectorLayer(uri.uri(), tableName, "spatialite")
-                features = vlayer.featureCount()
-                if gc.mostFeaturesLayer is None:
-                    gc.mostFeaturesLayer = (tableName, features)
-                elif features > gc.mostFeaturesLayer[1]:
-                    gc.mostFeaturesLayer = (tableName, features)
+            vlayer = iface.addVectorLayer(self.dbPath, None, "ogr")
 
-                if vlayer:
-                    symbol_renderer = vlayer.renderer()
-                    if symbol_renderer:
-                        symbol = symbol_renderer.symbol()
-                        symbol.setColor(QColor(125, 139, 142))
-                        symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
-                        symbol.setSize(2.4)
-                    iface.layerTreeView().refreshLayerSymbology(vlayer.id())
-                    vlayer.triggerRepaint()
-                    if not tableName in gc.tableList:
-                        gc.tableList.append(tableName)
+            # Setting CRS
+            my_crs = QgsCoordinateReferenceSystem(4326)
+            QgsProject.instance().setCrs(my_crs)
 
-            iface.mapCanvas().setSelectionColor(QColor("yellow"))
+            self.zoomToActiveLayer()
+
+            # vlayer
+            # for tableName in gc.tableList:
+            #     uri.setDataSource("", tableName, geom_column)
+            #     vlayer = iface.addVectorLayer(uri.uri(), tableName, "spatialite")
+            #     features = vlayer.featureCount()
+            #     if gc.mostFeaturesLayer is None:
+            #         gc.mostFeaturesLayer = (tableName, features)
+            #     elif features > gc.mostFeaturesLayer[1]:
+            #         gc.mostFeaturesLayer = (tableName, features)
+
+            #     if vlayer:
+            #         symbol_renderer = vlayer.renderer()
+            #         if symbol_renderer:
+            #             symbol = symbol_renderer.symbol()
+            #             symbol.setColor(QColor(125, 139, 142))
+            #             symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
+            #             symbol.setSize(2.4)
+            #         iface.layerTreeView().refreshLayerSymbology(vlayer.id())
+            #         vlayer.triggerRepaint()
+            #         if not tableName in gc.activeLayers:
+            #             gc.activeLayers.append(tableName)
+
+            # iface.mapCanvas().setSelectionColor(QColor("yellow"))
 
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
@@ -95,11 +123,12 @@ class LayerTask(QgsTask):
 
 
 class QuitTask(QgsTask):
-    def __init__(self, desc):
+    def __init__(self, desc, azenqosMain):
         QgsTask.__init__(self, desc)
         self.start_time = None
         self.desc = desc
         self.exception = None
+        self.azqMain = azenqosMain
 
     def run(self):
         QgsMessageLog.logMessage(
@@ -113,32 +142,13 @@ class QuitTask(QgsTask):
         for name in names:
             QSqlDatabase.database(name).close()
             QSqlDatabase.removeDatabase(name)
-        del gc.azenqosDatabase
+
+        gc.azenqosDatabase = None
 
         return True
 
     def finished(self, result):
         if result:
-            project = QgsProject.instance()
-            for (id_l, layer) in project.mapLayers().items():
-                if layer.type() == layer.VectorLayer:
-                    layer.removeSelection()
-                to_be_deleted = project.mapLayersByName(layer.name())[0]
-                project.removeMapLayer(to_be_deleted.id())
-                layer = None
-
-            QgsProject.instance().reloadAllLayers()
-            QgsProject.instance().clear()
-            gc.allLayers = []
-            gc.tableList = []
-
-            if len(gc.openedWindows) > 0:
-                for window in gc.openedWindows:
-                    window.close()
-                    # window.reject()
-                    del window
-                gc.openedWindows = []
-            QgsProject.removeAllMapLayers(QgsProject.instance())
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(
                 "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
@@ -146,6 +156,8 @@ class QuitTask(QgsTask):
             QgsMessageLog.logMessage(
                 "[-- End Removing Dependencies --]", tag="Processing"
             )
+            if self.azqMain.newImport is False:
+                self.azqMain.databaseUi.removeMainMenu()
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(

@@ -117,7 +117,13 @@ class Utils:
                 os.remove(file_folder_path + "/" + f)
         if len(os.listdir(file_folder_path)) == 0:
             with ZipFile(filePath, "r") as zip_obj:
-                zip_obj.extractall(file_folder_path)
+                filesContain = zip_obj.namelist()
+                for fileName in filesContain:
+                    try:
+                        zip_obj.extract(fileName, file_folder_path)
+                    except:
+                        pass
+
             db_file_path = file_folder_path + "/azqdata.db"
             return db_file_path
 

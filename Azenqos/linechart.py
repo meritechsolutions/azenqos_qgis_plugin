@@ -10,6 +10,7 @@ import datetime
 from .globalutils import Utils
 from .linechart_query import LineChartQueryNew
 import sys, os
+from .utils import get_default_color_for_index
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -720,6 +721,177 @@ class Ui_LTE_Data_LCwidget(QWidget):
         #     gc.tableList.remove(self.tablename)
         self.close()
         del self
+
+class Ui_NR_Data_LCwidget(QWidget):
+    def __init__(self, parent, windowName, azenqosDB):
+        super().__init__(parent)
+        self.title = windowName
+        self.database = azenqosDB
+        self.width = 640
+        self.height = 480
+        self.maximumHeight = 480
+        self.maximumWidth = 640
+        self.setupUi()
+
+    def setupUi(self):
+        self.setObjectName("NR_Data_LCwidget")
+        self.resize(841, 586)
+
+        layout = QVBoxLayout(self)
+
+        # Graph Area
+        self.nr_datalc_GArea = QScrollArea(self)
+        self.nr_datalc_GArea.setGeometry(QtCore.QRect(20, 10, 801, 371))
+        self.nr_datalc_GArea.setWidgetResizable(True)
+        self.nr_datalc_GArea.setObjectName("nr_datalc_GArea")
+
+        # Scroll Area
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 799, 369))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.nr_datalc_GArea.setWidget(self.scrollAreaWidgetContents)
+
+        # DataTable
+        col_count = 4
+        row_count = 10
+
+        self.nr_data_tableWidget = QTableWidget(self)
+        self.nr_data_tableWidget.setGeometry(QtCore.QRect(20, 395, 530, 161))
+        self.nr_data_tableWidget.setObjectName("nr_data_tableWidget")
+        self.nr_data_tableWidget.setColumnCount(col_count)
+        self.nr_data_tableWidget.setRowCount(row_count)
+        self.nr_data_tableWidget.verticalHeader().setSectionResizeMode(
+            QHeaderView.Stretch
+        )
+        self.nr_data_tableWidget.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.Stretch
+        )
+
+        for i in range(row_count):
+            item = QTableWidgetItem()
+            self.nr_data_tableWidget.setVerticalHeaderItem(i, item)
+
+        for i in range(col_count):
+            item = QTableWidgetItem()
+            font = QtGui.QFont()
+            font.setBold(True)
+            font.setWeight(75)
+            item.setFont(font)
+            self.nr_data_tableWidget.setHorizontalHeaderItem(i, item)
+        
+        for i in range(row_count):
+            for j in range(col_count):
+                item = QTableWidgetItem()
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.nr_data_tableWidget.setItem(i, j, item)
+                if j == 3:
+                    brush = QtGui.QBrush(QtGui.QColor(get_default_color_for_index(i)))
+                    brush.setStyle(QtCore.Qt.SolidPattern)
+                    item.setBackground(brush)
+
+
+        self.nr_data_tableWidget.setItem(row_count, col_count, item)
+        self.nr_data_tableWidget.horizontalHeader().setVisible(True)
+        self.nr_data_tableWidget.horizontalHeader().setHighlightSections(True)
+        self.nr_data_tableWidget.verticalHeader().setVisible(False)
+
+        # DateLabel
+        self.datelabel = QLabel(self)
+        self.datelabel.setGeometry(QtCore.QRect(655, 38, 47, 13))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.datelabel.setFont(font)
+        self.datelabel.setObjectName("datelabel")
+        self.lineEdit = QLineEdit(self)
+        self.lineEdit.setGeometry(QtCore.QRect(703, 36, 88, 20))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lineEdit.setFont(font)
+        self.lineEdit.setReadOnly(True)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Graph's Widget
+        self.nr_data_widget = LineChart(
+            self.nr_datalc_GArea,
+            self.title,
+            self.nr_data_tableWidget,
+            self.lineEdit,
+            self.database,
+        )
+        self.nr_data_widget.setGeometry(QtCore.QRect(10, 9, 781, 351))
+        self.nr_data_widget.setObjectName("nr_data_widget")
+        self.nr_datalc_GArea.setWidget(self.nr_data_widget)
+
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
+
+        layout.addWidget(self.nr_datalc_GArea)
+        layout.addWidget(self.nr_data_tableWidget)
+
+    def retranslateUi(self):
+        _translate = QtCore.QCoreApplication.translate
+        self.setWindowTitle(
+            _translate("NR_Data_LCwidget", "5G NR Data Line Chart [MS1]")
+        )
+        item = self.nr_data_tableWidget.verticalHeaderItem(0)
+        item.setText(_translate("NR_Data_LCwidget", "1"))
+        item = self.nr_data_tableWidget.verticalHeaderItem(1)
+        item.setText(_translate("NR_Data_LCwidget", "2"))
+        item = self.nr_data_tableWidget.verticalHeaderItem(2)
+        item.setText(_translate("NR_Data_LCwidget", "3"))
+        item = self.nr_data_tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("NR_Data_LCwidget", "4"))
+        item = self.nr_data_tableWidget.horizontalHeaderItem(0)
+        item.setText(_translate("NR_Data_LCwidget", "Element"))
+        item = self.nr_data_tableWidget.horizontalHeaderItem(1)
+        item.setText(_translate("NR_Data_LCwidget", "Value"))
+        item = self.nr_data_tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("NR_Data_LCwidget", "MS"))
+        item = self.nr_data_tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("NR_Data_LCwidget", "Color"))
+        __sortingEnabled = self.nr_data_tableWidget.isSortingEnabled()
+        self.nr_data_tableWidget.setSortingEnabled(False)
+        item = self.nr_data_tableWidget.item(0, 0)
+        item.setText(
+            _translate("NR_Data_LCwidget",
+                       "Download Overall Throughput(kbps)")
+        )
+        item = self.nr_data_tableWidget.item(1, 0)
+        item.setText(_translate("NR_Data_LCwidget", "Upload Overall Throughput(kbps)"))
+        item = self.nr_data_tableWidget.item(2, 0)
+        item.setText(_translate("NR_Data_LCwidget", "LTE L1 Throughput Mbps[1]"))
+        item = self.nr_data_tableWidget.item(3, 0)
+        item.setText(_translate("NR_Data_LCwidget", "nr_p_plus_scell_nr_pusch_tput_mbps"))
+        item = self.nr_data_tableWidget.item(4, 0)
+        item.setText(_translate("NR_Data_LCwidget", "nr_p_plus_scell_nr_ul_pdcp_tput_mbps"))
+        item = self.nr_data_tableWidget.item(5, 0)
+        item.setText(_translate("NR_Data_LCwidget", "nr_p_plus_scell_nr_pdsch_tput_mbps"))
+        item = self.nr_data_tableWidget.item(6, 0)
+        item.setText(_translate("NR_Data_LCwidget", "nr_p_plus_scell_nr_dl_pdcp_tput_mbps"))
+        item = self.nr_data_tableWidget.item(7, 0)
+        item.setText(_translate("NR_Data_LCwidget", "nr_p_plus_scell_lte_dl_pdcp_tput_mbps"))
+        item = self.nr_data_tableWidget.item(8, 0)
+        item.setText(_translate("NR_Data_LCwidget", "nr_p_plus_scell_lte_ul_pdcp_tput_mbps"))
+        self.nr_data_tableWidget.setSortingEnabled(__sortingEnabled)
+        self.datelabel.setText(_translate("NR_Data_LCwidget", "Date :"))
+
+    def moveChart(self, sampledate):
+        self.nr_data_widget.moveLineChart(sampledate)
+
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in gc.tableList:
+        #     gc.tableList.remove(self.tablename)
+        self.close()
+        del self
+
 
 
 # WCDMA Data Line Chart UI
@@ -1576,7 +1748,7 @@ class LineChart(QWidget):
         self.lines = []
         self.result = {}
         self.xdict = {}
-        self.ColorArr = []
+        
 
         # self.datelabel = QLineEdit(self)
         # self.datelabel.setGeometry(QtCore.QRect(400, 30, 110, 20))
@@ -1602,14 +1774,16 @@ class LineChart(QWidget):
             self.WCDMA_Data()
         elif self.title == "Data_GSM Data Line Chart":
             self.GSM_Data()
+        elif self.title == "Data_5G NR Data Line Chart":
+            self.NR_Data()   
 
     # Event Function
     def on_pick(self, event):
         for Line in range(len(self.lines)):
             if self.lines[Line] == event:
-                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line], width=4))
+                self.lines[Line].setPen(pg.mkPen(color=get_default_color_for_index(Line), width=4))
             else:
-                self.lines[Line].setPen(pg.mkPen(color=self.ColorArr[Line], width=2))
+                self.lines[Line].setPen(pg.mkPen(color=get_default_color_for_index(Line), width=2))
 
     # Show Data In Table
     def get_table_data(self, event):
@@ -1649,7 +1823,7 @@ class LineChart(QWidget):
             # self.datelabel.setText("Date: " + self.Date[0])
 
             # Ploting Graph
-            self.ColorArr = ["#ff0000", "#0000ff", "#007c00", "#ff77ab", "#000000"]
+            
             x = self.Time
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
@@ -1665,7 +1839,7 @@ class LineChart(QWidget):
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
-                    pg.mkPen(self.ColorArr[colorindex], width=2)
+                    pg.mkPen(get_default_color_for_index(colorindex), width=2)
                 )
 
             # Scale Editing
@@ -1714,7 +1888,6 @@ class LineChart(QWidget):
             # self.datelabel.setText("Date: " + self.Date[0])
 
             # Ploting Graph
-            self.ColorArr = ["#ff0000", "#0000ff", "#007c00", "#ff77ab", "#000000"]
             x = self.Time
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
@@ -1730,7 +1903,7 @@ class LineChart(QWidget):
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
-                    pg.mkPen(self.ColorArr[colorindex], width=2)
+                    pg.mkPen(get_default_color_for_index(colorindex), width=2)
                 )
 
             # Scale Editing
@@ -1785,7 +1958,6 @@ class LineChart(QWidget):
             # self.datelabel.setText(self.Date[0])
 
             # Ploting Graph
-            self.ColorArr = ["#ff0000", "#0000ff", "#007c00", "#ff77ab", "#000000"]
 
             x = self.Time
             self.xdict = dict(enumerate(x))
@@ -1802,7 +1974,7 @@ class LineChart(QWidget):
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
-                    pg.mkPen(self.ColorArr[colorindex], width=2)
+                    pg.mkPen(get_default_color_for_index(colorindex), width=2)
                 )
 
             # Scale Editing
@@ -1857,7 +2029,6 @@ class LineChart(QWidget):
             # self.datelabel.setText(self.Date[0])
 
             # Ploting Graph
-            self.ColorArr = ["#ff0000", "#0000ff", "#007c00", "#ff77ab", "#000000"]
 
             x = self.Time
             self.xdict = dict(enumerate(x))
@@ -1874,7 +2045,7 @@ class LineChart(QWidget):
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
-                    pg.mkPen(self.ColorArr[colorindex], width=2)
+                    pg.mkPen(get_default_color_for_index(colorindex), width=2)
                 )
 
             # Scale Editing
@@ -1924,7 +2095,6 @@ class LineChart(QWidget):
             # self.datelabel.setText("Date: " + self.Date[0])
 
             # Ploting Graph
-            self.ColorArr = ["#ff0000", "#0000ff", "#007c00", "#ff77ab", "#000000"]
             x = self.Time
             self.xdict = dict(enumerate(x))
             self.stringaxis.setTicks([self.xdict.items()])
@@ -1940,7 +2110,7 @@ class LineChart(QWidget):
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
-                    pg.mkPen(self.ColorArr[colorindex], width=2)
+                    pg.mkPen(get_default_color_for_index(colorindex), width=2)
                 )
 
             # Scale Editing
@@ -1992,7 +2162,6 @@ class LineChart(QWidget):
             # self.datelabel.setText(self.Date[0])
 
             # Ploting Graph
-            self.ColorArr = ["#ff0000", "#0000ff", "#007c00", "#ff77ab", "#000000"]
 
             x = self.Time
             self.xdict = dict(enumerate(x))
@@ -2009,7 +2178,59 @@ class LineChart(QWidget):
 
             for colorindex in range(len(self.lines)):
                 self.lines[colorindex].setPen(
-                    pg.mkPen(self.ColorArr[colorindex], width=2)
+                    pg.mkPen(get_default_color_for_index(colorindex), width=2)
+                )
+
+            # Scale Editing
+            self.canvas.axes.setYRange(np.nanmin(overallMin), np.nanmax(overallMax))
+            self.canvas.axes.setXRange(
+                list(self.xdict.keys())[0], list(self.xdict.keys())[4]
+            )
+            self.canvas.axes.setLimits(
+                xMin=min(list(self.xdict.keys())),
+                xMax=max(list(self.xdict.keys())),
+                minXRange=5,
+                maxXRange=5,
+            )
+
+            # Call Event Function
+            pick = [
+                self.lines[i].sigClicked.connect(self.on_pick)
+                for i in range(len(self.lines))
+            ]
+
+    # Create NR Data Line Chart
+    def NR_Data(self):
+        ChartQuery = LineChartQueryNew(self.database)
+        self.result = ChartQuery.getNrData()
+        overallMax = []
+        overallMin = []
+        for index in range(len(self.result["time"])):
+            self.Date.append(self.result["time"][index].split(" ")[0])
+            self.Time.append(self.result["time"][index].split(" ")[1])
+
+        if self.result["time"] != "":
+            # Graph setting
+            # self.datelabel.setText(self.Date[0])
+
+            # Ploting Graph
+
+            x = self.Time
+            self.xdict = dict(enumerate(x))
+            self.stringaxis.setTicks([self.xdict.items()])
+            for data in self.result.items():
+                if data[0] != "time":
+                    newline = self.canvas.axes.plot(
+                        x=list(self.xdict.keys()), y=data[1], connect="finite"
+                    )
+                    newline.curve.setClickable(True)
+                    self.lines.append(newline)
+                    overallMax.append(np.nanmax(data[1]))
+                    overallMin.append(np.nanmin(data[1]))
+
+            for colorindex in range(len(self.lines)):
+                self.lines[colorindex].setPen(
+                    pg.mkPen(get_default_color_for_index(colorindex), width=2)
                 )
 
             # Scale Editing

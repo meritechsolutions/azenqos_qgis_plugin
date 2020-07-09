@@ -29,6 +29,7 @@ linechartWindowname = [
     "Data_GSM Data Line Chart",
     "Data_WCDMA Data Line Chart",
     "Data_LTE Data Line Chart",
+    "Data_5G NR Data Line Chart",
 ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))

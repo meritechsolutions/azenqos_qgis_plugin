@@ -23,6 +23,7 @@ from .filter_header import *
 from .gsm_query import GsmDataQuery
 from .cdma_evdo_query import CdmaEvdoQuery
 from .lte_query import LteDataQuery
+from .nr_query import NrDataQuery
 from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
@@ -314,6 +315,17 @@ class TableWindow(QWidget):
                     gc.azenqosDatabase, gc.currentDateTimeString
                 ).getVolte()
 
+                
+            elif self.title == "5G NR_Radio Parameters":
+                self.tableHeader = ["Element", "PCC", "SCC0", "SCC1", "SCC2", "SCC3", "SCC4", "SCC5", "SCC6"]
+                self.dataList = NrDataQuery(
+                    gc.azenqosDatabase, gc.currentDateTimeString
+                ).getRadioParameters()
+            elif self.title == "5G NR_Serving + Neighbors":
+                (self.tableHeader,self.dataList) = NrDataQuery(
+                    gc.azenqosDatabase, gc.currentDateTimeString
+                ).getServingAndNeighbors()
+
             # CDMA/EVDO
             elif self.title == "CDMA/EVDO_Radio Parameters":
                 self.tableHeader = ["Element", "Value"]
@@ -363,6 +375,8 @@ class TableWindow(QWidget):
                 ]
             elif self.title == "Data_Wifi Graph":
                 return False
+            elif self.title == "Data_5G NR Data Line Chart":
+                self.tableHeader = ["Element", "Value", "MS", "Color"]
 
             # Signaling
             elif self.title == "Signaling_Events":

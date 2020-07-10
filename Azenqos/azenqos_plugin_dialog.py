@@ -225,6 +225,8 @@ class AzenqosDialog(QMainWindow):
         self.menuWCDMA.setObjectName("menuWCDMA")
         self.menuLTE = QMenu(self.menuPresentation)
         self.menuLTE.setObjectName("menuLTE")
+        self.menuNR = QMenu(self.menuPresentation)
+        self.menuNR.setObjectName("menuNR")
         self.menuCDMA_EVDO = QMenu(self.menuPresentation)
         self.menuCDMA_EVDO.setObjectName("menuCDMA_EVDO")
         self.menuData = QMenu(self.menuPresentation)
@@ -278,6 +280,8 @@ class AzenqosDialog(QMainWindow):
         self.actionPilot_Analyzer.setObjectName("actionPilot_Analyzer")
         self.actionRadio_Parameters_3 = QAction(AzenqosDialog)
         self.actionRadio_Parameters_3.setObjectName("actionRadio_Parameters_3")
+        self.actionNR_Radio_Parameters = QAction(AzenqosDialog)
+        self.actionNR_Radio_Parameters.setObjectName("actionNR_Radio_Parameters")
         self.actionServing_Neighbors_2 = QAction(AzenqosDialog)
         self.actionServing_Neighbors_2.setObjectName("actionServing_Neighbors_2")
         self.actionPUCCH_PDSCH_Parameters = QAction(AzenqosDialog)
@@ -328,6 +332,11 @@ class AzenqosDialog(QMainWindow):
         self.actionMM_Reg_States.setObjectName("actionMM_Reg_States")
         self.actionServing_System_Info = QAction(AzenqosDialog)
         self.actionServing_System_Info.setObjectName("actionServing_System_Info")
+        self.actionNR_Data_Line_Chart = QAction(AzenqosDialog)
+        self.actionNR_Data_Line_Chart.setObjectName("actionNR_Data_Line_Chart")
+        self.actionNR_Serving_Neighbors = QAction(AzenqosDialog)
+        self.actionNR_Serving_Neighbors.setObjectName("actionNR_Serving_Neighbors")
+        
         self.menuFile.addAction(self.actionImport_log_azm)
         self.menuFile.addAction(self.actionExit)
         self.menuGSM.addAction(self.actionRadio_Parameters)
@@ -354,6 +363,8 @@ class AzenqosDialog(QMainWindow):
         self.menuLTE.addAction(self.actionLTE_Line_Chart)
         self.menuLTE.addAction(self.actionLTE_RLC)
         self.menuLTE.addAction(self.actionLTE_VoLTE)
+        self.menuNR.addAction(self.actionNR_Radio_Parameters)
+        self.menuNR.addAction(self.actionNR_Serving_Neighbors)
         self.menuCDMA_EVDO.addAction(self.actionRadio_Parameters_4)
         self.menuCDMA_EVDO.addAction(self.actionServing_Neighbors_3)
         self.menuCDMA_EVDO.addAction(self.actionEVDO_Parameters)
@@ -368,6 +379,7 @@ class AzenqosDialog(QMainWindow):
         self.menuData.addAction(self.actionWifi_Connected_AP)
         self.menuData.addAction(self.actionWifi_Scanned_APs)
         self.menuData.addAction(self.actionWifi_Graph)
+        # self.menuData.addAction(self.actionNR_Data_Line_Chart)
         self.menuSignaling.addAction(self.actionEvents)
         self.menuSignaling.addAction(self.actionLayer_1_Messages)
         self.menuSignaling.addAction(self.actionLayer_3_Messages)
@@ -377,6 +389,7 @@ class AzenqosDialog(QMainWindow):
         self.menuPresentation.addAction(self.menuGSM.menuAction())
         self.menuPresentation.addAction(self.menuWCDMA.menuAction())
         self.menuPresentation.addAction(self.menuLTE.menuAction())
+        self.menuPresentation.addAction(self.menuNR.menuAction())
         self.menuPresentation.addAction(self.menuCDMA_EVDO.menuAction())
         self.menuPresentation.addAction(self.menuData.menuAction())
         self.menuPresentation.addAction(self.menuSignaling.menuAction())
@@ -392,6 +405,7 @@ class AzenqosDialog(QMainWindow):
         self.menuGSM.setTitle(_translate("AzenqosDialog", "GSM"))
         self.menuWCDMA.setTitle(_translate("AzenqosDialog", "WCDMA"))
         self.menuLTE.setTitle(_translate("AzenqosDialog", "LTE"))
+        self.menuNR.setTitle(_translate("AzenqosDialog", "5G NR"))
         self.menuCDMA_EVDO.setTitle(_translate("AzenqosDialog", "CDMA/EVDO"))
         self.menuData.setTitle(_translate("AzenqosDialog", "Data"))
         self.menuSignaling.setTitle(_translate("AzenqosDialog", "Signaling"))
@@ -452,6 +466,9 @@ class AzenqosDialog(QMainWindow):
         self.actionRadio_Parameters_4.setText(
             _translate("AzenqosDialog", "Radio Parameters")
         )
+        self.actionNR_Radio_Parameters.setText(
+            _translate("AzenqosDialog", "Radio Parameters")
+        )
         self.actionServing_Neighbors_3.setText(
             _translate("AzenqosDialog", "Serving + Neighbors")
         )
@@ -480,6 +497,9 @@ class AzenqosDialog(QMainWindow):
         self.actionLTE_Data_Line_Chart.setText(
             _translate("AzenqosDialog", "LTE Data Line Chart")
         )
+        self.actionNR_Data_Line_Chart.setText(
+            _translate("AzenqosDialog", "5G NR Data Line Chart")
+        )
         self.actionWifi_Connected_AP.setText(
             _translate("AzenqosDialog", "Wifi Connected AP")
         )
@@ -498,6 +518,9 @@ class AzenqosDialog(QMainWindow):
         self.actionMM_Reg_States.setText(_translate("AzenqosDialog", "MM Reg States"))
         self.actionServing_System_Info.setText(
             _translate("AzenqosDialog", "Serving System Info")
+        )
+        self.actionNR_Serving_Neighbors.setText(
+            _translate("AzenqosDialog", "Serving + Neighbors")
         )
 
     def selectPresentation(self, widget):
@@ -1687,6 +1710,55 @@ class AzenqosDialog(QMainWindow):
                     self.lte_volte_window.show()
                     gc.openedWindows.append(widget)
 
+        elif parent == "5G NR":
+            if child == "Radio Parameters":
+                tableWidget = None
+                if hasattr(self, "nr_param_window") is True:
+                    tableWindow = self.nr_param_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.nr_param_window, windowName)
+                        gc.openedWindows.append(tableWidget)
+
+                    if self.nr_param_window not in subwindowList:
+                        self.nr_param_window = SubWindowArea(self.mdi)
+                        self.mdi.addSubWindow(self.nr_param_window)
+
+                    if tableWidget:
+                        self.nr_param_window.setWidget(tableWidget)
+                    self.nr_param_window.show()
+                else:
+                    # create new subwindow
+                    self.nr_param_window = SubWindowArea(self.mdi)
+                    tableWidget = TableWindow(self.nr_param_window, windowName)
+                    self.nr_param_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.nr_param_window)
+                    self.nr_param_window.show()
+                    gc.openedWindows.append(tableWidget)
+
+            elif child == "Serving + Neighbors":
+                tableWidget = None
+                if hasattr(self, "nr_sn_window") is True:
+                    tableWindow = self.nr_sn_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.nr_sn_window, windowName)
+                        gc.openedWindows.append(tableWidget)
+
+                    if self.nr_sn_window not in subwindowList:
+                        self.nr_sn_window = SubWindowArea(self.mdi)
+                        self.mdi.addSubWindow(self.nr_sn_window)
+
+                    if tableWidget:
+                        self.nr_sn_window.setWidget(tableWidget)
+                    self.nr_sn_window.show()
+                else:
+                    # create new subwindow
+                    self.nr_sn_window = SubWindowArea(self.mdi)
+                    tableWidget = TableWindow(self.nr_sn_window, windowName)
+                    self.nr_sn_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.nr_sn_window)
+                    self.nr_sn_window.show()
+                    gc.openedWindows.append(tableWidget)
+
         elif parent == "CDMA/EVDO":
             if child == "Radio Parameters":
                 tableWidget = None
@@ -2042,6 +2114,36 @@ class AzenqosDialog(QMainWindow):
                     self.mdi.addSubWindow(self.wifi_graph)
                     self.wifi_graph.show()
                     gc.openedWindows.append(tableWidget)
+
+            elif child == "5G NR Data Line Chart":
+                linechartWidget = None
+                if hasattr(self, "nr_data_lc") is True:
+                    linechartWindow = self.nr_data_lc.widget()
+                    del linechartWindow
+                    linechartWindow = None
+                    if not linechartWindow:
+                        linechartWidget = Ui_NR_Data_LCwidget(
+                            self, windowName, gc.azenqosDatabase
+                        )
+                        gc.openedWindows.append(linechartWidget)
+
+                    if self.nr_data_lc not in subwindowList:
+                        self.nr_data_lc = SubWindowArea(self.mdi)
+                        self.mdi.addSubWindow(self.nr_data_lc)
+
+                    if linechartWidget:
+                        self.nr_data_lc.setWidget(linechartWidget)
+                    self.nr_data_lc.show()
+                else:
+                    # create new subwindow
+                    self.nr_data_lc = SubWindowArea(self.mdi)
+                    linechartWidget = Ui_NR_Data_LCwidget(
+                        self, windowName, gc.azenqosDatabase
+                    )
+                    self.nr_data_lc.setWidget(linechartWidget)
+                    self.mdi.addSubWindow(self.nr_data_lc)
+                    self.nr_data_lc.show()
+                    gc.openedWindows.append(linechartWidget)
 
         elif parent == "Signaling":
             if child == "Events":

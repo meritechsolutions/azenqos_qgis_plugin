@@ -236,6 +236,71 @@ class LineChartQueryNew:
         self.closeConnection()
         return self.result
 
+    def getNrData(self):
+        self.selectField = [
+            "time",
+            "data_download_overall",
+            "data_upload_overall",
+            "nr_p_plus_scell_nr_pusch_tput_mbps",
+            "nr_p_plus_scell_nr_ul_pdcp_tput_mbps",
+            "nr_p_plus_scell_nr_pdsch_tput_mbps",
+            "nr_p_plus_scell_nr_dl_pdcp_tput_mbps",
+            "nr_p_plus_scell_lte_dl_pdcp_tput_mbps",
+            "nr_p_plus_scell_lte_ul_pdcp_tput_mbps"
+        ]
+        self.openConnection()
+        query = QSqlQuery()
+        queryString = """SELECT 
+            dat.time, 
+            dat.data_download_overall, 
+            dat.data_upload_overall, 
+            NULL as nr_p_plus_scell_nr_pusch_tput_mbps, 
+            NULL as nr_p_plus_scell_nr_ul_pdcp_tput_mbps,
+            NULL as nr_p_plus_scell_nr_pdsch_tput_mbps,
+            NULL as nr_p_plus_scell_nr_dl_pdcp_tput_mbps,
+            NULL as nr_p_plus_scell_lte_dl_pdcp_tput_mbps,
+            NULL as nr_p_plus_scell_lte_ul_pdcp_tput_mbps
+        FROM data_app_throughput dat
+        WHERE data_download_overall IS NOT NULL OR data_upload_overall IS NOT NULL
+        UNION
+            SELECT 
+                lldt.time, 
+                NULL as data_download_overall, 
+                NULL as data_upload_overall, 
+                lldt.nr_p_plus_scell_nr_pusch_tput_mbps, 
+                lldt.nr_p_plus_scell_nr_ul_pdcp_tput_mbps,
+                lldt.nr_p_plus_scell_nr_pdsch_tput_mbps,
+                lldt.nr_p_plus_scell_nr_dl_pdcp_tput_mbps,
+                lldt.nr_p_plus_scell_lte_dl_pdcp_tput_mbps,
+                lldt.nr_p_plus_scell_lte_ul_pdcp_tput_mbps 
+            FROM nr_cell_meas lldt
+            WHERE 
+                nr_p_plus_scell_nr_pusch_tput_mbps IS NOT NULL 
+                OR nr_p_plus_scell_nr_ul_pdcp_tput_mbps IS NOT NULL
+                OR nr_p_plus_scell_nr_pdsch_tput_mbps IS NOT NULL
+                OR nr_p_plus_scell_nr_dl_pdcp_tput_mbps IS NOT NULL
+                OR nr_p_plus_scell_lte_dl_pdcp_tput_mbps IS NOT NULL
+                OR nr_p_plus_scell_lte_ul_pdcp_tput_mbps IS NOT NULL"""
+        query.exec_(queryString)
+        while query.next():
+            for field in range(len(self.selectField)):
+                fieldName = self.selectField[field]
+                validatedValue = self.valueValidation(query.value(field))
+                if fieldName in self.result:
+                    if isinstance(self.result[fieldName], list):
+                        self.result[fieldName].append(validatedValue)
+                    else:
+                        self.result[fieldName] = [validatedValue]
+                else:
+                    self.result[fieldName] = [validatedValue]
+
+        if not self.result:
+            for field in range(len(self.selectField)):
+                fieldName = self.selectField[field]
+                self.result[fieldName] = ""
+        self.closeConnection()
+        return self.result
+
     def valueValidation(self, value):
         validatedValue = np.nan
         if value:

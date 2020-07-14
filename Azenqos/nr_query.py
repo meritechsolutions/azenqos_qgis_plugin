@@ -43,7 +43,9 @@ class NrDataQuery:
         time <= '%s'
         ORDER BY time DESC
         LIMIT 1
-        """ % (self.timeFilter)
+        """ % (
+            self.timeFilter
+        )
 
         query = QSqlQuery()
 
@@ -134,7 +136,9 @@ class NrDataQuery:
         time <= '%s'
         ORDER BY time DESC
         LIMIT 1
-        """ % (self.timeFilter)
+        """ % (
+            self.timeFilter
+        )
 
         serv_list = [None] * MAX_SERVING
         for i in range(MAX_SERVING):
@@ -150,11 +154,12 @@ class NrDataQuery:
             for i in range(record.count()):
                 field_name = record.fieldName(i)
                 value = query.value(i)
-                if self.try_to_set_field_value(field_name, value, SER_PARAMS, serv_list):
+                if self.try_to_set_field_value(
+                    field_name, value, SER_PARAMS, serv_list
+                ):
                     continue
                 else:
-                    self.try_to_set_field_value(
-                        field_name, value, DET_PARAMS, det_list)
+                    self.try_to_set_field_value(field_name, value, DET_PARAMS, det_list)
 
         time_row = [""] * len(HEADERS)
         time_row[0] = "Time"
@@ -177,7 +182,7 @@ class NrDataQuery:
         for param in params_tuple:
             (field_index, param_test) = param
             m = param_test.match(field_name)
-            if(m):
+            if m:
                 arg = int(m.group(1)) - 1
                 row = result_list[arg]
                 row[field_index] = str(value or "")

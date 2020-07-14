@@ -379,7 +379,7 @@ class AzenqosDialog(QMainWindow):
         self.menuData.addAction(self.actionWifi_Connected_AP)
         self.menuData.addAction(self.actionWifi_Scanned_APs)
         self.menuData.addAction(self.actionWifi_Graph)
-        # self.menuData.addAction(self.actionNR_Data_Line_Chart)
+        self.menuData.addAction(self.actionNR_Data_Line_Chart)
         self.menuSignaling.addAction(self.actionEvents)
         self.menuSignaling.addAction(self.actionLayer_1_Messages)
         self.menuSignaling.addAction(self.actionLayer_3_Messages)

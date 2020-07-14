@@ -239,48 +239,48 @@ class LineChartQueryNew:
     def getNrData(self):
         self.selectField = [
             "time",
-            "data_download_overall",
-            "data_upload_overall",
-            "nr_p_plus_scell_nr_pusch_tput_mbps",
-            "nr_p_plus_scell_nr_ul_pdcp_tput_mbps",
-            "nr_p_plus_scell_nr_pdsch_tput_mbps",
-            "nr_p_plus_scell_nr_dl_pdcp_tput_mbps",
-            "nr_p_plus_scell_lte_dl_pdcp_tput_mbps",
-            "nr_p_plus_scell_lte_ul_pdcp_tput_mbps"
+            "app_dl",
+            "app_ul",
+            "nr_lte_dl",
+            "nr_lte_ul",
+            "nr_dl",
+            "nr_ul",
+            "lte_dl",
+            "lte_ul"
         ]
         self.openConnection()
         query = QSqlQuery()
         queryString = """SELECT 
             dat.time, 
-            dat.data_download_overall, 
-            dat.data_upload_overall, 
-            NULL as nr_p_plus_scell_nr_pusch_tput_mbps, 
-            NULL as nr_p_plus_scell_nr_ul_pdcp_tput_mbps,
-            NULL as nr_p_plus_scell_nr_pdsch_tput_mbps,
-            NULL as nr_p_plus_scell_nr_dl_pdcp_tput_mbps,
-            NULL as nr_p_plus_scell_lte_dl_pdcp_tput_mbps,
-            NULL as nr_p_plus_scell_lte_ul_pdcp_tput_mbps
+            dat.data_download_overall as app_dl, 
+            dat.data_upload_overall as app_ul, 
+            NULL as nr_lte_dl, 
+            NULL as nr_lte_ul,
+            NULL as nr_dl,
+            NULL as nr_ul,
+            NULL as lte_dl,
+            NULL as lte_ul
         FROM data_app_throughput dat
         WHERE data_download_overall IS NOT NULL OR data_upload_overall IS NOT NULL
         UNION
             SELECT 
                 lldt.time, 
-                NULL as data_download_overall, 
-                NULL as data_upload_overall, 
-                lldt.nr_p_plus_scell_nr_pusch_tput_mbps, 
-                lldt.nr_p_plus_scell_nr_ul_pdcp_tput_mbps,
-                lldt.nr_p_plus_scell_nr_pdsch_tput_mbps,
-                lldt.nr_p_plus_scell_nr_dl_pdcp_tput_mbps,
-                lldt.nr_p_plus_scell_lte_dl_pdcp_tput_mbps,
-                lldt.nr_p_plus_scell_lte_ul_pdcp_tput_mbps 
+                NULL as app_dl, 
+                NULL as app_ul, 
+                (IFNULL(lldt.nr_p_plus_scell_nr_pdsch_tput_mbps,0) + IFNULL(lldt.nr_p_plus_scell_lte_dl_pdcp_tput_mbps,0)) as nr_lte_dl, 
+                (IFNULL(lldt.nr_p_plus_scell_nr_pusch_tput_mbps,0) + IFNULL(lldt.nr_p_plus_scell_lte_ul_pdcp_tput_mbps,0)) as nr_lte_ul,
+                IFNULL(lldt.nr_p_plus_scell_nr_pdsch_tput_mbps,0) as nr_dl,
+                IFNULL(lldt.nr_p_plus_scell_nr_pusch_tput_mbps,0) as nr_ul,
+                IFNULL(lldt.nr_p_plus_scell_lte_dl_pdcp_tput_mbps,0) as lte_dl,
+                IFNULL(lldt.nr_p_plus_scell_lte_ul_pdcp_tput_mbps,0)  as lte_ul
             FROM nr_cell_meas lldt
             WHERE 
-                nr_p_plus_scell_nr_pusch_tput_mbps IS NOT NULL 
-                OR nr_p_plus_scell_nr_ul_pdcp_tput_mbps IS NOT NULL
-                OR nr_p_plus_scell_nr_pdsch_tput_mbps IS NOT NULL
-                OR nr_p_plus_scell_nr_dl_pdcp_tput_mbps IS NOT NULL
-                OR nr_p_plus_scell_lte_dl_pdcp_tput_mbps IS NOT NULL
-                OR nr_p_plus_scell_lte_ul_pdcp_tput_mbps IS NOT NULL"""
+                nr_lte_dl IS NOT NULL 
+                OR nr_lte_ul IS NOT NULL
+                OR nr_dl IS NOT NULL
+                OR nr_ul IS NOT NULL
+                OR lte_dl IS NOT NULL
+                OR lte_ul IS NOT NULL"""
         query.exec_(queryString)
         while query.next():
             for field in range(len(self.selectField)):

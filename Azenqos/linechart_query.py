@@ -252,8 +252,8 @@ class LineChartQueryNew:
         query = QSqlQuery()
         queryString = """SELECT 
             dat.time, 
-            dat.data_download_overall as app_dl, 
-            dat.data_upload_overall as app_ul, 
+            (dat.data_download_overall / 1000) as app_dl, 
+            (dat.data_upload_overall / 1000) as app_ul, 
             NULL as nr_lte_dl, 
             NULL as nr_lte_ul,
             NULL as nr_dl,
@@ -269,10 +269,10 @@ class LineChartQueryNew:
                 NULL as app_ul, 
                 (IFNULL(lldt.nr_p_plus_scell_nr_pdsch_tput_mbps,0) + IFNULL(lldt.nr_p_plus_scell_lte_dl_pdcp_tput_mbps,0)) as nr_lte_dl, 
                 (IFNULL(lldt.nr_p_plus_scell_nr_pusch_tput_mbps,0) + IFNULL(lldt.nr_p_plus_scell_lte_ul_pdcp_tput_mbps,0)) as nr_lte_ul,
-                IFNULL(lldt.nr_p_plus_scell_nr_pdsch_tput_mbps,0) as nr_dl,
-                IFNULL(lldt.nr_p_plus_scell_nr_pusch_tput_mbps,0) as nr_ul,
-                IFNULL(lldt.nr_p_plus_scell_lte_dl_pdcp_tput_mbps,0) as lte_dl,
-                IFNULL(lldt.nr_p_plus_scell_lte_ul_pdcp_tput_mbps,0)  as lte_ul
+                lldt.nr_p_plus_scell_nr_pdsch_tput_mbps as nr_dl,
+                lldt.nr_p_plus_scell_nr_pusch_tput_mbps as nr_ul,
+                lldt.nr_p_plus_scell_lte_dl_pdcp_tput_mbps as lte_dl,
+                lldt.nr_p_plus_scell_lte_ul_pdcp_tput_mbps  as lte_ul
             FROM nr_cell_meas lldt
             WHERE 
                 nr_lte_dl IS NOT NULL 

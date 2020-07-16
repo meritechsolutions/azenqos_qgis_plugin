@@ -12,12 +12,11 @@ class NrDataQuery:
     def getRadioParameters(self):
         self.openConnection()
         dataList = []
-        condition = ""
 
         MAX_SERVING = 8
 
         PARAMS = [
-            ("Beam ID", "nr_servingbeam_pci_"),
+            ("Beam ID", "nr_servingbeam_ssb_index_"),
             ("Band", "nr_band_"),
             ("Band Type", "nr_band_type_"),
             ("ARFCN", "nr_dl_arfcn_"),
@@ -28,7 +27,7 @@ class NrDataQuery:
             ("SINR", "nr_servingbeam_ss_sinr_"),
             ("Bandwidth", "nr_bw_"),
             ("SSB SCS", "nr_ssb_scs_"),
-            ("SCS", "nr_numerology_scs_"),
+            ("Numerology SCS", "nr_numerology_scs_"),
             ("PUSCH Power", "nr_pusch_tx_power_"),
             ("PUCCH Power", "nr_pucch_tx_power_"),
             ("SRS Power", "nr_srs_tx_power_"),
@@ -118,11 +117,11 @@ class NrDataQuery:
         ]
 
         DET_PARAMS = [
-            (COL_PCI, re.compile(r"nr_detectedbeam(\d+)_pci")),
-            (COL_BEAM_ID, re.compile(r"nr_detectedbeam(\d+)_ssb_index")),
-            (COL_RSRP, re.compile(r"nr_detectedbeam(\d+)_ss_rsrp")),
-            (COL_RSRQ, re.compile(r"nr_detectedbeam(\d+)_ss_rsrq")),
-            (COL_SINR, re.compile(r"nr_detectedbeam(\d+)_ss_sinr")),
+            (COL_PCI, re.compile(r"nr_detectedbeam(\d+)_pci(?:_1)")),
+            (COL_BEAM_ID, re.compile(r"nr_detectedbeam(\d+)_ssb_index(?:_1)")),
+            (COL_RSRP, re.compile(r"nr_detectedbeam(\d+)_ss_rsrp(?:_1)")),
+            (COL_RSRQ, re.compile(r"nr_detectedbeam(\d+)_ss_rsrq(?:_1)")),
+            (COL_SINR, re.compile(r"nr_detectedbeam(\d+)_ss_sinr(?:_1)")),
         ]
 
         query = QSqlQuery()
@@ -154,12 +153,12 @@ class NrDataQuery:
             for i in range(record.count()):
                 field_name = record.fieldName(i)
                 value = query.value(i)
-                if self.try_to_set_field_value(
-                    field_name, value, SER_PARAMS, serv_list
-                ):
-                    continue
-                else:
-                    self.try_to_set_field_value(field_name, value, DET_PARAMS, det_list)
+                # if self.try_to_set_field_value(
+                #     field_name, value, SER_PARAMS, serv_list
+                # ):
+                #     continue
+                # else:
+                self.try_to_set_field_value(field_name, value, DET_PARAMS, det_list)
 
         time_row = [""] * len(HEADERS)
         time_row[0] = "Time"

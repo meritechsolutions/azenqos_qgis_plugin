@@ -16,26 +16,32 @@ class NrDataQuery:
         MAX_SERVING = 8
 
         PARAMS = [
-            ("Beam ID", "nr_servingbeam_ssb_index_"),
-            ("Band", "nr_band_"),
-            ("Band Type", "nr_band_type_"),
-            ("ARFCN", "nr_dl_arfcn_"),
-            ("Frequency", "nr_dl_frequency_"),
-            ("PCI", "nr_servingbeam_pci_"),
-            ("RSRP", "nr_servingbeam_ss_rsrp_"),
-            ("RSRQ", "nr_servingbeam_ss_rsrq_"),
-            ("SINR", "nr_servingbeam_ss_sinr_"),
-            ("Bandwidth", "nr_bw_"),
-            ("SSB SCS", "nr_ssb_scs_"),
-            ("Numerology SCS", "nr_numerology_scs_"),
-            ("PUSCH Power", "nr_pusch_tx_power_"),
-            ("PUCCH Power", "nr_pucch_tx_power_"),
-            ("SRS Power", "nr_srs_tx_power_"),
+            ("Beam ID", "nr_servingbeam_ssb_index", MAX_SERVING),
+            ("Band", "nr_band", MAX_SERVING),
+            ("Band Type", "nr_band_type", MAX_SERVING),
+            ("ARFCN", "nr_dl_arfcn", MAX_SERVING),
+            ("Frequency", "nr_dl_frequency", MAX_SERVING),
+            ("PCI", "nr_servingbeam_pci", MAX_SERVING),
+            ("RSRP", "nr_servingbeam_ss_rsrp", MAX_SERVING),
+            ("RSRQ", "nr_servingbeam_ss_rsrq", MAX_SERVING),
+            ("SINR", "nr_servingbeam_ss_sinr", MAX_SERVING),
+            ("Bandwidth", "nr_bw", MAX_SERVING),
+            ("SSB SCS", "nr_ssb_scs", MAX_SERVING),
+            ("Numerology SCS", "nr_numerology_scs", MAX_SERVING),
+            ("PUSCH Power", "nr_pusch_tx_power", MAX_SERVING),
+            ("PUCCH Power", "nr_pucch_tx_power", MAX_SERVING),
+            ("SRS Power", "nr_srs_tx_power", MAX_SERVING),
         ]
+
+        selectFields = []
+        for (label, elementId, argCount) in PARAMS:
+            selectFields = selectFields + self.buildSelectFieldsByElementIdAndArgCount(elementId, argCount)
+
+        selectClause = ','.join(selectFields)
 
         queryString = """
         SELECT
-        *
+        %s
         FROM
         nr_cell_meas
         WHERE
@@ -43,6 +49,7 @@ class NrDataQuery:
         ORDER BY time DESC
         LIMIT 1
         """ % (
+            selectClause,
             self.timeFilter
         )
 
@@ -52,11 +59,11 @@ class NrDataQuery:
         record = query.record()
         if query.first():
             for i in range(len(PARAMS)):
-                (label, prefix) = PARAMS[i]
+                (label, prefix, argCount) = PARAMS[i]
                 row = [""] * (MAX_SERVING + 1)
                 row[0] = label
                 for arg in range(1, MAX_SERVING + 1):
-                    field_name = prefix + str(arg)
+                    field_name = prefix + "_" + str(arg)
                     filed_index = record.indexOf(field_name)
                     if filed_index >= 0:
                         value = query.value(filed_index)
@@ -65,6 +72,14 @@ class NrDataQuery:
 
         self.closeConnection()
         return dataList
+
+    def buildSelectFieldsByElementIdAndArgCount(self, elementId, argCount):
+        if argCount == 1:
+            return [elementId]
+        fields = []
+        for i in range(1, argCount + 1):
+            fields.append(elementId + "_" + str(i))
+        return fields
 
     def getServingAndNeighbors(self):
         self.openConnection()

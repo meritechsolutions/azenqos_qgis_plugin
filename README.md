@@ -1,4 +1,14 @@
-# Azenqos QGIS Plugin
+AZENQOS Log Replay QGIS Plugin
+==============================
+
+Install this plugin into QGIS to analyze AZENQOS '.azm' test logs: analyze Layer-3 Signalling, Events, 5GNR/LTE/WCDMA/GSM mesurements - all syncing with the QGIS map plot of your test log captured from the [AZENQOS Android Drivetest tool](https://www2.azenqos.com/) app.
+
+
+Installation instructions
+--------------------------
+
+- Install QGIS: <https://qgis.org/en/site/forusers/download.html> > Long Term Release > QGIS Standalone Installer Version 3.10
+- 
 
 # Require Software:
 

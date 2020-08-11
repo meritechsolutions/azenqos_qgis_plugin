@@ -55,8 +55,8 @@ class LayerTask(QgsTask):
                     try:
                         if child.layer().type() == QgsMapLayerType.VectorLayer:
                             extent.combineExtentWith(child.layer().extent())
-                    except NameError as ne:
-                        print("check QgsMapLayerType.VectorLayer failed - try fallback to alt method")
+                    except Exception as ne:
+                        print("check QgsMapLayerType.VectorLayer failed: {} - try fallback to alt method".format(ne))
                         if child.layer().type() == 0:
                             extent.combineExtentWith(child.layer().extent())
 
@@ -144,7 +144,9 @@ class QuitTask(QgsTask):
             "[-- Start Removing Dependencies --]", tag="Processing"
         )
         self.start_time = time.time()
-
+        if gc.dbcon:
+            gc.dbcon.close()
+            gc.dbcon = None
         gc.azenqosDatabase.close()
         QSqlDatabase.removeDatabase(gc.azenqosDatabase.connectionName())
         names = QSqlDatabase.connectionNames()

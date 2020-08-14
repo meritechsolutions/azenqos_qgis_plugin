@@ -63,17 +63,16 @@ def get(dbcon, parameter_to_columns_list, time_before, default_table=None, commo
             param_where_and
         )
         
-        print("params_disp_df sql:", sqlstr)        
+        #print("params_disp_df sql:", sqlstr)        
         df = pd.read_sql(sqlstr, dbcon)
-        print("params_disp_df sql df head:\n", df.head())
+        #print("params_disp_df sql df head:\n", df.head())
         if len(df) == 0:
             df = pd.DataFrame({"param":[param_name]})
         if len(df.columns) > 1:
             #pass
             df.columns = ["param"] + list(range(1, len(df.columns)))
 
-        df = df.set_index("param")
-        print("params_disp_df df final head:\n", df.head())
+        #print("params_disp_df df final head:\n", df.head())
         df_list.append(df)
 
     return pd.concat(df_list, sort=False)

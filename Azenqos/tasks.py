@@ -144,18 +144,7 @@ class QuitTask(QgsTask):
             "[-- Start Removing Dependencies --]", tag="Processing"
         )
         self.start_time = time.time()
-        if gc.dbcon:
-            gc.dbcon.close()
-            gc.dbcon = None
-        gc.azenqosDatabase.close()
-        QSqlDatabase.removeDatabase(gc.azenqosDatabase.connectionName())
-        names = QSqlDatabase.connectionNames()
-        for name in names:
-            QSqlDatabase.database(name).close()
-            QSqlDatabase.removeDatabase(name)
-
-        gc.azenqosDatabase = None
-
+        close_db()
         return True
 
     def finished(self, result):
@@ -184,3 +173,18 @@ class QuitTask(QgsTask):
                     tag="Exception",
                 )
                 raise self.exception
+
+
+def close_db():
+    if gc.dbcon:
+        gc.dbcon.close()
+        gc.dbcon = None
+    if gc.azenqosDatabase:
+        gc.azenqosDatabase.close()
+        QSqlDatabase.removeDatabase(gc.azenqosDatabase.connectionName())
+        names = QSqlDatabase.connectionNames()
+        for name in names:
+            QSqlDatabase.database(name).close()
+            QSqlDatabase.removeDatabase(name)
+        gc.azenqosDatabase = None
+

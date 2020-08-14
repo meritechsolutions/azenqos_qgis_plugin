@@ -637,7 +637,7 @@ class PdTableModel(QAbstractTableModel):
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if role == QtCore.Qt.DisplayRole:            
-            try:
+            try:                
                 ret = self.df.iloc[index.row(), index.column()]
                 if pd.isnull(ret):
                     return None
@@ -645,6 +645,7 @@ class PdTableModel(QAbstractTableModel):
                     ret = str(ret)
                 if ret.endswith(".0"):
                     ret = ret[:-2]
+                print("data() index:index.row() {}, index.column() {} ret {}".format(index.row(), index.column(), ret))
                 return ret
             except Exception as e:
                 print("WARNING: pdtablemodel data() exception: ", e)
@@ -655,8 +656,10 @@ class PdTableModel(QAbstractTableModel):
     def dataString(self, index):
         try:
             ret = self.df.iloc[index.row(), index.column()]
-            if ret is not None:
-                return str(ret)
+            if ret is not None:                
+                ret = str(ret)
+                print("datastring() index:index.row() {}, index.column() {}".format(index.row(), index.column(), ret))
+                return ret
             else:
                 return None
         except Exception as e:
@@ -666,5 +669,7 @@ class PdTableModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.df.columns[section]
+            ret = str(self.df.columns[section])
+            print("headerdata section: {} ret: {}".format(section, ret))
+            return ret
         return QAbstractTableModel.headerData(self, section, orientation, role)

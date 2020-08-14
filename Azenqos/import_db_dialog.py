@@ -103,6 +103,7 @@ class Ui_DatabaseDialog(QDialog):
 
     def checkDatabase(self):
         if self.dbPath.text() != "":
+            close_db()
             if hasattr(self, "azenqosMainMenu") is True:
                 self.azenqosMainMenu.newImport = True
                 self.azenqosMainMenu.killMainWindow()

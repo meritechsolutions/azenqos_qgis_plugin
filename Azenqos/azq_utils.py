@@ -1,4 +1,46 @@
 import random
+import sys
+import traceback
+import os
+import global_config as gc
+
+
+def get_module_path():
+    return os.path.realpath(
+        os.path.join(os.getcwd(), os.path.dirname(__file__))
+    )
+
+
+def write_local_file(fname, contents):
+    try:
+        with open(
+                os.path.join(
+                    get_module_path(),
+                    fname
+                ),
+                "wb"
+        ) as f:
+            f.write(contents)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: write_local_file - exception: {}".format(exstr))
+
+def read_local_file(fname):
+    try:
+        with open(
+                os.path.join(
+                    get_module_path(),
+                    fname
+                ),
+                "rb"
+        ) as f:
+            return f.read()
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: write_local_file - exception: {}".format(exstr))
+    return None
 
 
 def get_default_color_for_index(i):

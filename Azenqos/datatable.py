@@ -2,6 +2,7 @@ import datetime
 import threading
 import sys
 import os
+import pandas as pd
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -73,10 +74,15 @@ class TableWindow(QWidget):
         self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.doubleClicked.connect(self.showDetail)
         self.tableView.clicked.connect(self.updateSlider)
-        self.tableView.setSortingEnabled(True)
+        self.tableView.setSortingEnabled(False)
         self.tableView.setCornerButtonEnabled(False)
         self.tableView.setStyleSheet(
-            "QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}"
+            """
+            * {
+            font-size: 11px;
+            }
+            QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
+            """
         )
         self.specifyTablesHeader()
 
@@ -89,6 +95,9 @@ class TableWindow(QWidget):
             self.filterHeader.setFilterBoxes(gc.maxColumns, self)
 
         layout = QVBoxLayout(self)
+        layout.setSpacing(0)
+        layout.setMargin(0)
+        layout.setContentsMargins(0,0,0,0)
         layout.addWidget(self.tableView)
         # flayout = QFormLayout()
         # layout.addLayout(flayout)
@@ -108,47 +117,51 @@ class TableWindow(QWidget):
         self.setTableModel(self.dataList)
 
     def setTableModel(self, dataList):
-        if self.rows and self.columns:
+        if isinstance(dataList, list):
+            if self.rows and self.columns:
 
-            if len(dataList) >= self.rows:
-                if self.rows < self.fetchRows:
-                    self.fetchRows = self.rows
+                if len(dataList) >= self.rows:
+                    if self.rows < self.fetchRows:
+                        self.fetchRows = self.rows
 
-                dataList = dataList[: self.fetchRows]
+                    dataList = dataList[: self.fetchRows]
 
-            while len(dataList) < self.rows:
-                dataList.append([])
+                while len(dataList) < self.rows:
+                    dataList.append([])
 
-            for dataRow in dataList:
-                if len(dataRow) >= self.columns:
-                    if self.columns < self.fetchColumns:
-                        self.fetchColumns = self.columns
-                    dataRow = dataRow[: self.fetchColumns]
-                while len(dataRow) < self.columns:
-                    dataRow.append("")
+                for dataRow in dataList:
+                    if len(dataRow) >= self.columns:
+                        if self.columns < self.fetchColumns:
+                            self.fetchColumns = self.columns
+                        dataRow = dataRow[: self.fetchColumns]
+                    while len(dataRow) < self.columns:
+                        dataRow.append("")
 
-            if len(self.tableHeader) >= self.columns:
-                self.tableHeader = self.tableHeader[: self.columns]
-            else:
-                while len(self.tableHeader) < self.columns:
-                    self.tableHeader.append("")
-                # self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
+                if len(self.tableHeader) >= self.columns:
+                    self.tableHeader = self.tableHeader[: self.columns]
+                else:
+                    while len(self.tableHeader) < self.columns:
+                        self.tableHeader.append("")
+                    # self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
 
-        for customItem in self.customData:
-            try:
-                dataList[customItem["row"]][customItem["column"]] = customItem["text"]
-            except:
-                self.customData.remove(customItem)
+            for customItem in self.customData:
+                try:
+                    dataList[customItem["row"]][customItem["column"]] = customItem["text"]
+                except:
+                    self.customData.remove(customItem)
 
         if self.customHeader:
             self.tableHeader = self.customHeader
 
         self.dataList = dataList
-        self.tableModel = TableModel(dataList, self.tableHeader, self)
+        if isinstance(dataList, pd.DataFrame):
+            self.tableModel = PdTableModel(dataList, self)
+        else:
+            self.tableModel = TableModel(dataList, self.tableHeader, self)
         self.proxyModel = SortFilterProxyModel(self)
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
-        self.tableView.setSortingEnabled(True)
+        self.tableView.setSortingEnabled(False)
 
         if not self.rows:
             self.rows = self.tableModel.rowCount(self)
@@ -463,7 +476,7 @@ class TableWindow(QWidget):
         worker = None
         self.dateString = str(sampledate)
         # self.findCurrentRow()
-        if not self.dataList or self.title not in [
+        if (self.dataList is None) or self.title not in [
             "Signaling_Events",
             "Signaling_Layer 1 Messages",
             "Signaling_Layer 3 Messages",
@@ -614,4 +627,58 @@ class TableModel(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.headerLabels[section]
+        return QAbstractTableModel.headerData(self, section, orientation, role)
+
+
+class PdTableModel(QAbstractTableModel):
+    def __init__(self, df, parent=None, *args):
+        assert df is not None
+        assert isinstance(df, pd.DataFrame)
+        QAbstractTableModel.__init__(self, parent, *args)
+        self.df = df
+        
+    def rowCount(self, parent):
+        return len(self.df)
+
+    def columnCount(self, parent):
+        return len(self.df.columns)
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:            
+            try:                
+                ret = self.df.iloc[index.row(), index.column()]
+                if pd.isnull(ret):
+                    return None
+                if not isinstance(ret, str):
+                    if isinstance(ret, float):
+                        ret = "%.02f" % ret
+                if ret.endswith(".00"):
+                    ret = ret[:-3]
+                print("data() index:index.row() {}, index.column() {} ret {}".format(index.row(), index.column(), ret))
+                return ret
+            except Exception as e:
+                print("WARNING: pdtablemodel data() exception: ", e)
+                return None
+        else:
+            return None
+
+    def dataString(self, index):
+        try:
+            ret = self.df.iloc[index.row(), index.column()]
+            if ret is not None:                
+                ret = str(ret)
+                print("datastring() index:index.row() {}, index.column() {}".format(index.row(), index.column(), ret))
+                return ret
+            else:
+                return None
+        except Exception as e:
+            print("WARNING: pdtablemodel data() exception: ", e)
+            return None
+
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            ret = str(self.df.columns[section])
+            print("headerdata section: {} ret: {}".format(section, ret))
+            return ret
         return QAbstractTableModel.headerData(self, section, orientation, role)

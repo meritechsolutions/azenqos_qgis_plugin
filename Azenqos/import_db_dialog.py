@@ -8,6 +8,7 @@ from qgis.gui import *
 import datetime
 import sys
 import os
+import sqlite3
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -38,6 +39,12 @@ class Ui_DatabaseDialog(QDialog):
         self.dbPath = QtWidgets.QLineEdit(DatabaseDialog)
         self.dbPath.setGeometry(QtCore.QRect(10, 30, 439, 24))
         self.dbPath.setObjectName("dbPath")
+
+        import azq_utils
+        prev_azm = azq_utils.read_local_file("prev_azm")
+        if prev_azm is not None:
+            self.dbPath.setText(prev_azm.decode())
+            
         self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
         self.buttonBox.setGeometry(QtCore.QRect(370, 60, 164, 24))
         self.buttonBox.setStandardButtons(
@@ -64,7 +71,7 @@ class Ui_DatabaseDialog(QDialog):
         DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos"))
         self.browseButton.setText(_translate("DatabaseDialog", "Browse.."))
         self.dbPathLabel.setText(
-            _translate("DatabaseDialog", "Database path: ( .azm )")
+            _translate("DatabaseDialog", "Select processed .azm file")
         )
 
     def clearCurrentProject(self):
@@ -89,7 +96,6 @@ class Ui_DatabaseDialog(QDialog):
             self, "Single File", QtCore.QDir.rootPath(), "*.azm"
         )
         if fileName != "":
-            self.fileName = fileName
             self.dbPath.setText(fileName)
         else:
             if self.dbPath.text() != "":
@@ -97,13 +103,15 @@ class Ui_DatabaseDialog(QDialog):
 
     def checkDatabase(self):
         if self.dbPath.text() != "":
+            close_db()
             if hasattr(self, "azenqosMainMenu") is True:
                 self.azenqosMainMenu.newImport = True
                 self.azenqosMainMenu.killMainWindow()
                 self.clearCurrentProject()
-            self.databasePath = Utils().unzipToFile(gc.CURRENT_PATH, self.fileName)
-            self.addDatabase()
-            if not gc.azenqosDatabase.open():
+            self.databasePath = Utils().unzipToFile(gc.CURRENT_PATH, self.dbPath.text())
+            gc.databasePath = self.databasePath
+            dbcon = self.addDatabase()
+            if not dbcon or not gc.azenqosDatabase.open():
                 QtWidgets.QMessageBox.critical(
                     None,
                     "Cannot open database",
@@ -116,6 +124,8 @@ class Ui_DatabaseDialog(QDialog):
                 )
                 return False
             else:
+                import azq_utils
+                azq_utils.write_local_file("prev_azm", self.dbPath.text().encode())
                 self.getLayersFromDb()
                 # if hasattr(self, "layerTask") is False:
                 self.layerTask = LayerTask(u"Add layers", self.databasePath)
@@ -175,6 +185,10 @@ class Ui_DatabaseDialog(QDialog):
     def addDatabase(self):
         gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
         gc.azenqosDatabase.setDatabaseName(self.databasePath)
+        assert os.path.isfile(self.databasePath)
+        ret = sqlite3.connect(self.databasePath)
+        gc.dbcon = ret
+        return ret
 
     def getLayersFromDb(self):
         gc.azenqosDatabase.open()

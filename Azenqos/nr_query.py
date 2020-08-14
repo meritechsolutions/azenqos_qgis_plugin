@@ -1,5 +1,9 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import re
+import sqlite3
+import pandas as pd
+import global_config as gc
+import params_disp_df
 
 
 class NrDataQuery:
@@ -9,61 +13,69 @@ class NrDataQuery:
         if currentDateTimeString:
             self.timeFilter = currentDateTimeString
 
-    def getRadioParameters(self):
+    def getRadioParameters(self, pd_mode=True):
+        if pd_mode:
+            n_param_args = 8
+            parameter_to_columns_list = [
+                ("Band", map(lambda x: "nr_band_{}".format(x+1), range(n_param_args)) ),
+                ("Band Type", map(lambda x: "nr_band_type_{}".format(x+1), range(n_param_args)) ),
+                ("ARFCN", map(lambda x: "nr_dl_arfcn_{}".format(x+1), range(n_param_args)) ),
+                ("Frequency", map(lambda x: "nr_dl_frequency_{}".format(x+1), range(n_param_args)) ),
+                ("PCI", map(lambda x: "nr_servingbeam_pci_{}".format(x+1), range(n_param_args)) ),
+                ("RSRP", map(lambda x: "nr_servingbeam_ss_rsrp_{}".format(x+1), range(n_param_args)) ),
+                ("RSRQ", map(lambda x: "nr_servingbeam_ss_rsrq_{}".format(x+1), range(n_param_args)) ),
+                ("SINR", map(lambda x: "nr_servingbeam_ss_sinr_{}".format(x+1), range(n_param_args)) ),
+                ("Bandwidth", map(lambda x: "nr_bw_{}".format(x+1), range(n_param_args)) ),
+                ("SSB SCS", map(lambda x: "nr_ssb_scs_{}".format(x+1), range(n_param_args)) ),
+                ("SCS", map(lambda x: "nr_numerology_scs_{}".format(x+1), range(n_param_args)) ),
+                ("PUSCH Power", map(lambda x: "nr_pusch_tx_power_{}".format(x+1), range(n_param_args)) ),
+                ("PUCCH Power", map(lambda x: "nr_pucch_tx_power_{}".format(x+1), range(n_param_args)) ),
+                ("SRS Power", map(lambda x: "nr_srs_tx_power_{}".format(x+1), range(n_param_args)) ),
+            ]            
+            return params_disp_df.get(gc.dbcon, parameter_to_columns_list, self.timeFilter, default_table="nr_cell_meas", not_null_first_col=True, custom_lookback_dur_millis=4000)
+        
         self.openConnection()
-        dataList = []
-
         MAX_SERVING = 8
-
         PARAMS = [
-            ("Beam ID", "nr_servingbeam_ssb_index", MAX_SERVING),
-            ("Band", "nr_band", MAX_SERVING),
-            ("Band Type", "nr_band_type", MAX_SERVING),
-            ("ARFCN", "nr_dl_arfcn", MAX_SERVING),
-            ("Frequency", "nr_dl_frequency", MAX_SERVING),
-            ("PCI", "nr_servingbeam_pci", MAX_SERVING),
-            ("RSRP", "nr_servingbeam_ss_rsrp", MAX_SERVING),
-            ("RSRQ", "nr_servingbeam_ss_rsrq", MAX_SERVING),
-            ("SINR", "nr_servingbeam_ss_sinr", MAX_SERVING),
-            ("Bandwidth", "nr_bw", MAX_SERVING),
-            ("SSB SCS", "nr_ssb_scs", MAX_SERVING),
-            ("Numerology SCS", "nr_numerology_scs", MAX_SERVING),
-            ("PUSCH Power", "nr_pusch_tx_power", MAX_SERVING),
-            ("PUCCH Power", "nr_pucch_tx_power", MAX_SERVING),
-            ("SRS Power", "nr_srs_tx_power", MAX_SERVING),
+            ("Beam ID", "nr_servingbeam_pci_"),
+            ("Band", "nr_band_"),
+            ("Band Type", "nr_band_type_"),
+            ("ARFCN", "nr_dl_arfcn_"),
+            ("Frequency", "nr_dl_frequency_"),
+            ("PCI", "nr_servingbeam_pci_"),
+            ("RSRP", "nr_servingbeam_ss_rsrp_"),
+            ("RSRQ", "nr_servingbeam_ss_rsrq_"),
+            ("SINR", "nr_servingbeam_ss_sinr_"),
+            ("Bandwidth", "nr_bw_"),
+            ("SSB SCS", "nr_ssb_scs_"),
+            ("SCS", "nr_numerology_scs_"),
+            ("PUSCH Power", "nr_pusch_tx_power_"),
+            ("PUCCH Power", "nr_pucch_tx_power_"),
+            ("SRS Power", "nr_srs_tx_power_"),
         ]
-
-        selectFields = []
-        for (label, elementId, argCount) in PARAMS:
-            selectFields = selectFields + self.buildSelectFieldsByElementIdAndArgCount(elementId, argCount)
-
-        selectClause = ','.join(selectFields)
-
+        dataList = []
+        condition = ""
         queryString = """
         SELECT
-        %s
+        *
         FROM
         nr_cell_meas
         WHERE
         time <= '%s'
         ORDER BY time DESC
         LIMIT 1
-        """ % (
-            selectClause,
-            self.timeFilter
-        )
-
+        """ % (self.timeFilter)
         query = QSqlQuery()
 
         query.exec_(queryString)
         record = query.record()
         if query.first():
             for i in range(len(PARAMS)):
-                (label, prefix, argCount) = PARAMS[i]
+                (label, prefix) = PARAMS[i]
                 row = [""] * (MAX_SERVING + 1)
                 row[0] = label
                 for arg in range(1, MAX_SERVING + 1):
-                    field_name = prefix + "_" + str(arg)
+                    field_name = prefix + str(arg)
                     filed_index = record.indexOf(field_name)
                     if filed_index >= 0:
                         value = query.value(filed_index)
@@ -71,15 +83,8 @@ class NrDataQuery:
                 dataList.append(row)
 
         self.closeConnection()
+        print("getradioparams1")
         return dataList
-
-    def buildSelectFieldsByElementIdAndArgCount(self, elementId, argCount):
-        if argCount == 1:
-            return [elementId]
-        fields = []
-        for i in range(1, argCount + 1):
-            fields.append(elementId + "_" + str(i))
-        return fields
 
     def getServingAndNeighbors(self):
         self.openConnection()
@@ -132,11 +137,11 @@ class NrDataQuery:
         ]
 
         DET_PARAMS = [
-            (COL_PCI, re.compile(r"nr_detectedbeam(\d+)_pci(?:_1)")),
-            (COL_BEAM_ID, re.compile(r"nr_detectedbeam(\d+)_ssb_index(?:_1)")),
-            (COL_RSRP, re.compile(r"nr_detectedbeam(\d+)_ss_rsrp(?:_1)")),
-            (COL_RSRQ, re.compile(r"nr_detectedbeam(\d+)_ss_rsrq(?:_1)")),
-            (COL_SINR, re.compile(r"nr_detectedbeam(\d+)_ss_sinr(?:_1)")),
+            (COL_PCI, re.compile(r"nr_detectedbeam(\d+)_pci")),
+            (COL_BEAM_ID, re.compile(r"nr_detectedbeam(\d+)_ssb_index")),
+            (COL_RSRP, re.compile(r"nr_detectedbeam(\d+)_ss_rsrp")),
+            (COL_RSRQ, re.compile(r"nr_detectedbeam(\d+)_ss_rsrq")),
+            (COL_SINR, re.compile(r"nr_detectedbeam(\d+)_ss_sinr")),
         ]
 
         query = QSqlQuery()
@@ -150,9 +155,7 @@ class NrDataQuery:
         time <= '%s'
         ORDER BY time DESC
         LIMIT 1
-        """ % (
-            self.timeFilter
-        )
+        """ % (self.timeFilter)
 
         serv_list = [None] * MAX_SERVING
         for i in range(MAX_SERVING):
@@ -168,12 +171,11 @@ class NrDataQuery:
             for i in range(record.count()):
                 field_name = record.fieldName(i)
                 value = query.value(i)
-                # if self.try_to_set_field_value(
-                #     field_name, value, SER_PARAMS, serv_list
-                # ):
-                #     continue
-                # else:
-                self.try_to_set_field_value(field_name, value, DET_PARAMS, det_list)
+                if self.try_to_set_field_value(field_name, value, SER_PARAMS, serv_list):
+                    continue
+                else:
+                    self.try_to_set_field_value(
+                        field_name, value, DET_PARAMS, det_list)
 
         time_row = [""] * len(HEADERS)
         time_row[0] = "Time"
@@ -196,7 +198,7 @@ class NrDataQuery:
         for param in params_tuple:
             (field_index, param_test) = param
             m = param_test.match(field_name)
-            if m:
+            if(m):
                 arg = int(m.group(1)) - 1
                 row = result_list[arg]
                 row[field_index] = str(value or "")

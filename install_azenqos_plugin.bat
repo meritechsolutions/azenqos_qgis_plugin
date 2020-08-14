@@ -2,7 +2,6 @@
 echo === AZENQOS log file analysis QGIS plugin installer ===
 echo - Please make sure QGIS is closed first.
 echo - Any existing Azenqos plugins would get deleted and replaced
-pause
 
 echo == Finding local QGIS installation folder...
 For /F "Skip=1 Tokens=2*" %%A In (

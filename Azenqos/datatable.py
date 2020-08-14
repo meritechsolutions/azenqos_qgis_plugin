@@ -77,7 +77,12 @@ class TableWindow(QWidget):
         self.tableView.setSortingEnabled(False)
         self.tableView.setCornerButtonEnabled(False)
         self.tableView.setStyleSheet(
-            "QTableCornerButton::section{border-width: 1px; border-color: #BABABA; border-style:solid;}"
+            """
+            * {
+            font-size: 11px;
+            }
+            QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
+            """
         )
         self.specifyTablesHeader()
 
@@ -90,6 +95,9 @@ class TableWindow(QWidget):
             self.filterHeader.setFilterBoxes(gc.maxColumns, self)
 
         layout = QVBoxLayout(self)
+        layout.setSpacing(0)
+        layout.setMargin(0)
+        layout.setContentsMargins(0,0,0,0)
         layout.addWidget(self.tableView)
         # flayout = QFormLayout()
         # layout.addLayout(flayout)
@@ -642,9 +650,10 @@ class PdTableModel(QAbstractTableModel):
                 if pd.isnull(ret):
                     return None
                 if not isinstance(ret, str):
-                    ret = str(ret)
-                if ret.endswith(".0"):
-                    ret = ret[:-2]
+                    if isinstance(ret, float):
+                        ret = "%.02f" % ret
+                if ret.endswith(".00"):
+                    ret = ret[:-3]
                 print("data() index:index.row() {}, index.column() {} ret {}".format(index.row(), index.column(), ret))
                 return ret
             except Exception as e:

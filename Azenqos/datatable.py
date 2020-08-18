@@ -528,6 +528,19 @@ class TableWindow(QWidget):
                 gc.timeSlider.setValue(sliderValue)
 
     def findCurrentRow(self):
+        
+        if isinstance(self.dataList, pd.DataFrame):
+            if self.dateString:
+                df = self.dataList
+                ts_query = """time <= '{}'""".format(self.dateString)
+                print("ts_query:", ts_query)
+                df = df.query(ts_query)
+                #print('findcurrentrow filt df.index:', df.index)
+                if len(df):
+                    self.tableView.selectRow(df.index[-1])
+                return
+
+        
         startRange = 0
         indexList = []
         timeDiffList = []
@@ -656,9 +669,11 @@ class PdTableModel(QAbstractTableModel):
                 if not isinstance(ret, str):
                     if isinstance(ret, float):
                         ret = "%.02f" % ret
+                    else:
+                        ret = str(ret)
                 if ret.endswith(".00"):
                     ret = ret[:-3]
-                print("data() index:index.row() {}, index.column() {} ret {}".format(index.row(), index.column(), ret))
+                #print("data() index:index.row() {}, index.column() {} ret {}".format(index.row(), index.column(), ret))
                 return ret
             except Exception as e:
                 print("WARNING: pdtablemodel data() exception: ", e)
@@ -671,7 +686,7 @@ class PdTableModel(QAbstractTableModel):
             ret = self.df.iloc[index.row(), index.column()]
             if ret is not None:                
                 ret = str(ret)
-                print("datastring() index:index.row() {}, index.column() {}".format(index.row(), index.column(), ret))
+                #print("datastring() index:index.row() {}, index.column() {}".format(index.row(), index.column(), ret))
                 return ret
             else:
                 return None

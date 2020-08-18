@@ -14,3 +14,15 @@ Installation instructions for Windows
 - In the extracted folder, double-click on <pre>install_azenqos_plugin.bat</pre> - it must show 'SUCCESS', otherwise fix as per error message shown.
 - If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.
+- Repeat the same when you want to upgrade the plugin
+
+
+Installation instructions for Ubuntu GNU/Linux
+-------------------------------------
+- Install QGIS Long Term Release on Ubuntu
+- Close QGIS if it is open.
+- Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder.
+- Open a terminal to that folder then run <pre>./install_azenqos_plugin_ubuntu.sh</pre> - it must show 'SUCCESS', otherwise fix as per error message shown. (Note that this makes a link to contents of this folder so dont delete this folder unless you're going to re-install from a new version)
+- If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
+- Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.
+- Repeat the same when you want to upgrade the plugin

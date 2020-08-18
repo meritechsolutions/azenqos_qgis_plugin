@@ -495,7 +495,7 @@ class TableWindow(QWidget):
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
         if self.tablename == "signalling":
-            item = item.siblingAtColumn(5)
+            item = item.sibling(item.row(), 5)
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 
@@ -514,7 +514,7 @@ class TableWindow(QWidget):
             except Exception as e2:
                 columnIndex = -1
             if not columnIndex == -1:
-                timeItem = item.siblingAtColumn(columnIndex)
+                timeItem = item.sibling(item.row(), columnIndex)
                 cellContent = str(timeItem.data())
                 timeCell = datetime.datetime.strptime(
                     str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
@@ -571,12 +571,15 @@ class TableWindow(QWidget):
 class DetailWidget(QDialog):
     def __init__(self, parent, detailText):
         super().__init__(None)
-        self.title = "Detail"
+        self.title = "Details"
         self.detailText = detailText
         self.left = 10
         self.top = 10
         self.width = 640
         self.height = 480
+        self.setWindowFlags(
+            QtCore.Qt.Window
+        )
         self.setupUi()
 
     def setupUi(self):
@@ -589,6 +592,7 @@ class DetailWidget(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(self.textEdit)
         self.setLayout(layout)
+        self.resize(self.width, self.height)
         self.show()
         self.raise_()
         self.activateWindow()

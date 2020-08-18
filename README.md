@@ -19,9 +19,9 @@ Installation instructions for Windows
 
 Installation instructions for Ubuntu GNU/Linux
 -------------------------------------
-- Install QGIS Long Term Release on Ubuntu
+- Install QGIS Long Term Release on Ubuntu, open and complete first time setup if first run.
 - Close QGIS if it is open.
-- Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder.
+- Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder. (Or if you know how to use <pre>git</pre> then git clone this repo)
 - Open a terminal to that folder then run <pre>./install_azenqos_plugin_ubuntu.sh</pre> - it must show 'SUCCESS', otherwise fix as per error message shown. (Note that this makes a link to contents of this folder so dont delete this folder unless you're going to re-install from a new version)
 - If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.

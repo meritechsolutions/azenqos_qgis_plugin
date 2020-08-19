@@ -330,12 +330,11 @@ class TableWindow(QWidget):
 
                 
             elif self.title == "5G NR_Radio Parameters":
-                self.tableHeader = ["Element", "PCC", "SCC0", "SCC1", "SCC2", "SCC3", "SCC4", "SCC5", "SCC6"]
                 self.dataList = NrDataQuery(
                     gc.azenqosDatabase, gc.currentDateTimeString
                 ).getRadioParameters()
             elif self.title == "5G NR_Serving + Neighbors":
-                (self.tableHeader,self.dataList) = NrDataQuery(
+                self.dataList = NrDataQuery(
                     gc.azenqosDatabase, gc.currentDateTimeString
                 ).getServingAndNeighbors()
 

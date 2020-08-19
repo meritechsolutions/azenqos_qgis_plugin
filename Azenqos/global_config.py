@@ -1,6 +1,7 @@
 import os
 from PyQt5.QtCore import *
 
+DEFAULT_LOOKBACK_DUR_MILLIS = 2000
 maxColumns = 50
 maxRows = 1000
 schemaList = []

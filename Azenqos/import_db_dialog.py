@@ -19,7 +19,7 @@ from .tasks import *
 from .timeslider import *
 from .datatable import *
 from .azenqos_plugin_dialog import *  # AzenqosDialog, clearAllSelectedFeatures
-
+from .version import VERSION
 
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -68,7 +68,7 @@ class Ui_DatabaseDialog(QDialog):
 
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
-        DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos"))
+        DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos Replay QGIS Plugin v.%.03f" % VERSION))
         self.browseButton.setText(_translate("DatabaseDialog", "Browse.."))
         self.dbPathLabel.setText(
             _translate("DatabaseDialog", "Select processed .azm file")

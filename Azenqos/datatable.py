@@ -494,8 +494,8 @@ class TableWindow(QWidget):
 
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
-        if self.tablename == "signalling":
-            item = item.sibling(item.row(), 5)
+        '''if self.tablename == "signalling":
+            item = item.sibling(item.row(), 4)'''
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 

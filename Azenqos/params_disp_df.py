@@ -49,9 +49,9 @@ def get(dbcon, parameter_to_columns_list, time_before, default_table=None, commo
         if custom_lookback_dur_millis:
             assert isinstance(custom_lookback_dur_millis, int)
             dt_before = pd.to_datetime(time_before)
-            print("dt_before:", dt_before)
+            #print("dt_before:", dt_before)
             dt_after = dt_before - pd.Timedelta(custom_lookback_dur_millis, 'ms')
-            print("dt_after:", dt_after)
+            #print("dt_after:", dt_after)
             time_after_and = "and time >= '{}'".format(dt_after)
             
         sqlstr = "select '{}' as param, {} from {} where time <= '{}' {} {} order by time desc limit 1".format(
@@ -68,9 +68,13 @@ def get(dbcon, parameter_to_columns_list, time_before, default_table=None, commo
         #print("params_disp_df sql df head:\n", df.head())
         if len(df) == 0:
             df = pd.DataFrame({"param":[param_name]})
+            for i in range(1, len(param_cols)+1):
+                df[i] = None
+
         if len(df.columns) > 1:
             #pass
             df.columns = ["param"] + list(range(1, len(df.columns)))
+
 
         #print("params_disp_df df final head:\n", df.head())
         df_list.append(df)

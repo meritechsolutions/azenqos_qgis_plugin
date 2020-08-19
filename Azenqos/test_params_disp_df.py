@@ -31,7 +31,12 @@ def test():
         ("SRS Power", map(lambda x: "nr_srs_tx_power_{}".format(x+1), range(n_param_args)) ),
     ]
     with sqlite3.connect(dbfp) as dbcon:
+        # valid time
         ret = params_disp_df.get(dbcon, parameter_to_columns_list, '2020-08-06 18:51:38.000', default_table="nr_cell_meas", not_null_first_col=True, custom_lookback_dur_millis=4000)
+        print("ret.head():\n",ret.head())
+
+        # invalid time must ret empty df
+        ret = params_disp_df.get(dbcon, parameter_to_columns_list, '2020-08-05 18:51:38.000', default_table="nr_cell_meas", not_null_first_col=True, custom_lookback_dur_millis=4000)
         print("ret.head():\n",ret.head())
     
 

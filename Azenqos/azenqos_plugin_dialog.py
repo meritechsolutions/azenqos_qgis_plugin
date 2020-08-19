@@ -2450,8 +2450,8 @@ class AzenqosDialog(QMainWindow):
                 self,
                 "Quit Azenqos",
                 "Do you want to quit?",
+                QMessageBox.Yes|QMessageBox.No,
                 QMessageBox.Yes,
-                QMessageBox.No,
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:

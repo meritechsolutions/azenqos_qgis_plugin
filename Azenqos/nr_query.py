@@ -13,78 +13,20 @@ class NrDataQuery:
         if currentDateTimeString:
             self.timeFilter = currentDateTimeString
 
-    def getRadioParameters(self, pd_mode=True):
-        if pd_mode:
-            n_param_args = 8
-            parameter_to_columns_list = [
-                ("Band", map(lambda x: "nr_band_{}".format(x+1), range(n_param_args)) ),
-                ("Band Type", map(lambda x: "nr_band_type_{}".format(x+1), range(n_param_args)) ),
-                ("ARFCN", map(lambda x: "nr_dl_arfcn_{}".format(x+1), range(n_param_args)) ),
-                ("Frequency", map(lambda x: "nr_dl_frequency_{}".format(x+1), range(n_param_args)) ),
-                ("PCI", map(lambda x: "nr_servingbeam_pci_{}".format(x+1), range(n_param_args)) ),
-                ("RSRP", map(lambda x: "nr_servingbeam_ss_rsrp_{}".format(x+1), range(n_param_args)) ),
-                ("RSRQ", map(lambda x: "nr_servingbeam_ss_rsrq_{}".format(x+1), range(n_param_args)) ),
-                ("SINR", map(lambda x: "nr_servingbeam_ss_sinr_{}".format(x+1), range(n_param_args)) ),
-                ("Bandwidth", map(lambda x: "nr_bw_{}".format(x+1), range(n_param_args)) ),
-                ("SSB SCS", map(lambda x: "nr_ssb_scs_{}".format(x+1), range(n_param_args)) ),
-                ("SCS", map(lambda x: "nr_numerology_scs_{}".format(x+1), range(n_param_args)) ),
-                ("PUSCH Power", map(lambda x: "nr_pusch_tx_power_{}".format(x+1), range(n_param_args)) ),
-                ("PUCCH Power", map(lambda x: "nr_pucch_tx_power_{}".format(x+1), range(n_param_args)) ),
-                ("SRS Power", map(lambda x: "nr_srs_tx_power_{}".format(x+1), range(n_param_args)) ),
-            ]            
-            return params_disp_df.get(gc.dbcon, parameter_to_columns_list, self.timeFilter, default_table="nr_cell_meas", not_null_first_col=True, custom_lookback_dur_millis=4000)
-        
-        self.openConnection()
-        MAX_SERVING = 8
-        PARAMS = [
-            ("Beam ID", "nr_servingbeam_pci_"),
-            ("Band", "nr_band_"),
-            ("Band Type", "nr_band_type_"),
-            ("ARFCN", "nr_dl_arfcn_"),
-            ("Frequency", "nr_dl_frequency_"),
-            ("PCI", "nr_servingbeam_pci_"),
-            ("RSRP", "nr_servingbeam_ss_rsrp_"),
-            ("RSRQ", "nr_servingbeam_ss_rsrq_"),
-            ("SINR", "nr_servingbeam_ss_sinr_"),
-            ("Bandwidth", "nr_bw_"),
-            ("SSB SCS", "nr_ssb_scs_"),
-            ("SCS", "nr_numerology_scs_"),
-            ("PUSCH Power", "nr_pusch_tx_power_"),
-            ("PUCCH Power", "nr_pucch_tx_power_"),
-            ("SRS Power", "nr_srs_tx_power_"),
-        ]
-        dataList = []
-        condition = ""
-        queryString = """
-        SELECT
-        *
-        FROM
-        nr_cell_meas
-        WHERE
-        time <= '%s'
-        ORDER BY time DESC
-        LIMIT 1
-        """ % (self.timeFilter)
-        query = QSqlQuery()
-
-        query.exec_(queryString)
-        record = query.record()
-        if query.first():
-            for i in range(len(PARAMS)):
-                (label, prefix) = PARAMS[i]
-                row = [""] * (MAX_SERVING + 1)
-                row[0] = label
-                for arg in range(1, MAX_SERVING + 1):
-                    field_name = prefix + str(arg)
-                    filed_index = record.indexOf(field_name)
-                    if filed_index >= 0:
-                        value = query.value(filed_index)
-                        row[arg] = str(value or "")
-                dataList.append(row)
-
-        self.closeConnection()
-        print("getradioparams1")
-        return dataList
+    def getRadioParameters(self):
+        n_param_args = 8
+        parameter_to_columns_list = [
+            ("Band", map(lambda x: "nr_band_{}".format(x+1), range(n_param_args)) ),
+            ("ARFCN", map(lambda x: "nr_dl_arfcn_{}".format(x+1), range(n_param_args)) ),
+            ("PCI", map(lambda x: "nr_servingbeam_pci_{}".format(x+1), range(n_param_args)) ),
+            ("RSRP", map(lambda x: "nr_servingbeam_ss_rsrp_{}".format(x+1), range(n_param_args)) ),
+            ("RSRQ", map(lambda x: "nr_servingbeam_ss_rsrq_{}".format(x+1), range(n_param_args)) ),
+            ("SINR", map(lambda x: "nr_servingbeam_ss_sinr_{}".format(x+1), range(n_param_args)) ),
+            ("PUSCH Power", map(lambda x: "nr_pusch_tx_power_{}".format(x+1), range(n_param_args)) ),
+            ("PUCCH Power", map(lambda x: "nr_pucch_tx_power_{}".format(x+1), range(n_param_args)) ),
+            ("SRS Power", map(lambda x: "nr_srs_tx_power_{}".format(x+1), range(n_param_args)) ),
+        ]            
+        return params_disp_df.get(gc.dbcon, parameter_to_columns_list, self.timeFilter, default_table="nr_cell_meas", not_null_first_col=True, custom_lookback_dur_millis=4000)
 
     def getServingAndNeighbors(self):
         self.openConnection()

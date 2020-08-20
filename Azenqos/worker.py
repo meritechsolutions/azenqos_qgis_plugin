@@ -40,8 +40,10 @@ class Worker(QRunnable):
     :param kwargs: Keywords to pass to the callback function
 
     """
+    ret = None
 
     def __init__(self, fn, *args, **kwargs):
+        assert fn is not None
         super(Worker, self).__init__()
         # Store constructor arguments (re-used for processing)
         self.fn = fn
@@ -49,6 +51,7 @@ class Worker(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
+    
     @pyqtSlot()
     def run(self):
         """
@@ -57,11 +60,12 @@ class Worker(QRunnable):
 
         # Retrieve args/kwargs here; and fire processing using them
         try:
-            if self.args and self.kwargs:
-                result = self.fn(*self.args, **self.kwargs)
-            else:
-                result = self.fn
+            result = self.fn(*self.args, **self.kwargs)
+            self.ret = result
         except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: Worker - exception: {}".format(exstr))
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))

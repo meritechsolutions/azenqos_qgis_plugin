@@ -480,9 +480,9 @@ class TableWindow(QWidget):
             "Signaling_Layer 1 Messages",
             "Signaling_Layer 3 Messages",
         ]:
-            worker = Worker(self.specifyTablesHeader())
+            worker = Worker(self.specifyTablesHeader)
         else:
-            worker = Worker(self.findCurrentRow())
+            worker = Worker(self.findCurrentRow)
 
         if worker:
             gc.threadpool.start(worker)
@@ -697,6 +697,6 @@ class PdTableModel(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             ret = str(self.df.columns[section])
-            print("headerdata section: {} ret: {}".format(section, ret))
+            #print("headerdata section: {} ret: {}".format(section, ret))
             return ret
         return QAbstractTableModel.headerData(self, section, orientation, role)

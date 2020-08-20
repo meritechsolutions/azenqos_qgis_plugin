@@ -1,5 +1,6 @@
 import os
 from PyQt5.QtCore import *
+from PyQt5 import QtCore
 
 DEFAULT_LOOKBACK_DUR_MILLIS = 2000
 maxColumns = 50
@@ -36,3 +37,4 @@ linechartWindowname = [
 ]
 threadpool = QThreadPool()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
+

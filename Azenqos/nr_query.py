@@ -14,10 +14,12 @@ class NrDataQuery:
             self.timeFilter = currentDateTimeString
 
     def getRadioParameters(self):
-        return get_nr_radio_params_disp_df(gc.dbcon, self.timeFilter)
+        with sqlite3.connect(gc.databasePath) as dbcon:
+            return get_nr_radio_params_disp_df(dbcon, self.timeFilter)
     
     def getServingAndNeighbors(self):
-        return get_nr_serv_and_neigh_disp_df(gc.dbcon, self.timeFilter)
+        with sqlite3.connect(gc.databasePath) as dbcon:
+            return get_nr_serv_and_neigh_disp_df(dbcon, self.timeFilter)
         
     def defaultData(self, fieldsList, dataList):
         fieldCount = len(fieldsList)

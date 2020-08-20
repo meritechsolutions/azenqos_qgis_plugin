@@ -24,6 +24,7 @@
 import datetime
 import threading
 import sys
+import traceback
 import os
 import csv
 
@@ -50,6 +51,7 @@ from .worker import Worker
 from .tasks import *
 from .timeslider import *
 from .datatable import *
+from atomic_int import atomic_int
 
 
 def clearAllSelectedFeatures():
@@ -70,6 +72,11 @@ def removeAzenqosGroup():
 
 
 class AzenqosDialog(QMainWindow):
+
+    timechange_service_thread = None
+    timechange_to_service_counter = atomic_int(0)
+    closed = False
+    
     def __init__(self, databaseUi):
         """Constructor."""
         super(AzenqosDialog, self).__init__(None)
@@ -95,6 +102,9 @@ class AzenqosDialog(QMainWindow):
         root = QgsProject.instance().layerTreeRoot()
         root.addedChildren.connect(self.mergeLayerGroup)
         QgsProject.instance().layerWillBeRemoved.connect(self.removingTreeLayer)
+        self.timechange_service_thread = Worker(self.timeChangedWorkerFunc)
+        gc.threadpool.start(self.timechange_service_thread)
+        
 
     def initializeSchema(self):
         dirname = os.path.dirname(__file__)
@@ -835,6 +845,7 @@ class AzenqosDialog(QMainWindow):
         self.pauseButton.clicked.connect(self.pauseTime)
 
     def startPlaytimeThread(self):
+        print("%s: startPlaytimeThread" % os.path.basename(__file__))
         if self.timeSliderThread.getCurrentValue() < gc.sliderLength:
             gc.isSliderPlay = True
             self.playButton.setDisabled(True)
@@ -848,6 +859,7 @@ class AzenqosDialog(QMainWindow):
         self.clickTool.canvasClicked.connect(self.clickCanvas)
 
     def selectLayer(self):
+        print("%s: selectLayer" % os.path.basename(__file__))
         vlayer = iface.addVectorLayer(self.databaseUi.databasePath, None, "ogr")
 
         # Setting CRS
@@ -863,6 +875,7 @@ class AzenqosDialog(QMainWindow):
         gc.isSliderPlay = False
 
     def setTimeValue(self, value):
+        print("%s: setTimeValue" % os.path.basename(__file__))
         gc.timeSlider.setValue(value)
         gc.timeSlider.update()
         if value >= gc.sliderLength:
@@ -958,7 +971,8 @@ class AzenqosDialog(QMainWindow):
             # self.canvas.refreshgc.tableList()
 
     def clickCanvasWorker(self, point, button):
-        worker = Worker(self.clickCanvas(point, button))
+        print("%s: clickCanvasWorker" % os.path.basename(__file__))
+        worker = Worker(self.clickCanvas, point, button)
         gc.threadpool.start(worker)
 
     def useCustomMapTool(self):
@@ -980,35 +994,76 @@ class AzenqosDialog(QMainWindow):
         # self.hide()
 
     def timeChange(self):
+        ret = self.timechange_to_service_counter.inc_and_get()
+        print("%s: timeChange: timechange_to_service_counter: %d" % (os.path.basename(__file__), ret))
+
+    def timeChangedWorkerFunc(self):
+        print("timeChangedWorkerFunc START")
+        while True:
+            try:
+                if self.closed:
+                    break
+                ret = self.timechange_to_service_counter.get()
+                if ret > 1:
+                    self.timechange_to_service_counter.dec_and_get()
+                    continue # skip until we remain 1 then do work
+                if ret == 1:
+                    print("%s: timeChangedWorkerFunc: timechange_to_service_counter: %d so calling timeChangeImpl() START" % (os.path.basename(__file__), ret))
+                    self.timeChangeImpl()
+                    print("%s: timeChangedWorkerFunc: timechange_to_service_counter: %d so calling timeChangeImpl() END" % (os.path.basename(__file__), ret))
+                    ret = self.timechange_to_service_counter.dec_and_get()
+                #print("%s: timeChangedWorkerFunc: timechange_to_service_counter: %d" % (os.path.basename(__file__), ret))
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: timeChangedWorkerFunc - exception: {}".format(exstr))
+            time.sleep(0.1)                            
+
+        print("timeChangedWorkerFunc END")
+
+    def timeChangeImpl(self):
+        print("%s: timeChange0" % os.path.basename(__file__))
         value = gc.timeSlider.value()
+        print("%s: timeChange1" % os.path.basename(__file__))
         timestampValue = gc.minTimeValue + value
+        print("%s: timeChange2" % os.path.basename(__file__))
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
+        print("%s: timeChange3" % os.path.basename(__file__))
         self.timeEdit.setDateTime(sampledate)
+        print("%s: timeChange4" % os.path.basename(__file__))
         self.timeSliderThread.set(value)
+        print("%s: timeChange5" % os.path.basename(__file__))
         gc.currentTimestamp = timestampValue
+        print("%s: timeChange6" % os.path.basename(__file__))
         gc.currentDateTimeString = "%s" % (
             datetime.datetime.fromtimestamp(gc.currentTimestamp)
         )
+        print("%s: timeChange7" % os.path.basename(__file__))
         if len(gc.openedWindows) > 0:
             for window in gc.openedWindows:
                 if not window.title in gc.linechartWindowname:
-                    worker = Worker(window.hilightRow(sampledate))
+                    worker = Worker(window.hilightRow, sampledate)
                 else:
-                    worker = Worker(window.moveChart(sampledate))
+                    worker = Worker(window.moveChart, sampledate)
                 gc.threadpool.start(worker)
+        print("%s: timeChange8" % os.path.basename(__file__))
         # text = "[--" + str(len(gc.tableList) + "--]"
         # QgsMessageLog.logMessage(text)
 
+        
         if len(gc.activeLayers) > 0:
             QgsMessageLog.logMessage("[-- have gc.tableList --]")
-            worker = Worker(self.hilightFeature())
+            worker = Worker(self.hilightFeature)
             gc.threadpool.start(worker)
+            
+        print("%s: timeChange end1" % os.path.basename(__file__))
 
     # def threadComplete(self):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
     #     iface.mapCanvas().refresh()
 
     def hilightFeature(self):
+        print("%s: hilightFeature" % os.path.basename(__file__))
         QgsMessageLog.logMessage("[-- Start hilight features --]")
         start_time = time.time()
         self.getPosIdsByTable()
@@ -1017,6 +1072,7 @@ class AzenqosDialog(QMainWindow):
         QgsMessageLog.logMessage("[-- End hilight features --]")
 
     def getPosIdsByTable(self):
+        print("%s: getPosIdsByTable" % os.path.basename(__file__))
         gc.azenqosDatabase.open()
         # start_time = time.time()
         QgsMessageLog.logMessage("tables: " + str(gc.tableList))
@@ -1039,6 +1095,7 @@ class AzenqosDialog(QMainWindow):
         gc.azenqosDatabase.close()
 
     def usePosIdsSelectedFeatures(self):
+        print("%s: usePosIdsSelectedFeatures" % os.path.basename(__file__))
         if self.posIds:
             selected_ids = []
             layerName = None
@@ -2490,6 +2547,7 @@ class AzenqosDialog(QMainWindow):
             self.mdi.close()
             QgsMessageLog.logMessage("Close App")
             event.accept()
+            self.closed = True
         else:
             event.ignore()
 

@@ -33,7 +33,7 @@ def get(dbcon, parameter_to_columns_list, time_before, default_table=None, commo
         param_name = param_set[0]
         param_cols = param_set[1]
         #print("param_name:", param_name)
-        print("param_cols:", param_cols)
+        #print("param_cols:", param_cols)
         assert isinstance(param_name, str) or isinstance(param_name, list)
         assert isinstance(param_cols, list)            
         param_table = default_table
@@ -64,7 +64,7 @@ def get(dbcon, parameter_to_columns_list, time_before, default_table=None, commo
             param_where_and
         )
         
-        print("params_disp_df sql:", sqlstr)        
+        #print("params_disp_df sql:", sqlstr)        
         df = pd.read_sql(sqlstr, dbcon)
         if isinstance(param_name, list):
             # multiple param rows in one query mode - we should chop the columns set into rows - each per param

@@ -6,10 +6,15 @@ import azq_utils
 import os
 import xml.etree.ElementTree as xet
 import io
+import pandas as pd
 
 
 def prepare_spatialite_views(dbcon):
     assert dbcon is not None
+
+    
+    dbcon.execute('''CREATE TABLE IF NOT EXISTS 'layer_styles' ( "id" INTEGER PRIMARY KEY AUTOINCREMENT, 'f_table_catalog' VARCHAR(256), 'f_table_schema' VARCHAR(256), 'f_table_name' VARCHAR(256), 'f_geometry_column' VARCHAR(256), 'stylename' VARCHAR(30), 'styleqml' VARCHAR, 'stylesld' VARCHAR, 'useasdefault' INTEGER_BOOLEAN, 'description' VARCHAR, 'owner' VARCHAR(30), 'ui' VARCHAR(30), 'update_time' TIMESTAMP DEFAULT CURRENT_TIMESTAMP);''')
+    dbcon.execute('delete from layer_styles;')
 
     default_qml_fp = os.path.join(azq_utils.get_module_path(),'default_style.qml')
     default_qml = None
@@ -27,7 +32,9 @@ def prepare_spatialite_views(dbcon):
 
     # create layer_styles table if not exist
 
+    layer_style_id = 0
     for param in params_to_gen:
+        layer_style_id += 1
         try:
             print("create param table for param %s" % param)
             table = preprocess_azm.get_table_for_column(param)
@@ -98,6 +105,25 @@ def prepare_spatialite_views(dbcon):
             renderer.remove(renderer.find("symbols"))
             renderer.append(xet.fromstring(symbols_xml))
             #print("qml_xml: %s" % xet.tostring(root))
+
+            df = pd.DataFrame(
+                {
+                    "id":[layer_style_id],
+                    "f_table_name":[param],
+                    "f_geometry_column":["geom"],
+                    "stylename": [param],
+                    "styleqml": [ "<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>\n {}".format(str(xet.tostring(root), 'utf8'))],
+                    "useasdefault": [1],
+                    "update_time": [pd.to_datetime(pd.Timestamp.now())],
+                    "description": [pd.to_datetime(pd.Timestamp.now())],
+                    "f_table_catalog": [""],  # REQUIRED TO SHOW IN QGIS BY DEFAULT
+                    "f_table_schema": [""],  # REQUIRED TO SHOW IN QGIS BY DEFAULT
+                }
+            )
+            df.to_sql('layer_styles', dbcon, if_exists='append', index=False)
+
+            dbcon.execute(""" INSERT INTO sqlite_sequence VALUES('layer_styles',{}); """).format(layer_style_id)
+
             
             # gen theme qml for this param
             # insert into layer_styles table

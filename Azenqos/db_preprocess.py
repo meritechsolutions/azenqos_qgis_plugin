@@ -116,7 +116,7 @@ def prepare_spatialite_views(dbcon):
                     "useasdefault": [1],
                     "update_time": [pd.to_datetime(pd.Timestamp.now())],
                     "description": [pd.to_datetime(pd.Timestamp.now())],
-                    "f_table_catalog": [""],  # REQUIRED TO SHOW IN QGIS BY DEFAULT
+                    "f_table_catalog": [""],  # REQUIRED TO SHOW IN QGIS BY DEFAULT - it wont show theme by default if this is None
                     "f_table_schema": [""],  # REQUIRED TO SHOW IN QGIS BY DEFAULT
                 }
             )

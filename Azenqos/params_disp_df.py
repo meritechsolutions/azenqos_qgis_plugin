@@ -64,9 +64,17 @@ def get(dbcon, parameter_to_columns_list, time_before, default_table=None, commo
             param_where_and
         )
         
-        #print("params_disp_df sql:", sqlstr)        
-        df = pd.read_sql(sqlstr, dbcon)
-        if isinstance(param_name, list):
+        #print("params_disp_df sql:", sqlstr)
+        df = None
+        try:
+            df = pd.read_sql(sqlstr, dbcon)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: params_disp_df exception:", exstr)
+            df = pd.DataFrame()  # empty df to enter len 0 block
+
+        if isinstance(param_name, list) and len(df):
             # multiple param rows in one query mode - we should chop the columns set into rows - each per param
             n_param_name = len(param_name)
             col_chunks = np.split(df.columns[1:], n_param_name)

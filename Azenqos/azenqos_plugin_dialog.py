@@ -124,12 +124,13 @@ class AzenqosDialog(QMainWindow):
     def renamingLayers(self, layers):
 
         # Configure layers data source + rename layers
-        uri = QgsDataSourceUri()
-        uri.setDatabase(self.databaseUi.databasePath)
+        #uri = QgsDataSourceUri()
+        #uri.setDatabase(self.databaseUi.databasePath)
         root = QgsProject.instance().layerTreeRoot()
         treeGroups = root.findGroups()
         geom_column = "geom"
         for layer in layers:
+            print("renamingLayers: ", layer.name())
             name = layer.name().split(" ")
             if name[0] == "azqdata":
 
@@ -145,8 +146,8 @@ class AzenqosDialog(QMainWindow):
                 # Setting up layer data source
                 layer.setName(" ".join(name[1:]))
                 gc.activeLayers.append(" ".join(name[1:]))
-                uri.setDataSource("", " ".join(name[1:]), geom_column)
-                layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
+                #uri.setDataSource("", " ".join(name[1:]), geom_column)
+                #layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
 
                 # Force adding layer to root node
                 # cloneLayer = layer.clone()
@@ -935,13 +936,16 @@ class AzenqosDialog(QMainWindow):
                 if layer.featureCount() == 0:
                     # There are no features - skip
                     continue
-
+                print("layer.name()", layer.name())
                 # Loop through all features in the layer
                 for f in layer.getFeatures():
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
                     if distance != -1.0 and distance <= 0.001:
                         closestFeatureId = f.id()
-                        time = layer.getFeature(closestFeatureId).attribute("time")
+                        cf = layer.getFeature(closestFeatureId)
+                        print("cf.attributes:", cf.attributes())
+                        print("cf.fields:", cf.fields().toList())
+                        time = cf.attribute("time")
                         info = (layer, closestFeatureId, distance, time)
                         layerData.append(info)
 
@@ -1075,7 +1079,7 @@ class AzenqosDialog(QMainWindow):
         print("%s: getPosIdsByTable" % os.path.basename(__file__))
         gc.azenqosDatabase.open()
         # start_time = time.time()
-        QgsMessageLog.logMessage("tables: " + str(gc.tableList))
+        #QgsMessageLog.logMessage("tables: " + str(gc.tableList))
         self.posObjs = []
         self.posIds = []
         for tableName in gc.activeLayers:
@@ -2531,7 +2535,7 @@ class AzenqosDialog(QMainWindow):
 
             QgsProject.instance().reloadAllLayers()
             QgsProject.instance().clear()
-            gc.tableList = []
+            #gc.tableList = []
             gc.activeLayers = []
 
             if len(gc.openedWindows) > 0:

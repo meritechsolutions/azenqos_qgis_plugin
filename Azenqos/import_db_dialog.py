@@ -20,6 +20,8 @@ from .timeslider import *
 from .datatable import *
 from .azenqos_plugin_dialog import *  # AzenqosDialog, clearAllSelectedFeatures
 from .version import VERSION
+import db_preprocess
+
 
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -126,8 +128,6 @@ class Ui_DatabaseDialog(QDialog):
             else:
                 import azq_utils
                 azq_utils.write_local_file("prev_azm", self.dbPath.text().encode())
-                self.getLayersFromDb()
-                # if hasattr(self, "layerTask") is False:
                 self.layerTask = LayerTask(u"Add layers", self.databasePath)
                 QgsApplication.taskManager().addTask(self.layerTask)
                 self.getTimeForSlider()
@@ -183,27 +183,15 @@ class Ui_DatabaseDialog(QDialog):
         self.setIncrementValue()
 
     def addDatabase(self):
+        assert os.path.isfile(self.databasePath)
+        dbcon = sqlite3.connect(self.databasePath)
+        db_preprocess.prepare_spatialite_views(dbcon)
+        dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
+        dbcon = sqlite3.connect(self.databasePath)
         gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
         gc.azenqosDatabase.setDatabaseName(self.databasePath)
-        assert os.path.isfile(self.databasePath)
-        ret = sqlite3.connect(self.databasePath)
-        gc.dbcon = ret
-        return ret
-
-    def getLayersFromDb(self):
-        gc.azenqosDatabase.open()
-        query = QSqlQuery()
-        queryString = "select tbl_name from sqlite_master where sql LIKE '%\"geom\"%' and type = 'table' order by tbl_name"
-        query.exec_(queryString)
-        while query.next():
-            tableName = query.value(0)
-            subQueryString = "select count(*) from %s" % (tableName)
-            subQuery = QSqlQuery()
-            subQuery.exec_(subQueryString)
-            while subQuery.next():
-                if int(subQuery.value(0)) > 0:
-                    gc.tableList.append(tableName)
-        gc.azenqosDatabase.close()
+        gc.dbcon = dbcon
+        return dbcon
 
     def setIncrementValue(self):
         gc.sliderLength = gc.maxTimeValue - gc.minTimeValue
@@ -215,3 +203,5 @@ class Ui_DatabaseDialog(QDialog):
 
     def reject(self):
         super().reject()
+
+

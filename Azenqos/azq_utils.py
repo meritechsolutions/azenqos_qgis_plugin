@@ -3,6 +3,11 @@ import sys
 import traceback
 import os
 import global_config as gc
+import dprint
+
+
+def debug(s):
+    dprint.dprint(s)
 
 
 def get_module_path():

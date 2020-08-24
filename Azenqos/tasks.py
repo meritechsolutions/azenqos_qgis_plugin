@@ -73,9 +73,6 @@ class LayerTask(QgsTask):
         if result:
             gc.mostFeaturesLayer = None
             self.addMapToQgis()
-            uri = QgsDataSourceUri()
-            uri.setDatabase(self.dbPath)
-            gc.tableList.sort(reverse=True)
             geom_column = "geom"
             vlayer = iface.addVectorLayer(self.dbPath, None, "ogr")
 
@@ -84,30 +81,6 @@ class LayerTask(QgsTask):
             QgsProject.instance().setCrs(my_crs)
 
             self.zoomToActiveLayer()
-
-            # vlayer
-            # for tableName in gc.tableList:
-            #     uri.setDataSource("", tableName, geom_column)
-            #     vlayer = iface.addVectorLayer(uri.uri(), tableName, "spatialite")
-            #     features = vlayer.featureCount()
-            #     if gc.mostFeaturesLayer is None:
-            #         gc.mostFeaturesLayer = (tableName, features)
-            #     elif features > gc.mostFeaturesLayer[1]:
-            #         gc.mostFeaturesLayer = (tableName, features)
-
-            #     if vlayer:
-            #         symbol_renderer = vlayer.renderer()
-            #         if symbol_renderer:
-            #             symbol = symbol_renderer.symbol()
-            #             symbol.setColor(QColor(125, 139, 142))
-            #             symbol.symbolLayer(0).setStrokeColor(QColor(0, 0, 0))
-            #             symbol.setSize(2.4)
-            #         iface.layerTreeView().refreshLayerSymbology(vlayer.id())
-            #         vlayer.triggerRepaint()
-            #         if not tableName in gc.activeLayers:
-            #             gc.activeLayers.append(tableName)
-
-            # iface.mapCanvas().setSelectionColor(QColor("yellow"))
 
             elapsed_time = time.time() - self.start_time
             QgsMessageLog.logMessage(

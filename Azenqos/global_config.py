@@ -24,7 +24,7 @@ openedWindows = []
 timeSlider = None
 isSliderPlay = False
 allLayers = []
-tableList = []
+#tableList = []
 h_list = []
 linechartWindowname = [
     "GSM_GSM Line Chart",

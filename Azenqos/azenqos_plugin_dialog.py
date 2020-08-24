@@ -910,32 +910,30 @@ class AzenqosDialog(QMainWindow):
             if not layer:
                 continue
 
-            # if layer.type() == layer.VectorLayer:
-            #     if layer.featureCount() == 0:
-            #         # There are no features - skip
-            #         continue
-
-            #     # Loop through all features in the layer
-            #     for f in layer.getFeatures():
-            #         distance = -1.0
-
-            #         if f.geometry():
-            #             featurePoint = f.geometry().asPoint()
-            #             featurePoint = self.canvas.getCoordinateTransform().toMapCoordinates(
-            #                 featurePoint.x(), featurePoint.y()
-            #             )
-            #             distance = featurePoint.distance(point)
-            #         if distance != -1.0 and distance <= 0.005:
-            #             closestFeatureId = f.id()
-            #             time = layer.getFeature(closestFeatureId).attribute("time")
-            #             info = (layer, closestFeatureId, distance, time)
-            #             layerData.append(info)
-
             if layer.type() == layer.VectorLayer:
                 if layer.featureCount() == 0:
                     # There are no features - skip
                     continue
 
+
+                # Loop through all features in a rect near point xy
+                offset = 0.0005
+                p1 = QgsPointXY(point.x() - offset, point.y() - offset)
+                p2 = QgsPointXY(point.x() + offset, point.y() + offset)
+                rect = QgsRectangle(p1, p2)
+                nearby_features = layer.getFeatures(rect)                
+                print("n selected:", (len(layer.selectedFeatures())))
+                nearby_features
+                for f in nearby_features:
+                    distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
+                    if distance != -1.0 and distance <= 0.001:
+                        closestFeatureId = f.id()
+                        time = layer.getFeature(closestFeatureId).attribute("time")
+                        info = (layer, closestFeatureId, distance, time)
+                        layerData.append(info)
+
+
+                '''
                 # Loop through all features in the layer
                 for f in layer.getFeatures():
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
@@ -944,6 +942,7 @@ class AzenqosDialog(QMainWindow):
                         time = layer.getFeature(closestFeatureId).attribute("time")
                         info = (layer, closestFeatureId, distance, time)
                         layerData.append(info)
+                '''
 
         if not len(layerData) > 0:
             # Looks like no vector layers were found - do nothing
@@ -956,7 +955,6 @@ class AzenqosDialog(QMainWindow):
             # layer.select(closestFeatureId)
             selectedTime = time
             break
-
         try:
             selectedTimestamp = Utils().datetimeStringtoTimestamp(
                 selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")

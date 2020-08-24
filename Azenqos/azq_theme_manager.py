@@ -395,6 +395,7 @@ def get_theme_df_for_column(param_col_with_arg, data_df=None, dbcon=None, table_
                 print("total cols: ",len(headers))
                 #print headers
                 retdf = pd.DataFrame(all_records, columns=headers)
+                print("total cols0")
                 #print "precheckretdf empty retdf ",retdf
 
                 retdfempty = True
@@ -403,6 +404,8 @@ def get_theme_df_for_column(param_col_with_arg, data_df=None, dbcon=None, table_
                         retdfempty = False
                 except:
                     pass
+
+                print("total cols1")
                 
                 if retdfempty and theme_xml_file != g_ori_default_theme_file:
                     print("retdf.size 0 in non-default theme try get from default_theme.xml: theme_xml_file {} g_ori_default_theme_file {}".format(theme_xml_file, g_ori_default_theme_file))
@@ -414,7 +417,8 @@ def get_theme_df_for_column(param_col_with_arg, data_df=None, dbcon=None, table_
                 if retdf.size == 0:                    
                         raise Exception("No ranges for this element - fall back to generate theme from data insted...")
 
-                
+
+                print("total cols2")
                 """
                 now we do recursive calls and this breaks match_values that was already populated
                 col_is_id = False
@@ -425,6 +429,7 @@ def get_theme_df_for_column(param_col_with_arg, data_df=None, dbcon=None, table_
                 except giside:
                     print "WARNING: read xml theme check if param_col is id exception:", giside
                 """
+                print("return now")
                 return retdf
 
         

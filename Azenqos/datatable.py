@@ -3,6 +3,7 @@ import threading
 import sys
 import os
 import pandas as pd
+import sqlite3
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -29,6 +30,7 @@ from .signalling_query import SignalingDataQuery
 from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
 from .customize_properties import *
+import lte_query
 
 
 class TableWindow(QWidget):
@@ -181,275 +183,261 @@ class TableWindow(QWidget):
             self.columnCount = sizelist[1]
 
     def refreshTableContents(self):
-        if self.title is not None:
-            # GSM
-            if self.title == "GSM_Radio Parameters":
-                self.tableHeader = ["Element", "Full", "Sub"]
-                self.dataList = GsmDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getRadioParameters()
-                # self.dataList = GsmDataQuery(None).getRadioParameters()
-            elif self.title == "GSM_Serving + Neighbors":
-                self.tableHeader = [
-                    "Time",
-                    "Cellname",
-                    "LAC",
-                    "BSIC",
-                    "ARFCN",
-                    "RxLev",
-                    "C1",
-                    "C2",
-                    "C31",
-                    "C32",
-                ]
-                self.dataList = GsmDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getServingAndNeighbors()
-            elif self.title == "GSM_Current Channel":
-                self.tableHeader = ["Element", "Value"]
-                self.dataList = GsmDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getCurrentChannel()
-            elif self.title == "GSM_C/I":
-                self.tableHeader = ["Time", "ARFCN", "Value"]
-                self.dataList = GsmDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getCSlashI()
-            # TODO: find the way to find event counter
-            # elif self.title == "GSM_Events Counter":
-            #     self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
+        with sqlite3.connect(gc.databasePath) as dbcon:
+            if self.title is not None:
+                # GSM
+                if self.title == "GSM_Radio Parameters":
+                    self.tableHeader = ["Element", "Full", "Sub"]
+                    self.dataList = GsmDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getRadioParameters()
+                    # self.dataList = GsmDataQuery(None).getRadioParameters()
+                elif self.title == "GSM_Serving + Neighbors":
+                    self.tableHeader = [
+                        "Time",
+                        "Cellname",
+                        "LAC",
+                        "BSIC",
+                        "ARFCN",
+                        "RxLev",
+                        "C1",
+                        "C2",
+                        "C31",
+                        "C32",
+                    ]
+                    self.dataList = GsmDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getServingAndNeighbors()
+                elif self.title == "GSM_Current Channel":
+                    self.tableHeader = ["Element", "Value"]
+                    self.dataList = GsmDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getCurrentChannel()
+                elif self.title == "GSM_C/I":
+                    self.tableHeader = ["Time", "ARFCN", "Value"]
+                    self.dataList = GsmDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getCSlashI()
+                # TODO: find the way to find event counter
+                # elif self.title == "GSM_Events Counter":
+                #     self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
 
-            # WCDMA
-            if self.title == "WCDMA_Active + Monitored Sets":
-                self.tableHeader = [
-                    "Time",
-                    "CellName",
-                    "CellType",
-                    "SC",
-                    "Ec/Io",
-                    "RSCP",
-                    "Freq",
-                    "Event",
-                ]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getActiveMonitoredSets()
-            elif self.title == "WCDMA_Radio Parameters":
-                self.tableHeader = ["Element", "Value"]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getRadioParameters()
-            elif self.title == "WCDMA_Active Set List":
-                self.tableHeader = [
-                    "Time",
-                    "Freq",
-                    "PSC",
-                    "Cell Position",
-                    "Cell TPC",
-                    "Diversity",
-                ]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getActiveSetList()
-            elif self.title == "WCDMA_Monitored Set List":
-                self.tableHeader = ["Time", "Freq", "PSC", "Cell Position", "Diversity"]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getMonitoredSetList()
-            elif self.title == "WCDMA_BLER Summary":
-                self.tableHeader = ["Element", "Value"]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getBlerSummary()
-            elif self.title == "WCDMA_BLER / Transport Channel":
-                self.tableHeader = ["Transport Channel", "Percent", "Err", "Rcvd"]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getBLER_TransportChannel()
-            elif self.title == "WCDMA_Line Chart":
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == "WCDMA_Bearers":
-                self.tableHeader = [
-                    "N Bearers",
-                    "Bearers ID",
-                    "Bearers Rate DL",
-                    "Bearers Rate UL",
-                ]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getBearers()
-            elif self.title == "WCDMA_Pilot Poluting Cells":
-                self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getPilotPolutingCells()
-            elif self.title == "WCDMA_Active + Monitored Bar":
-                self.tableHeader = ["Cell Type", "Ec/Io", "RSCP"]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getActiveMonitoredBar()
-            elif self.title == "WCDMA_CM GSM Reports":
-                self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
+                # WCDMA
+                if self.title == "WCDMA_Active + Monitored Sets":
+                    self.tableHeader = [
+                        "Time",
+                        "CellName",
+                        "CellType",
+                        "SC",
+                        "Ec/Io",
+                        "RSCP",
+                        "Freq",
+                        "Event",
+                    ]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getActiveMonitoredSets()
+                elif self.title == "WCDMA_Radio Parameters":
+                    self.tableHeader = ["Element", "Value"]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getRadioParameters()
+                elif self.title == "WCDMA_Active Set List":
+                    self.tableHeader = [
+                        "Time",
+                        "Freq",
+                        "PSC",
+                        "Cell Position",
+                        "Cell TPC",
+                        "Diversity",
+                    ]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getActiveSetList()
+                elif self.title == "WCDMA_Monitored Set List":
+                    self.tableHeader = ["Time", "Freq", "PSC", "Cell Position", "Diversity"]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getMonitoredSetList()
+                elif self.title == "WCDMA_BLER Summary":
+                    self.tableHeader = ["Element", "Value"]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getBlerSummary()
+                elif self.title == "WCDMA_BLER / Transport Channel":
+                    self.tableHeader = ["Transport Channel", "Percent", "Err", "Rcvd"]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getBLER_TransportChannel()
+                elif self.title == "WCDMA_Line Chart":
+                    self.tableHeader = ["Element", "Value", "MS", "Color"]
+                elif self.title == "WCDMA_Bearers":
+                    self.tableHeader = [
+                        "N Bearers",
+                        "Bearers ID",
+                        "Bearers Rate DL",
+                        "Bearers Rate UL",
+                    ]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getBearers()
+                elif self.title == "WCDMA_Pilot Poluting Cells":
+                    self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getPilotPolutingCells()
+                elif self.title == "WCDMA_Active + Monitored Bar":
+                    self.tableHeader = ["Cell Type", "Ec/Io", "RSCP"]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getActiveMonitoredBar()
+                elif self.title == "WCDMA_CM GSM Reports":
+                    self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
 
-            elif self.title == "WCDMA_CM GSM Cells":
-                self.tableHeader = ["Time", "ARFCN", "RxLev", "BSIC", "Measure"]
-                self.dataList = WcdmaDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getCmGsmCells()
-            elif self.title == "WCDMA_Pilot Analyzer":
-                self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
+                elif self.title == "WCDMA_CM GSM Cells":
+                    self.tableHeader = ["Time", "ARFCN", "RxLev", "BSIC", "Measure"]
+                    self.dataList = WcdmaDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getCmGsmCells()
+                elif self.title == "WCDMA_Pilot Analyzer":
+                    self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 
-            # LTE
-            elif self.title == "LTE_Radio Parameters":
-                self.tableHeader = ["Element", "PCC", "SCC0", "SCC1"]
-                self.dataList = LteDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getRadioParameters()
-            elif self.title == "LTE_Serving + Neighbors":
-                self.tableHeader = ["Time", "EARFCN", "Band", "PCI", "RSRP", "RSRQ"]
-                self.dataList = LteDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getServingAndNeighbors()
-            elif self.title == "LTE_PUCCH/PDSCH Parameters":
-                self.tableHeader = ["Element", "Value"]
-                self.dataList = LteDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getPucchPdschParameters()
-            elif self.title == "LTE_LTE Line Chart":
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == "LTE_LTE RLC":
-                self.tableHeader = ["Element", "Value", "", "", ""]
-                self.dataList = LteDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getRlc()
-            elif self.title == "LTE_LTE VoLTE":
-                self.tableHeader = ["Element", "Value"]
-                self.dataList = LteDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getVolte()
+                # LTE
+                elif self.title == "LTE_Radio Parameters":
+                    self.dataList = lte_query.get_lte_radio_params_disp_df(dbcon, gc.currentDateTimeString)
+                elif self.title == "LTE_Serving + Neighbors":
+                    self.dataList = lte_query.get_lte_serv_and_neigh_disp_df(dbcon, gc.currentDateTimeString)
+                elif self.title == "LTE_PUCCH/PDSCH Parameters":
+                    self.tableHeader = ["Element", "Value"]
+                    self.dataList = LteDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getPucchPdschParameters()
+                elif self.title == "LTE_LTE Line Chart":
+                    self.tableHeader = ["Element", "Value", "MS", "Color"]
+                elif self.title == "LTE_LTE RLC":
+                    self.tableHeader = ["Element", "Value", "", "", ""]
+                    self.dataList = LteDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getRlc()
+                elif self.title == "LTE_LTE VoLTE":
+                    self.tableHeader = ["Element", "Value"]
+                    self.dataList = LteDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getVolte()
+                elif self.title == "LTE_LTE RRC/SIB States":
+                    print("LTE_LTE RRC/SIB States gen datalist")
+                    self.dataList = lte_query.get_lte_rrc_sib_states_df(dbcon, gc.currentDateTimeString)
+                elif self.title == "5G NR_Radio Parameters":
+                    self.dataList = NrDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getRadioParameters()
+                elif self.title == "5G NR_Serving + Neighbors":
+                    self.dataList = NrDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getServingAndNeighbors()
 
-                
-            elif self.title == "5G NR_Radio Parameters":
-                self.dataList = NrDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getRadioParameters()
-            elif self.title == "5G NR_Serving + Neighbors":
-                self.dataList = NrDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getServingAndNeighbors()
+                # CDMA/EVDO
+                elif self.title == "CDMA/EVDO_Radio Parameters":
+                    self.tableHeader = ["Element", "Value"]
+                    self.dataList = CdmaEvdoQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getRadioParameters()
+                elif self.title == "CDMA/EVDO_Serving + Neighbors":
+                    self.tableHeader = ["Time", "PN", "Ec/Io", "Type"]
+                    self.dataList = CdmaEvdoQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getServingAndNeighbors()
+                elif self.title == "CDMA/EVDO_EVDO Parameters":
+                    self.tableHeader = ["Element", "Value"]
+                    self.dataList = CdmaEvdoQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getEvdoParameters()
 
-            # CDMA/EVDO
-            elif self.title == "CDMA/EVDO_Radio Parameters":
-                self.tableHeader = ["Element", "Value"]
-                self.dataList = CdmaEvdoQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getRadioParameters()
-            elif self.title == "CDMA/EVDO_Serving + Neighbors":
-                self.tableHeader = ["Time", "PN", "Ec/Io", "Type"]
-                self.dataList = CdmaEvdoQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getServingAndNeighbors()
-            elif self.title == "CDMA/EVDO_EVDO Parameters":
-                self.tableHeader = ["Element", "Value"]
-                self.dataList = CdmaEvdoQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getEvdoParameters()
+                # Data
+                elif self.title == "Data_GSM Data Line Chart":
+                    self.tableHeader = ["Element", "Value", "MS", "Color"]
+                elif self.title == "Data_WCDMA Data Line Chart":
+                    self.tableHeader = ["Element", "Value", "MS", "Color"]
+                elif self.title == "Data_GPRS/EDGE Information":
+                    self.tableHeader = ["Element", "Value"]
+                elif self.title == "Data_Web Browser":
+                    self.tableHeader = ["Type", "Object"]
+                    self.windowHeader = ["ID", "URL", "Type", "State", "Size(%)"]
+                elif self.title == "Data_HSDPA/HSPA + Statistics":
+                    self.tableHeader = ["Element", "Value"]
+                elif self.title == "Data_HSUPA Statistics":
+                    self.tableHeader = ["Element", "Value"]
+                elif self.title == "Data_LTE Data Statistics":
+                    self.tableHeader = ["Element", "Value", "", ""]
+                elif self.title == "Data_LTE Data Line Chart":
+                    self.tableHeader = ["Element", "Value", "MS", "Color"]
+                elif self.title == "Data_Wifi Connected AP":
+                    self.tableHeader = ["Element", "Value"]
+                elif self.title == "Data_Wifi Scanned APs":
+                    self.tableHeader = [
+                        "Time",
+                        "BSSID",
+                        "SSID",
+                        "Freq",
+                        "Ch.",
+                        "Level",
+                        "Encryption",
+                    ]
+                elif self.title == "Data_Wifi Graph":
+                    return False
+                elif self.title == "Data_5G NR Data Line Chart":
+                    self.tableHeader = ["Element", "Value", "MS", "Color"]
 
-            # Data
-            elif self.title == "Data_GSM Data Line Chart":
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == "Data_WCDMA Data Line Chart":
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == "Data_GPRS/EDGE Information":
-                self.tableHeader = ["Element", "Value"]
-            elif self.title == "Data_Web Browser":
-                self.tableHeader = ["Type", "Object"]
-                self.windowHeader = ["ID", "URL", "Type", "State", "Size(%)"]
-            elif self.title == "Data_HSDPA/HSPA + Statistics":
-                self.tableHeader = ["Element", "Value"]
-            elif self.title == "Data_HSUPA Statistics":
-                self.tableHeader = ["Element", "Value"]
-            elif self.title == "Data_LTE Data Statistics":
-                self.tableHeader = ["Element", "Value", "", ""]
-            elif self.title == "Data_LTE Data Line Chart":
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
-            elif self.title == "Data_Wifi Connected AP":
-                self.tableHeader = ["Element", "Value"]
-            elif self.title == "Data_Wifi Scanned APs":
-                self.tableHeader = [
-                    "Time",
-                    "BSSID",
-                    "SSID",
-                    "Freq",
-                    "Ch.",
-                    "Level",
-                    "Encryption",
-                ]
-            elif self.title == "Data_Wifi Graph":
-                return False
-            elif self.title == "Data_5G NR Data Line Chart":
-                self.tableHeader = ["Element", "Value", "MS", "Color"]
+                # Signaling
+                elif self.title == "Signaling_Events":
+                    self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
+                    self.tablename = "events"
+                    self.dataList = SignalingDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getEvents()
 
-            # Signaling
-            elif self.title == "Signaling_Events":
-                self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                self.tablename = "events"
-                self.dataList = SignalingDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getEvents()
+                elif self.title == "Signaling_Layer 1 Messages":
+                    self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
+                    self.tablename = "events"
+                    self.dataList = SignalingDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getLayerOneMessages()
+                elif self.title == "Signaling_Layer 3 Messages":
+                    self.tableHeader = ["Time", "", "Eq.", "Protocol", "Name", "Detail"]
+                    self.tablename = "signalling"
+                    self.dataList = SignalingDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getLayerThreeMessages()
+                elif self.title == "Signaling_Benchmark":
+                    self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
+                    # self.tablename = 'signalling'
+                    self.dataList = SignalingDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getBenchmark()
+                elif self.title == "Signaling_MM Reg States":
+                    self.tableHeader = ["Element", "Value"]
+                    self.tablename = "mm_state"
+                    self.dataList = SignalingDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getMmRegStates()
+                elif self.title == "Signaling_Serving System Info":
+                    self.tableHeader = ["Element", "Value"]
+                    self.tablename = "serving_system"
+                    self.dataList = SignalingDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getServingSystemInfo()
+                elif self.title == "Signaling_Debug Android/Event":
+                    self.tableHeader = ["Element", "Value"]
+                    # self.tablename = 'serving_system'
+                    self.dataList = SignalingDataQuery(
+                        gc.azenqosDatabase, gc.currentDateTimeString
+                    ).getDebugAndroidEvent()
 
-            elif self.title == "Signaling_Layer 1 Messages":
-                self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                self.tablename = "events"
-                self.dataList = SignalingDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getLayerOneMessages()
-            elif self.title == "Signaling_Layer 3 Messages":
-                self.tableHeader = ["Time", "", "Eq.", "Protocol", "Name", "Detail"]
-                self.tablename = "signalling"
-                self.dataList = SignalingDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getLayerThreeMessages()
-            elif self.title == "Signaling_Benchmark":
-                self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
-                # self.tablename = 'signalling'
-                self.dataList = SignalingDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getBenchmark()
-            elif self.title == "Signaling_MM Reg States":
-                self.tableHeader = ["Element", "Value"]
-                self.tablename = "mm_state"
-                self.dataList = SignalingDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getMmRegStates()
-            elif self.title == "Signaling_Serving System Info":
-                self.tableHeader = ["Element", "Value"]
-                self.tablename = "serving_system"
-                self.dataList = SignalingDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getServingSystemInfo()
-            elif self.title == "Signaling_Debug Android/Event":
-                self.tableHeader = ["Element", "Value"]
-                # self.tablename = 'serving_system'
-                self.dataList = SignalingDataQuery(
-                    gc.azenqosDatabase, gc.currentDateTimeString
-                ).getDebugAndroidEvent()
+                if self.dataList is not None:
+                    self.setTableModel(self.dataList)
+                    self.tableViewCount = self.tableView.model().rowCount()
 
-            if self.dataList is not None:
-                self.setTableModel(self.dataList)
-                self.tableViewCount = self.tableView.model().rowCount()
-
-            # if self.tablename and self.tablename != "":
-            #     global gc.tableList
-            #     if not self.tablename in gc.tableList:
-            #         gc.tableList.append(self.tablename)
-
-    # def mousePressEvent(self, QMouseEvent):
-    #     if QMouseEvent.button() == Qt.LeftButton:
-    #         pass
-    #     elif QMouseEvent.button() == Qt.RightButton:
-    #         self.generateMenu
-
+                    
     def setHeader(self, headers):
         # self.tableHeader = headers
         self.customHeader = headers
@@ -499,6 +487,12 @@ class TableWindow(QWidget):
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 
     def updateSlider(self, item):
+
+        if not self.tableHeader:
+            return
+        
+        # get selected row time for signalling and events table
+        
         cellContent = str(item.data())
         timeCell = None
         try:

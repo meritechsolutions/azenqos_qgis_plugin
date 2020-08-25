@@ -303,6 +303,10 @@ class AzenqosDialog(QMainWindow):
         self.actionLTE_RLC.setObjectName("actionLTE_RLC")
         self.actionLTE_VoLTE = QAction(AzenqosDialog)
         self.actionLTE_VoLTE.setObjectName("actionLTE_VoLTE")
+
+        self.actionlte_rrc_sib_states = QAction(AzenqosDialog)
+        self.actionlte_rrc_sib_states.setObjectName("actionlte_rrc_sib_states")
+        
         self.actionRadio_Parameters_4 = QAction(AzenqosDialog)
         self.actionRadio_Parameters_4.setObjectName("actionRadio_Parameters_4")
         self.actionServing_Neighbors_3 = QAction(AzenqosDialog)
@@ -368,12 +372,15 @@ class AzenqosDialog(QMainWindow):
         self.menuWCDMA.addAction(self.actionCM_GSM_Reports)
         self.menuWCDMA.addAction(self.actionCM_GSM_Cells)
         self.menuWCDMA.addAction(self.actionPilot_Analyzer)
+
         self.menuLTE.addAction(self.actionRadio_Parameters_3)
         self.menuLTE.addAction(self.actionServing_Neighbors_2)
-        self.menuLTE.addAction(self.actionPUCCH_PDSCH_Parameters)
-        self.menuLTE.addAction(self.actionLTE_Line_Chart)
+        self.menuLTE.addAction(self.actionlte_rrc_sib_states)
+        self.menuLTE.addAction(self.actionPUCCH_PDSCH_Parameters)        
         self.menuLTE.addAction(self.actionLTE_RLC)
         self.menuLTE.addAction(self.actionLTE_VoLTE)
+        self.menuLTE.addAction(self.actionLTE_Line_Chart)
+        
         self.menuNR.addAction(self.actionNR_Radio_Parameters)
         self.menuNR.addAction(self.actionNR_Serving_Neighbors)
         self.menuCDMA_EVDO.addAction(self.actionRadio_Parameters_4)
@@ -474,6 +481,9 @@ class AzenqosDialog(QMainWindow):
         self.actionLTE_Line_Chart.setText(_translate("AzenqosDialog", "LTE Line Chart"))
         self.actionLTE_RLC.setText(_translate("AzenqosDialog", "LTE RLC"))
         self.actionLTE_VoLTE.setText(_translate("AzenqosDialog", "LTE VoLTE"))
+        
+        self.actionlte_rrc_sib_states.setText(_translate("AzenqosDialog", "LTE RRC/SIB States"))
+        
         self.actionRadio_Parameters_4.setText(
             _translate("AzenqosDialog", "Radio Parameters")
         )
@@ -755,8 +765,9 @@ class AzenqosDialog(QMainWindow):
 
         # LTE Section
         lte = QTreeWidgetItem(self.presentationTreeWidget, ["LTE"])
-        lteRadioParams = QTreeWidgetItem(lte, ["Radio Parameters"])
+        lteRadioParams = QTreeWidgetItem(lte, ["Radio Parameters"])        
         lteServingNeighbors = QTreeWidgetItem(lte, ["Serving + Neighbors"])
+        QTreeWidgetItem(lte, ["LTE RRC/SIB States"])
         ltePPParams = QTreeWidgetItem(lte, ["PUCCH/PDSCH Parameters"])
         lteLineChart = QTreeWidgetItem(lte, ["LTE Line Chart"])
         lteRlc = QTreeWidgetItem(lte, ["LTE RLC"])
@@ -1205,6 +1216,7 @@ class AzenqosDialog(QMainWindow):
 
     def classifySelectedItems(self, parent, child):
         windowName = parent + "_" + child
+        print("classifySelectedItems windowName:", windowName, "parent:", parent, "child:", child)
         if hasattr(self, "mdi") is False:
             self.mdi = GroupArea()
         subwindowList = self.mdi.subWindowList()
@@ -1676,7 +1688,32 @@ class AzenqosDialog(QMainWindow):
                     gc.openedWindows.append(tableWidget)
 
         elif parent == "LTE":
-            if child == "Radio Parameters":
+            if child == "LTE RRC/SIB States":
+                print("enter RRC/SIB States")
+                tableWidget = None
+                if hasattr(self, "lte_rrc_sib_states_window") is True:
+                    tableWindow = self.lte_rrc_sib_states_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.lte_rrc_sib_states_window, windowName)
+                        gc.openedWindows.append(tableWidget)
+
+                    if self.lte_rrc_sib_states_window not in subwindowList:
+                        self.lte_rrc_sib_states_window = SubWindowArea(self.mdi)
+                        self.mdi.addSubWindow(self.lte_rrc_sib_states_window)
+
+                    if tableWidget:
+                        self.lte_rrc_sib_states_window.setWidget(tableWidget)
+                    self.lte_rrc_sib_states_window.show()
+                else:
+                    # create new subwindow
+                    self.lte_rrc_sib_states_window = SubWindowArea(self.mdi)
+                    tableWidget = TableWindow(self.lte_rrc_sib_states_window, windowName)
+                    self.lte_rrc_sib_states_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.lte_rrc_sib_states_window)
+                    self.lte_rrc_sib_states_window.show()
+                    gc.openedWindows.append(tableWidget)
+
+            elif child == "Radio Parameters":
                 tableWidget = None
                 if hasattr(self, "lte_param_window") is True:
                     tableWindow = self.lte_param_window.widget()

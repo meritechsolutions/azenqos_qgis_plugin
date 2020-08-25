@@ -12,7 +12,7 @@ class NrDataQuery:
         self.azenqosDatabase = database
         if currentDateTimeString:
             self.timeFilter = currentDateTimeString
-
+            
     def getRadioParameters(self):
         with sqlite3.connect(gc.databasePath) as dbcon:
             return get_nr_radio_params_disp_df(dbcon, self.timeFilter)

@@ -1,4 +1,7 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+import pandas as pd
+import params_disp_df
+import global_config as gc
 
 
 class LteDataQuery:
@@ -229,6 +232,10 @@ class LteDataQuery:
                 dataList.append([columnName, value, "", ""])
         self.closeConnection()
         return dataList
+
+    def get_rrc_sib_states():
+        with sqlite3.connect(gc.databasePath) as dbcon:
+            return get_nr_radio_params_disp_df(dbcon, self.timeFilter)
 
     def getServingAndNeighbors(self):
         self.openConnection()
@@ -524,3 +531,160 @@ class LteDataQuery:
 
     def closeConnection(self):
         self.azenqosDatabase.close()
+
+
+################################## df get functions
+
+
+def get_lte_rrc_sib_states_df(dbcon, time_before):
+        parameter_to_columns_list = [
+
+            (
+                [
+                    "Time",
+                    "SIB1 MCC",
+                    "SIB1 MNC",
+                    "SIB1 TAC",
+                    "SIB1 ECI (Cell ID)",
+                    "SIB1 eNodeB ID",
+                    "SIB1 LCI",
+                ],
+                [
+                    "time",
+                    "lte_sib1_mcc",
+                    "lte_sib1_mnc",
+                    "lte_sib1_tac",
+                    "lte_sib1_eci",
+                    "lte_sib1_enb_id",
+                    "lte_sib1_local_cell_id",                    
+                ],
+                "lte_sib1_info"
+            ),
+                        (
+                [
+                    "Time",
+                    "Transmission Mode (RRC-tm)"
+                ],
+                [
+                    "time",
+                    "lte_transmission_mode_l3",
+                ],
+                "lte_rrc_transmode_info"
+            ),            
+            (
+                [
+                    "Time",
+                    "RRC State"
+                ],
+                [
+                    "time",
+                    "lte_rrc_state",
+                ],
+                "lte_rrc_state"
+            ),            
+
+        ]            
+        return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=True, custom_lookback_dur_millis=24*3600)
+
+
+def get_lte_radio_params_disp_df(dbcon, time_before):
+    n_param_args = 4
+    parameter_to_columns_list = [
+        ("Time", ["time"], "lte_cell_meas"),            
+        (  # these params below come together so query them all in one query
+            [
+                "Band",
+                "EARFCN",
+                "PCI",
+                "RSRP",
+                "RSRQ",
+                "SINR",
+                "RSSI"
+            ],
+            list(map(lambda x: "lte_band_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_earfcn_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_physical_cell_id_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_inst_rsrp_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_inst_rsrq_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_sinr_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_inst_rssi_{}".format(x+1), range(n_param_args))),
+            "lte_cell_meas"
+        ),
+        (
+            [
+                "TxPower",
+            ],
+            [
+                "lte_tx_power",
+            ],
+            "lte_tx_power"
+        ),
+        (
+            [
+                "PUSCH TxPower"
+            ],
+            [
+                "lte_pusch_tx_power",
+            ],
+            "lte_pusch_tx_info"
+        ),
+        (
+            [
+                "PUCCH TxPower"
+            ],
+            [
+                "lte_pucch_tx_power",
+            ],
+            "lte_pucch_tx_info"
+        ),
+        (
+            [
+                "TA"
+            ],
+            [
+                "lte_ta",
+            ],
+            "lte_frame_timing"
+        ),
+    ]            
+    return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=True, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+
+
+def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
+    df_list = []
+
+    pcell_scell_col_prefix_sr = pd.Series(["lte_earfcn_", "lte_physical_cell_id_", "lte_inst_rsrp_", "lte_inst_rsrq_", "lte_sinr_"])
+    pcell_scell_col_prefix_renamed = ["EARFCN","PCI", "RSRP","RSRQ","SINR"]
+    parameter_to_columns_list = [
+        ("Time", ["time"] ),
+        (
+            ["PCell","SCell1","SCell2","SCell3"],
+            list(pcell_scell_col_prefix_sr+"1")+list(pcell_scell_col_prefix_sr+"2")+list(pcell_scell_col_prefix_sr+"3")+list(pcell_scell_col_prefix_sr+"4"),
+            "lte_cell_meas"
+        ),
+        
+    ]
+    df = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, default_table="lte_cell_meas", not_null_first_col=True, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    #print("df.head():\n%s" % df.head())
+    df.columns = ["CellGroup"]+pcell_scell_col_prefix_renamed
+    #print("df.head():\n%s" % df.head())
+    df_list.append(df)
+
+    # neigh
+    pcell_scell_col_prefix_sr = pd.Series(["lte_neigh_earfcn_", "lte_neigh_physical_cell_id_", "lte_neigh_rsrp_", "lte_neigh_rsrq_"])
+    pcell_scell_col_prefix_renamed = ["ARFCN","PCI", "RSRP","RSRQ"]
+    parameter_to_columns_list = [
+        (
+            ["Neigh1","Neigh2","Neigh3","Neigh4","Neigh5","Neigh6", "Neigh7", "Neigh8"],
+            list(pcell_scell_col_prefix_sr+"1")+list(pcell_scell_col_prefix_sr+"2")+list(pcell_scell_col_prefix_sr+"3")+list(pcell_scell_col_prefix_sr+"4")+list(pcell_scell_col_prefix_sr+"5")+list(pcell_scell_col_prefix_sr+"6")+list(pcell_scell_col_prefix_sr+"7")+list(pcell_scell_col_prefix_sr+"8"),
+            "lte_neigh_meas"
+        )
+    ]
+    df = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=True, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    #print("df.head():\n%s" % df.head())
+    df.columns = ["CellGroup"]+pcell_scell_col_prefix_renamed
+    #print("df.head():\n%s" % df.head())
+    df_list.append(df)
+    
+    final_df = pd.concat(df_list, sort=False)
+    return final_df

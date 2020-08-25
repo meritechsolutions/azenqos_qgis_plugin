@@ -924,8 +924,6 @@ class AzenqosDialog(QMainWindow):
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
                 nearby_features = layer.getFeatures(rect)                
-                print("n selected:", (len(layer.selectedFeatures())))
-                nearby_features
                 for f in nearby_features:
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
                     if distance != -1.0 and distance <= 0.001:
@@ -1065,15 +1063,76 @@ class AzenqosDialog(QMainWindow):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
     #     iface.mapCanvas().refresh()
 
-    def hilightFeature(self):
-        print("%s: hilightFeature" % os.path.basename(__file__))
-        QgsMessageLog.logMessage("[-- Start hilight features --]")
-        start_time = time.time()
-        self.getPosIdsByTable()
-        if len(self.posIds) > 0 and len(self.posObjs) > 0:
-            self.usePosIdsSelectedFeatures()
-        QgsMessageLog.logMessage("[-- End hilight features --]")
+    def hilightFeature(self, time_mode=True):
+        if time_mode:
+            self.selectFeatureOnLayersByTime()
+        else:
+            print("%s: hilightFeature" % os.path.basename(__file__))
+            QgsMessageLog.logMessage("[-- Start hilight features --]")
+            start_time = time.time()
+            self.getPosIdsByTable()
+            if len(self.posIds) > 0 and len(self.posObjs) > 0:
+                self.usePosIdsSelectedFeatures()
+            QgsMessageLog.logMessage("[-- End hilight features --]")
 
+    def selectFeatureOnLayersByTime(self):
+        root = QgsProject.instance().layerTreeRoot()
+        layers = root.findLayers()
+        for layer in layers:
+            if layer.name() not in gc.activeLayers:
+                continue
+            try:
+                print("selectFeatureOnLayersByTime layer: %s" % layer.name())
+                end_dt = datetime.datetime.fromtimestamp(gc.currentTimestamp)
+                start_dt = end_dt - datetime.timedelta(seconds=(gc.DEFAULT_LOOKBACK_DUR_MILLIS/1000.0))
+                # 2020-10-08 15:35:55.431000
+                filt_expr = "time >= '%s' and time <= '%s'" % (start_dt, end_dt)
+                print("filt_expr:", filt_expr)
+                request = (
+                    QgsFeatureRequest()
+                    .setFilterExpression(filt_expr)
+                    .setFlags(QgsFeatureRequest.NoGeometry)
+                )
+
+                layerFeatures = layer.layer().getFeatures(request)
+                print("filt request ret:", layerFeatures)
+                lc = 0
+                fids = []
+                time_list = []
+                for lf in layerFeatures:
+                    lc += 1
+                    fids.append(lf.id())
+                    time_list.append(lf.attribute("time"))
+                if len(fids):
+                    sr = pd.Series(time_list, index=fids, dtype='datetime64[ns]')
+                    sids = [sr.idxmax()]
+                    print("sr:", sr)
+                    print("select ids:", sids)
+                    layer.layer().selectByIds(sids)
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: selectFeatureOnLayersByTime layer.name() {} exception: {}".format(layer.name(), exstr))
+            '''
+            root = QgsProject.instance().layerTreeRoot()
+            root.setHasCustomLayerOrder(True)
+            order = root.customLayerOrder()
+            order.insert(0, order.pop(order.index(layer)))  # vlayer to the top
+            root.setCustomLayerOrder(order)
+            iface.setActiveLayer(layer)
+
+            for feature in layerFeatures:
+                posid = feature["posid"]
+                if self.currentMaxPosId == posid:
+                    selected_ids.append(feature.id())
+            QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
+
+            if layer is not None:
+                if len(selected_ids) > 0:
+                    layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
+            '''
+
+                        
     def getPosIdsByTable(self):
         print("%s: getPosIdsByTable" % os.path.basename(__file__))
         gc.azenqosDatabase.open()

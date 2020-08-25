@@ -75,7 +75,7 @@ class TableWindow(QWidget):
         self.filterHeader = FilterHeader(self.tableView)
         self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.doubleClicked.connect(self.showDetail)
-        self.tableView.clicked.connect(self.updateSlider)
+        #self.tableView.clicked.connect(self.updateSlider)  - now we use onselectionchanged from modelview instead
         self.tableView.setSortingEnabled(False)
         self.tableView.setCornerButtonEnabled(False)
         self.tableView.setStyleSheet(
@@ -117,6 +117,7 @@ class TableWindow(QWidget):
 
     def updateTable(self):
         self.setTableModel(self.dataList)
+
 
     def setTableModel(self, dataList):
         if isinstance(dataList, list):
@@ -164,6 +165,10 @@ class TableWindow(QWidget):
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(False)
+        
+        sm = self.tableView.selectionModel()
+        if sm is not None:
+            sm.selectionChanged.connect(self.updateSlider)
 
         if not self.rows:
             self.rows = self.tableModel.rowCount(self)
@@ -486,14 +491,23 @@ class TableWindow(QWidget):
         cellContent = str(item.data())
         self.detailWidget = DetailWidget(parentWindow, cellContent)
 
+        
     def updateSlider(self, item):
 
-        if not self.tableHeader:
-            return
-        
         # get selected row time for signalling and events table
         
-        cellContent = str(item.data())
+        if not self.tableHeader:
+            return       
+
+        
+        if isinstance(item, QItemSelection):
+            # onselectionchanged mode signal to this slot
+            idx_list = item.indexes()
+            for idx in idx_list:
+                print("onselectionchanged mode signal to this slot: idx.row()", idx.row())
+                item = idx
+                break
+
         timeCell = None
         try:
             timeCell = datetime.datetime.strptime(

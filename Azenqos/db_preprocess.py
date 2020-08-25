@@ -40,7 +40,7 @@ def prepare_spatialite_views(dbcon):
             table = preprocess_azm.get_table_for_column(param)
             assert table
             view = param
-            sqlstr = "create table {col} as select log_hash, time, modem_time, posid, seqid, netid, geom, {col} from {table} ;".format(col=view, table=table)
+            sqlstr = "create table {col} as select log_hash, time, modem_time, geom, {col} from {table} ;".format(col=view, table=table)
             print("create view sqlstr: %s" % sqlstr)
             dbcon.execute(sqlstr)
             sqlstr = '''insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);'''.format(view)
@@ -122,7 +122,7 @@ def prepare_spatialite_views(dbcon):
             )
             df.to_sql('layer_styles', dbcon, if_exists='append', index=False)
 
-            dbcon.execute(""" INSERT INTO sqlite_sequence VALUES('layer_styles',{}); """).format(layer_style_id)
+            dbcon.execute(""" INSERT INTO sqlite_sequence VALUES('layer_styles',{}); """.format(layer_style_id))
 
             
             # gen theme qml for this param

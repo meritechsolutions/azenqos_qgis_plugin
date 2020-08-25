@@ -15,6 +15,11 @@ def test():
     with sqlite3.connect(dbfp) as dbcon:
         db_preprocess.prepare_spatialite_views(dbcon)
 
+        df = pd.read_sql("select * from lte_inst_rsrp_1", dbcon)
+        assert "geom" in df.columns
+        print("len df rsrp:", len(df))
+        assert len(df) == 589
+        
         df = pd.read_sql('select * from layer_styles', dbcon)
         print("df.head() %s" % df)
         assert len(df[df.f_table_name == 'nr_cqi']) == 1

@@ -1029,6 +1029,7 @@ class AzenqosDialog(QMainWindow):
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: timeChangedWorkerFunc - exception: {}".format(exstr))
+            #print("{}: timeChangedWorkerFunc thread gc.threadpool.maxThreadCount() {} gc.threadpool.activeThreadCount() {}".format(os.path.basename(__file__), gc.threadpool.maxThreadCount(),  gc.threadpool.activeThreadCount()))
             time.sleep(0.1)                            
 
         print("timeChangedWorkerFunc END")
@@ -1051,24 +1052,29 @@ class AzenqosDialog(QMainWindow):
             datetime.datetime.fromtimestamp(gc.currentTimestamp)
         )
         print("%s: timeChange7" % os.path.basename(__file__))
+
+        if len(gc.activeLayers) > 0:
+            QgsMessageLog.logMessage("[-- have gc.tableList --]")
+            self.hilightFeature()
+
+        print("%s: timeChange8" % os.path.basename(__file__))
+        
         if len(gc.openedWindows) > 0:
             for window in gc.openedWindows:
+                worker = None
                 if not window.title in gc.linechartWindowname:
-                    worker = Worker(window.hilightRow, sampledate)
+                    print("%s: timeChange7 hilightrow window %s" % (os.path.basename(__file__), window.title))
+                    window.hilightRow(sampledate)
                 else:
-                    worker = Worker(window.moveChart, sampledate)
-                gc.threadpool.start(worker)
-        print("%s: timeChange8" % os.path.basename(__file__))
+                    print("%s: timeChange7 movechart window %s" % (os.path.basename(__file__), window.title))
+                    window.moveChart(sampledate)
+        print("%s: timeChange9" % os.path.basename(__file__))
         # text = "[--" + str(len(gc.tableList) + "--]"
         # QgsMessageLog.logMessage(text)
 
         
-        if len(gc.activeLayers) > 0:
-            QgsMessageLog.logMessage("[-- have gc.tableList --]")
-            worker = Worker(self.hilightFeature)
-            gc.threadpool.start(worker)
             
-        print("%s: timeChange end1" % os.path.basename(__file__))
+        print("{}: timeChange end1 gc.threadpool.maxThreadCount() {} gc.threadpool.activeThreadCount() {}".format(os.path.basename(__file__), gc.threadpool.maxThreadCount(),  gc.threadpool.activeThreadCount()))
 
     # def threadComplete(self):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')

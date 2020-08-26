@@ -462,7 +462,10 @@ class TableWindow(QWidget):
             self.properties_window.setupComboBox()
             self.properties_window.show()
 
-    def hilightRow(self, sampledate):
+
+    
+    def hilightRow(self, sampledate, threading=False):
+        
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
@@ -473,11 +476,19 @@ class TableWindow(QWidget):
             "Signaling_Layer 1 Messages",
             "Signaling_Layer 3 Messages",
         ]:
-            worker = Worker(self.refreshTableContents)
+            print("datatable: threading: {} self.title: {} hilightRow: refreshTableContents()".format(threading, self.title))
+            if threading:
+                worker = Worker(self.refreshTableContents)
+            else:
+                self.refreshTableContents()
         else:
-            worker = Worker(self.findCurrentRow)
+            print("datatable: threading: {} self.title: {} hilightRow: findCurrentRow()".format(threading, self.title))
+            if threading:
+                worker = Worker(self.findCurrentRow)
+            else:
+                self.findCurrentRow()
 
-        if worker:
+        if threading and worker:
             gc.threadpool.start(worker)
         # elapse_time = time.time() - start_time
         # del worker

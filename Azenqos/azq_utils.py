@@ -2,7 +2,6 @@ import random
 import sys
 import traceback
 import os
-import global_config as gc
 import dprint
 
 
@@ -16,8 +15,10 @@ def get_module_path():
     )
 
 
-def write_local_file(fname, contents):
+def write_local_file(fname, contents, auto_encode=True):
     try:
+        if auto_encode and isinstance(contents, str):
+            contents = contents.encode()  # conv to bytes for write
         with open(
                 os.path.join(
                     get_module_path(),
@@ -31,7 +32,7 @@ def write_local_file(fname, contents):
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: write_local_file - exception: {}".format(exstr))
 
-def read_local_file(fname):
+def read_local_file(fname, auto_decode=True):
     try:
         with open(
                 os.path.join(
@@ -40,11 +41,14 @@ def read_local_file(fname):
                 ),
                 "rb"
         ) as f:
-            return f.read()
+            ret = f.read()
+            if auto_decode:
+                ret = ret.decode()
+            return ret
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
-        print("WARNING: write_local_file - exception: {}".format(exstr))
+        print("WARNING: read_local_file - exception: {}".format(exstr))
     return None
 
 

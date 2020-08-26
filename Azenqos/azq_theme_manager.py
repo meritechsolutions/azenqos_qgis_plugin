@@ -25,8 +25,11 @@ def get_module_path():
         os.path.join(os.getcwd(), os.path.dirname(__file__))
     )
 
-g_default_theme_file = os.path.join(get_module_path(),"default_theme.xml")
-g_ori_default_theme_file = g_default_theme_file
+def get_ori_default_theme():
+    return os.path.join(get_module_path(),"default_theme.xml")
+
+g_default_theme_file = get_ori_default_theme()
+g_ori_default_theme_file = get_ori_default_theme()
 
 g_var_name_legacy_to_new_dict = {
 "android_cellid_from_cellfile":"android_cellid_from_cellref",

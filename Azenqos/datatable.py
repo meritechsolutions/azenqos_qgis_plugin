@@ -521,29 +521,41 @@ class TableWindow(QWidget):
 
         timeCell = None
         try:
-            timeCell = datetime.datetime.strptime(
-                str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
-            ).timestamp()
-        except Exception as e:
-            # if current cell is not Time cell
-            headers = [item.lower() for item in self.tableHeader]
+            cellContent = str(item.data())            
             try:
-                columnIndex = headers.index("time")
-            except Exception as e2:
-                columnIndex = -1
-            if not columnIndex == -1:
-                timeItem = item.sibling(item.row(), columnIndex)
-                cellContent = str(timeItem.data())
                 timeCell = datetime.datetime.strptime(
                     str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
                 ).timestamp()
-            else:
-                timeCell = timeCell
+            except Exception as e:
+                # if current cell is not Time cell
+                headers = [item.lower() for item in self.tableHeader]
+                try:
+                    columnIndex = headers.index("time")
+                except Exception as e2:
+                    columnIndex = -1
+                if not columnIndex == -1:
+                    timeItem = item.sibling(item.row(), columnIndex)
+                    cellContent = str(timeItem.data())
+                    timeCell = datetime.datetime.strptime(
+                        str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
+                    ).timestamp()
+                else:
+                    timeCell = timeCell
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: updateSlider exception:", exstr)
         finally:
             if timeCell is not None:
-                sliderValue = timeCell - gc.minTimeValue
-                sliderValue = round(sliderValue, 3)
-                gc.timeSlider.setValue(sliderValue)
+                try:
+                    sliderValue = timeCell - gc.minTimeValue
+                    sliderValue = round(sliderValue, 3)
+                    gc.timeSlider.setValue(sliderValue)
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: updateSlider timecell exception:", exstr)
+
 
     def findCurrentRow(self):
         

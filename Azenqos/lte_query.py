@@ -688,3 +688,150 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
     
     final_df = pd.concat(df_list, sort=False)
     return final_df
+
+def get_lte_rlc_disp_df(dbcon, time_before):
+    n_param_args = 4
+    parameter_to_columns_list = [
+        (
+            ["Time","DL TP(Mbps)","DL TP(Kbps)","N Bearers"], 
+            ["time","lte_rlc_dl_tp_mbps","lte_rlc_dl_tp","lte_rlc_n_bearers"], 
+            "lte_rlc_stats"
+        ),             
+        (  # these params below come together so query them all in one query
+            [
+                "Mode",
+                "Type",
+                "RB-ID",
+                "Index",
+                "TP Mbps",
+            ],
+            list(map(lambda x: "lte_rlc_per_rb_dl_rb_mode_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_rlc_per_rb_dl_rb_type_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_rlc_per_rb_dl_rb_id_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_rlc_per_rb_cfg_index_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_rlc_per_rb_dl_tp_{}".format(x+1), range(n_param_args))),
+            "lte_rlc_stats"
+        )
+        
+    ]            
+    return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=True, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+
+def get_lte_pucch_pdsch_disp_df(dbcon, time_before):
+    n_param_args = 4
+    parameter_to_columns_list = [          
+        (
+            [
+            "---- PUCCH ----",
+            "CQI CW 0",
+            "CQI CW 1",
+            "CQI N Sub-bands",
+            "Rank Indicator",
+            ],
+            list(map(lambda x: "\"\" as unused_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_cqi_cw0_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_cqi_cw1_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_cqi_n_subbands_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_rank_indication_{}".format(x+1), range(n_param_args))),
+            "lte_cqi"
+        ),             
+        ( 
+            [
+            "---- PDSCH ----",
+            "PDSCH Serving Cell ID",
+            "PDSCH RNTI ID",
+            "PDSCH RNTI Type",
+            "PDSCH Serving N Tx Antennas",
+            "PDSCH Serving N Rx Antennas",
+            "PDSCH Transmission Mode Current",
+            "PDSCH Spatial Rank",
+            "PDSCH Rb Allocation Slot 0",
+            "PDSCH Rb Allocation Slot 1",
+            "PDSCH PMI Type",
+            "PDSCH PMI Index",
+            "PDSCH Stream[0] Block Size",
+            "PDSCH Stream[0] Modulation",
+            "PDSCH Traffic To Pilot Ratio",
+            "PDSCH Stream[1] Block Size",
+            "PDSCH Stream[1] Modulation",
+            ],
+            list(map(lambda x: "\"\" as unused_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_serving_cell_id_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_rnti_id_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_rnti_type_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_serving_n_tx_antennas_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_serving_n_rx_antennas_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_transmission_mode_current_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_spatial_rank_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_rb_allocation_slot0_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_rb_allocation_slot1_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_pmi_type_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_pmi_index_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_stream0_transport_block_size_bits_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_stream0_modulation_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_traffic_to_pilot_ratio_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_stream1_transport_block_size_bits_{}".format(x+1), range(n_param_args))) +
+            list(map(lambda x: "lte_pdsch_stream1_modulation_{}".format(x+1), range(n_param_args))),
+            "lte_pdsch_meas"
+        )
+        
+    ]            
+    return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=True, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)   
+
+def get_volte_disp_df(dbcon, time_before):
+    n_param_args = 4
+    parameter_to_columns_list = [          
+        (
+            "Time", ["time"], "lte_volte_stats"
+        ),
+        (
+            [
+                "Codec:",
+                "AMR SpeechCodec-RX",
+                "AMR SpeechCodec-TX",
+                "Delay interval avg:",
+                "Audio Packet delay (ms.)"
+            ],
+            [
+                "\"\" as unused0",
+                "gsm_speechcodecrx",
+                "gsm_speechcodectx",
+                "\"\" as unused1",
+                "vocoder_amr_audio_packet_delay_avg"
+            ],
+            "vocoder_info"
+        ), 
+        (
+            [
+                "RTP Packet delay (ms.)",
+                "RTCP SR Params:",
+                "RTCP Round trip time (ms.)",
+                "RTCP SR Params - Jitter DL:",
+                "RTCP SR Jitter DL (ts unit)",
+                "RTCP SR Jitter DL (ms.)",
+                "RTCP SR Params - Jitter UL:",
+                "RTCP SR Jitter UL (ts unit)",
+                "RTCP SR Jitter UL (ms.)",
+                "RTCP SR Params - Packet loss rate:",
+                "RTCP SR Packet loss DL (%)",
+                "RTCP SR Packet loss UL (%)",
+            ],
+            [
+                "lte_volte_rtp_pkt_delay_avg",
+                "\"\" as unused2",
+                "lte_volte_rtp_round_trip_time",
+                "\"\" as unused3",
+                "lte_volte_rtp_jitter_dl",
+                "lte_volte_rtp_jitter_dl_millis",
+                "\"\" as unused4",
+                "lte_volte_rtp_jitter_ul",
+                "lte_volte_rtp_jitter_ul_millis",
+                "\"\" as unused5",
+                "lte_volte_rtp_packet_loss_rate_dl",
+                "lte_volte_rtp_packet_loss_rate_ul",
+            ],
+            "lte_volte_stats"
+        ), 
+        
+    ]            
+    return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=True, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)   
+

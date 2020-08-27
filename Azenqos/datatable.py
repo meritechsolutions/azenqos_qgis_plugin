@@ -329,22 +329,13 @@ class TableWindow(QWidget):
                 elif self.title == "LTE_Serving + Neighbors":
                     self.dataList = lte_query.get_lte_serv_and_neigh_disp_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "LTE_PUCCH/PDSCH Parameters":
-                    self.tableHeader = ["Element", "Value"]
-                    self.dataList = LteDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getPucchPdschParameters()
+                    self.dataList = lte_query.get_lte_pucch_pdsch_disp_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "LTE_LTE Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
                 elif self.title == "LTE_LTE RLC":
-                    self.tableHeader = ["Element", "Value", "", "", ""]
-                    self.dataList = LteDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getRlc()
+                    self.dataList = lte_query.get_lte_rlc_disp_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "LTE_LTE VoLTE":
-                    self.tableHeader = ["Element", "Value"]
-                    self.dataList = LteDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getVolte()
+                    self.dataList = lte_query.get_volte_disp_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "LTE_LTE RRC/SIB States":
                     print("LTE_LTE RRC/SIB States gen datalist")
                     self.dataList = lte_query.get_lte_rrc_sib_states_df(dbcon, gc.currentDateTimeString)

@@ -16,6 +16,8 @@ echo "== Installing required python packages into QGIS's python env..."
 python3 -m pip install -r requirements.txt
 exit_if_failed
 
+mkdir ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
+
 echo == Removing any existing plugin folders...
 rm -rf ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Azenqos
 

@@ -14,6 +14,8 @@ def get_module_path():
         os.path.join(os.getcwd(), os.path.dirname(__file__))
     )
 
+def get_local_fp(fn):
+    return os.path.join(get_module_path(), fn)
 
 def write_local_file(fname, contents, auto_encode=True):
     try:

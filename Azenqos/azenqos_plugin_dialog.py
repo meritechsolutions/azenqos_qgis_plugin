@@ -35,7 +35,8 @@ import pyqtgraph as pg
 import numpy as np
 import global_config as gc
 import tasks
-
+import azq_utils
+import shutil
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -54,6 +55,7 @@ from .timeslider import *
 from .datatable import *
 from atomic_int import atomic_int
 
+GUI_SETTING_NAME_PREFIX = "azenqos_plugin_dialog/"
 
 def clearAllSelectedFeatures():
     mc = iface.mapCanvas()
@@ -74,12 +76,16 @@ def removeAzenqosGroup():
 
 class AzenqosDialog(QMainWindow):
 
+    company_name = 'freewill_fx'
+    software_name = 'azenqos_qgis_plugin'
+
     timechange_service_thread = None
     timechange_to_service_counter = atomic_int(0)
     closed = False
     
     def __init__(self, databaseUi):
         """Constructor."""
+        self.settings = QSettings(azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat)
         super(AzenqosDialog, self).__init__(None)
         self.timeSliderThread = timeSliderThread()
         self.newImport = False
@@ -105,8 +111,100 @@ class AzenqosDialog(QMainWindow):
         QgsProject.instance().layerWillBeRemoved.connect(self.removingTreeLayer)
         self.timechange_service_thread = Worker(self.timeChangedWorkerFunc)
         gc.threadpool.start(self.timechange_service_thread)
+        self._gui_restore()
         
 
+    def _gui_save(self):
+        # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
+        """
+        save "ui" controls and values to registry "setting"
+        :return:
+        """
+        try:
+            print("_gui_save() START")
+            print("_gui_save() geom")
+            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry())
+            print("_gui_save() state")
+            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
+
+            swl = self.mdi.subWindowList()
+            if swl:
+                self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+                i = -1
+                for window in swl:
+                    # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
+                    if not window.widget():
+                        continue
+                    i += 1
+                    self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i), window.widget().title)
+                    self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i), window.saveGeometry())
+                    # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
+                    
+            self.settings.sync()  # save to disk
+            print("_gui_save() DONE")
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: _gui_save() - exception: {}".format(exstr))
+
+
+    def _gui_restore(self):
+        """
+        restore "ui" controls with values stored in registry "settings"
+        :return:
+        """
+        try:
+            print("_gui_restore() START")
+            self.settings.sync()  # load from disk
+            window_geom = self.settings.value(GUI_SETTING_NAME_PREFIX + "geom")
+            if window_geom:
+                print("_gui_restore() geom")
+                self.restoreGeometry(window_geom)
+            '''
+            state_value = self.settings.value(GUI_SETTING_NAME_PREFIX + "state")
+            if state_value:
+                print("_gui_restore() state")
+                self.restoreState(state_value)
+            '''
+            n_windows = self.settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
+            if n_windows:
+                n_windows = int(n_windows)
+                for i in range(n_windows):
+                    title = self.settings.value(GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i))
+                    geom = self.settings.value(GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i))
+                    print("_gui_restore() window i {} title {}".format(i, title))
+                    if title and "_" in title:
+                        parts = title.split("_", 1)
+                        if len(parts) == 2:
+                            print("")
+                            print("_gui_restore() window i {} title {} openwindow".format(i, title))
+                            self.classifySelectedItems(parts[0], parts[1])
+                    if geom:
+                        for window in self.mdi.subWindowList():
+                            if not window.widget():
+                                continue
+                            if window.widget().title == title:
+                                print("_gui_restore() window i {} title {} setgeom".format(i, title))
+                                window.restoreGeometry(geom)
+                                break
+                               
+            print("_gui_restore() DONE")
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: _gui_restore() - exception: {}".format(exstr))
+            try:
+                print("doing qsettings clear()")
+                self.settings.clear()
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: qsettings clear() - exception: {}".format(exstr))
+
+                
+            
+
+        
     def initializeSchema(self):
         dirname = os.path.dirname(__file__)
         fileDir = os.path.join(dirname, "element_info_list.csv")
@@ -653,8 +751,8 @@ class AzenqosDialog(QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(AzenqosDialog)
 
         gc.timeSlider.valueChanged.connect(self.timeChange)
-        self.loadBtn.clicked.connect(self.loadFile)
-        self.saveBtn.clicked.connect(self.saveFile)
+        self.loadBtn.clicked.connect(self.loadWorkspaceFile)
+        self.saveBtn.clicked.connect(self.saveWorkspaceFile)
         self.layerSelect.clicked.connect(self.selectLayer)
         self.importDatabaseBtn.clicked.connect(self.importDatabase)
         self.maptool.clicked.connect(self.setMapTool)
@@ -2370,23 +2468,31 @@ class AzenqosDialog(QMainWindow):
                 # self.layer_one_messages.activateWindow()
             elif child == "Layer 3 Messages":
                 layer_three_widget = None
+                print("l30")
                 if hasattr(self, "layer_three_messages") is True:
                     tableWindow = self.layer_three_messages.widget()
+                    print("l31")
                     if not tableWindow:
+                        print("l32")
                         layer_three_widget = TableWindow(
                             self.layer_three_messages, windowName
                         )
                         gc.openedWindows.append(layer_three_widget)
-
+                    
+                    print("l33")
                     if self.layer_three_messages not in subwindowList:
+                        print("l34")
                         self.layer_three_messages = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.layer_three_messages)
-
-                    if layer_three_widget:
-                        self.layer_three_messages.setWidget(layer_three_widget)
+                    print("l35")
+                    if tableWindow:
+                        print("l36")
+                        self.layer_three_messages.setWidget(tableWindow)
+                    print("l37")
                     self.layer_three_messages.show()
-
+                    print("l38")
                 else:
+                    print("l39")
                     # create new subwindow
                     self.layer_three_messages = SubWindowArea(self.mdi)
                     layer_three_widget = TableWindow(
@@ -2589,31 +2695,35 @@ class AzenqosDialog(QMainWindow):
         for action in actions:
             self.toolbar.removeAction(action)
 
-    def loadFile(self):
+    def loadWorkspaceFile(self):
         print("loadFile()")
-        fileName, _ = QFileDialog.getOpenFileName(
-            self, "Open Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
+        fp, _ = QFileDialog.getOpenFileName(
+            self, "Open workspace file", QtCore.QDir.rootPath(), "*.ini"
         )
-        if fileName != "":
+        if fp:
+            print("loadWorkspaceFile:", fp)
             if len(gc.openedWindows) > 0:
-                for window in gc.openedWindows:
-                    window.close()
                 for mdiwindow in self.mdi.subWindowList():
                     mdiwindow.close()
                 gc.openedWindows = []
-            Utils().loadStateFromFile(fileName, self)
+            shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
+            self.settings.sync()  # load changes
+            self._gui_restore()
 
-    def saveFile(self):
-        fileName, _ = QFileDialog.getSaveFileName(
-            self, "Save Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
+            
+    def saveWorkspaceFile(self):
+        fp, _ = QFileDialog.getSaveFileName(
+            self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
         )
-        if fileName != "":
-            Utils().saveStateToFile(fileName)
+        if fp:
+            print("saveWorkspaceFile:", fp)
+            self._gui_save()
+            self.settings.sync()  # save changes
+            shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
 
     
     def closeEvent(self, event):
         print("azenqos_plugin_dialog: closeEvent:", event)
-
         # just close it as it might be ordered by qgis close (unload()) too
         self.cleanup()
         event.accept()
@@ -2636,8 +2746,9 @@ class AzenqosDialog(QMainWindow):
             event.ignore()
         '''
             
-    def cleanup(self):        
-        saving = Utils().saveState(gc.CURRENT_PATH)
+    def cleanup(self):
+        self._gui_save()
+        #saving = Utils().saveState(gc.CURRENT_PATH)
         iface.actionPan().trigger()
         self.pauseTime()
         self.timeSliderThread.exit()

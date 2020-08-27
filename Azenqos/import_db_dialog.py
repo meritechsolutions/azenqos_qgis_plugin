@@ -209,8 +209,7 @@ class Ui_DatabaseDialog(QDialog):
                 self.azenqosMainMenu = AzenqosDialog(self)
                 self.azenqosMainMenu.show()
                 self.azenqosMainMenu.raise_()
-                self.azenqosMainMenu.activateWindow()
-                self.loading = Utils().loadState(gc.CURRENT_PATH, self.azenqosMainMenu)
+                self.azenqosMainMenu.activateWindow()                
                 return True
         except Exception as ex:
             type_, value_, traceback_ = sys.exc_info()

@@ -115,7 +115,6 @@ class Ui_DatabaseDialog(QDialog):
 
 
     def clearCurrentProject(self):
-
         for hi in gc.h_list:
             hi.hide()
         gc.h_list = []

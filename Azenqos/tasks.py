@@ -14,7 +14,7 @@ from PyQt5.QtGui import *
 from qgis.core import *
 from qgis.utils import *
 from qgis.gui import *
-from .globalutils import Utils
+from globalutils import Utils
 
 
 class LayerTask(QgsTask):
@@ -120,7 +120,6 @@ class QuitTask(QgsTask):
             "[-- Start Removing Dependencies --]", tag="Processing"
         )
         self.start_time = time.time()
-        close_db()
         return True
 
     def finished(self, result):

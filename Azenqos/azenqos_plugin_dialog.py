@@ -34,6 +34,8 @@ sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 import pyqtgraph as pg
 import numpy as np
 import global_config as gc
+import tasks
+
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -48,7 +50,6 @@ from .cdma_evdo_query import CdmaEvdoQuery
 from .globalutils import Utils
 from .linechart import *
 from .worker import Worker
-from .tasks import *
 from .timeslider import *
 from .datatable import *
 from atomic_int import atomic_int
@@ -2571,14 +2572,17 @@ class AzenqosDialog(QMainWindow):
                 elif getChildNode == "Equipment Configuration":
                     pass
 
-    def killMainWindow(self):
-        self.close()
-        self.destroy(True, True)
 
+    def killMainWindow(self):
+        self.cleanup()
+        self.close()
+        '''
+        self.destroy(True, True)
         removeAzenqosGroup()
         for mdiwindow in self.mdi.subWindowList():
             mdiwindow.close()
         self.mdi.close()
+        '''
 
     def removeToolBarActions(self):
         actions = self.toolbar.actions()
@@ -2586,6 +2590,7 @@ class AzenqosDialog(QMainWindow):
             self.toolbar.removeAction(action)
 
     def loadFile(self):
+        print("loadFile()")
         fileName, _ = QFileDialog.getOpenFileName(
             self, "Open Azenqos save file", QtCore.QDir.rootPath(), "*.azs"
         )
@@ -2605,7 +2610,15 @@ class AzenqosDialog(QMainWindow):
         if fileName != "":
             Utils().saveStateToFile(fileName)
 
+    
     def closeEvent(self, event):
+        print("azenqos_plugin_dialog: closeEvent:", event)
+
+        # just close it as it might be ordered by qgis close (unload()) too
+        self.cleanup()
+        event.accept()
+        
+        '''
         reply = None
         if self.newImport is False:
             reply = QMessageBox.question(
@@ -2617,44 +2630,49 @@ class AzenqosDialog(QMainWindow):
             )
 
         if reply == QMessageBox.Yes or self.newImport is True:
-            saving = Utils().saveState(gc.CURRENT_PATH)
-            iface.actionPan().trigger()
-            self.pauseTime()
-            self.timeSliderThread.exit()
-            self.removeToolBarActions()
-            self.quitTask = QuitTask(u"Quiting Plugin", self)
-            QgsApplication.taskManager().addTask(self.quitTask)
-
-            # Begin removing layer (which cause db issue)
-            project = QgsProject.instance()
-            for (id_l, layer) in project.mapLayers().items():
-                if layer.type() == layer.VectorLayer:
-                    layer.removeSelection()
-                to_be_deleted = project.mapLayersByName(layer.name())[0]
-                project.removeMapLayer(to_be_deleted.id())
-                layer = None
-
-            QgsProject.instance().reloadAllLayers()
-            QgsProject.instance().clear()
-            #gc.tableList = []
-            gc.activeLayers = []
-
-            if len(gc.openedWindows) > 0:
-                for window in gc.openedWindows:
-                    window.close()
-                gc.openedWindows = []
-            QgsProject.removeAllMapLayers(QgsProject.instance())
-            # End removing layer
-
-            removeAzenqosGroup()
-            for mdiwindow in self.mdi.subWindowList():
-                mdiwindow.close()
-            self.mdi.close()
-            QgsMessageLog.logMessage("Close App")
+            self.cleanup()
             event.accept()
-            self.closed = True
         else:
             event.ignore()
+        '''
+            
+    def cleanup(self):        
+        saving = Utils().saveState(gc.CURRENT_PATH)
+        iface.actionPan().trigger()
+        self.pauseTime()
+        self.timeSliderThread.exit()
+        self.removeToolBarActions()
+        self.quitTask = tasks.QuitTask(u"Quiting Plugin", self)
+        QgsApplication.taskManager().addTask(self.quitTask)
+
+        # Begin removing layer (which cause db issue)
+        project = QgsProject.instance()
+        for (id_l, layer) in project.mapLayers().items():
+            if layer.type() == layer.VectorLayer:
+                layer.removeSelection()
+            to_be_deleted = project.mapLayersByName(layer.name())[0]
+            project.removeMapLayer(to_be_deleted.id())
+            layer = None
+
+        QgsProject.instance().reloadAllLayers()
+        QgsProject.instance().clear()
+        #gc.tableList = []
+        gc.activeLayers = []
+
+        if len(gc.openedWindows) > 0:
+            for window in gc.openedWindows:
+                window.close()
+            gc.openedWindows = []
+        QgsProject.removeAllMapLayers(QgsProject.instance())
+        # End removing layer
+
+        removeAzenqosGroup()
+        for mdiwindow in self.mdi.subWindowList():
+            mdiwindow.close()
+        self.mdi.close()            
+        QgsMessageLog.logMessage("Close App")
+        tasks.close_db()
+        self.closed = True
 
 
 class GroupArea(QMdiArea):

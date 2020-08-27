@@ -35,6 +35,6 @@ linechartWindowname = [
     "Data_LTE Data Line Chart",
     "Data_5G NR Data Line Chart",
 ]
-threadpool = QThreadPool()
+threadpool = QThreadPool().globalInstance()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 

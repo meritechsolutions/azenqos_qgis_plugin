@@ -262,7 +262,7 @@ class Utils:
                 db.close()
 
     def datetimeStringtoTimestamp(self, datetimeString: str):
-        print("%s: datetimestringtotimestamp" % os.path.basename(__file__))
+        #print("%s: datetimestringtotimestamp" % os.path.basename(__file__))
         try:
             element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
             timestamp = datetime.datetime.timestamp(element)

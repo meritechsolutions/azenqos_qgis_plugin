@@ -34,6 +34,8 @@ import lte_query
 
 
 class TableWindow(QWidget):
+    signal_ui_thread_emit_model_datachanged = pyqtSignal()
+    
     def __init__(self, parent, windowName):
         super().__init__(parent)
         self.title = windowName
@@ -54,6 +56,7 @@ class TableWindow(QWidget):
         self.dateString = ""
         self.tableViewCount = 0
         self.parentWindow = parent
+        self.signal_ui_thread_emit_model_datachanged.connect(self.ui_thread_emit_model_datachanged)
         self.setupUi()
         # self.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.customContextMenuRequested.connect(self.generateMenu)
@@ -86,7 +89,7 @@ class TableWindow(QWidget):
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
             """
         )
-        self.refreshTableContents()
+        self.refreshTableContents(create_table_model=True)
 
         # Attach header to table, create text filter
         self.tableView.setHorizontalHeader(self.filterHeader)
@@ -115,9 +118,22 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
-    def updateTable(self):
-        self.setTableModel(self.dataList)
-
+        
+    def ui_thread_emit_model_datachanged(self):
+        print("ui_thread_emit_model_datachanged")
+        # this func is supposed to be called as a slot by ui thread - triggered by signal from non-ui thread
+        index_topleft = self.tableModel.index(0,0)
+        index_bottomright = self.tableModel.index(100, 100)
+        #self.tableModel.dataChanged.emit(index_topleft, index_bottomright, [QtCore.Qt.DisplayRole])
+        self.proxyModel.dataChanged.emit(index_topleft, index_bottomright, [QtCore.Qt.DisplayRole])
+        
+    def updateTableModelData(self, data):
+        #self.setTableModel(self.dataList)
+        if self.tableModel is not None:
+            print("updateTableModelData()")
+            self.tableModel.setData(None, data)
+            self.signal_ui_thread_emit_model_datachanged.emit()  # this func is called from the sync thread which is non-ui so setdata() above's emit of dataChanged signal wont have effect, emit this signal to trigger dataChanged emit from ui thread...
+            
 
     def setTableModel(self, dataList):
         if isinstance(dataList, list):
@@ -187,7 +203,7 @@ class TableWindow(QWidget):
             self.rowCount = sizelist[0]
             self.columnCount = sizelist[1]
 
-    def refreshTableContents(self):
+    def refreshTableContents(self, create_table_model=False):
         with sqlite3.connect(gc.databasePath) as dbcon:
             if self.title is not None:
                 # GSM
@@ -439,16 +455,20 @@ class TableWindow(QWidget):
                     ).getDebugAndroidEvent()
 
                 if self.dataList is not None:
-                    self.setTableModel(self.dataList)
+                    if create_table_model:
+                        self.setTableModel(self.dataList)
+                    else:
+                        self.updateTableModelData(self.dataList)  # applies new self.dataList
                     self.tableViewCount = self.tableView.model().rowCount()
 
                     
     def setHeader(self, headers):
         # self.tableHeader = headers
         self.customHeader = headers
-        self.updateTable()
+        self.updateTableModelData(self.dataList)
         # self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
 
+        
     def generateMenu(self, pos):
         menu = QMenu()
         item1 = menu.addAction(u"Customize")
@@ -642,6 +662,8 @@ class DetailWidget(QDialog):
 
 
 class TableModel(QAbstractTableModel):
+
+        
     def __init__(self, inputData, header, parent=None, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
@@ -660,8 +682,20 @@ class TableModel(QAbstractTableModel):
             columns = len(self.headerLabels)
         return columns
 
+    # override
+    def setData(self, index, data, role=QtCore.Qt.DisplayRole):
+        if isinstance(data, list):
+            self.dataSource = data
+            index_topleft = self.index(0,0)
+            index_bottomright = self.index(100,100)
+            self.dataChanged.emit(index_topleft, index_bottomright, [role])  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
+            return True
+        return False
+    
     def data(self, index, role=QtCore.Qt.DisplayRole):
+        #print("tablemodel data() role:", role)
         if role == QtCore.Qt.DisplayRole:
+            #print("data() QtCore.Qt.DisplayRole")
             row = index.row()
             column = index.column()
             return "{}".format(self.dataSource[row][column])
@@ -690,8 +724,22 @@ class PdTableModel(QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.df.columns)
 
+    # override
+    def setData(self, index, data, role=QtCore.Qt.DisplayRole):
+        if isinstance(data, pd.DataFrame):
+            self.df = data
+            index_topleft = self.index(0,0)
+            index_bottomright = self.index(100,100)
+            self.dataChanged.emit(index_topleft, index_bottomright, [QtCore.Qt.DisplayRole])  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
+            print("pdtablemodel setdata emit done")
+            return True
+        return False
+    
+    
     def data(self, index, role=QtCore.Qt.DisplayRole):
-        if role == QtCore.Qt.DisplayRole:            
+        #print("pdtablemodel data() role:", role)
+        if role == QtCore.Qt.DisplayRole:
+            #print("pdtablemodel data() displayrole enter")
             try:                
                 ret = self.df.iloc[index.row(), index.column()]
                 if pd.isnull(ret):

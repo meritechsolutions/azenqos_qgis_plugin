@@ -1037,27 +1037,27 @@ class AzenqosDialog(QMainWindow):
     def timeChangeImpl(self):
         print("%s: timeChange0" % os.path.basename(__file__))
         value = gc.timeSlider.value()
-        print("%s: timeChange1" % os.path.basename(__file__))
+        #print("%s: timeChange1" % os.path.basename(__file__))
         timestampValue = gc.minTimeValue + value
-        print("%s: timeChange2" % os.path.basename(__file__))
+        #print("%s: timeChange2" % os.path.basename(__file__))
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
-        print("%s: timeChange3" % os.path.basename(__file__))
+        #print("%s: timeChange3" % os.path.basename(__file__))
         self.timeEdit.setDateTime(sampledate)
-        print("%s: timeChange4" % os.path.basename(__file__))
+        #print("%s: timeChange4" % os.path.basename(__file__))
         self.timeSliderThread.set(value)
-        print("%s: timeChange5" % os.path.basename(__file__))
+        #print("%s: timeChange5" % os.path.basename(__file__))
         gc.currentTimestamp = timestampValue
-        print("%s: timeChange6" % os.path.basename(__file__))
+        #print("%s: timeChange6" % os.path.basename(__file__))
         gc.currentDateTimeString = "%s" % (
             datetime.datetime.fromtimestamp(gc.currentTimestamp)
         )
-        print("%s: timeChange7" % os.path.basename(__file__))
+        #print("%s: timeChange7" % os.path.basename(__file__))
 
         if len(gc.activeLayers) > 0:
             QgsMessageLog.logMessage("[-- have gc.tableList --]")
             self.hilightFeature()
 
-        print("%s: timeChange8" % os.path.basename(__file__))
+        #print("%s: timeChange8" % os.path.basename(__file__))
         
         if len(gc.openedWindows) > 0:
             for window in gc.openedWindows:
@@ -1099,12 +1099,12 @@ class AzenqosDialog(QMainWindow):
             if layer.name() not in gc.activeLayers:
                 continue
             try:
-                print("selectFeatureOnLayersByTime layer: %s" % layer.name())
+                #print("selectFeatureOnLayersByTime layer: %s" % layer.name())
                 end_dt = datetime.datetime.fromtimestamp(gc.currentTimestamp)
                 start_dt = end_dt - datetime.timedelta(seconds=(gc.DEFAULT_LOOKBACK_DUR_MILLIS/1000.0))
                 # 2020-10-08 15:35:55.431000
                 filt_expr = "time >= '%s' and time <= '%s'" % (start_dt, end_dt)
-                print("filt_expr:", filt_expr)
+                #print("filt_expr:", filt_expr)
                 request = (
                     QgsFeatureRequest()
                     .setFilterExpression(filt_expr)
@@ -1112,7 +1112,7 @@ class AzenqosDialog(QMainWindow):
                 )
 
                 layerFeatures = layer.layer().getFeatures(request)
-                print("filt request ret:", layerFeatures)
+                #print("filt request ret:", layerFeatures)
                 lc = 0
                 fids = []
                 time_list = []
@@ -1123,8 +1123,8 @@ class AzenqosDialog(QMainWindow):
                 if len(fids):
                     sr = pd.Series(time_list, index=fids, dtype='datetime64[ns]')
                     sids = [sr.idxmax()]
-                    print("sr:", sr)
-                    print("select ids:", sids)
+                    #print("sr:", sr)
+                    #print("select ids:", sids)
                     layer.layer().selectByIds(sids)
             except:
                 type_, value_, traceback_ = sys.exc_info()

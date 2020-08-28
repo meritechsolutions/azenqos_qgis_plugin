@@ -71,9 +71,6 @@ class TableWindow(QWidget):
 
         # Init table
         self.tableView = QTableView(self)
-        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
-        #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
@@ -95,9 +92,12 @@ class TableWindow(QWidget):
 
         # Attach header to table, create text filter
         self.tableView.setHorizontalHeader(self.filterHeader)
+
+        
+        '''
         self.tableView.verticalHeader().setFixedWidth(
             self.tableView.verticalHeader().sizeHint().width()
-        )
+        )'''
         if self.tableHeader and len(self.tableHeader) > 0:
             self.filterHeader.setFilterBoxes(gc.maxColumns, self)
 
@@ -106,6 +106,16 @@ class TableWindow(QWidget):
         layout.setMargin(0)
         layout.setContentsMargins(0,0,0,0)
         layout.addWidget(self.tableView)
+
+        self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.tableView.horizontalHeader().setMinimumSectionSize(40)
+        self.tableView.horizontalHeader().setDefaultSectionSize(60)
+        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+
+        self.tableView.verticalHeader().setMinimumSectionSize(10)
+        self.tableView.verticalHeader().setDefaultSectionSize(30)
+
+       
         # flayout = QFormLayout()
         # layout.addLayout(flayout)
         # for i in range(len(self.tableHeader)):
@@ -195,7 +205,8 @@ class TableWindow(QWidget):
         if not self.columns:
             self.columns = self.tableModel.columnCount(self)
             self.fetchColumns = self.columns
-        # self.tableView.resizeColumnsToContents()
+            #print("resizeColumnsToContents()")
+            #self.tableView.resizeColumnsToContents()
 
     def setDataSet(self, data_set: list):
         self.dataList = data_set

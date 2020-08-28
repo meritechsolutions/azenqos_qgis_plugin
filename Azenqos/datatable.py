@@ -72,6 +72,8 @@ class TableWindow(QWidget):
         # Init table
         self.tableView = QTableView(self)
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header

@@ -128,13 +128,17 @@ class AzenqosDialog(QMainWindow):
             self.settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
 
             swl = self.mdi.subWindowList()
-            if swl:
+            swl = [w for w in swl if (w is not None and w.widget() is not None)]
+            print("_gui_save() len(swl)", len(swl), "len(gc.openedWindows)", len(gc.openedWindows))
+            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+            if swl:                
                 self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
                 i = -1
                 for window in swl:
                     # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
                     if not window.widget():
                         continue
+                    print("_gui_save() window_{}_title".format(i), window.widget().title)
                     i += 1
                     self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i), window.widget().title)
                     self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i), window.saveGeometry())

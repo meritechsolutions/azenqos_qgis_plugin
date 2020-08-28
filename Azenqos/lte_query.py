@@ -775,7 +775,7 @@ def get_lte_pucch_pdsch_disp_df(dbcon, time_before):
         )
         
     ]            
-    return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=True, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)   
+    return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)   
 
 def get_volte_disp_df(dbcon, time_before):
     n_param_args = 4
@@ -833,5 +833,5 @@ def get_volte_disp_df(dbcon, time_before):
         ), 
         
     ]            
-    return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=True, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)   
+    return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)   
 

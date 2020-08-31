@@ -599,19 +599,25 @@ class AzenqosDialog(QMainWindow):
 
     def tileHorizontally(self):
         position = QPoint(0,0)
-        for subWindow in self.mdi.subWindowList():
-            rect = QRect(0,0,self.mdi.width(),self.mdi.height()/ len(self.mdi.subWindowList()))
-            subWindow.setGeometry(rect)
-            subWindow.move(position)
-            position.setY(position.y()+subWindow.height())
+        if len(self.mdi.subWindowList()) < 2:
+            self.mdi.tileSubWindows()
+        else:
+            for subWindow in self.mdi.subWindowList():
+                rect = QRect(0,0,self.mdi.width(),self.mdi.height()/ len(self.mdi.subWindowList()))
+                subWindow.setGeometry(rect)
+                subWindow.move(position)
+                position.setY(position.y()+subWindow.height())
     
     def tileVertically(self):
         position = QPoint(0,0)
-        for subWindow in self.mdi.subWindowList():
-            rect = QRect(0,0,self.mdi.width()/len(self.mdi.subWindowList()),self.mdi.height())
-            subWindow.setGeometry(rect)
-            subWindow.move(position)
-            position.setX(position.x()+subWindow.width())
+        if len(self.mdi.subWindowList()) < 2:
+            self.mdi.tileSubWindows()
+        else:
+            for subWindow in self.mdi.subWindowList():
+                rect = QRect(0,0,self.mdi.width()/len(self.mdi.subWindowList()),self.mdi.height())
+                subWindow.setGeometry(rect)
+                subWindow.move(position)
+                position.setX(position.x()+subWindow.width())
 
     def setupUi(self, AzenqosDialog):
         AzenqosDialog.setObjectName("AzenqosDialog")

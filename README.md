@@ -26,3 +26,11 @@ Installation instructions for Ubuntu GNU/Linux
 - If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.
 - Repeat the same when you want to upgrade the plugin
+
+
+License
+-------
+
+Copyright (C) 2019-2020 Freewill FX Co., Ltd. All rights reserved.
+
+Released under the GNU GPL Version 2. Please see [LICENSE](LICENSE) file.

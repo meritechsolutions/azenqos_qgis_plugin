@@ -1,4 +1,7 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+import pandas as pd
+import params_disp_df
+import global_config as gc
 
 
 class WcdmaDataQuery:
@@ -576,3 +579,66 @@ class WcdmaDataQuery:
                 value = ""
                 dataList.append([columnName, value, "", ""])
             return dataList
+
+
+################################## df get functions
+
+
+def get_wcdma_acive_monitored_df(dbcon, time_before):
+    df_list = []
+    
+    cell_col_prefix_renamed = ["Cell ID", "Cell Name", "PSC", "Ec/Io", "RSCP ", "UARFCN"]
+    
+    aset_col_prefix_sr = pd.Series(["wcdma_aset_cellfile_matched_cellid_", "wcdma_aset_cellfile_matched_cellname_", "wcdma_aset_sc_", "wcdma_aset_ecio_", "wcdma_aset_rscp_", "wcdma_aset_cellfreq_"])
+    aset_n_param = 3
+    aset = sum(map(lambda x: list(map(lambda y: x+"{}".format(y+1), range(aset_n_param))),aset_col_prefix_sr),[])
+    parameter_to_columns_list = [
+        ("Time", ["time"] ),
+        (
+            list(map(lambda x:"Aset{}".format(x+1), range(aset_n_param))),
+            aset,
+            # list(map(lambda x: "wcdma_aset_cellfile_matched_cellid_{}".format(x+1), range(aset_n_param))) +
+            # list(map(lambda x: "wcdma_aset_cellfile_matched_cellname_{}".format(x+1), range(aset_n_param))) +
+            # list(map(lambda x: "wcdma_aset_sc_{}".format(x+1), range(aset_n_param))) +
+            # list(map(lambda x: "wcdma_aset_ecio_{}".format(x+1), range(aset_n_param))) +
+            # list(map(lambda x: "wcdma_aset_rscp_{}".format(x+1), range(aset_n_param))) +
+            # list(map(lambda x: "wcdma_aset_cellfreq_{}".format(x+1), range(aset_n_param))),
+            "wcdma_cell_meas"
+        ),
+    ]
+    df = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, default_table="wcdma_cell_meas", not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    #print("df.head():\n%s" % df.head())
+    df.columns = ["CellGroup"]+cell_col_prefix_renamed
+    #print("df.head():\n%s" % df.head())
+    df_list.append(df)
+
+    mset_col_prefix_sr = pd.Series(["wcdma_mset_cellfile_matched_cellid_", "wcdma_mset_cellfile_matched_cellname_", "wcdma_mset_sc_", "wcdma_mset_ecio_", "wcdma_mset_rscp_", "wcdma_mset_cellfreq_"])
+    mset_n_param = 16
+    mset = sum(map(lambda x: list(map(lambda y: x+"{}".format(y+1), range(mset_n_param))),mset_col_prefix_sr),[])
+    parameter_to_columns_list = [
+        (
+            list(map(lambda x:"Mset{}".format(x+1), range(mset_n_param))),
+            mset,
+            "wcdma_cell_meas"
+        ),
+    ]
+    df = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, default_table="wcdma_cell_meas", not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    df.columns = ["CellGroup"]+cell_col_prefix_renamed
+    df_list.append(df)
+
+    dset_col_prefix_sr = pd.Series(["wcdma_dset_cellfile_matched_cellid_", "wcdma_dset_cellfile_matched_cellname_", "wcdma_dset_sc_", "wcdma_dset_ecio_", "wcdma_dset_rscp_", "wcdma_dset_cellfreq_"])
+    dset_n_param = 8
+    dset = sum(map(lambda x: list(map(lambda y: x+"{}".format(y+1), range(dset_n_param))),dset_col_prefix_sr),[])
+    parameter_to_columns_list = [
+        (
+            list(map(lambda x:"Dset{}".format(x+1), range(dset_n_param))),
+            dset,
+            "wcdma_cell_meas"
+        ),
+    ]
+    df = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, default_table="wcdma_cell_meas", not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    df.columns = ["CellGroup"]+cell_col_prefix_renamed
+    df_list.append(df)
+
+    final_df = pd.concat(df_list, sort=False)
+    return final_df

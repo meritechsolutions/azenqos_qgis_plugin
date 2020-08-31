@@ -31,6 +31,7 @@ from .wcdma_query import WcdmaDataQuery
 from .worker import Worker
 from .customize_properties import *
 import lte_query
+import wcdma_query
 
 
 class TableWindow(QWidget):
@@ -258,19 +259,7 @@ class TableWindow(QWidget):
 
                 # WCDMA
                 if self.title == "WCDMA_Active + Monitored Sets":
-                    self.tableHeader = [
-                        "Time",
-                        "CellName",
-                        "CellType",
-                        "SC",
-                        "Ec/Io",
-                        "RSCP",
-                        "Freq",
-                        "Event",
-                    ]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getActiveMonitoredSets()
+                    self.dataList = wcdma_query.get_wcdma_acive_monitored_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "WCDMA_Radio Parameters":
                     self.tableHeader = ["Element", "Value"]
                     self.dataList = WcdmaDataQuery(

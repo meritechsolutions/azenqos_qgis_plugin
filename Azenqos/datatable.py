@@ -261,10 +261,7 @@ class TableWindow(QWidget):
                 if self.title == "WCDMA_Active + Monitored Sets":
                     self.dataList = wcdma_query.get_wcdma_acive_monitored_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "WCDMA_Radio Parameters":
-                    self.tableHeader = ["Element", "Value"]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getRadioParameters()
+                    self.dataList = wcdma_query.get_wcdma_radio_params_disp_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "WCDMA_Active Set List":
                     self.tableHeader = [
                         "Time",
@@ -283,27 +280,13 @@ class TableWindow(QWidget):
                         gc.azenqosDatabase, gc.currentDateTimeString
                     ).getMonitoredSetList()
                 elif self.title == "WCDMA_BLER Summary":
-                    self.tableHeader = ["Element", "Value"]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getBlerSummary()
+                    self.dataList = wcdma_query.get_bler_sum_disp_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "WCDMA_BLER / Transport Channel":
-                    self.tableHeader = ["Transport Channel", "Percent", "Err", "Rcvd"]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getBLER_TransportChannel()
+                    self.dataList = wcdma_query.get_wcdma_bler_transport_channel_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "WCDMA_Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
                 elif self.title == "WCDMA_Bearers":
-                    self.tableHeader = [
-                        "N Bearers",
-                        "Bearers ID",
-                        "Bearers Rate DL",
-                        "Bearers Rate UL",
-                    ]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getBearers()
+                    self.dataList = wcdma_query.get_wcdma_bearers_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "WCDMA_Pilot Poluting Cells":
                     self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
                     self.dataList = WcdmaDataQuery(

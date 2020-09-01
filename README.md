@@ -34,3 +34,5 @@ License
 Copyright (C) 2019-2020 Freewill FX Co., Ltd. All rights reserved.
 
 Released under the GNU GPL Version 2. Please see [LICENSE](LICENSE) file.
+
+This project uses tshark and text2pcap utilities from the Wireshark project Please see [wireshark_LICENSE](wireshark_LICENSE) file for its license and [wireshark_SOURCE](wireshark_SOURCE) for its source.

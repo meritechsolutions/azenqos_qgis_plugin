@@ -31,8 +31,27 @@ Installation instructions for Ubuntu GNU/Linux
 License
 -------
 
-Copyright (C) 2019-2020 Freewill FX Co., Ltd. All rights reserved.
-
 Released under the GNU GPL Version 2. Please see [LICENSE](LICENSE) file.
 
-This project uses `tshark` and `text2pcap` utilities from the Wireshark project Please see [wireshark_LICENSE](wireshark_LICENSE) file for its license and [wireshark_SOURCE](wireshark_SOURCE) for its source.
+Copyright (C) 2019-2020 Freewill FX Co., Ltd.
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+---
+
+Special thanks and notices
+--------------------------
+
+- This project uses `tshark` and `text2pcap` utilities from the Wireshark project Please see [wireshark_LICENSE](wireshark_LICENSE) file for its license and [wireshark_SOURCE](wireshark_SOURCE) for its source.

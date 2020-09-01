@@ -31,7 +31,7 @@ Installation instructions for Ubuntu GNU/Linux
 License
 -------
 
-Released under the GNU GPL Version 2. Please see [LICENSE](LICENSE) file.
+- Released under the GNU GPL Version 2. Please see [LICENSE](LICENSE) file.
 
 Copyright (C) 2019-2020 Freewill FX Co., Ltd.
 
@@ -49,7 +49,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
----
 
 Special thanks and notices
 --------------------------

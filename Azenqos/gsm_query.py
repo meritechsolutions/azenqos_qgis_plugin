@@ -565,7 +565,7 @@ def get_coi_df(dbcon, time_before):
     parameter_to_columns_list = [
         (
             "Avg",
-            [""]
+            ["\"\""]
         ),
         (
             list(map(lambda x: "", range(avg_n_param))),

@@ -83,10 +83,13 @@ class AzenqosDialog(QMainWindow):
     timechange_to_service_counter = atomic_int(0)
     closed = False
 
+    signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
+
     def __init__(self, databaseUi):
         """Constructor."""
         self.settings = QSettings(azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat)
         super(AzenqosDialog, self).__init__(None)
+        self.signal_ui_thread_emit_time_slider_updated.connect(self.ui_thread_emit_time_slider_updated)
         self.timeSliderThread = timeSliderThread()
         self.newImport = False
         self.posObjs = []
@@ -113,6 +116,10 @@ class AzenqosDialog(QMainWindow):
         gc.threadpool.start(self.timechange_service_thread)
         self._gui_restore()
 
+    def ui_thread_emit_time_slider_updated(self, timestamp):
+        print("ui_thread_emit_time_slider_updated")
+        sampledate = datetime.datetime.fromtimestamp(timestamp)
+        self.timeEdit.setDateTime(sampledate)
 
     def _gui_save(self):
         # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
@@ -1145,7 +1152,6 @@ class AzenqosDialog(QMainWindow):
         #print("%s: timeChange2" % os.path.basename(__file__))
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         #print("%s: timeChange3" % os.path.basename(__file__))
-        self.timeEdit.setDateTime(sampledate)
         #print("%s: timeChange4" % os.path.basename(__file__))
         self.timeSliderThread.set(value)
         #print("%s: timeChange5" % os.path.basename(__file__))
@@ -1155,6 +1161,8 @@ class AzenqosDialog(QMainWindow):
             datetime.datetime.fromtimestamp(gc.currentTimestamp)
         )
         #print("%s: timeChange7" % os.path.basename(__file__))
+        # print("signal_ui_thread_emit_time_slider_updated.emit()")
+        self.signal_ui_thread_emit_time_slider_updated.emit(gc.currentTimestamp)
 
         if len(gc.activeLayers) > 0:
             QgsMessageLog.logMessage("[-- have gc.tableList --]")

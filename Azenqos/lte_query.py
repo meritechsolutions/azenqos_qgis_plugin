@@ -835,3 +835,179 @@ def get_volte_disp_df(dbcon, time_before):
     ]            
     return params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)   
 
+
+def get_lte_data_disp_df(dbcon, time_before):
+    n_param_args = 4
+    df_list=[]
+    parameter_to_columns_list = [          
+        (
+            [
+                "RRC State",
+            ],
+            [
+                "lte_rrc_state" ,
+            ],
+            "lte_rrc_state"
+        ),             
+        
+    ]            
+    df_rrc = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, default_table="lte_rrc_state", not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    df_list.append(df_rrc)
+
+    parameter_to_columns_list = [          
+        (
+            [
+                "L1 Combined (Mbps)", "L1 Combined (Kbps)",
+            ],
+            [
+                "lte_l1_dl_throughput_all_carriers_mbps", "lte_l1_dl_throughput_all_carriers"
+            ],
+            "lte_l1_dl_tp"
+        ),
+        (
+            [
+                "L1 Combined (Mbps)", "L1 Combined (Kbps)",
+            ],
+            [
+                "lte_l1_ul_throughput_all_carriers_mbps_1", "lte_l1_ul_throughput_all_carriers_1"
+            ],
+            "lte_l1_ul_tp"
+        ),   
+
+    ]            
+    df_tp = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+
+
+    df_t = pd.DataFrame(columns=["param",1, 2])
+    df_t.loc[0]=["Throughput","DL","UL"]
+    df_t.loc[1]=["L1 Combined (Mbps)", df_tp.iloc[0,1], df_tp.iloc[2,1]]
+    df_t.loc[2]=["L1 Combined (kbps)", df_tp.iloc[1,1], df_tp.iloc[3,1]]
+    df_list.append(df_t)
+
+    parameter_to_columns_list = [          
+        (
+            [
+                "PDCP (Mbps)",
+                "PDCP (kbps)",
+            ],
+            [
+                "lte_pdcp_dl_throughput_mbps",
+                "lte_pdcp_ul_throughput_mbps",
+                "lte_pdcp_dl_throughput",
+                "lte_pdcp_ul_throughput"
+            ],
+            "lte_pdcp_stats"
+        ),
+        (
+            [
+                "RLC (Mbps)",
+                "RLC (kbps)",
+            ],
+            [
+                "lte_rlc_dl_tp_mbps",
+                "lte_rlc_ul_tp_mbps",
+                "lte_rlc_dl_tp",
+                "lte_rlc_ul_tp"
+            ],
+            "lte_rlc_stats"
+        ),  
+        (
+            [
+                "MAC (Kbps)",
+            ],
+            [
+                "lte_mac_dl_tp",
+                "lte_mac_ul_tp",
+            ],
+            "lte_mac_ul_tx_stat"
+        ),         
+        
+    ]            
+    df_pdcp = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    df_list.append(df_pdcp)
+         
+    parameter_to_columns_list = [          
+        (
+            [ 
+                "TransMode RRC tm",
+            ],
+            [
+                "lte_transmission_mode_l3",
+            ],
+            "lte_rrc_transmode_info"
+        ),   
+
+    ]            
+    df_tran = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    df_list.append(df_tran)
+
+    df_cell = pd.DataFrame(columns=["param",1, 2, 3, 4])
+    df_cell.loc[1]=["", "PCC", "SCC0", "SCC1", "SCC2"]
+    df_list.append(df_cell)
+
+    parameter_to_columns_list = [          
+        (
+            [ 
+                "L1 DL TP (Mbps)",
+            ],
+            list(map(lambda x: "lte_l1_throughput_mbps_{}".format(x+1), range(n_param_args))),
+            "lte_l1_dl_tp"
+        ),   
+        (
+            [ 
+                "L1 UL TP (Mbps)",
+            ],
+            list(map(lambda x: "lte_l1_ul_throughput_mbps_{}".format(x+1), range(n_param_args))),
+            "lte_l1_ul_tp"
+        ),  
+        (
+            [ 
+                "TransMode Cur",
+            ],
+            list(map(lambda x: "lte_pdsch_transmission_mode_current_{}".format(x+1), range(n_param_args))),
+            "lte_pdsch_meas"
+        ),  
+        (
+            [ 
+                "EARFCN",
+            ],
+            list(map(lambda x: "lte_earfcn_{}".format(x+1), range(n_param_args))),
+            "lte_cell_meas"
+        ),  
+        (
+            [ 
+                "PCI",
+            ],
+            list(map(lambda x: "lte_pdsch_serving_cell_id_{}".format(x+1), range(n_param_args))),
+            "lte_pdsch_meas"
+        ), 
+        (
+            [ 
+                "PUSCH Stats:",
+                "PRB Alloc UL",
+                "MCS Index UL",
+                "Modulation UL",
+                "L1 UL Bler"
+            ],
+            
+            list(map(lambda x: "\"\" as unused_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_l1_ul_n_rbs_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_ul_mcs_index_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pusch_modulation_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_l1_ul_bler_{}".format(x+1), range(n_param_args))),
+            "lte_l1_ul_tp"
+        ),  
+        (
+            [ 
+                "DCI",
+            ],
+            list(map(lambda x: "lte_pdcch_dci_{}".format(x+1), range(n_param_args))),
+            "lte_pdcch_dec_result"
+        ),  
+
+    ]            
+    df_tran = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
+    df_list.append(df_tran)
+
+    final_df = pd.concat(df_list, sort=False)
+    return final_df

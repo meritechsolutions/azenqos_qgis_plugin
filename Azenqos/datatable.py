@@ -268,6 +268,8 @@ class TableWindow(QWidget):
                     self.dataList = lte_query.get_lte_serv_and_neigh_disp_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "LTE_PUCCH/PDSCH Parameters":
                     self.dataList = lte_query.get_lte_pucch_pdsch_disp_df(dbcon, gc.currentDateTimeString)
+                elif self.title == "LTE_Data":
+                    self.dataList = lte_query.get_lte_data_disp_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "LTE_LTE Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
                 elif self.title == "LTE_LTE RLC":

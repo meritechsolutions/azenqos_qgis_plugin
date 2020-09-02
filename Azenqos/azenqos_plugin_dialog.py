@@ -399,6 +399,8 @@ class AzenqosDialog(QMainWindow):
         self.actionServing_Neighbors_2.setObjectName("actionServing_Neighbors_2")
         self.actionPUCCH_PDSCH_Parameters = QAction(AzenqosDialog)
         self.actionPUCCH_PDSCH_Parameters.setObjectName("actionPUCCH_PDSCH_Parameters")
+        self.actionData = QAction(AzenqosDialog)
+        self.actionData.setObjectName("actionData")
         self.actionLTE_Line_Chart = QAction(AzenqosDialog)
         self.actionLTE_Line_Chart.setObjectName("actionLTE_Line_Chart")
         self.actionLTE_RLC = QAction(AzenqosDialog)
@@ -485,6 +487,7 @@ class AzenqosDialog(QMainWindow):
         self.menuLTE.addAction(self.actionPUCCH_PDSCH_Parameters)
         self.menuLTE.addAction(self.actionLTE_RLC)
         self.menuLTE.addAction(self.actionLTE_VoLTE)
+        self.menuLTE.addAction(self.actionData)
         self.menuLTE.addAction(self.actionLTE_Line_Chart)
 
         self.menuNR.addAction(self.actionNR_Radio_Parameters)
@@ -580,6 +583,7 @@ class AzenqosDialog(QMainWindow):
         self.actionPUCCH_PDSCH_Parameters.setText(
             _translate("AzenqosDialog", "PUCCH/PDSCH Parameters")
         )
+        self.actionData.setText(_translate("AzenqosDialog", "Data"))
         self.actionLTE_Line_Chart.setText(_translate("AzenqosDialog", "LTE Line Chart"))
         self.actionLTE_RLC.setText(_translate("AzenqosDialog", "LTE RLC"))
         self.actionLTE_VoLTE.setText(_translate("AzenqosDialog", "LTE VoLTE"))
@@ -912,6 +916,7 @@ class AzenqosDialog(QMainWindow):
         lteServingNeighbors = QTreeWidgetItem(lte, ["Serving + Neighbors"])
         QTreeWidgetItem(lte, ["LTE RRC/SIB States"])
         ltePPParams = QTreeWidgetItem(lte, ["PUCCH/PDSCH Parameters"])
+        lteData = QTreeWidgetItem(lte, ["Data"])
         lteLineChart = QTreeWidgetItem(lte, ["LTE Line Chart"])
         lteRlc = QTreeWidgetItem(lte, ["LTE RLC"])
         lteVo = QTreeWidgetItem(lte, ["LTE VoLTE"])
@@ -1813,6 +1818,30 @@ class AzenqosDialog(QMainWindow):
                     self.lte_ppparam_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.lte_ppparam_window)
                     self.lte_ppparam_window.show()
+                    gc.openedWindows.append(tableWidget)
+            
+            elif child == "Data":
+                tableWidget = None
+                if hasattr(self, "lte_data_window") is True:
+                    tableWindow = self.lte_data_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.lte_data_window, windowName)
+                        gc.openedWindows.append(tableWidget)
+
+                    if self.lte_data_window not in subwindowList:
+                        self.lte_data_window = SubWindowArea(self.mdi)
+                        self.mdi.addSubWindow(self.lte_data_window)
+
+                    if tableWidget:
+                        self.lte_data_window.setWidget(tableWidget)
+                    self.lte_data_window.show()
+                else:
+                    # create new subwindow
+                    self.lte_data_window = SubWindowArea(self.mdi)
+                    tableWidget = TableWindow(self.lte_data_window, windowName)
+                    self.lte_data_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.lte_data_window)
+                    self.lte_data_window.show()
                     gc.openedWindows.append(tableWidget)
 
             elif child == "LTE Line Chart":

@@ -7,6 +7,7 @@ maxColumns = 50
 maxRows = 1000
 schemaList = []
 activeLayers = []
+mdi = None
 mostFeaturesLayer = None
 azenqosDatabase = None
 databasePath = None

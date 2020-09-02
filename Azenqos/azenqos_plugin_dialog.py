@@ -333,6 +333,8 @@ class AzenqosDialog(QMainWindow):
         self.menuFile.setObjectName("menuFile")
         self.menuPresentation = QMenu(self.menubar)
         self.menuPresentation.setObjectName("menuPresentation")
+        self.menuWindows = QMenu(self.menubar)
+        self.menuWindows.setObjectName("menuWindows")
         self.menuGSM = QMenu(self.menuPresentation)
         self.menuGSM.setObjectName("menuGSM")
         self.menuWCDMA = QMenu(self.menuPresentation)
@@ -454,6 +456,15 @@ class AzenqosDialog(QMainWindow):
         self.actionNR_Data_Line_Chart.setObjectName("actionNR_Data_Line_Chart")
         self.actionNR_Serving_Neighbors = QAction(AzenqosDialog)
         self.actionNR_Serving_Neighbors.setObjectName("actionNR_Serving_Neighbors")
+
+        self.actionCascadeWindow = QAction(AzenqosDialog)
+        self.actionCascadeWindow.setObjectName("cascadeWindow")
+        self.actionTileHorizontal = QAction(AzenqosDialog)
+        self.actionTileHorizontal.setObjectName("tileHorizontal")
+        self.actionTileVertical = QAction(AzenqosDialog)
+        self.actionTileVertical.setObjectName("tileVertical")
+        self.actionCloseAll = QAction(AzenqosDialog)
+        self.actionCloseAll.setObjectName("closeAll")
         
         self.menuFile.addAction(self.actionImport_log_azm)
         self.menuFile.addAction(self.actionExit)
@@ -514,15 +525,22 @@ class AzenqosDialog(QMainWindow):
         self.menuPresentation.addAction(self.menuCDMA_EVDO.menuAction())
         self.menuPresentation.addAction(self.menuData.menuAction())
         self.menuPresentation.addAction(self.menuSignaling.menuAction())
+        self.menuWindows.addAction(self.actionCascadeWindow)
+        self.menuWindows.addAction(self.actionTileHorizontal)
+        self.menuWindows.addAction(self.actionTileVertical)
+        self.menuWindows.addAction(self.actionCloseAll)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuPresentation.menuAction())
+        self.menubar.addAction(self.menuWindows.menuAction())
         self.menuPresentation.triggered.connect(self.selectPresentation)
         self.menuFile.triggered.connect(self.selectFileAction)
+        self.menuWindows.triggered.connect(self.selectWindowAction)
 
         # translate for menubar
         _translate = QtCore.QCoreApplication.translate
         self.menuFile.setTitle(_translate("AzenqosDialog", "File"))
         self.menuPresentation.setTitle(_translate("AzenqosDialog", "Presentation"))
+        self.menuWindows.setTitle(_translate("AzenqosDialog", "Windows"))
         self.menuGSM.setTitle(_translate("AzenqosDialog", "GSM"))
         self.menuWCDMA.setTitle(_translate("AzenqosDialog", "WCDMA"))
         self.menuLTE.setTitle(_translate("AzenqosDialog", "LTE"))
@@ -646,6 +664,18 @@ class AzenqosDialog(QMainWindow):
         self.actionNR_Serving_Neighbors.setText(
             _translate("AzenqosDialog", "Serving + Neighbors")
         )
+        self.actionCascadeWindow.setText(
+            _translate("AzenqosDialog", "Cascade")
+        )
+        self.actionTileHorizontal.setText(
+            _translate("AzenqosDialog", "Tile Horizontally")
+        )
+        self.actionTileVertical.setText(
+            _translate("AzenqosDialog", "Tile Vertically")
+        )
+        self.actionCloseAll.setText(
+            _translate("AzenqosDialog", "Close All")
+        )
 
     def selectPresentation(self, widget):
         parent = widget.associatedWidgets()
@@ -659,11 +689,45 @@ class AzenqosDialog(QMainWindow):
         elif option == "actionImport_log_azm":
             self.importDatabase()
 
+    def selectWindowAction(self, widget):
+        option = widget.objectName()
+        if option == "cascadeWindow":
+            self.mdi.cascadeSubWindows()
+        elif option == "tileHorizontal":
+            self.tileHorizontally()
+        elif option == "tileVertical":
+            self.tileVertically()
+        elif option == "closeAll":
+            self.mdi.closeAllSubWindows()
+
+    def tileHorizontally(self):
+        position = QPoint(0,0)
+        if len(self.mdi.subWindowList()) < 2:
+            self.mdi.tileSubWindows()
+        else:
+            for subWindow in self.mdi.subWindowList():
+                rect = QRect(0,0,self.mdi.width(),self.mdi.height()/ len(self.mdi.subWindowList()))
+                subWindow.setGeometry(rect)
+                subWindow.move(position)
+                position.setY(position.y()+subWindow.height())
+    
+    def tileVertically(self):
+        position = QPoint(0,0)
+        if len(self.mdi.subWindowList()) < 2:
+            self.mdi.tileSubWindows()
+        else:
+            for subWindow in self.mdi.subWindowList():
+                rect = QRect(0,0,self.mdi.width()/len(self.mdi.subWindowList()),self.mdi.height())
+                subWindow.setGeometry(rect)
+                subWindow.move(position)
+                position.setX(position.x()+subWindow.width())
+
     def setupUi(self, AzenqosDialog):
         AzenqosDialog.setObjectName("AzenqosDialog")
         AzenqosDialog.resize(640, 480)
         # self.setupTreeWidget(AzenqosDialog)
         self.mdi = GroupArea()
+        gc.mdi = self.mdi
         self.setCentralWidget(self.mdi)
         toolbar = self.addToolBar("toolbar")
         self.toolbar = toolbar
@@ -2803,3 +2867,6 @@ class SubWindowArea(QMdiSubWindow):
         super().__init__(item)
         dirname = os.path.dirname(__file__)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
+
+    def closeEvent(self, QCloseEvent):
+        gc.mdi.removeSubWindow(self)

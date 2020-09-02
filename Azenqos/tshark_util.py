@@ -121,7 +121,7 @@ tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\
         tf.write(("000000 "+hexdump).encode("ascii"))
 
     # call text2pcap -l 161 assgn.txt assgn.pcap
-    cmd = azq_utils.get_local_fp("text2pcap"+("" if os.name == "posix" else ".exe"))+' -l 161 "{}" "{}"'.format(tmp_txt_fp, tmp_pcap_fp)
+    cmd = azq_utils.get_local_fp(os.path.join("wireshark_" + os.name, "text2pcap"+("" if os.name == "posix" else ".exe")))+' -l 161 "{}" "{}"'.format(tmp_txt_fp, tmp_pcap_fp)
     print("text2pcap cmd:", cmd)
     cmdret = os.system(cmd)
     print("text2pcap ret:", cmdret)
@@ -130,7 +130,7 @@ tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\
         print("text2pcap failed - abort")
     else:
         # tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\"\"" -r assgn.pcap -V
-        cmd = azq_utils.get_local_fp("tshark"+("" if os.name == "posix" else ".exe"))+' -o "uat:user_dlts:\\"User 14 (DLT=161)\\",\\"gsm_a_dtap\\",\\"0\\",\\"\\",\\"0\\",\\"\\"" -r {} -V'.format(tmp_pcap_fp)
+        cmd = azq_utils.get_local_fp(os.path.join("wireshark_" + os.name, "tshark"+("" if os.name == "posix" else ".exe")))+' -o "uat:user_dlts:\\"User 14 (DLT=161)\\",\\"gsm_a_dtap\\",\\"0\\",\\"\\",\\"0\\",\\"\\"" -r {} -V'.format(tmp_pcap_fp)
         print("tshark cmd:", cmd)
         #cmdret = os.system(cmd)
         print("tshark cmd ret:", cmdret)

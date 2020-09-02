@@ -567,6 +567,8 @@ class TableWindow(QWidget):
 
 
 class DetailWidget(QDialog):
+    closed = False
+
     def __init__(self, parent, detailText, messageName = None, side = None, protocol = None):
         super().__init__(None)
         self.title = "Details"
@@ -604,8 +606,12 @@ class DetailWidget(QDialog):
             gc.threadpool.start(worker)
         # messageName is not None and side is not None and protocol is not None :
 
+    def closeEvent(self, event):
+        self.closed = True
+
     def setDecodedDetail(self, detail):
-        self.textEdit.setPlainText(self.detailText + "\n" + str(detail))
+        if self.closed == False:
+            self.textEdit.setPlainText(self.detailText + "\n" + str(detail))
 
 class TableModel(QAbstractTableModel):
 

@@ -7,7 +7,7 @@ import sqlite3
 import integration_test_helpers
 
 def test():
-    azmfp = "example_logs/nr_exynos_drive1/354569110588585-18_08_2020-13_54_22.azm"
+    azmfp = "../example_logs/nr_exynos_drive1/354569110588585-18_08_2020-13_54_22.azm"
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
     n_param_args = 8

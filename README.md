@@ -21,8 +21,36 @@ Installation instructions for Ubuntu GNU/Linux
 -------------------------------------
 - Install QGIS Long Term Release on Ubuntu, open and complete first time setup if first run.
 - Close QGIS if it is open.
-- Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder. (Or if you know how to use <pre>git</pre> then git clone this repo)
+- Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder. (Or if you know how to use `git` then git clone this repo)
 - Open a terminal to that folder then run <pre>./install_azenqos_plugin_ubuntu.sh</pre> - it must show 'SUCCESS', otherwise fix as per error message shown. (Note that this makes a link to contents of this folder so dont delete this folder unless you're going to re-install from a new version)
 - If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.
 - Repeat the same when you want to upgrade the plugin
+
+
+License
+-------
+
+- Released under the GNU GPL version 2. Please see [LICENSE](LICENSE) file.
+
+Copyright (C) 2019-2020 Freewill FX Co., Ltd.
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+Special thanks and notices
+--------------------------
+
+- This project uses `tshark` and `text2pcap` utilities from the Wireshark project Please see [wireshark_LICENSE](wireshark_LICENSE) file for its license and [wireshark_SOURCE](wireshark_SOURCE) for its source.

@@ -8,7 +8,7 @@
                              -------------------
         begin                : 2019-03-18
         git sha              : $Format:%H$
-        copyright            : (C) 2019 by Metamedia Techonology Co.,Ltd
+        copyright            : Copyright (C) 2019-2020 Freewill FX Co., Ltd. All rights reserved
         email                : gritmanoch@longdo.com
  ***************************************************************************/
 
@@ -82,11 +82,14 @@ class AzenqosDialog(QMainWindow):
     timechange_service_thread = None
     timechange_to_service_counter = atomic_int(0)
     closed = False
-    
+
+    signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
+
     def __init__(self, databaseUi):
         """Constructor."""
         self.settings = QSettings(azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat)
         super(AzenqosDialog, self).__init__(None)
+        self.signal_ui_thread_emit_time_slider_updated.connect(self.ui_thread_emit_time_slider_updated)
         self.timeSliderThread = timeSliderThread()
         self.newImport = False
         self.posObjs = []
@@ -112,7 +115,11 @@ class AzenqosDialog(QMainWindow):
         self.timechange_service_thread = Worker(self.timeChangedWorkerFunc)
         gc.threadpool.start(self.timechange_service_thread)
         self._gui_restore()
-        
+
+    def ui_thread_emit_time_slider_updated(self, timestamp):
+        print("ui_thread_emit_time_slider_updated")
+        sampledate = datetime.datetime.fromtimestamp(timestamp)
+        self.timeEdit.setDateTime(sampledate)
 
     def _gui_save(self):
         # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
@@ -131,7 +138,7 @@ class AzenqosDialog(QMainWindow):
             swl = [w for w in swl if (w is not None and w.widget() is not None)]
             print("_gui_save() len(swl)", len(swl), "len(gc.openedWindows)", len(gc.openedWindows))
             self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
-            if swl:                
+            if swl:
                 self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
                 i = -1
                 for window in swl:
@@ -143,7 +150,7 @@ class AzenqosDialog(QMainWindow):
                     self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i), window.widget().title)
                     self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i), window.saveGeometry())
                     # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
-                    
+
             self.settings.sync()  # save to disk
             print("_gui_save() DONE")
         except:
@@ -191,7 +198,7 @@ class AzenqosDialog(QMainWindow):
                                 print("_gui_restore() window i {} title {} setgeom".format(i, title))
                                 window.restoreGeometry(geom)
                                 break
-                               
+
             print("_gui_restore() DONE")
         except:
             type_, value_, traceback_ = sys.exc_info()
@@ -205,10 +212,10 @@ class AzenqosDialog(QMainWindow):
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
-                
-            
 
-        
+
+
+
     def initializeSchema(self):
         dirname = os.path.dirname(__file__)
         fileDir = os.path.join(dirname, "element_info_list.csv")
@@ -401,7 +408,7 @@ class AzenqosDialog(QMainWindow):
 
         self.actionlte_rrc_sib_states = QAction(AzenqosDialog)
         self.actionlte_rrc_sib_states.setObjectName("actionlte_rrc_sib_states")
-        
+
         self.actionRadio_Parameters_4 = QAction(AzenqosDialog)
         self.actionRadio_Parameters_4.setObjectName("actionRadio_Parameters_4")
         self.actionServing_Neighbors_3 = QAction(AzenqosDialog)
@@ -475,11 +482,11 @@ class AzenqosDialog(QMainWindow):
         self.menuLTE.addAction(self.actionRadio_Parameters_3)
         self.menuLTE.addAction(self.actionServing_Neighbors_2)
         self.menuLTE.addAction(self.actionlte_rrc_sib_states)
-        self.menuLTE.addAction(self.actionPUCCH_PDSCH_Parameters)        
+        self.menuLTE.addAction(self.actionPUCCH_PDSCH_Parameters)
         self.menuLTE.addAction(self.actionLTE_RLC)
         self.menuLTE.addAction(self.actionLTE_VoLTE)
         self.menuLTE.addAction(self.actionLTE_Line_Chart)
-        
+
         self.menuNR.addAction(self.actionNR_Radio_Parameters)
         self.menuNR.addAction(self.actionNR_Serving_Neighbors)
         self.menuCDMA_EVDO.addAction(self.actionRadio_Parameters_4)
@@ -576,9 +583,9 @@ class AzenqosDialog(QMainWindow):
         self.actionLTE_Line_Chart.setText(_translate("AzenqosDialog", "LTE Line Chart"))
         self.actionLTE_RLC.setText(_translate("AzenqosDialog", "LTE RLC"))
         self.actionLTE_VoLTE.setText(_translate("AzenqosDialog", "LTE VoLTE"))
-        
+
         self.actionlte_rrc_sib_states.setText(_translate("AzenqosDialog", "LTE RRC/SIB States"))
-        
+
         self.actionRadio_Parameters_4.setText(
             _translate("AzenqosDialog", "Radio Parameters")
         )
@@ -901,7 +908,7 @@ class AzenqosDialog(QMainWindow):
 
         # LTE Section
         lte = QTreeWidgetItem(self.presentationTreeWidget, ["LTE"])
-        lteRadioParams = QTreeWidgetItem(lte, ["Radio Parameters"])        
+        lteRadioParams = QTreeWidgetItem(lte, ["Radio Parameters"])
         lteServingNeighbors = QTreeWidgetItem(lte, ["Serving + Neighbors"])
         QTreeWidgetItem(lte, ["LTE RRC/SIB States"])
         ltePPParams = QTreeWidgetItem(lte, ["PUCCH/PDSCH Parameters"])
@@ -1070,7 +1077,7 @@ class AzenqosDialog(QMainWindow):
                 p1 = QgsPointXY(point.x() - offset, point.y() - offset)
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
-                nearby_features = layer.getFeatures(rect)                
+                nearby_features = layer.getFeatures(rect)
                 for f in nearby_features:
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
                     if distance != -1.0 and distance <= 0.001:
@@ -1166,7 +1173,7 @@ class AzenqosDialog(QMainWindow):
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: timeChangedWorkerFunc - exception: {}".format(exstr))
             #print("{}: timeChangedWorkerFunc thread gc.threadpool.maxThreadCount() {} gc.threadpool.activeThreadCount() {}".format(os.path.basename(__file__), gc.threadpool.maxThreadCount(),  gc.threadpool.activeThreadCount()))
-            time.sleep(0.1)                            
+            time.sleep(0.1)
 
         print("timeChangedWorkerFunc END")
 
@@ -1178,7 +1185,6 @@ class AzenqosDialog(QMainWindow):
         #print("%s: timeChange2" % os.path.basename(__file__))
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         #print("%s: timeChange3" % os.path.basename(__file__))
-        self.timeEdit.setDateTime(sampledate)
         #print("%s: timeChange4" % os.path.basename(__file__))
         self.timeSliderThread.set(value)
         #print("%s: timeChange5" % os.path.basename(__file__))
@@ -1188,13 +1194,15 @@ class AzenqosDialog(QMainWindow):
             datetime.datetime.fromtimestamp(gc.currentTimestamp)
         )
         #print("%s: timeChange7" % os.path.basename(__file__))
+        # print("signal_ui_thread_emit_time_slider_updated.emit()")
+        self.signal_ui_thread_emit_time_slider_updated.emit(gc.currentTimestamp)
 
         if len(gc.activeLayers) > 0:
             QgsMessageLog.logMessage("[-- have gc.tableList --]")
             self.hilightFeature()
 
         #print("%s: timeChange8" % os.path.basename(__file__))
-        
+
         if len(gc.openedWindows) > 0:
             for window in gc.openedWindows:
                 worker = None
@@ -1208,8 +1216,8 @@ class AzenqosDialog(QMainWindow):
         # text = "[--" + str(len(gc.tableList) + "--]"
         # QgsMessageLog.logMessage(text)
 
-        
-            
+
+
         print("{}: timeChange end1 gc.threadpool.maxThreadCount() {} gc.threadpool.activeThreadCount() {}".format(os.path.basename(__file__), gc.threadpool.maxThreadCount(),  gc.threadpool.activeThreadCount()))
 
     # def threadComplete(self):
@@ -1285,7 +1293,7 @@ class AzenqosDialog(QMainWindow):
                     layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
             '''
 
-                        
+
     def getPosIdsByTable(self):
         print("%s: getPosIdsByTable" % os.path.basename(__file__))
         gc.azenqosDatabase.open()
@@ -2395,7 +2403,7 @@ class AzenqosDialog(QMainWindow):
                             self.layer_three_messages, windowName
                         )
                         gc.openedWindows.append(layer_three_widget)
-                    
+
                     print("l33")
                     if self.layer_three_messages not in subwindowList:
                         print("l34")
@@ -2627,7 +2635,7 @@ class AzenqosDialog(QMainWindow):
             self.settings.sync()  # load changes
             self._gui_restore()
 
-            
+
     def saveWorkspaceFile(self):
         fp, _ = QFileDialog.getSaveFileName(
             self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
@@ -2638,13 +2646,13 @@ class AzenqosDialog(QMainWindow):
             self.settings.sync()  # save changes
             shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
 
-    
+
     def closeEvent(self, event):
         print("azenqos_plugin_dialog: closeEvent:", event)
         # just close it as it might be ordered by qgis close (unload()) too
         self.cleanup()
         event.accept()
-        
+
         '''
         reply = None
         if self.newImport is False:
@@ -2662,7 +2670,7 @@ class AzenqosDialog(QMainWindow):
         else:
             event.ignore()
         '''
-            
+
     def cleanup(self):
         self._gui_save()
         #saving = Utils().saveState(gc.CURRENT_PATH)
@@ -2697,7 +2705,7 @@ class AzenqosDialog(QMainWindow):
         removeAzenqosGroup()
         for mdiwindow in self.mdi.subWindowList():
             mdiwindow.close()
-        self.mdi.close()            
+        self.mdi.close()
         QgsMessageLog.logMessage("Close App")
         tasks.close_db()
         self.closed = True

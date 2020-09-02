@@ -8,7 +8,7 @@
                               -------------------
         begin                : 2019-03-18
         git sha              : $Format:%H$
-        copyright            : (C) 2019 by Metamedia Techonology Co.,Ltd
+        copyright            : Copyright (C) 2019-2020 Freewill FX Co., Ltd. All rights reserved
         email                : gritmanoch@longdo.com
  ***************************************************************************/
 

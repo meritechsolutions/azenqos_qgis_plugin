@@ -120,10 +120,14 @@ tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\
         print("create tshark txt tmpfp: ", tmp_txt_fp)
         tf.write(("000000 "+hexdump).encode("ascii"))
 
+    env = os.environ.copy()
+
+    env = prepare_env_and_libs(env)  # call this only once at start of program! otherwise will be very slow extracting .so in gnu/linux everytime...
+        
     # call text2pcap -l 161 assgn.txt assgn.pcap
     cmd = azq_utils.get_local_fp(os.path.join("wireshark_" + os.name, "text2pcap"+("" if os.name == "posix" else ".exe")))+' -l 161 "{}" "{}"'.format(tmp_txt_fp, tmp_pcap_fp)
     print("text2pcap cmd:", cmd)
-    cmdret = os.system(cmd)
+    cmdret = subprocess.call(cmd, shell=True, env=env)
     print("text2pcap ret:", cmdret)
 
     if cmdret != 0:
@@ -134,9 +138,19 @@ tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\
         print("tshark cmd:", cmd)
         #cmdret = os.system(cmd)
         print("tshark cmd ret:", cmdret)
-        ret = subprocess.check_output(cmd, shell=True)
+        ret = subprocess.check_output(cmd, shell=True, env=env)
         ret = ret.decode("ascii")        
         return ret
         
 
     return None
+
+
+# call this only once at start of program! otherwise will be very slow extracting .so in gnu/linux everytime...
+def prepare_env_and_libs(env):
+    ws_bin_dir = azq_utils.get_local_fp("wireshark_" + os.name)
+    env["LD_LIBRARY_PATH"] = ws_bin_dir
+    if os.name == "posix":
+        extract_so_ret = os.system("tar -xzf {}/libwireshark.so.0.tar.gz -C {}".format(ws_bin_dir, ws_bin_dir))
+        print("extract_so_ret:", extract_so_ret)
+    return env

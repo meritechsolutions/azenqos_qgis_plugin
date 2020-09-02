@@ -609,7 +609,7 @@ class DetailWidget(QDialog):
 
     def setDecodedDetail(self, detail):
         if self.closed == False:
-            self.textEdit.setPlainText(self.detailText + "\n" + str(detail))
+            self.textEdit.setPlainText(self.detailText + "\n\n------\nALTERNATIVE WIRESHARK DECODE OF SAME PACKET BELOW\n------\n" + str(detail))
 
 class TableModel(QAbstractTableModel):
 

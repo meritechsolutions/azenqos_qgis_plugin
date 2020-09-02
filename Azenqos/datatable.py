@@ -33,6 +33,7 @@ from .customize_properties import *
 import lte_query
 import wcdma_query
 import gsm_query
+from .tsharkworker import TsharkDecodeWorker
 
 
 
@@ -445,11 +446,15 @@ class TableWindow(QWidget):
 
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
-        '''if self.tablename == "signalling":
-            item = item.sibling(item.row(), 4)'''
         cellContent = str(item.data())
-        self.detailWidget = DetailWidget(parentWindow, cellContent)
-
+        if self.tablename == "signalling":
+            name = item.sibling(item.row(), 1).data()
+            side = item.sibling(item.row(), 2).data()
+            protocol = item.sibling(item.row(), 3).data()
+            cellContent = item.sibling(item.row(), 4).data()
+            self.detailWidget = DetailWidget(parentWindow, cellContent, name, side, protocol)
+        else:
+            self.detailWidget = DetailWidget(parentWindow, cellContent)
         
     def updateSlider(self, item):
 
@@ -560,10 +565,13 @@ class TableWindow(QWidget):
 
 
 class DetailWidget(QDialog):
-    def __init__(self, parent, detailText):
+    def __init__(self, parent, detailText, messageName = None, side = None, protocol = None):
         super().__init__(None)
         self.title = "Details"
         self.detailText = detailText
+        self.messageName = messageName
+        self.side = side
+        self.protocol = protocol
         self.left = 10
         self.top = 10
         self.width = 640
@@ -587,7 +595,15 @@ class DetailWidget(QDialog):
         self.show()
         self.raise_()
         self.activateWindow()
+        if None not in [self.messageName, self.side, self.protocol] and "msg_raw_hex:" in self.detailText  :
+            print("Need to decode")
+            worker = TsharkDecodeWorker(self.messageName, self.side, self.protocol, self.detailText)
+            worker.signals.result.connect(self.setDecodedDetail)
+            gc.threadpool.start(worker)
+        # messageName is not None and side is not None and protocol is not None :
 
+    def setDecodedDetail(self, detail):
+        self.textEdit.setPlainText(self.detailText + "\n" + str(detail))
 
 class TableModel(QAbstractTableModel):
 

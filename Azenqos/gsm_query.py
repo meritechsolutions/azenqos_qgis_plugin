@@ -466,7 +466,6 @@ def get_gsm_serv_and_neigh__df(dbcon, time_before):
 
 
     neigh = sum(map(lambda y: list(map(lambda x: name_map(x,y), neigh_col_prefix_sr)),range(neigh_n_param)),[])
-    print(neigh)
     parameter_to_columns_list = [
         (
             list(map(lambda x:"neigh{}".format(x+1), range(neigh_n_param))),

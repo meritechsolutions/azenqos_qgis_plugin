@@ -372,14 +372,8 @@ class AzenqosDialog(QMainWindow):
         self.actionActive_Monitored_Sets.setObjectName("actionActive_Monitored_Sets")
         self.actionRadio_Parameters_2 = QAction(AzenqosDialog)
         self.actionRadio_Parameters_2.setObjectName("actionRadio_Parameters_2")
-        self.actionActive_Set_List = QAction(AzenqosDialog)
-        self.actionActive_Set_List.setObjectName("actionActive_Set_List")
-        self.actionMonitoSet_List = QAction(AzenqosDialog)
-        self.actionMonitoSet_List.setObjectName("actionMonitoSet_List")
         self.actionBLER_Summary = QAction(AzenqosDialog)
         self.actionBLER_Summary.setObjectName("actionBLER_Summary")
-        self.actionBLER_Transport_Channel = QAction(AzenqosDialog)
-        self.actionBLER_Transport_Channel.setObjectName("actionBLER_Transport_Channel")
         self.actionLine_Chart = QAction(AzenqosDialog)
         self.actionLine_Chart.setObjectName("actionLine_Chart")
         self.actionBearers = QAction(AzenqosDialog)
@@ -388,10 +382,6 @@ class AzenqosDialog(QMainWindow):
         self.actionPilot_Poluting_Cells.setObjectName("actionPilot_Poluting_Cells")
         self.actionActive_Monitored_Bar = QAction(AzenqosDialog)
         self.actionActive_Monitored_Bar.setObjectName("actionActive_Monitored_Bar")
-        self.actionCM_GSM_Reports = QAction(AzenqosDialog)
-        self.actionCM_GSM_Reports.setObjectName("actionCM_GSM_Reports")
-        self.actionCM_GSM_Cells = QAction(AzenqosDialog)
-        self.actionCM_GSM_Cells.setObjectName("actionCM_GSM_Cells")
         self.actionPilot_Analyzer = QAction(AzenqosDialog)
         self.actionPilot_Analyzer.setObjectName("actionPilot_Analyzer")
         self.actionRadio_Parameters_3 = QAction(AzenqosDialog)
@@ -475,16 +465,11 @@ class AzenqosDialog(QMainWindow):
         self.menuGSM.addAction(self.actionGSM_Line_Chart)
         self.menuWCDMA.addAction(self.actionActive_Monitored_Sets)
         self.menuWCDMA.addAction(self.actionRadio_Parameters_2)
-        self.menuWCDMA.addAction(self.actionActive_Set_List)
-        self.menuWCDMA.addAction(self.actionMonitoSet_List)
         self.menuWCDMA.addAction(self.actionBLER_Summary)
-        self.menuWCDMA.addAction(self.actionBLER_Transport_Channel)
         self.menuWCDMA.addAction(self.actionLine_Chart)
         self.menuWCDMA.addAction(self.actionBearers)
         self.menuWCDMA.addAction(self.actionPilot_Poluting_Cells)
         self.menuWCDMA.addAction(self.actionActive_Monitored_Bar)
-        self.menuWCDMA.addAction(self.actionCM_GSM_Reports)
-        self.menuWCDMA.addAction(self.actionCM_GSM_Cells)
         self.menuWCDMA.addAction(self.actionPilot_Analyzer)
 
         self.menuLTE.addAction(self.actionRadio_Parameters_3)
@@ -569,16 +554,7 @@ class AzenqosDialog(QMainWindow):
         self.actionRadio_Parameters_2.setText(
             _translate("AzenqosDialog", "Radio Parameters")
         )
-        self.actionActive_Set_List.setText(
-            _translate("AzenqosDialog", "Active Set List")
-        )
-        self.actionMonitoSet_List.setText(
-            _translate("AzenqosDialog", "Monitored Set List")
-        )
         self.actionBLER_Summary.setText(_translate("AzenqosDialog", "BLER Summary"))
-        self.actionBLER_Transport_Channel.setText(
-            _translate("AzenqosDialog", "BLER / Transport Channel")
-        )
         self.actionLine_Chart.setText(_translate("AzenqosDialog", "Line Chart"))
         self.actionBearers.setText(_translate("AzenqosDialog", "Bearers"))
         self.actionPilot_Poluting_Cells.setText(
@@ -587,8 +563,6 @@ class AzenqosDialog(QMainWindow):
         self.actionActive_Monitored_Bar.setText(
             _translate("AzenqosDialog", "Active + Monitored Bar")
         )
-        self.actionCM_GSM_Reports.setText(_translate("AzenqosDialog", "CM GSM Reports"))
-        self.actionCM_GSM_Cells.setText(_translate("AzenqosDialog", "CM GSM Cells"))
         self.actionPilot_Analyzer.setText(_translate("AzenqosDialog", "Pilot Analyzer"))
         self.actionRadio_Parameters_3.setText(
             _translate("AzenqosDialog", "Radio Parameters")
@@ -918,16 +892,11 @@ class AzenqosDialog(QMainWindow):
         wcdma = QTreeWidgetItem(self.presentationTreeWidget, ["WCDMA"])
         wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma, ["Active + Monitored Sets"])
         wcdmaRadioParams = QTreeWidgetItem(wcdma, ["Radio Parameters"])
-        wcdmaASL = QTreeWidgetItem(wcdma, ["Active Set List"])
-        wcdmaMonitoredSet = QTreeWidgetItem(wcdma, ["Monitored Set List"])
         wcdmaSummary = QTreeWidgetItem(wcdma, ["BLER Summary"])
-        wcdmaTransportChannel = QTreeWidgetItem(wcdma, ["BLER / Transport Channel"])
         wcdmaLineChart = QTreeWidgetItem(wcdma, ["Line Chart"])
         wcdmaBearers = QTreeWidgetItem(wcdma, ["Bearers"])
         wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ["Pilot Poluting Cells"])
         wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma, ["Active + Monitored Bar"])
-        wcdmaReports = QTreeWidgetItem(wcdma, ["CM GSM Reports"])
-        wcdmaCells = QTreeWidgetItem(wcdma, ["CM GSM Cells"])
         wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ["Pilot Analyzer"])
 
         # LTE Section
@@ -1588,54 +1557,6 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_rp_window.show()
                     gc.openedWindows.append(tableWidget)
 
-            elif child == "Active Set List":
-                tableWidget = None
-                if hasattr(self, "wcdma_asl_window") is True:
-                    tableWindow = self.wcdma_asl_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.wcdma_asl_window, windowName)
-                        gc.openedWindows.append(tableWidget)
-
-                    if self.wcdma_asl_window not in subwindowList:
-                        self.wcdma_asl_window = SubWindowArea(self.mdi)
-                        self.mdi.addSubWindow(self.wcdma_asl_window)
-
-                    if tableWidget:
-                        self.wcdma_asl_window.setWidget(tableWidget)
-                    self.wcdma_asl_window.show()
-                else:
-                    # create new subwindow
-                    self.wcdma_asl_window = SubWindowArea(self.mdi)
-                    tableWidget = TableWindow(self.wcdma_asl_window, windowName)
-                    self.wcdma_asl_window.setWidget(tableWidget)
-                    self.mdi.addSubWindow(self.wcdma_asl_window)
-                    self.wcdma_asl_window.show()
-                    gc.openedWindows.append(tableWidget)
-
-            elif child == "Monitored Set List":
-                tableWidget = None
-                if hasattr(self, "wcdma_msl_window") is True:
-                    tableWindow = self.wcdma_msl_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.wcdma_msl_window, windowName)
-                        gc.openedWindows.append(tableWidget)
-
-                    if self.wcdma_msl_window not in subwindowList:
-                        self.wcdma_msl_window = SubWindowArea(self.mdi)
-                        self.mdi.addSubWindow(self.wcdma_msl_window)
-
-                    if tableWidget:
-                        self.wcdma_msl_window.setWidget(tableWidget)
-                    self.wcdma_msl_window.show()
-                else:
-                    # create new subwindow
-                    self.wcdma_msl_window = SubWindowArea(self.mdi)
-                    tableWidget = TableWindow(self.wcdma_msl_window, windowName)
-                    self.wcdma_msl_window.setWidget(tableWidget)
-                    self.mdi.addSubWindow(self.wcdma_msl_window)
-                    self.wcdma_msl_window.show()
-                    gc.openedWindows.append(tableWidget)
-
             elif child == "BLER Summary":
                 tableWidget = None
                 if hasattr(self, "wcdma_bler_window") is True:
@@ -1658,30 +1579,6 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_bler_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_bler_window)
                     self.wcdma_bler_window.show()
-                    gc.openedWindows.append(tableWidget)
-
-            elif child == "BLER / Transport Channel":
-                tableWidget = None
-                if hasattr(self, "wcdma_blertc_window") is True:
-                    tableWindow = self.wcdma_blertc_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.wcdma_blertc_window, windowName)
-                        gc.openedWindows.append(tableWidget)
-
-                    if self.wcdma_blertc_window not in subwindowList:
-                        self.wcdma_blertc_window = SubWindowArea(self.mdi)
-                        self.mdi.addSubWindow(self.wcdma_blertc_window)
-
-                    if tableWidget:
-                        self.wcdma_blertc_window.setWidget(tableWidget)
-                    self.wcdma_blertc_window.show()
-                else:
-                    # create new subwindow
-                    self.wcdma_blertc_window = SubWindowArea(self.mdi)
-                    tableWidget = TableWindow(self.wcdma_blertc_window, windowName)
-                    self.wcdma_blertc_window.setWidget(tableWidget)
-                    self.mdi.addSubWindow(self.wcdma_blertc_window)
-                    self.wcdma_blertc_window.show()
                     gc.openedWindows.append(tableWidget)
 
             elif child == "Line Chart":
@@ -1784,54 +1681,6 @@ class AzenqosDialog(QMainWindow):
                     self.wcdma_amb_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.wcdma_amb_window)
                     self.wcdma_amb_window.show()
-                    gc.openedWindows.append(tableWidget)
-
-            elif child == "CM GSM Reports":
-                tableWidget = None
-                if hasattr(self, "wcdma_report_window") is True:
-                    tableWindow = self.wcdma_report_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.wcdma_report_window, windowName)
-                        gc.openedWindows.append(tableWidget)
-
-                    if self.wcdma_report_window not in subwindowList:
-                        self.wcdma_report_window = SubWindowArea(self.mdi)
-                        self.mdi.addSubWindow(self.wcdma_report_window)
-
-                    if tableWidget:
-                        self.wcdma_report_window.setWidget(tableWidget)
-                    self.wcdma_report_window.show()
-                else:
-                    # create new subwindow
-                    self.wcdma_report_window = SubWindowArea(self.mdi)
-                    tableWidget = TableWindow(self.wcdma_report_window, windowName)
-                    self.wcdma_report_window.setWidget(tableWidget)
-                    self.mdi.addSubWindow(self.wcdma_report_window)
-                    self.wcdma_report_window.show()
-                    gc.openedWindows.append(tableWidget)
-
-            elif child == "CM GSM Cells":
-                tableWidget = None
-                if hasattr(self, "wcdma_cells_window") is True:
-                    tableWindow = self.wcdma_cells_window.widget()
-                    if not tableWindow:
-                        tableWidget = TableWindow(self.wcdma_cells_window, windowName)
-                        gc.openedWindows.append(tableWidget)
-
-                    if self.wcdma_cells_window not in subwindowList:
-                        self.wcdma_cells_window = SubWindowArea(self.mdi)
-                        self.mdi.addSubWindow(self.wcdma_cells_window)
-
-                    if tableWidget:
-                        self.wcdma_cells_window.setWidget(tableWidget)
-                    self.wcdma_cells_window.show()
-                else:
-                    # create new subwindow
-                    self.wcdma_cells_window = SubWindowArea(self.mdi)
-                    tableWidget = TableWindow(self.wcdma_cells_window, windowName)
-                    self.wcdma_cells_window.setWidget(tableWidget)
-                    self.mdi.addSubWindow(self.wcdma_cells_window)
-                    self.wcdma_cells_window.show()
                     gc.openedWindows.append(tableWidget)
 
             elif child == "Pilot Analyzer":

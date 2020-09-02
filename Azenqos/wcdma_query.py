@@ -613,7 +613,7 @@ def get_wcdma_acive_monitored_df(dbcon, time_before):
     df_list.append(df)
 
     mset_col_prefix_sr = pd.Series(["wcdma_mset_cellfile_matched_cellid_", "wcdma_mset_cellfile_matched_cellname_", "wcdma_mset_sc_", "wcdma_mset_ecio_", "wcdma_mset_rscp_", "wcdma_mset_cellfreq_"])
-    mset_n_param = 16
+    mset_n_param = 6
     mset = sum(map(lambda y: list(map(lambda x: x+"{}".format(y+1), mset_col_prefix_sr)),range(mset_n_param)),[])
     parameter_to_columns_list = [
         (
@@ -627,7 +627,7 @@ def get_wcdma_acive_monitored_df(dbcon, time_before):
     df_list.append(df)
 
     dset_col_prefix_sr = pd.Series(["wcdma_dset_cellfile_matched_cellid_", "wcdma_dset_cellfile_matched_cellname_", "wcdma_dset_sc_", "wcdma_dset_ecio_", "wcdma_dset_rscp_", "wcdma_dset_cellfreq_"])
-    dset_n_param = 8
+    dset_n_param = 4
     dset = sum(map(lambda y: list(map(lambda x: x+"{}".format(y+1), dset_col_prefix_sr)),range(dset_n_param)),[])
     parameter_to_columns_list = [
         (
@@ -750,7 +750,6 @@ def get_wcdma_bearers_df(dbcon, time_before):
     cell_col_prefix_sr = pd.Series(["data_wcdma_bearer_id_", "data_wcdma_bearer_rate_dl_", "data_wcdma_bearer_rate_ul_"])
     n_param = 10
     bearer = sum(map(lambda y: list(map(lambda x: x+"{}".format(y+1), cell_col_prefix_sr)),range(n_param)),[])
-    print(["data_wcdma_n_bearers"]+bearer)
     parameter_to_columns_list = [
         (
             list(map(lambda x:" {}".format(x+1), range(n_param))),

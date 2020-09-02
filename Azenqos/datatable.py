@@ -241,27 +241,8 @@ class TableWindow(QWidget):
                     self.dataList = wcdma_query.get_wcdma_acive_monitored_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "WCDMA_Radio Parameters":
                     self.dataList = wcdma_query.get_wcdma_radio_params_disp_df(dbcon, gc.currentDateTimeString)
-                elif self.title == "WCDMA_Active Set List":
-                    self.tableHeader = [
-                        "Time",
-                        "Freq",
-                        "PSC",
-                        "Cell Position",
-                        "Cell TPC",
-                        "Diversity",
-                    ]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getActiveSetList()
-                elif self.title == "WCDMA_Monitored Set List":
-                    self.tableHeader = ["Time", "Freq", "PSC", "Cell Position", "Diversity"]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getMonitoredSetList()
                 elif self.title == "WCDMA_BLER Summary":
                     self.dataList = wcdma_query.get_bler_sum_disp_df(dbcon, gc.currentDateTimeString)
-                elif self.title == "WCDMA_BLER / Transport Channel":
-                    self.dataList = wcdma_query.get_wcdma_bler_transport_channel_df(dbcon, gc.currentDateTimeString)
                 elif self.title == "WCDMA_Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
                 elif self.title == "WCDMA_Bearers":
@@ -276,14 +257,6 @@ class TableWindow(QWidget):
                     self.dataList = WcdmaDataQuery(
                         gc.azenqosDatabase, gc.currentDateTimeString
                     ).getActiveMonitoredBar()
-                elif self.title == "WCDMA_CM GSM Reports":
-                    self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-
-                elif self.title == "WCDMA_CM GSM Cells":
-                    self.tableHeader = ["Time", "ARFCN", "RxLev", "BSIC", "Measure"]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getCmGsmCells()
                 elif self.title == "WCDMA_Pilot Analyzer":
                     self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 

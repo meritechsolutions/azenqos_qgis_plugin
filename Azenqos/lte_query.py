@@ -989,7 +989,6 @@ def get_lte_data_disp_df(dbcon, time_before):
                 "Modulation UL",
                 "L1 UL Bler"
             ],
-            
             list(map(lambda x: "\"\" as unused_{}".format(x+1), range(n_param_args)))+
             list(map(lambda x: "lte_l1_ul_n_rbs_{}".format(x+1), range(n_param_args)))+
             list(map(lambda x: "lte_ul_mcs_index_{}".format(x+1), range(n_param_args)))+
@@ -1004,7 +1003,105 @@ def get_lte_data_disp_df(dbcon, time_before):
             list(map(lambda x: "lte_pdcch_dci_{}".format(x+1), range(n_param_args))),
             "lte_pdcch_dec_result"
         ),  
-
+        (
+            [ 
+                "PDSCH Stats:",
+                "BLER",
+            ],
+            list(map(lambda x: "\"\" as unused_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_bler_{}".format(x+1), range(n_param_args))),
+            "lte_l1_dl_tp"
+        ), 
+        (
+            [ 
+                "Serv N Tx Ant",
+                "Serv N Tx Ant",
+                "Spatial Rank"
+            ],
+            list(map(lambda x: "lte_pdsch_serving_n_tx_antennas_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_serving_n_rx_antennas_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_spatial_rank_{}".format(x+1), range(n_param_args))),
+            "lte_pdsch_meas"
+        ), 
+        (
+            [ 
+                "Rank Ind",
+                "CQI CW0",
+                "CQI CW1"
+            ],
+            list(map(lambda x: "lte_rank_indication_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_cqi_cw0_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_cqi_cw1_{}".format(x+1), range(n_param_args))),
+            "lte_cqi"
+        ), 
+        (
+            [ 
+                "PRB Alloc"
+            ],
+            list(map(lambda x: "lte_pdsch_n_rb_allocated_latest_{}".format(x+1), range(n_param_args))),
+            "lte_pdsch_meas"
+        ), 
+        (
+            [ 
+                "PRB Ma"
+            ],
+            list(map(lambda x: "lte_mib_max_n_rb_{}".format(x+1), range(n_param_args))),
+            "lte_mib_info"
+        ), 
+        (
+            [ 
+                "PRB Util (alloc/bw) %"
+            ],
+            list(map(lambda x: "lte_prb_alloc_in_bandwidth_percent_latest_{}".format(x+1), range(n_param_args))),
+            "lte_pdsch_meas"
+        ), 
+        (
+            [ 
+                "DL Bandwidth (MHz)"
+            ],
+            list(map(lambda x: "lte_mib_dl_bandwidth_mhz_{}".format(x+1), range(n_param_args))),
+            "lte_mib_info"
+        ), 
+        (
+            [ 
+                "PCC UL Bw (Mhz)"
+            ],
+            ["lte_sib2_ul_bandwidth_mhz"],
+            "lte_sib2_info"
+        ),
+        (
+            [ 
+                "Time Scheduled %",
+                "MCS Index"
+            ],
+            list(map(lambda x: "lte_pdsch_sched_percent_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_mcs_index_{}".format(x+1), range(n_param_args))),
+            "lte_l1_dl_tp"
+        ),
+        (
+            [ 
+                "BlockSizeBits[0]",
+                "Modulation[0]",
+                "BlockSizeBits[1]",
+                "Modulation[1]",
+                "TrafficToPilot Ratio",
+                "RNTI Type",
+                "RNTI ID",
+                "PMI Type",
+                "PMI Index",
+            ],
+            list(map(lambda x: "lte_pdsch_stream0_transport_block_size_bits_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_stream0_modulation_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_stream1_transport_block_size_bits_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_stream1_modulation_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_traffic_to_pilot_ratio_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_rnti_type_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_rnti_id_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_pmi_type_{}".format(x+1), range(n_param_args)))+
+            list(map(lambda x: "lte_pdsch_pmi_index_{}".format(x+1), range(n_param_args))),
+            "lte_pdsch_meas"
+        ),  
+        
     ]            
     df_tran = params_disp_df.get(dbcon, parameter_to_columns_list, time_before, not_null_first_col=False, custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS)
     df_list.append(df_tran)

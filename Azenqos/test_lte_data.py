@@ -16,6 +16,9 @@ def test():
     with sqlite3.connect(dbfp) as dbcon:
         df = lte_query.get_lte_data_disp_df(dbcon, "2020-08-26 15:42:26.226")
         print(df)
+        assert df.iloc[1,1] == "DL"
+        assert len(df) == 46
+        assert len(df.columns) == 5
         
 
 if __name__ == "__main__":

@@ -11,7 +11,9 @@ import tempfile
 import os
 import global_config as gc
 import uuid 
-import re 
+import re
+import tshark_util
+
 
 class TsharkDecodeWorker(QRunnable):
     ret = None
@@ -32,7 +34,8 @@ class TsharkDecodeWorker(QRunnable):
     @pyqtSlot()
     def run(self):
         result = ""
-        try:                                                                                                                                                                                                                                                                                                                        
+        try:
+            env = tshark_util.prepare_env_and_libs()
             tsharkPath = os.path.join(gc.CURRENT_PATH,os.path.join("wireshark_" + os.name, "tshark"+("" if os.name == "posix" else ".exe")))
             text2pcapPath = os.path.join(gc.CURRENT_PATH,os.path.join("wireshark_" + os.name, "text2pcap"+("" if os.name == "posix" else ".exe")))
             print("tsharkPath", tsharkPath)
@@ -59,7 +62,7 @@ class TsharkDecodeWorker(QRunnable):
 
             cmd = text2pcapPath +' -l 161 "{}" "{}"'.format(tempHexPath, tempPcapPath)
             print("text2pcap cmd:", cmd)
-            cmdret = subprocess.call(cmd, shell=True)
+            cmdret = subprocess.call(cmd, shell=True, env=env)
             print("text2pcap ret:", cmdret)
 
             if cmdret != 0:
@@ -75,9 +78,9 @@ class TsharkDecodeWorker(QRunnable):
                 dissector = protocolToDissector(self.protocol, channelType)
                 cmd = tsharkPath +' -o "uat:user_dlts:\\"User 14 (DLT=161)\\",\\"{}\\",\\"0\\",\\"\\",\\"0\\",\\"\\"" -r {} -V'.format(dissector, tempPcapPath)
                 print("tshark cmd:", cmd)
-                decodeResult = subprocess.check_output(cmd, shell=True)
+                decodeResult = subprocess.check_output(cmd, shell=True, env=env)
                 decodeResult = decodeResult.decode("utf-8")  
-                print("decodeResult", decodeResult)
+                #print("decodeResult", decodeResult)
                 result = decodeResult
                 if "DLT: 161," in result:
                     result = result[result.index("DLT: 161,"):]

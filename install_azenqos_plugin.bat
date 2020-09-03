@@ -19,8 +19,8 @@ python3 -m pip install -r requirements.txt || (echo INSTALL FAILED && pause && e
 echo == Removing any existing plugin folders...
 rmdir /q /s "%appdata%\QGIS\QGIS3\profiles\default\python\plugins\Azenqos"
 
-echo == Create link in plugins folder...
-mklink /D "%appdata%\QGIS\QGIS3\profiles\default\python\plugins\Azenqos" "%cd%\Azenqos"
+echo == Copying new plugin from this folder...
+xcopy /E /I Azenqos "%appdata%\QGIS\QGIS3\profiles\default\python\plugins\Azenqos" || (echo INSTALL FAILED && pause && exit 1)
 
 echo === INSTAL SUCCESS - you can start QGIS now
 echo "If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin"

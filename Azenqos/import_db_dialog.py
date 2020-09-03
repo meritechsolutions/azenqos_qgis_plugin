@@ -24,7 +24,7 @@ from .version import VERSION
 import db_preprocess
 import azq_utils
 import azq_theme_manager
-
+from .cell_layer_task import *
 
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
@@ -205,6 +205,8 @@ class Ui_DatabaseDialog(QDialog):
                 self.getTimeForSlider()
                 self.layerTask = LayerTask(u"Add layers", self.databasePath)
                 QgsApplication.taskManager().addTask(self.layerTask)
+                self.longTask = CellLayerTask('waste cpu long', 20)
+                QgsApplication.taskManager().addTask(self.longTask)
                 self.hide()
                 self.azenqosMainMenu = AzenqosDialog(self)
                 self.azenqosMainMenu.show()

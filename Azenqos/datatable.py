@@ -347,13 +347,6 @@ class TableWindow(QWidget):
                     self.dataList = SignalingDataQuery(
                         gc.azenqosDatabase, gc.currentDateTimeString
                     ).getEvents()
-
-                elif self.title == "Signaling_Layer 1 Messages":
-                    self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                    self.tablename = "events"
-                    self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getLayerOneMessages()
                 elif self.title == "Signaling_Layer 3 Messages":
                     self.tableHeader = ["Time", "", "Eq.", "Protocol", "Name", "Detail"]
                     self.tablename = "signalling"
@@ -424,7 +417,6 @@ class TableWindow(QWidget):
         # self.findCurrentRow()
         if (self.dataList is None) or self.title not in [
             "Signaling_Events",
-            "Signaling_Layer 1 Messages",
             "Signaling_Layer 3 Messages",
         ]:
             print("datatable: threading: {} self.title: {} hilightRow: refreshTableContents()".format(threading, self.title))

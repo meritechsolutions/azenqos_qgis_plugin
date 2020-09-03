@@ -441,8 +441,6 @@ class AzenqosDialog(QMainWindow):
         self.actionWifi_Graph.setObjectName("actionWifi_Graph")
         self.actionEvents = QAction(AzenqosDialog)
         self.actionEvents.setObjectName("actionEvents")
-        self.actionLayer_1_Messages = QAction(AzenqosDialog)
-        self.actionLayer_1_Messages.setObjectName("actionLayer_1_Messages")
         self.actionLayer_3_Messages = QAction(AzenqosDialog)
         self.actionLayer_3_Messages.setObjectName("actionLayer_3_Messages")
         self.actionBenchmark = QAction(AzenqosDialog)
@@ -508,7 +506,6 @@ class AzenqosDialog(QMainWindow):
         self.menuData.addAction(self.actionWifi_Graph)
         self.menuData.addAction(self.actionNR_Data_Line_Chart)
         self.menuSignaling.addAction(self.actionEvents)
-        self.menuSignaling.addAction(self.actionLayer_1_Messages)
         self.menuSignaling.addAction(self.actionLayer_3_Messages)
         self.menuSignaling.addAction(self.actionBenchmark)
         self.menuSignaling.addAction(self.actionMM_Reg_States)
@@ -635,9 +632,6 @@ class AzenqosDialog(QMainWindow):
         )
         self.actionWifi_Graph.setText(_translate("AzenqosDialog", "Wifi Graph"))
         self.actionEvents.setText(_translate("AzenqosDialog", "Events"))
-        self.actionLayer_1_Messages.setText(
-            _translate("AzenqosDialog", "Layer 1 Messages")
-        )
         self.actionLayer_3_Messages.setText(
             _translate("AzenqosDialog", "Layer 3 Messages")
         )
@@ -944,7 +938,6 @@ class AzenqosDialog(QMainWindow):
         # Signaling Section
         signaling = QTreeWidgetItem(self.presentationTreeWidget, ["Signaling"])
         signalingEvents = QTreeWidgetItem(signaling, ["Events"])
-        # signalingLayerOne = QTreeWidgetItem(signaling, ['Layer 1 Messages'])
         signalingLayerThree = QTreeWidgetItem(signaling, ["Layer 3 Messages"])
         signalingBenchmark = QTreeWidgetItem(signaling, ["Benchmark"])
         signalingMM = QTreeWidgetItem(signaling, ["MM Reg States"])
@@ -2386,40 +2379,6 @@ class AzenqosDialog(QMainWindow):
                     self.events_window.show()
                     gc.openedWindows.append(events_widget)
 
-            elif child == "Layer 1 Messages":
-                layer_one_widget = None
-                if hasattr(self, "layer_one_messages") is True:
-                    tableWindow = self.layer_one_messages.widget()
-                    if not tableWindow:
-                        layer_one_widget = TableWindow(
-                            self.layer_one_messages, windowName
-                        )
-                        gc.openedWindows.append(layer_one_widget)
-
-                    if self.layer_one_messages not in subwindowList:
-                        self.layer_one_messages = SubWindowArea(self.mdi)
-                        self.mdi.addSubWindow(self.layer_one_messages)
-
-                    if layer_one_widget:
-                        self.layer_one_messages.setWidget(layer_one_widget)
-                    self.layer_one_messages.show()
-
-                else:
-                    # create new subwindow
-                    self.layer_one_messages = SubWindowArea(self.mdi)
-                    layer_one_widget = TableWindow(self.layer_one_messages, windowName)
-                    self.layer_one_messages.setWidget(layer_one_widget)
-                    self.mdi.addSubWindow(self.layer_one_messages)
-                    self.layer_one_messages.show()
-                    gc.openedWindows.append(layer_one_widget)
-
-                # if hasattr(self, 'layer_one_messages') is False:
-                #     # self.layer_one_messages = TableWindow(self, windowName)
-                #     self.layer_one_messages = TableWindow(self, windowName)
-                # self.mdi.addSubWindow(self.layer_one_messages)
-                # gc.openedWindows.append(self.layer_one_messages)
-                # self.layer_one_messages.show()
-                # self.layer_one_messages.activateWindow()
             elif child == "Layer 3 Messages":
                 layer_three_widget = None
                 print("l30")

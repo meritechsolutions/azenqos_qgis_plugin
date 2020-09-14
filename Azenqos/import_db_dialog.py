@@ -52,6 +52,10 @@ class Ui_DatabaseDialog(QDialog):
         vbox.addWidget(theme_gb)
         vbox.addStretch()
 
+        cell_gb = QGroupBox("Cell file")
+        vbox.addWidget(cell_gb)
+        vbox.addStretch()
+
         self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
         self.buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -86,12 +90,26 @@ class Ui_DatabaseDialog(QDialog):
         tmp_box.addWidget(self.browseButtonTheme)
         ##################################
 
+        ############ theme_gb setup
+        tmp_box = QVBoxLayout() 
+        cell_gb.setLayout(tmp_box)
+        
+        self.cellPathLineEdit = QtWidgets.QLineEdit()
+        self.cellPathLineEdit.setObjectName("cellPath")
+        tmp_box.addWidget(self.cellPathLineEdit)
+
+        self.browseButtonCell = QtWidgets.QPushButton()
+        self.browseButtonCell.setObjectName("browseButtonCell")
+        tmp_box.addWidget(self.browseButtonCell)
+        ##################################
+
         ################ config/connect
         self.retranslateUi(DatabaseDialog)
         
         QtCore.QMetaObject.connectSlotsByName(DatabaseDialog)
         self.browseButton.clicked.connect(self.choose_azm)
         self.browseButtonTheme.clicked.connect(self.choose_theme)
+        self.browseButtonCell.clicked.connect(self.choose_cell)
         
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
             self.checkDatabase
@@ -107,8 +125,10 @@ class Ui_DatabaseDialog(QDialog):
         DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos Replay QGIS Plugin v.%.03f" % VERSION))
         self.browseButton.setText(_translate("DatabaseDialog", "Choose Log..."))
         self.browseButtonTheme.setText(_translate("DatabaseDialog", "Choose Theme..."))
+        self.browseButtonCell.setText(_translate("DatabaseDialog", "Choose Cell file..."))
         
         self.dbPathLineEdit.setText(azq_utils.read_local_file("config_prev_azm"))
+        self.cellPathLineEdit.setText(azq_utils.read_local_file("config_prev_cell_file"))
 
         tp = azq_utils.read_local_file("config_prev_theme")
         self.themePathLineEdit.setText(tp) if tp else self.themePathLineEdit.setText("Default")
@@ -143,6 +163,13 @@ class Ui_DatabaseDialog(QDialog):
             self, "Single File", QtCore.QDir.rootPath(), "*.xml"
         )
         self.themePathLineEdit.setText(fileName) if fileName else self.themePathLineEdit.setText("Default")
+
+
+    def choose_cell(self):
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Single File", QtCore.QDir.rootPath(), "*.*"
+        )
+        self.cellPathLineEdit.setText(fileName) if fileName else self.cellPathLineEdit.setText("")
 
 
     def checkDatabase(self):
@@ -205,7 +232,7 @@ class Ui_DatabaseDialog(QDialog):
                 self.getTimeForSlider()
                 self.layerTask = LayerTask(u"Add layers", self.databasePath)
                 QgsApplication.taskManager().addTask(self.layerTask)
-                self.longTask = CellLayerTask('waste cpu long', 20)
+                self.longTask = CellLayerTask('Load cell file', self.cellPathLineEdit.text())
                 QgsApplication.taskManager().addTask(self.longTask)
                 self.hide()
                 self.azenqosMainMenu = AzenqosDialog(self)

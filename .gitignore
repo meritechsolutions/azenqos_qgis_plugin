@@ -139,3 +139,4 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
+Azenqos/config_prev_cell_file

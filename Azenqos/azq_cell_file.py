@@ -386,7 +386,7 @@ def interval_plot(dbcon, rat, df,  default_cell_color, detail_label_format, ax, 
 
 def get_csv_separator_for_file(fp):
     print("fp:", fp)
-    with open(fp, 'rb') as f:
+    with open(fp, 'r') as f:
         first_line = f.readline()
         if '\t' in first_line:
             return '\t'
@@ -399,13 +399,7 @@ def read_cell_file(fp, extra_required_columns=[], raise_exception_if_check_faile
 
     df = None
     try:
-        if os.name == 'nt':
-            with open(fp, "rb") as pdfptr:
-                df = pd.read_csv(pdfptr, sep=get_csv_separator_for_file(fp))
-        else:
-            print("read_cell_file fp:", fp)
-            df = pd.read_csv(fp, sep=get_csv_separator_for_file(fp))
-
+        df = pd.read_csv(fp, sep=get_csv_separator_for_file(fp))
         df.columns = list(map(str.lower, df.columns))
         # df.columns = map(str.strip(), df.columns) # problem about str.strip()
         rcs = CELL_FILE_REQUIRED_COLUMNS + extra_required_columns

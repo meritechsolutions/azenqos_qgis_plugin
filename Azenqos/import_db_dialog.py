@@ -166,10 +166,10 @@ class Ui_DatabaseDialog(QDialog):
 
 
     def choose_cell(self):
-        fileName, _ = QFileDialog.getOpenFileName(
-            self, "Single File", QtCore.QDir.rootPath(), "*.*"
+        fileNames, _ = QFileDialog.getOpenFileNames(
+            self, "Select cell files", QtCore.QDir.rootPath(), "*.*"
         )
-        self.cellPathLineEdit.setText(fileName) if fileName else self.cellPathLineEdit.setText("")
+        self.cellPathLineEdit.setText(','.join(fileNames)) if fileNames else self.cellPathLineEdit.setText("")
 
 
     def checkDatabase(self):
@@ -232,7 +232,7 @@ class Ui_DatabaseDialog(QDialog):
                 self.getTimeForSlider()
                 self.layerTask = LayerTask(u"Add layers", self.databasePath)
                 QgsApplication.taskManager().addTask(self.layerTask)
-                self.longTask = CellLayerTask('Load cell file', self.cellPathLineEdit.text())
+                self.longTask = CellLayerTask('Load cell file', self.cellPathLineEdit.text().split(","))
                 QgsApplication.taskManager().addTask(self.longTask)
                 self.hide()
                 self.azenqosMainMenu = AzenqosDialog(self)

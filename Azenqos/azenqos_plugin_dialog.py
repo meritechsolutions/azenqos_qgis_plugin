@@ -57,6 +57,7 @@ from atomic_int import atomic_int
 
 GUI_SETTING_NAME_PREFIX = "azenqos_plugin_dialog/"
 
+
 def clearAllSelectedFeatures():
     mc = iface.mapCanvas()
     for layer in mc.layers():
@@ -76,8 +77,8 @@ def removeAzenqosGroup():
 
 class AzenqosDialog(QMainWindow):
 
-    company_name = 'freewill_fx'
-    software_name = 'azenqos_qgis_plugin'
+    company_name = "freewill_fx"
+    software_name = "azenqos_qgis_plugin"
 
     timechange_service_thread = None
     timechange_to_service_counter = atomic_int(0)
@@ -87,9 +88,13 @@ class AzenqosDialog(QMainWindow):
 
     def __init__(self, databaseUi):
         """Constructor."""
-        self.settings = QSettings(azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat)
+        self.settings = QSettings(
+            azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat
+        )
         super(AzenqosDialog, self).__init__(None)
-        self.signal_ui_thread_emit_time_slider_updated.connect(self.ui_thread_emit_time_slider_updated)
+        self.signal_ui_thread_emit_time_slider_updated.connect(
+            self.ui_thread_emit_time_slider_updated
+        )
         self.timeSliderThread = timeSliderThread()
         self.newImport = False
         self.posObjs = []
@@ -130,13 +135,20 @@ class AzenqosDialog(QMainWindow):
         try:
             print("_gui_save() START")
             print("_gui_save() geom")
-            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry())
+            self.settings.setValue(
+                GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry()
+            )
             print("_gui_save() state")
             self.settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
 
             swl = self.mdi.subWindowList()
             swl = [w for w in swl if (w is not None and w.widget() is not None)]
-            print("_gui_save() len(swl)", len(swl), "len(gc.openedWindows)", len(gc.openedWindows))
+            print(
+                "_gui_save() len(swl)",
+                len(swl),
+                "len(gc.openedWindows)",
+                len(gc.openedWindows),
+            )
             self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
             if swl:
                 self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
@@ -145,10 +157,18 @@ class AzenqosDialog(QMainWindow):
                     # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
                     if not window.widget():
                         continue
-                    print("_gui_save() window_{}_title".format(i), window.widget().title)
+                    print(
+                        "_gui_save() window_{}_title".format(i), window.widget().title
+                    )
                     i += 1
-                    self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i), window.widget().title)
-                    self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i), window.saveGeometry())
+                    self.settings.setValue(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i),
+                        window.widget().title,
+                    )
+                    self.settings.setValue(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
+                        window.saveGeometry(),
+                    )
                     # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
 
             self.settings.sync()  # save to disk
@@ -157,7 +177,6 @@ class AzenqosDialog(QMainWindow):
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: _gui_save() - exception: {}".format(exstr))
-
 
     def _gui_restore(self):
         """
@@ -171,31 +190,43 @@ class AzenqosDialog(QMainWindow):
             if window_geom:
                 print("_gui_restore() geom")
                 self.restoreGeometry(window_geom)
-            '''
+            """
             state_value = self.settings.value(GUI_SETTING_NAME_PREFIX + "state")
             if state_value:
                 print("_gui_restore() state")
                 self.restoreState(state_value)
-            '''
+            """
             n_windows = self.settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
             if n_windows:
                 n_windows = int(n_windows)
                 for i in range(n_windows):
-                    title = self.settings.value(GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i))
-                    geom = self.settings.value(GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i))
+                    title = self.settings.value(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i)
+                    )
+                    geom = self.settings.value(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i)
+                    )
                     print("_gui_restore() window i {} title {}".format(i, title))
                     if title and "_" in title:
                         parts = title.split("_", 1)
                         if len(parts) == 2:
                             print("")
-                            print("_gui_restore() window i {} title {} openwindow".format(i, title))
+                            print(
+                                "_gui_restore() window i {} title {} openwindow".format(
+                                    i, title
+                                )
+                            )
                             self.classifySelectedItems(parts[0], parts[1])
                     if geom:
                         for window in self.mdi.subWindowList():
                             if not window.widget():
                                 continue
                             if window.widget().title == title:
-                                print("_gui_restore() window i {} title {} setgeom".format(i, title))
+                                print(
+                                    "_gui_restore() window i {} title {} setgeom".format(
+                                        i, title
+                                    )
+                                )
                                 window.restoreGeometry(geom)
                                 break
 
@@ -211,10 +242,6 @@ class AzenqosDialog(QMainWindow):
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: qsettings clear() - exception: {}".format(exstr))
-
-
-
-
 
     def initializeSchema(self):
         dirname = os.path.dirname(__file__)
@@ -234,8 +261,8 @@ class AzenqosDialog(QMainWindow):
     def renamingLayers(self, layers):
 
         # Configure layers data source + rename layers
-        #uri = QgsDataSourceUri()
-        #uri.setDatabase(self.databaseUi.databasePath)
+        # uri = QgsDataSourceUri()
+        # uri.setDatabase(self.databaseUi.databasePath)
         root = QgsProject.instance().layerTreeRoot()
         treeGroups = root.findGroups()
         geom_column = "geom"
@@ -256,8 +283,8 @@ class AzenqosDialog(QMainWindow):
                 # Setting up layer data source
                 layer.setName(" ".join(name[1:]))
                 gc.activeLayers.append(" ".join(name[1:]))
-                #uri.setDataSource("", " ".join(name[1:]), geom_column)
-                #layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
+                # uri.setDataSource("", " ".join(name[1:]), geom_column)
+                # layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
 
                 # Force adding layer to root node
                 # cloneLayer = layer.clone()
@@ -462,7 +489,7 @@ class AzenqosDialog(QMainWindow):
         self.actionTileVertical.setObjectName("tileVertical")
         self.actionCloseAll = QAction(AzenqosDialog)
         self.actionCloseAll.setObjectName("closeAll")
-        
+
         self.menuFile.addAction(self.actionImport_log_azm)
         self.menuFile.addAction(self.actionExit)
         self.menuGSM.addAction(self.actionRadio_Parameters)
@@ -585,7 +612,9 @@ class AzenqosDialog(QMainWindow):
         self.actionLTE_RLC.setText(_translate("AzenqosDialog", "LTE RLC"))
         self.actionLTE_VoLTE.setText(_translate("AzenqosDialog", "LTE VoLTE"))
 
-        self.actionlte_rrc_sib_states.setText(_translate("AzenqosDialog", "LTE RRC/SIB States"))
+        self.actionlte_rrc_sib_states.setText(
+            _translate("AzenqosDialog", "LTE RRC/SIB States")
+        )
 
         self.actionRadio_Parameters_4.setText(
             _translate("AzenqosDialog", "Radio Parameters")
@@ -643,18 +672,12 @@ class AzenqosDialog(QMainWindow):
         self.actionNR_Serving_Neighbors.setText(
             _translate("AzenqosDialog", "Serving + Neighbors")
         )
-        self.actionCascadeWindow.setText(
-            _translate("AzenqosDialog", "Cascade")
-        )
+        self.actionCascadeWindow.setText(_translate("AzenqosDialog", "Cascade"))
         self.actionTileHorizontal.setText(
             _translate("AzenqosDialog", "Tile Horizontally")
         )
-        self.actionTileVertical.setText(
-            _translate("AzenqosDialog", "Tile Vertically")
-        )
-        self.actionCloseAll.setText(
-            _translate("AzenqosDialog", "Close All")
-        )
+        self.actionTileVertical.setText(_translate("AzenqosDialog", "Tile Vertically"))
+        self.actionCloseAll.setText(_translate("AzenqosDialog", "Close All"))
 
     def selectPresentation(self, widget):
         parent = widget.associatedWidgets()
@@ -680,26 +703,36 @@ class AzenqosDialog(QMainWindow):
             self.mdi.closeAllSubWindows()
 
     def tileHorizontally(self):
-        position = QPoint(0,0)
+        position = QPoint(0, 0)
         if len(self.mdi.subWindowList()) < 2:
             self.mdi.tileSubWindows()
         else:
             for subWindow in self.mdi.subWindowList():
-                rect = QRect(0,0,self.mdi.width(),self.mdi.height()/ len(self.mdi.subWindowList()))
+                rect = QRect(
+                    0,
+                    0,
+                    self.mdi.width(),
+                    self.mdi.height() / len(self.mdi.subWindowList()),
+                )
                 subWindow.setGeometry(rect)
                 subWindow.move(position)
-                position.setY(position.y()+subWindow.height())
-    
+                position.setY(position.y() + subWindow.height())
+
     def tileVertically(self):
-        position = QPoint(0,0)
+        position = QPoint(0, 0)
         if len(self.mdi.subWindowList()) < 2:
             self.mdi.tileSubWindows()
         else:
             for subWindow in self.mdi.subWindowList():
-                rect = QRect(0,0,self.mdi.width()/len(self.mdi.subWindowList()),self.mdi.height())
+                rect = QRect(
+                    0,
+                    0,
+                    self.mdi.width() / len(self.mdi.subWindowList()),
+                    self.mdi.height(),
+                )
                 subWindow.setGeometry(rect)
                 subWindow.move(position)
-                position.setX(position.x()+subWindow.width())
+                position.setX(position.x() + subWindow.width())
 
     def setupUi(self, AzenqosDialog):
         AzenqosDialog.setObjectName("AzenqosDialog")
@@ -1069,7 +1102,6 @@ class AzenqosDialog(QMainWindow):
                     continue
                 print("layer.name()", layer.name())
 
-
                 # Loop through all features in a rect near point xy
                 offset = 0.0005
                 p1 = QgsPointXY(point.x() - offset, point.y() - offset)
@@ -1084,8 +1116,7 @@ class AzenqosDialog(QMainWindow):
                         info = (layer, closestFeatureId, distance, time)
                         layerData.append(info)
 
-
-                '''
+                """
                 # Loop through all features in the layer
                 for f in layer.getFeatures():
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
@@ -1097,7 +1128,7 @@ class AzenqosDialog(QMainWindow):
                         time = cf.attribute("time")
                         info = (layer, closestFeatureId, distance, time)
                         layerData.append(info)
-                '''
+                """
 
         if not len(layerData) > 0:
             # Looks like no vector layers were found - do nothing
@@ -1148,7 +1179,10 @@ class AzenqosDialog(QMainWindow):
 
     def timeChange(self):
         ret = self.timechange_to_service_counter.inc_and_get()
-        print("%s: timeChange: timechange_to_service_counter: %d" % (os.path.basename(__file__), ret))
+        print(
+            "%s: timeChange: timechange_to_service_counter: %d"
+            % (os.path.basename(__file__), ret)
+        )
 
     def timeChangedWorkerFunc(self):
         print("timeChangedWorkerFunc START")
@@ -1159,18 +1193,24 @@ class AzenqosDialog(QMainWindow):
                 ret = self.timechange_to_service_counter.get()
                 if ret > 1:
                     self.timechange_to_service_counter.dec_and_get()
-                    continue # skip until we remain 1 then do work
+                    continue  # skip until we remain 1 then do work
                 if ret == 1:
-                    print("%s: timeChangedWorkerFunc: timechange_to_service_counter: %d so calling timeChangeImpl() START" % (os.path.basename(__file__), ret))
+                    print(
+                        "%s: timeChangedWorkerFunc: timechange_to_service_counter: %d so calling timeChangeImpl() START"
+                        % (os.path.basename(__file__), ret)
+                    )
                     self.timeChangeImpl()
-                    print("%s: timeChangedWorkerFunc: timechange_to_service_counter: %d so calling timeChangeImpl() END" % (os.path.basename(__file__), ret))
+                    print(
+                        "%s: timeChangedWorkerFunc: timechange_to_service_counter: %d so calling timeChangeImpl() END"
+                        % (os.path.basename(__file__), ret)
+                    )
                     ret = self.timechange_to_service_counter.dec_and_get()
-                #print("%s: timeChangedWorkerFunc: timechange_to_service_counter: %d" % (os.path.basename(__file__), ret))
+                # print("%s: timeChangedWorkerFunc: timechange_to_service_counter: %d" % (os.path.basename(__file__), ret))
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: timeChangedWorkerFunc - exception: {}".format(exstr))
-            #print("{}: timeChangedWorkerFunc thread gc.threadpool.maxThreadCount() {} gc.threadpool.activeThreadCount() {}".format(os.path.basename(__file__), gc.threadpool.maxThreadCount(),  gc.threadpool.activeThreadCount()))
+            # print("{}: timeChangedWorkerFunc thread gc.threadpool.maxThreadCount() {} gc.threadpool.activeThreadCount() {}".format(os.path.basename(__file__), gc.threadpool.maxThreadCount(),  gc.threadpool.activeThreadCount()))
             time.sleep(0.1)
 
         print("timeChangedWorkerFunc END")
@@ -1178,20 +1218,20 @@ class AzenqosDialog(QMainWindow):
     def timeChangeImpl(self):
         print("%s: timeChange0" % os.path.basename(__file__))
         value = gc.timeSlider.value()
-        #print("%s: timeChange1" % os.path.basename(__file__))
+        # print("%s: timeChange1" % os.path.basename(__file__))
         timestampValue = gc.minTimeValue + value
-        #print("%s: timeChange2" % os.path.basename(__file__))
+        # print("%s: timeChange2" % os.path.basename(__file__))
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
-        #print("%s: timeChange3" % os.path.basename(__file__))
-        #print("%s: timeChange4" % os.path.basename(__file__))
+        # print("%s: timeChange3" % os.path.basename(__file__))
+        # print("%s: timeChange4" % os.path.basename(__file__))
         self.timeSliderThread.set(value)
-        #print("%s: timeChange5" % os.path.basename(__file__))
+        # print("%s: timeChange5" % os.path.basename(__file__))
         gc.currentTimestamp = timestampValue
-        #print("%s: timeChange6" % os.path.basename(__file__))
+        # print("%s: timeChange6" % os.path.basename(__file__))
         gc.currentDateTimeString = "%s" % (
             datetime.datetime.fromtimestamp(gc.currentTimestamp)
         )
-        #print("%s: timeChange7" % os.path.basename(__file__))
+        # print("%s: timeChange7" % os.path.basename(__file__))
         # print("signal_ui_thread_emit_time_slider_updated.emit()")
         self.signal_ui_thread_emit_time_slider_updated.emit(gc.currentTimestamp)
 
@@ -1199,24 +1239,34 @@ class AzenqosDialog(QMainWindow):
             QgsMessageLog.logMessage("[-- have gc.tableList --]")
             self.hilightFeature()
 
-        #print("%s: timeChange8" % os.path.basename(__file__))
+        # print("%s: timeChange8" % os.path.basename(__file__))
 
         if len(gc.openedWindows) > 0:
             for window in gc.openedWindows:
                 worker = None
                 if not window.title in gc.linechartWindowname:
-                    print("%s: timeChange7 hilightrow window %s" % (os.path.basename(__file__), window.title))
+                    print(
+                        "%s: timeChange7 hilightrow window %s"
+                        % (os.path.basename(__file__), window.title)
+                    )
                     window.hilightRow(sampledate)
                 else:
-                    print("%s: timeChange7 movechart window %s" % (os.path.basename(__file__), window.title))
+                    print(
+                        "%s: timeChange7 movechart window %s"
+                        % (os.path.basename(__file__), window.title)
+                    )
                     window.moveChart(sampledate)
         print("%s: timeChange9" % os.path.basename(__file__))
         # text = "[--" + str(len(gc.tableList) + "--]"
         # QgsMessageLog.logMessage(text)
 
-
-
-        print("{}: timeChange end1 gc.threadpool.maxThreadCount() {} gc.threadpool.activeThreadCount() {}".format(os.path.basename(__file__), gc.threadpool.maxThreadCount(),  gc.threadpool.activeThreadCount()))
+        print(
+            "{}: timeChange end1 gc.threadpool.maxThreadCount() {} gc.threadpool.activeThreadCount() {}".format(
+                os.path.basename(__file__),
+                gc.threadpool.maxThreadCount(),
+                gc.threadpool.activeThreadCount(),
+            )
+        )
 
     # def threadComplete(self):
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
@@ -1241,12 +1291,14 @@ class AzenqosDialog(QMainWindow):
             if layer.name() not in gc.activeLayers:
                 continue
             try:
-                #print("selectFeatureOnLayersByTime layer: %s" % layer.name())
+                # print("selectFeatureOnLayersByTime layer: %s" % layer.name())
                 end_dt = datetime.datetime.fromtimestamp(gc.currentTimestamp)
-                start_dt = end_dt - datetime.timedelta(seconds=(gc.DEFAULT_LOOKBACK_DUR_MILLIS/1000.0))
+                start_dt = end_dt - datetime.timedelta(
+                    seconds=(gc.DEFAULT_LOOKBACK_DUR_MILLIS / 1000.0)
+                )
                 # 2020-10-08 15:35:55.431000
                 filt_expr = "time >= '%s' and time <= '%s'" % (start_dt, end_dt)
-                #print("filt_expr:", filt_expr)
+                # print("filt_expr:", filt_expr)
                 request = (
                     QgsFeatureRequest()
                     .setFilterExpression(filt_expr)
@@ -1254,7 +1306,7 @@ class AzenqosDialog(QMainWindow):
                 )
 
                 layerFeatures = layer.layer().getFeatures(request)
-                #print("filt request ret:", layerFeatures)
+                # print("filt request ret:", layerFeatures)
                 lc = 0
                 fids = []
                 time_list = []
@@ -1263,16 +1315,20 @@ class AzenqosDialog(QMainWindow):
                     fids.append(lf.id())
                     time_list.append(lf.attribute("time"))
                 if len(fids):
-                    sr = pd.Series(time_list, index=fids, dtype='datetime64[ns]')
+                    sr = pd.Series(time_list, index=fids, dtype="datetime64[ns]")
                     sids = [sr.idxmax()]
-                    #print("sr:", sr)
-                    #print("select ids:", sids)
+                    # print("sr:", sr)
+                    # print("select ids:", sids)
                     layer.layer().selectByIds(sids)
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: selectFeatureOnLayersByTime layer.name() {} exception: {}".format(layer.name(), exstr))
-            '''
+                print(
+                    "WARNING: selectFeatureOnLayersByTime layer.name() {} exception: {}".format(
+                        layer.name(), exstr
+                    )
+                )
+            """
             root = QgsProject.instance().layerTreeRoot()
             root.setHasCustomLayerOrder(True)
             order = root.customLayerOrder()
@@ -1289,14 +1345,13 @@ class AzenqosDialog(QMainWindow):
             if layer is not None:
                 if len(selected_ids) > 0:
                     layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
-            '''
-
+            """
 
     def getPosIdsByTable(self):
         print("%s: getPosIdsByTable" % os.path.basename(__file__))
         gc.azenqosDatabase.open()
         # start_time = time.time()
-        #QgsMessageLog.logMessage("tables: " + str(gc.tableList))
+        # QgsMessageLog.logMessage("tables: " + str(gc.tableList))
         self.posObjs = []
         self.posIds = []
         for tableName in gc.activeLayers:
@@ -1364,7 +1419,14 @@ class AzenqosDialog(QMainWindow):
 
     def classifySelectedItems(self, parent, child):
         windowName = parent + "_" + child
-        print("classifySelectedItems windowName:", windowName, "parent:", parent, "child:", child)
+        print(
+            "classifySelectedItems windowName:",
+            windowName,
+            "parent:",
+            parent,
+            "child:",
+            child,
+        )
         if hasattr(self, "mdi") is False:
             self.mdi = GroupArea()
         subwindowList = self.mdi.subWindowList()
@@ -1722,7 +1784,9 @@ class AzenqosDialog(QMainWindow):
                 if hasattr(self, "lte_rrc_sib_states_window") is True:
                     tableWindow = self.lte_rrc_sib_states_window.widget()
                     if not tableWindow:
-                        tableWidget = TableWindow(self.lte_rrc_sib_states_window, windowName)
+                        tableWidget = TableWindow(
+                            self.lte_rrc_sib_states_window, windowName
+                        )
                         gc.openedWindows.append(tableWidget)
 
                     if self.lte_rrc_sib_states_window not in subwindowList:
@@ -1735,7 +1799,9 @@ class AzenqosDialog(QMainWindow):
                 else:
                     # create new subwindow
                     self.lte_rrc_sib_states_window = SubWindowArea(self.mdi)
-                    tableWidget = TableWindow(self.lte_rrc_sib_states_window, windowName)
+                    tableWidget = TableWindow(
+                        self.lte_rrc_sib_states_window, windowName
+                    )
                     self.lte_rrc_sib_states_window.setWidget(tableWidget)
                     self.mdi.addSubWindow(self.lte_rrc_sib_states_window)
                     self.lte_rrc_sib_states_window.show()
@@ -1812,7 +1878,7 @@ class AzenqosDialog(QMainWindow):
                     self.mdi.addSubWindow(self.lte_ppparam_window)
                     self.lte_ppparam_window.show()
                     gc.openedWindows.append(tableWidget)
-            
+
             elif child == "Data":
                 tableWidget = None
                 if hasattr(self, "lte_data_window") is True:
@@ -2591,17 +2657,16 @@ class AzenqosDialog(QMainWindow):
                 elif getChildNode == "Equipment Configuration":
                     pass
 
-
     def killMainWindow(self):
         self.cleanup()
         self.close()
-        '''
+        """
         self.destroy(True, True)
         removeAzenqosGroup()
         for mdiwindow in self.mdi.subWindowList():
             mdiwindow.close()
         self.mdi.close()
-        '''
+        """
 
     def removeToolBarActions(self):
         actions = self.toolbar.actions()
@@ -2623,7 +2688,6 @@ class AzenqosDialog(QMainWindow):
             self.settings.sync()  # load changes
             self._gui_restore()
 
-
     def saveWorkspaceFile(self):
         fp, _ = QFileDialog.getSaveFileName(
             self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
@@ -2634,14 +2698,13 @@ class AzenqosDialog(QMainWindow):
             self.settings.sync()  # save changes
             shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
 
-
     def closeEvent(self, event):
         print("azenqos_plugin_dialog: closeEvent:", event)
         # just close it as it might be ordered by qgis close (unload()) too
         self.cleanup()
         event.accept()
 
-        '''
+        """
         reply = None
         if self.newImport is False:
             reply = QMessageBox.question(
@@ -2657,11 +2720,11 @@ class AzenqosDialog(QMainWindow):
             event.accept()
         else:
             event.ignore()
-        '''
+        """
 
     def cleanup(self):
         self._gui_save()
-        #saving = Utils().saveState(gc.CURRENT_PATH)
+        # saving = Utils().saveState(gc.CURRENT_PATH)
         iface.actionPan().trigger()
         self.pauseTime()
         self.timeSliderThread.exit()
@@ -2680,7 +2743,7 @@ class AzenqosDialog(QMainWindow):
 
         QgsProject.instance().reloadAllLayers()
         QgsProject.instance().clear()
-        #gc.tableList = []
+        # gc.tableList = []
         gc.activeLayers = []
 
         if len(gc.openedWindows) > 0:

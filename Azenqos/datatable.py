@@ -36,10 +36,9 @@ import gsm_query
 from .tsharkworker import TsharkDecodeWorker
 
 
-
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
-    
+
     def __init__(self, parent, windowName):
         super().__init__(parent)
         self.title = windowName
@@ -60,7 +59,9 @@ class TableWindow(QWidget):
         self.dateString = ""
         self.tableViewCount = 0
         self.parentWindow = parent
-        self.signal_ui_thread_emit_model_datachanged.connect(self.ui_thread_emit_model_datachanged)
+        self.signal_ui_thread_emit_model_datachanged.connect(
+            self.ui_thread_emit_model_datachanged
+        )
         self.setupUi()
         # self.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.customContextMenuRequested.connect(self.generateMenu)
@@ -81,9 +82,9 @@ class TableWindow(QWidget):
         self.filterHeader = FilterHeader(self.tableView)
         self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
         self.filterHeader.sectionClicked.connect(self.horizontalHeader_sectionClicked)
-        
+
         self.tableView.doubleClicked.connect(self.showDetail)
-        #self.tableView.clicked.connect(self.updateSlider)  - now we use onselectionchanged from modelview instead
+        # self.tableView.clicked.connect(self.updateSlider)  - now we use onselectionchanged from modelview instead
         self.tableView.setSortingEnabled(False)
         self.tableView.setCornerButtonEnabled(False)
         self.tableView.setStyleSheet(
@@ -99,29 +100,27 @@ class TableWindow(QWidget):
         # Attach header to table, create text filter
         self.tableView.setHorizontalHeader(self.filterHeader)
 
-        
-        '''
+        """
         self.tableView.verticalHeader().setFixedWidth(
             self.tableView.verticalHeader().sizeHint().width()
-        )'''
+        )"""
         if self.tableHeader and len(self.tableHeader) > 0:
             self.filterHeader.setFilterBoxes(gc.maxColumns, self)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
         layout.setMargin(0)
-        layout.setContentsMargins(0,0,0,0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.tableView)
 
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.horizontalHeader().setMinimumSectionSize(40)
         self.tableView.horizontalHeader().setDefaultSectionSize(60)
         self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-        
+
         self.tableView.verticalHeader().setMinimumSectionSize(10)
         self.tableView.verticalHeader().setDefaultSectionSize(30)
 
-       
         # flayout = QFormLayout()
         # layout.addLayout(flayout)
         # for i in range(len(self.tableHeader)):
@@ -135,13 +134,13 @@ class TableWindow(QWidget):
         # self.setFixedWidth(layout.sizeHint())
         self.setLayout(layout)
         self.show()
-        
-    def slotSelect(self,state):
+
+    def slotSelect(self, state):
         for checkbox in self.checkBoxs:
             checkbox.setChecked(QtCore.Qt.Checked == state)
-        
+
     def horizontalHeader_sectionClicked(self, index):
-        print('click header')
+        print("click header")
         self.menu = QMenu(self)
         self.column = index
         data_unique = []
@@ -152,56 +151,58 @@ class TableWindow(QWidget):
         self.menu.addAction(checkableAction)
         checkBox.setChecked(True)
         checkBox.stateChanged.connect(self.slotSelect)
-        
+
         for i in range(self.tableViewCount):
             if not self.tableView.isRowHidden(i):
-                locateOfData = self.tableView.model().index(i,index)
+                locateOfData = self.tableView.model().index(i, index)
                 item = self.tableView.model().data(locateOfData)
                 if item not in data_unique:
                     data_unique.append(item)
-                    checkBox = QCheckBox(item,self.menu)
+                    checkBox = QCheckBox(item, self.menu)
                     checkBox.setChecked(True)
                     checkableAction = QWidgetAction(self.menu)
                     checkableAction.setDefaultWidget(checkBox)
                     self.menu.addAction(checkableAction)
                     self.checkBoxes.append(checkBox)
-        btn = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel,
-                                     QtCore.Qt.Horizontal, self.menu)
+        btn = QtGui.QDialogButtonBox(
+            QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel,
+            QtCore.Qt.Horizontal,
+            self.menu,
+        )
         btn.accepted.connect(self.menuClose)
         btn.rejected.connect(self.menu.close)
         checkableAction = QtGui.QWidgetAction(self.menu)
         checkableAction.setDefaultWidget(btn)
         self.menu.addAction(checkableAction)
         self.menu.show()
-    
 
         # posY = headerPos.y() + self.horizontalHeader.height()
         # posX = headerPos.x() + self.horizontalHeader.sectionPosition(index)
         # self.menu.exec_(QtCore.QPoint(posX, posY))
-        
+
     def menuClose(self):
-        '''self.keywords[self.col] = []
+        """self.keywords[self.col] = []
         for element in self.checkBoxs:
             if element.isChecked():
-                self.keywords[self.col].append(element.text())'''
+                self.keywords[self.col].append(element.text())"""
         self.menu.close()
 
-        
     def ui_thread_emit_model_datachanged(self):
         print("ui_thread_emit_model_datachanged")
         # this func is supposed to be called as a slot by ui thread - triggered by signal from non-ui thread
-        index_topleft = self.tableModel.index(0,0)
+        index_topleft = self.tableModel.index(0, 0)
         index_bottomright = self.tableModel.index(100, 100)
-        #self.tableModel.dataChanged.emit(index_topleft, index_bottomright, [QtCore.Qt.DisplayRole])
-        self.proxyModel.dataChanged.emit(index_topleft, index_bottomright, [QtCore.Qt.DisplayRole])
-        
+        # self.tableModel.dataChanged.emit(index_topleft, index_bottomright, [QtCore.Qt.DisplayRole])
+        self.proxyModel.dataChanged.emit(
+            index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
+        )
+
     def updateTableModelData(self, data):
-        #self.setTableModel(self.dataList)
+        # self.setTableModel(self.dataList)
         if self.tableModel is not None:
             print("updateTableModelData()")
             self.tableModel.setData(None, data)
             self.signal_ui_thread_emit_model_datachanged.emit()  # this func is called from the sync thread which is non-ui so setdata() above's emit of dataChanged signal wont have effect, emit this signal to trigger dataChanged emit from ui thread...
-            
 
     def setTableModel(self, dataList):
         if isinstance(dataList, list):
@@ -233,7 +234,9 @@ class TableWindow(QWidget):
 
             for customItem in self.customData:
                 try:
-                    dataList[customItem["row"]][customItem["column"]] = customItem["text"]
+                    dataList[customItem["row"]][customItem["column"]] = customItem[
+                        "text"
+                    ]
                 except:
                     self.customData.remove(customItem)
 
@@ -249,7 +252,7 @@ class TableWindow(QWidget):
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
         self.tableView.setSortingEnabled(False)
-        
+
         sm = self.tableView.selectionModel()
         if sm is not None:
             sm.selectionChanged.connect(self.updateSlider)
@@ -261,8 +264,8 @@ class TableWindow(QWidget):
         if not self.columns:
             self.columns = self.tableModel.columnCount(self)
             self.fetchColumns = self.columns
-            #print("resizeColumnsToContents()")
-            #self.tableView.resizeColumnsToContents()
+            # print("resizeColumnsToContents()")
+            # self.tableView.resizeColumnsToContents()
 
     def setDataSet(self, data_set: list):
         self.dataList = data_set
@@ -277,29 +280,45 @@ class TableWindow(QWidget):
             if self.title is not None:
                 # GSM
                 if self.title == "GSM_Radio Parameters":
-                    self.dataList = gsm_query.get_gsm_radio_params_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = gsm_query.get_gsm_radio_params_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "GSM_Serving + Neighbors":
-                    self.dataList = gsm_query.get_gsm_serv_and_neigh__df(dbcon, gc.currentDateTimeString)
+                    self.dataList = gsm_query.get_gsm_serv_and_neigh__df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "GSM_Current Channel":
                     self.tableHeader = ["Element", "Value"]
-                    self.dataList = gsm_query.get_gsm_current_channel_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = gsm_query.get_gsm_current_channel_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "GSM_C/I":
-                    self.dataList = gsm_query.get_coi_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = gsm_query.get_coi_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 # TODO: find the way to find event counter
                 # elif self.title == "GSM_Events Counter":
                 #     self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
 
                 # WCDMA
                 if self.title == "WCDMA_Active + Monitored Sets":
-                    self.dataList = wcdma_query.get_wcdma_acive_monitored_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = wcdma_query.get_wcdma_acive_monitored_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "WCDMA_Radio Parameters":
-                    self.dataList = wcdma_query.get_wcdma_radio_params_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = wcdma_query.get_wcdma_radio_params_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "WCDMA_BLER Summary":
-                    self.dataList = wcdma_query.get_bler_sum_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = wcdma_query.get_bler_sum_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "WCDMA_Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
                 elif self.title == "WCDMA_Bearers":
-                    self.dataList = wcdma_query.get_wcdma_bearers_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = wcdma_query.get_wcdma_bearers_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "WCDMA_Pilot Poluting Cells":
                     self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
                     self.dataList = WcdmaDataQuery(
@@ -315,22 +334,36 @@ class TableWindow(QWidget):
 
                 # LTE
                 elif self.title == "LTE_Radio Parameters":
-                    self.dataList = lte_query.get_lte_radio_params_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = lte_query.get_lte_radio_params_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "LTE_Serving + Neighbors":
-                    self.dataList = lte_query.get_lte_serv_and_neigh_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = lte_query.get_lte_serv_and_neigh_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "LTE_PUCCH/PDSCH Parameters":
-                    self.dataList = lte_query.get_lte_pucch_pdsch_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = lte_query.get_lte_pucch_pdsch_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "LTE_Data":
-                    self.dataList = lte_query.get_lte_data_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = lte_query.get_lte_data_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "LTE_LTE Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
                 elif self.title == "LTE_LTE RLC":
-                    self.dataList = lte_query.get_lte_rlc_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = lte_query.get_lte_rlc_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "LTE_LTE VoLTE":
-                    self.dataList = lte_query.get_volte_disp_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = lte_query.get_volte_disp_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "LTE_LTE RRC/SIB States":
                     print("LTE_LTE RRC/SIB States gen datalist")
-                    self.dataList = lte_query.get_lte_rrc_sib_states_df(dbcon, gc.currentDateTimeString)
+                    self.dataList = lte_query.get_lte_rrc_sib_states_df(
+                        dbcon, gc.currentDateTimeString
+                    )
                 elif self.title == "5G NR_Radio Parameters":
                     self.dataList = NrDataQuery(
                         gc.azenqosDatabase, gc.currentDateTimeString
@@ -434,17 +467,17 @@ class TableWindow(QWidget):
                     if create_table_model:
                         self.setTableModel(self.dataList)
                     else:
-                        self.updateTableModelData(self.dataList)  # applies new self.dataList
+                        self.updateTableModelData(
+                            self.dataList
+                        )  # applies new self.dataList
                     self.tableViewCount = self.tableView.model().rowCount()
 
-                    
     def setHeader(self, headers):
         # self.tableHeader = headers
         self.customHeader = headers
         self.updateTableModelData(self.dataList)
         # self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
 
-        
     def generateMenu(self, pos):
         menu = QMenu()
         item1 = menu.addAction(u"Customize")
@@ -458,10 +491,8 @@ class TableWindow(QWidget):
             self.properties_window.setupComboBox()
             self.properties_window.show()
 
-
-    
     def hilightRow(self, sampledate, threading=False):
-        
+
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
@@ -471,13 +502,21 @@ class TableWindow(QWidget):
             "Signaling_Events",
             "Signaling_Layer 3 Messages",
         ]:
-            print("datatable: threading: {} self.title: {} hilightRow: refreshTableContents()".format(threading, self.title))
+            print(
+                "datatable: threading: {} self.title: {} hilightRow: refreshTableContents()".format(
+                    threading, self.title
+                )
+            )
             if threading:
                 worker = Worker(self.refreshTableContents)
             else:
                 self.refreshTableContents()
         else:
-            print("datatable: threading: {} self.title: {} hilightRow: findCurrentRow()".format(threading, self.title))
+            print(
+                "datatable: threading: {} self.title: {} hilightRow: findCurrentRow()".format(
+                    threading, self.title
+                )
+            )
             if threading:
                 worker = Worker(self.findCurrentRow)
             else:
@@ -498,29 +537,32 @@ class TableWindow(QWidget):
             side = item.sibling(item.row(), 2).data()
             protocol = item.sibling(item.row(), 3).data()
             cellContent = item.sibling(item.row(), 4).data()
-            self.detailWidget = DetailWidget(parentWindow, cellContent, name, side, protocol)
+            self.detailWidget = DetailWidget(
+                parentWindow, cellContent, name, side, protocol
+            )
         else:
             self.detailWidget = DetailWidget(parentWindow, cellContent)
-        
+
     def updateSlider(self, item):
 
         # get selected row time for signalling and events table
-        
-        if not self.tableHeader:
-            return       
 
-        
+        if not self.tableHeader:
+            return
+
         if isinstance(item, QItemSelection):
             # onselectionchanged mode signal to this slot
             idx_list = item.indexes()
             for idx in idx_list:
-                print("onselectionchanged mode signal to this slot: idx.row()", idx.row())
+                print(
+                    "onselectionchanged mode signal to this slot: idx.row()", idx.row()
+                )
                 item = idx
                 break
 
         timeCell = None
         try:
-            cellContent = str(item.data())            
+            cellContent = str(item.data())
             try:
                 timeCell = datetime.datetime.strptime(
                     str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
@@ -555,21 +597,19 @@ class TableWindow(QWidget):
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: updateSlider timecell exception:", exstr)
 
-
     def findCurrentRow(self):
-        
+
         if isinstance(self.dataList, pd.DataFrame):
             if self.dateString:
                 df = self.dataList
                 ts_query = """time <= '{}'""".format(self.dateString)
                 print("ts_query:", ts_query)
                 df = df.query(ts_query)
-                #print('findcurrentrow filt df.index:', df.index)
+                # print('findcurrentrow filt df.index:', df.index)
                 if len(df):
                     self.tableView.selectRow(df.index[-1])
                 return
 
-        
         startRange = 0
         indexList = []
         timeDiffList = []
@@ -613,7 +653,7 @@ class TableWindow(QWidget):
 class DetailWidget(QDialog):
     closed = False
 
-    def __init__(self, parent, detailText, messageName = None, side = None, protocol = None):
+    def __init__(self, parent, detailText, messageName=None, side=None, protocol=None):
         super().__init__(None)
         self.title = "Details"
         self.detailText = detailText
@@ -624,9 +664,7 @@ class DetailWidget(QDialog):
         self.top = 10
         self.width = 640
         self.height = 480
-        self.setWindowFlags(
-            QtCore.Qt.Window
-        )
+        self.setWindowFlags(QtCore.Qt.Window)
         self.setupUi()
 
     def setupUi(self):
@@ -643,9 +681,14 @@ class DetailWidget(QDialog):
         self.show()
         self.raise_()
         self.activateWindow()
-        if None not in [self.messageName, self.side, self.protocol] and "msg_raw_hex:" in self.detailText  :
+        if (
+            None not in [self.messageName, self.side, self.protocol]
+            and "msg_raw_hex:" in self.detailText
+        ):
             print("Need to decode")
-            worker = TsharkDecodeWorker(self.messageName, self.side, self.protocol, self.detailText)
+            worker = TsharkDecodeWorker(
+                self.messageName, self.side, self.protocol, self.detailText
+            )
             worker.signals.result.connect(self.setDecodedDetail)
             gc.threadpool.start(worker)
         # messageName is not None and side is not None and protocol is not None :
@@ -655,11 +698,14 @@ class DetailWidget(QDialog):
 
     def setDecodedDetail(self, detail):
         if self.closed == False:
-            self.textEdit.setPlainText(self.detailText + "\n\n------\nALTERNATIVE WIRESHARK DECODE OF SAME PACKET BELOW\n------\n" + str(detail))
+            self.textEdit.setPlainText(
+                self.detailText
+                + "\n\n------\nALTERNATIVE WIRESHARK DECODE OF SAME PACKET BELOW\n------\n"
+                + str(detail)
+            )
+
 
 class TableModel(QAbstractTableModel):
-
-        
     def __init__(self, inputData, header, parent=None, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
@@ -682,16 +728,18 @@ class TableModel(QAbstractTableModel):
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
         if isinstance(data, list):
             self.dataSource = data
-            index_topleft = self.index(0,0)
-            index_bottomright = self.index(100,100)
-            self.dataChanged.emit(index_topleft, index_bottomright, [role])  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
+            index_topleft = self.index(0, 0)
+            index_bottomright = self.index(100, 100)
+            self.dataChanged.emit(
+                index_topleft, index_bottomright, [role]
+            )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
             return True
         return False
-    
+
     def data(self, index, role=QtCore.Qt.DisplayRole):
-        #print("tablemodel data() role:", role)
+        # print("tablemodel data() role:", role)
         if role == QtCore.Qt.DisplayRole:
-            #print("data() QtCore.Qt.DisplayRole")
+            # print("data() QtCore.Qt.DisplayRole")
             row = index.row()
             column = index.column()
             return "{}".format(self.dataSource[row][column])
@@ -713,7 +761,7 @@ class PdTableModel(QAbstractTableModel):
         assert isinstance(df, pd.DataFrame)
         QAbstractTableModel.__init__(self, parent, *args)
         self.df = df
-        
+
     def rowCount(self, parent):
         return len(self.df)
 
@@ -724,19 +772,20 @@ class PdTableModel(QAbstractTableModel):
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
         if isinstance(data, pd.DataFrame):
             self.df = data
-            index_topleft = self.index(0,0)
-            index_bottomright = self.index(100,100)
-            self.dataChanged.emit(index_topleft, index_bottomright, [QtCore.Qt.DisplayRole])  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
+            index_topleft = self.index(0, 0)
+            index_bottomright = self.index(100, 100)
+            self.dataChanged.emit(
+                index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
+            )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
             print("pdtablemodel setdata emit done")
             return True
         return False
-    
-    
+
     def data(self, index, role=QtCore.Qt.DisplayRole):
-        #print("pdtablemodel data() role:", role)
+        # print("pdtablemodel data() role:", role)
         if role == QtCore.Qt.DisplayRole:
-            #print("pdtablemodel data() displayrole enter")
-            try:                
+            # print("pdtablemodel data() displayrole enter")
+            try:
                 ret = self.df.iloc[index.row(), index.column()]
                 if pd.isnull(ret):
                     return None
@@ -747,7 +796,7 @@ class PdTableModel(QAbstractTableModel):
                         ret = str(ret)
                 if ret.endswith(".00"):
                     ret = ret[:-3]
-                #print("data() index:index.row() {}, index.column() {} ret {}".format(index.row(), index.column(), ret))
+                # print("data() index:index.row() {}, index.column() {} ret {}".format(index.row(), index.column(), ret))
                 return ret
             except Exception as e:
                 print("WARNING: pdtablemodel data() exception: ", e)
@@ -758,9 +807,9 @@ class PdTableModel(QAbstractTableModel):
     def dataString(self, index):
         try:
             ret = self.df.iloc[index.row(), index.column()]
-            if ret is not None:                
+            if ret is not None:
                 ret = str(ret)
-                #print("datastring() index:index.row() {}, index.column() {}".format(index.row(), index.column(), ret))
+                # print("datastring() index:index.row() {}, index.column() {}".format(index.row(), index.column(), ret))
                 return ret
             else:
                 return None
@@ -768,10 +817,9 @@ class PdTableModel(QAbstractTableModel):
             print("WARNING: pdtablemodel data() exception: ", e)
             return None
 
-
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             ret = str(self.df.columns[section])
-            #print("headerdata section: {} ret: {}".format(section, ret))
+            # print("headerdata section: {} ret: {}".format(section, ret))
             return ret
         return QAbstractTableModel.headerData(self, section, orientation, role)

@@ -26,12 +26,12 @@ import azq_utils
 import azq_theme_manager
 from .cell_layer_task import *
 
+
 class Ui_DatabaseDialog(QDialog):
     def __init__(self):
         super(Ui_DatabaseDialog, self).__init__()
         self.setupUi(self)
 
-        
     def setupUi(self, DatabaseDialog):
         dirname = os.path.dirname(__file__)
         DatabaseDialog.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
@@ -44,11 +44,15 @@ class Ui_DatabaseDialog(QDialog):
 
         vbox.addStretch()
 
-        azm_gb = QGroupBox("Log file (.azm from Server > Download > Processed AZM file)")
+        azm_gb = QGroupBox(
+            "Log file (.azm from Server > Download > Processed AZM file)"
+        )
         vbox.addWidget(azm_gb)
         vbox.addStretch()
 
-        theme_gb = QGroupBox("Theme file (.xml from Server > Manage phone > Manage theme)")
+        theme_gb = QGroupBox(
+            "Theme file (.xml from Server > Manage phone > Manage theme)"
+        )
         vbox.addWidget(theme_gb)
         vbox.addStretch()
 
@@ -63,24 +67,23 @@ class Ui_DatabaseDialog(QDialog):
         self.buttonBox.setObjectName("buttonBox")
         vbox.addWidget(self.buttonBox)
 
-
         ########### azm_gb setup
-        tmp_box = QVBoxLayout() 
+        tmp_box = QVBoxLayout()
         azm_gb.setLayout(tmp_box)
-        
+
         self.dbPathLineEdit = QtWidgets.QLineEdit()
         self.dbPathLineEdit.setObjectName("dbPath")
         tmp_box.addWidget(self.dbPathLineEdit)
-        
+
         self.browseButton = QtWidgets.QPushButton()
         self.browseButton.setObjectName("browseButton")
         tmp_box.addWidget(self.browseButton)
         ############################
 
         ############ theme_gb setup
-        tmp_box = QVBoxLayout() 
+        tmp_box = QVBoxLayout()
         theme_gb.setLayout(tmp_box)
-        
+
         self.themePathLineEdit = QtWidgets.QLineEdit(DatabaseDialog)
         self.themePathLineEdit.setObjectName("themePath")
         tmp_box.addWidget(self.themePathLineEdit)
@@ -91,9 +94,9 @@ class Ui_DatabaseDialog(QDialog):
         ##################################
 
         ############ theme_gb setup
-        tmp_box = QVBoxLayout() 
+        tmp_box = QVBoxLayout()
         cell_gb.setLayout(tmp_box)
-        
+
         self.cellPathLineEdit = QtWidgets.QLineEdit()
         self.cellPathLineEdit.setObjectName("cellPath")
         tmp_box.addWidget(self.cellPathLineEdit)
@@ -105,12 +108,12 @@ class Ui_DatabaseDialog(QDialog):
 
         ################ config/connect
         self.retranslateUi(DatabaseDialog)
-        
+
         QtCore.QMetaObject.connectSlotsByName(DatabaseDialog)
         self.browseButton.clicked.connect(self.choose_azm)
         self.browseButtonTheme.clicked.connect(self.choose_theme)
         self.browseButtonCell.clicked.connect(self.choose_cell)
-        
+
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
             self.checkDatabase
         )
@@ -119,20 +122,26 @@ class Ui_DatabaseDialog(QDialog):
         )
         #################################
 
-
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
-        DatabaseDialog.setWindowTitle(_translate("DatabaseDialog", "Azenqos Replay QGIS Plugin v.%.03f" % VERSION))
+        DatabaseDialog.setWindowTitle(
+            _translate("DatabaseDialog", "Azenqos Replay QGIS Plugin v.%.03f" % VERSION)
+        )
         self.browseButton.setText(_translate("DatabaseDialog", "Choose Log..."))
         self.browseButtonTheme.setText(_translate("DatabaseDialog", "Choose Theme..."))
-        self.browseButtonCell.setText(_translate("DatabaseDialog", "Choose Cell file..."))
-        
+        self.browseButtonCell.setText(
+            _translate("DatabaseDialog", "Choose Cell file...")
+        )
+
         self.dbPathLineEdit.setText(azq_utils.read_local_file("config_prev_azm"))
-        self.cellPathLineEdit.setText(azq_utils.read_local_file("config_prev_cell_file"))
+        self.cellPathLineEdit.setText(
+            azq_utils.read_local_file("config_prev_cell_file")
+        )
 
         tp = azq_utils.read_local_file("config_prev_theme")
-        self.themePathLineEdit.setText(tp) if tp else self.themePathLineEdit.setText("Default")
-
+        self.themePathLineEdit.setText(tp) if tp else self.themePathLineEdit.setText(
+            "Default"
+        )
 
     def clearCurrentProject(self):
         for hi in gc.h_list:
@@ -150,32 +159,32 @@ class Ui_DatabaseDialog(QDialog):
         QgsProject.instance().clear()
         gc.tableList = []
 
-        
     def choose_azm(self):
         fileName, _ = QFileDialog.getOpenFileName(
             self, "Single File", QtCore.QDir.rootPath(), "*.azm"
         )
         self.dbPathLineEdit.setText(fileName) if fileName else None
 
-        
     def choose_theme(self):
         fileName, _ = QFileDialog.getOpenFileName(
             self, "Single File", QtCore.QDir.rootPath(), "*.xml"
         )
-        self.themePathLineEdit.setText(fileName) if fileName else self.themePathLineEdit.setText("Default")
-
+        self.themePathLineEdit.setText(
+            fileName
+        ) if fileName else self.themePathLineEdit.setText("Default")
 
     def choose_cell(self):
         fileNames, _ = QFileDialog.getOpenFileNames(
             self, "Select cell files", QtCore.QDir.rootPath(), "*.*"
         )
-        self.cellPathLineEdit.setText(','.join(fileNames)) if fileNames else self.cellPathLineEdit.setText("")
-
+        self.cellPathLineEdit.setText(
+            ",".join(fileNames)
+        ) if fileNames else self.cellPathLineEdit.setText("")
 
     def checkDatabase(self):
         if not self.dbPathLineEdit.text():
             QtWidgets.QMessageBox.critical(
-                None,                
+                None,
                 "No log chosen",
                 "Please choose a log to open...",
                 QtWidgets.QMessageBox.Cancel,
@@ -184,7 +193,7 @@ class Ui_DatabaseDialog(QDialog):
 
         if not os.path.isfile(self.dbPathLineEdit.text()):
             QtWidgets.QMessageBox.critical(
-                None,                
+                None,
                 "File not found",
                 "Failed to find specified azm file...",
                 QtWidgets.QMessageBox.Cancel,
@@ -193,22 +202,24 @@ class Ui_DatabaseDialog(QDialog):
 
         if not self.themePathLineEdit.text():
             QtWidgets.QMessageBox.critical(
-                None,                
+                None,
                 "No theme chosen",
                 "Please choose a theme xml to use...",
                 QtWidgets.QMessageBox.Cancel,
             )
             return False
 
-        if self.themePathLineEdit.text() != "Default" and not os.path.isfile(self.themePathLineEdit.text()):
+        if self.themePathLineEdit.text() != "Default" and not os.path.isfile(
+            self.themePathLineEdit.text()
+        ):
             QtWidgets.QMessageBox.critical(
-                None,                
+                None,
                 "Theme file not found",
                 "Please choose a theme xml to use...",
                 QtWidgets.QMessageBox.Cancel,
             )
             return False
-        
+
         try:
             close_db()
             if hasattr(self, "azenqosMainMenu") is True:
@@ -216,8 +227,12 @@ class Ui_DatabaseDialog(QDialog):
                 self.azenqosMainMenu.killMainWindow()
                 self.clearCurrentProject()
 
-            self.databasePath = Utils().unzipToFile(gc.CURRENT_PATH, self.dbPathLineEdit.text())            
-            dbcon = self.addDatabase()  # this will create views/tables per param as per specified theme so must check theme before here
+            self.databasePath = Utils().unzipToFile(
+                gc.CURRENT_PATH, self.dbPathLineEdit.text()
+            )
+            dbcon = (
+                self.addDatabase()
+            )  # this will create views/tables per param as per specified theme so must check theme before here
             if not dbcon or not gc.azenqosDatabase.open():
                 QtWidgets.QMessageBox.critical(
                     None,
@@ -228,17 +243,22 @@ class Ui_DatabaseDialog(QDialog):
                 return False
             else:
                 import azq_utils
-                azq_utils.write_local_file("config_prev_azm", self.dbPathLineEdit.text())
+
+                azq_utils.write_local_file(
+                    "config_prev_azm", self.dbPathLineEdit.text()
+                )
                 self.getTimeForSlider()
                 self.layerTask = LayerTask(u"Add layers", self.databasePath)
                 QgsApplication.taskManager().addTask(self.layerTask)
-                self.longTask = CellLayerTask('Load cell file', self.cellPathLineEdit.text().split(","))
+                self.longTask = CellLayerTask(
+                    "Load cell file", self.cellPathLineEdit.text().split(",")
+                )
                 QgsApplication.taskManager().addTask(self.longTask)
                 self.hide()
                 self.azenqosMainMenu = AzenqosDialog(self)
                 self.azenqosMainMenu.show()
                 self.azenqosMainMenu.raise_()
-                self.azenqosMainMenu.activateWindow()                
+                self.azenqosMainMenu.activateWindow()
                 return True
         except Exception as ex:
             type_, value_, traceback_ = sys.exc_info()
@@ -252,9 +272,7 @@ class Ui_DatabaseDialog(QDialog):
             )
             return False
 
-        
         raise Exception("invalid state")
-        
 
     def getTimeForSlider(self):
         dataList = []
@@ -295,16 +313,22 @@ class Ui_DatabaseDialog(QDialog):
             raise Exception("invalid log database - cant read log_hash")
 
         # check theme
-        theme_fp = self.themePathLineEdit.text()        
+        theme_fp = self.themePathLineEdit.text()
         if theme_fp == "Default":
             theme_fp = azq_theme_manager.get_ori_default_theme()
         azq_theme_manager.set_default_theme_file(theme_fp)
-        params_in_theme = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
+        params_in_theme = (
+            azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
+        )
         if not params_in_theme:
-            raise Exception("Invalid theme file: failed to read any params from theme file: {}".format(theme_fp))
+            raise Exception(
+                "Invalid theme file: failed to read any params from theme file: {}".format(
+                    theme_fp
+                )
+            )
         print("params_in_theme:", params_in_theme)
         azq_utils.write_local_file("config_prev_theme", theme_fp)
-        
+
         db_preprocess.prepare_spatialite_views(dbcon)
         dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
         dbcon = sqlite3.connect(self.databasePath)
@@ -324,5 +348,3 @@ class Ui_DatabaseDialog(QDialog):
 
     def reject(self):
         super().reject()
-
-

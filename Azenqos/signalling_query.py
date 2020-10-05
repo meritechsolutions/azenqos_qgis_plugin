@@ -13,9 +13,11 @@ class SignalingDataQuery:
 
     def getEvents(self, pd_mode=True):
         if pd_mode:
-            df = pd.read_sql("SELECT time, name, info FROM events", gc.dbcon, parse_dates=["time"])
+            df = pd.read_sql(
+                "SELECT time, name, info FROM events", gc.dbcon, parse_dates=["time"]
+            )
             return df
-        
+
         self.openConnection()
         queryString = "SELECT time, name, info FROM events"
         query = QSqlQuery()
@@ -34,9 +36,11 @@ class SignalingDataQuery:
 
     def getLayerOneMessages(self, pd_mode=True):  ##ต้องแก้ query
         if pd_mode:
-            df = pd.read_sql("SELECT time, name, info FROM events", gc.dbcon, parse_dates=["time"])
+            df = pd.read_sql(
+                "SELECT time, name, info FROM events", gc.dbcon, parse_dates=["time"]
+            )
             return df
-        
+
         self.openConnection()
         query = QSqlQuery()
         query.exec_("SELECT * FROM events")
@@ -54,9 +58,13 @@ class SignalingDataQuery:
 
     def getLayerThreeMessages(self, pd_mode=True):
         if pd_mode:
-            df = pd.read_sql("SELECT time, name, symbol, protocol, detail_str FROM signalling", gc.dbcon, parse_dates=["time"])
+            df = pd.read_sql(
+                "SELECT time, name, symbol, protocol, detail_str FROM signalling",
+                gc.dbcon,
+                parse_dates=["time"],
+            )
             return df
-        
+
         self.openConnection()
         query = QSqlQuery()
         query.exec_("SELECT time, name, symbol, protocol, detail_str FROM signalling")

@@ -112,18 +112,24 @@ tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\
         pass
     else:
         os.makedirs(tmp_proc_dir)
-    tmpfn = os.path.join(tmp_proc_dir, "tmp_tshark_dec_"+str(uuid.uuid4()))
-    tmp_txt_fp = tmpfn+".txt"
-    tmp_pcap_fp = tmpfn+".pcap"
-    
+    tmpfn = os.path.join(tmp_proc_dir, "tmp_tshark_dec_" + str(uuid.uuid4()))
+    tmp_txt_fp = tmpfn + ".txt"
+    tmp_pcap_fp = tmpfn + ".pcap"
+
     with open(tmp_txt_fp, "wb") as tf:
         print("create tshark txt tmpfp: ", tmp_txt_fp)
-        tf.write(("000000 "+hexdump).encode("ascii"))
+        tf.write(("000000 " + hexdump).encode("ascii"))
 
-    env = prepare_env_and_libs()  # call this only once at start of program! otherwise will be very slow extracting .so in gnu/linux everytime...
-        
+    env = (
+        prepare_env_and_libs()
+    )  # call this only once at start of program! otherwise will be very slow extracting .so in gnu/linux everytime...
+
     # call text2pcap -l 161 assgn.txt assgn.pcap
-    cmd = azq_utils.get_local_fp(os.path.join("wireshark_" + os.name, "text2pcap"+("" if os.name == "posix" else ".exe")))+' -l 161 "{}" "{}"'.format(tmp_txt_fp, tmp_pcap_fp)
+    cmd = azq_utils.get_local_fp(
+        os.path.join(
+            "wireshark_" + os.name, "text2pcap" + ("" if os.name == "posix" else ".exe")
+        )
+    ) + ' -l 161 "{}" "{}"'.format(tmp_txt_fp, tmp_pcap_fp)
     print("text2pcap cmd:", cmd)
     cmdret = subprocess.call(cmd, shell=True, env=env)
     print("text2pcap ret:", cmdret)
@@ -132,14 +138,20 @@ tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\
         print("text2pcap failed - abort")
     else:
         # tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\"\"" -r assgn.pcap -V
-        cmd = azq_utils.get_local_fp(os.path.join("wireshark_" + os.name, "tshark"+("" if os.name == "posix" else ".exe")))+' -o "uat:user_dlts:\\"User 14 (DLT=161)\\",\\"gsm_a_dtap\\",\\"0\\",\\"\\",\\"0\\",\\"\\"" -r {} -V'.format(tmp_pcap_fp)
+        cmd = azq_utils.get_local_fp(
+            os.path.join(
+                "wireshark_" + os.name,
+                "tshark" + ("" if os.name == "posix" else ".exe"),
+            )
+        ) + ' -o "uat:user_dlts:\\"User 14 (DLT=161)\\",\\"gsm_a_dtap\\",\\"0\\",\\"\\",\\"0\\",\\"\\"" -r {} -V'.format(
+            tmp_pcap_fp
+        )
         print("tshark cmd:", cmd)
-        #cmdret = os.system(cmd)
+        # cmdret = os.system(cmd)
         print("tshark cmd ret:", cmdret)
         ret = subprocess.check_output(cmd, shell=True, env=env)
-        ret = ret.decode("ascii")        
+        ret = ret.decode("ascii")
         return ret
-        
 
     return None
 
@@ -153,7 +165,9 @@ def prepare_env_and_libs():
     ws_bin_dir = azq_utils.get_local_fp("wireshark_" + os.name)
     env["LD_LIBRARY_PATH"] = ws_bin_dir
     if os.name == "posix" and not g_extract_so_tar_gz_done:
-        extract_so_ret = os.system("tar -xzf {}/libwireshark.so.0.tar.gz -C {}".format(ws_bin_dir, ws_bin_dir))
+        extract_so_ret = os.system(
+            "tar -xzf {}/libwireshark.so.0.tar.gz -C {}".format(ws_bin_dir, ws_bin_dir)
+        )
         print("extract_so_ret:", extract_so_ret)
         g_extract_so_tar_gz_done = True
     return env

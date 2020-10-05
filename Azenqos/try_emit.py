@@ -3,8 +3,8 @@ from PyQt5.QtWidgets import *
 from PyQt5 import *
 import sys
 
-class Main(QWidget):
 
+class Main(QWidget):
     def __init__(self):
         super().__init__()
 
@@ -33,7 +33,7 @@ class ExecuteThread(QThread):
 
 
 if __name__ == "__main__":
-    app=QtWidgets.QApplication(sys.argv)
-    window=Main()
+    app = QtWidgets.QApplication(sys.argv)
+    window = Main()
     window.show()
     app.exec_()

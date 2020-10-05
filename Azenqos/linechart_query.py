@@ -246,7 +246,7 @@ class LineChartQueryNew:
             "nr_dl",
             "nr_ul",
             "lte_dl",
-            "lte_ul"
+            "lte_ul",
         ]
         self.openConnection()
         query = QSqlQuery()

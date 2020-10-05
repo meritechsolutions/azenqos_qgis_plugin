@@ -25,7 +25,7 @@ openedWindows = []
 timeSlider = None
 isSliderPlay = False
 allLayers = []
-#tableList = []
+# tableList = []
 h_list = []
 linechartWindowname = [
     "GSM_GSM Line Chart",
@@ -39,4 +39,3 @@ linechartWindowname = [
 threadpool = QThreadPool.globalInstance()
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 FILE_PATH = os.path.join(CURRENT_PATH, "file")
-

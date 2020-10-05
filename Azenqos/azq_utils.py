@@ -10,39 +10,28 @@ def debug(s):
 
 
 def get_module_path():
-    return os.path.realpath(
-        os.path.join(os.getcwd(), os.path.dirname(__file__))
-    )
+    return os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
 
 def get_local_fp(fn):
     return os.path.join(get_module_path(), fn)
+
 
 def write_local_file(fname, contents, auto_encode=True):
     try:
         if auto_encode and isinstance(contents, str):
             contents = contents.encode()  # conv to bytes for write
-        with open(
-                os.path.join(
-                    get_module_path(),
-                    fname
-                ),
-                "wb"
-        ) as f:
+        with open(os.path.join(get_module_path(), fname), "wb") as f:
             f.write(contents)
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: write_local_file - exception: {}".format(exstr))
 
+
 def read_local_file(fname, auto_decode=True):
     try:
-        with open(
-                os.path.join(
-                    get_module_path(),
-                    fname
-                ),
-                "rb"
-        ) as f:
+        with open(os.path.join(get_module_path(), fname), "rb") as f:
             ret = f.read()
             if auto_decode:
                 ret = ret.decode()

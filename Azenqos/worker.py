@@ -40,6 +40,7 @@ class Worker(QRunnable):
     :param kwargs: Keywords to pass to the callback function
 
     """
+
     ret = None
 
     def __init__(self, fn, *args, **kwargs):
@@ -51,7 +52,6 @@ class Worker(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
-    
     @pyqtSlot()
     def run(self):
         """

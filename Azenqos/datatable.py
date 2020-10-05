@@ -80,6 +80,8 @@ class TableWindow(QWidget):
         # Init filter header
         self.filterHeader = FilterHeader(self.tableView)
         self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
+        self.filterHeader.sectionClicked.connect(self.horizontalHeader_sectionClicked)
+        
         self.tableView.doubleClicked.connect(self.showDetail)
         #self.tableView.clicked.connect(self.updateSlider)  - now we use onselectionchanged from modelview instead
         self.tableView.setSortingEnabled(False)
@@ -115,7 +117,7 @@ class TableWindow(QWidget):
         self.tableView.horizontalHeader().setMinimumSectionSize(40)
         self.tableView.horizontalHeader().setDefaultSectionSize(60)
         self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
-
+        
         self.tableView.verticalHeader().setMinimumSectionSize(10)
         self.tableView.verticalHeader().setDefaultSectionSize(30)
 
@@ -133,6 +135,56 @@ class TableWindow(QWidget):
         # self.setFixedWidth(layout.sizeHint())
         self.setLayout(layout)
         self.show()
+        
+    def slotSelect(self,state):
+        for checkbox in self.checkBoxs:
+            checkbox.setChecked(QtCore.Qt.Checked == state)
+        
+    def horizontalHeader_sectionClicked(self, index):
+        print('click header')
+        self.menu = QMenu(self)
+        self.column = index
+        data_unique = []
+        self.checkBoxes = []
+        checkBox = QCheckBox("Select all", self.menu)
+        checkableAction = QWidgetAction(self.menu)
+        checkableAction.setDefaultWidget(checkBox)
+        self.menu.addAction(checkableAction)
+        checkBox.setChecked(True)
+        checkBox.stateChanged.connect(self.slotSelect)
+        
+        for i in range(self.tableViewCount):
+            if not self.tableView.isRowHidden(i):
+                locateOfData = self.tableView.model().index(i,index)
+                item = self.tableView.model().data(locateOfData)
+                if item not in data_unique:
+                    data_unique.append(item)
+                    checkBox = QCheckBox(item,self.menu)
+                    checkBox.setChecked(True)
+                    checkableAction = QWidgetAction(self.menu)
+                    checkableAction.setDefaultWidget(checkBox)
+                    self.menu.addAction(checkableAction)
+                    self.checkBoxes.append(checkBox)
+        btn = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel,
+                                     QtCore.Qt.Horizontal, self.menu)
+        btn.accepted.connect(self.menuClose)
+        btn.rejected.connect(self.menu.close)
+        checkableAction = QtGui.QWidgetAction(self.menu)
+        checkableAction.setDefaultWidget(btn)
+        self.menu.addAction(checkableAction)
+        self.menu.show()
+    
+
+        # posY = headerPos.y() + self.horizontalHeader.height()
+        # posX = headerPos.x() + self.horizontalHeader.sectionPosition(index)
+        # self.menu.exec_(QtCore.QPoint(posX, posY))
+        
+    def menuClose(self):
+        '''self.keywords[self.col] = []
+        for element in self.checkBoxs:
+            if element.isChecked():
+                self.keywords[self.col].append(element.text())'''
+        self.menu.close()
 
         
     def ui_thread_emit_model_datachanged(self):

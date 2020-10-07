@@ -823,3 +823,33 @@ class PdTableModel(QAbstractTableModel):
             # print("headerdata section: {} ret: {}".format(section, ret))
             return ret
         return QAbstractTableModel.headerData(self, section, orientation, role)
+
+
+class FilterMenuWidget(QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setupUi(self)
+
+    def setupUi(self, FilterMenuWidget):
+        self.setObjectName("FilterMenuWidget")
+        self.resize(400, 300)
+        self.verticalLayout = QtWidgets.QVBoxLayout(FilterMenuWidget)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.listView = QtWidgets.QListView(FilterMenuWidget)
+        self.listView.setObjectName("listView")
+        self.verticalLayout.addWidget(self.listView)
+        self.buttonBox = QtWidgets.QDialogButtonBox(FilterMenuWidget)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
+        self.buttonBox.accepted.connect()
+        self.buttonBox.rejected.connect()
+        self.buttonBox.setObjectName("buttonBox")
+        self.verticalLayout.addWidget(self.buttonBox)
+
+        self.retranslateUi(self)
+        QtCore.QMetaObject.connectSlotsByName(self)
+
+    def retranslateUi(self):
+        title = "Filter Menu Widget"
+        self.setWindowTitle(title)

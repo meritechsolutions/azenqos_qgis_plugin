@@ -9,17 +9,21 @@ class SortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, *args, **kwargs):
         QSortFilterProxyModel.__init__(self, *args, **kwargs)
         self.filters = {}
+        self.args = args
 
     def setFilterByColumn(self, regex, column):
         self.filters[column] = regex
         self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
-        for key, regex in self.filters.items():
-            ix = self.sourceModel().index(source_row, key, source_parent)
-            if ix.isValid():
-                if regex.indexIn(str(self.sourceModel().dataString(ix))) == -1:
-                    return False
+        if self.args:
+            print('test')
+        else:
+            for key, regex in self.filters.items():
+                ix = self.sourceModel().index(source_row, key, source_parent)
+                if ix.isValid():
+                    if regex.indexIn(str(self.sourceModel().dataString(ix))) == -1:
+                        return False
         return True
 
 
@@ -27,7 +31,9 @@ class FilterHeader(QtGui.QHeaderView):
     filterActivated = QtCore.pyqtSignal()
 
     def __init__(self, parent):
-        super().__init__(QtCore.Qt.Horizontal, parent)
+        super().__init__(
+            QtCore.Qt.Horizontal, parent
+        )
         self._editors = []
         self._padding = 4
         self.setStretchLastSection(True)

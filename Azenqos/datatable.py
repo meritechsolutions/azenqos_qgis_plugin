@@ -135,57 +135,14 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
-    def slotSelect(self, state):
-        for checkbox in self.checkBoxs:
-            checkbox.setChecked(QtCore.Qt.Checked == state)
-
     def horizontalHeader_sectionClicked(self, index):
         print("click header")
-        self.menu = QMenu(self)
-        self.column = index
-        data_unique = []
-        self.checkBoxes = []
-        checkBox = QCheckBox("Select all", self.menu)
-        checkableAction = QWidgetAction(self.menu)
-        checkableAction.setDefaultWidget(checkBox)
-        self.menu.addAction(checkableAction)
-        checkBox.setChecked(True)
-        checkBox.stateChanged.connect(self.slotSelect)
-
-        for i in range(self.tableViewCount):
-            if not self.tableView.isRowHidden(i):
-                locateOfData = self.tableView.model().index(i, index)
-                item = self.tableView.model().data(locateOfData)
-                if item not in data_unique:
-                    data_unique.append(item)
-                    checkBox = QCheckBox(item, self.menu)
-                    checkBox.setChecked(True)
-                    checkableAction = QWidgetAction(self.menu)
-                    checkableAction.setDefaultWidget(checkBox)
-                    self.menu.addAction(checkableAction)
-                    self.checkBoxes.append(checkBox)
-        btn = QtGui.QDialogButtonBox(
-            QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel,
-            QtCore.Qt.Horizontal,
-            self.menu,
-        )
-        btn.accepted.connect(self.menuClose)
-        btn.rejected.connect(self.menu.close)
-        checkableAction = QtGui.QWidgetAction(self.menu)
-        checkableAction.setDefaultWidget(btn)
-        self.menu.addAction(checkableAction)
-        self.menu.show()
+        self.filterMenu = FilterMenuWidget(self, index)
+        self.filterMenu.show()
 
         # posY = headerPos.y() + self.horizontalHeader.height()
         # posX = headerPos.x() + self.horizontalHeader.sectionPosition(index)
         # self.menu.exec_(QtCore.QPoint(posX, posY))
-
-    def menuClose(self):
-        """self.keywords[self.col] = []
-        for element in self.checkBoxs:
-            if element.isChecked():
-                self.keywords[self.col].append(element.text())"""
-        self.menu.close()
 
     def ui_thread_emit_model_datachanged(self):
         print("ui_thread_emit_model_datachanged")
@@ -650,6 +607,96 @@ class TableWindow(QWidget):
         del self
 
 
+class FilterMenuWidget(QWidget):
+    def __init__(self, parent, columnIndex):
+        super().__init__()
+        self.parent = parent
+        self.columnIndex = columnIndex
+        self.setupUi(self)
+        self.setupFilterMenu()
+
+    def setupUi(self, FilterMenuWidget):
+        self.setObjectName("FilterMenuWidget")
+        self.resize(400, 300)
+        self.verticalLayout = QtWidgets.QVBoxLayout(FilterMenuWidget)
+        self.verticalLayout.setObjectName("verticalLayout")
+
+        self.treeWidget = QTreeWidget(FilterMenuWidget)
+        self.treeWidget.setObjectName("treeWidget")
+        self.treeWidget.setHeaderLabel("Name")
+        self.treeWidget.setSortingEnabled(True)
+        self.verticalLayout.addWidget(self.treeWidget)
+
+        self.buttonBox = QtWidgets.QDialogButtonBox(FilterMenuWidget)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
+        self.buttonBox.accepted.connect(self.setFilter)
+        self.buttonBox.rejected.connect(self.close)
+        self.buttonBox.setObjectName("buttonBox")
+        self.verticalLayout.addWidget(self.buttonBox)
+
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
+
+    def retranslateUi(self):
+        title = "Filter Menu Widget"
+        self.setWindowTitle(title)
+
+    def setupFilterMenu(self):
+        data_unique = []
+        for i in range(self.parent.tableView.model().rowCount()):
+            if not self.parent.tableView.isRowHidden(i):
+                locateOfData = self.parent.tableView.model().index(i, self.columnIndex)
+                data = self.parent.tableView.model().data(locateOfData)
+
+                if data not in data_unique:
+                    item = QTreeWidgetItem(self.treeWidget)
+                    item.setText(0, data)
+                    item.setFlags(
+                        item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable
+                    )
+                    item.setCheckState(0, Qt.Checked)
+                    data_unique.append(data)
+
+        # self.listView.setModel(model)
+
+    # def setupFilterMenu(self):
+    #     data_unique = []
+    #     self.checkBoxes = []
+    #     checkBox = QCheckBox("Select all", self.listView)
+    #     checkableAction = QWidgetAction(self.listView)
+    #     checkableAction.setDefaultWidget(checkBox)
+    #     self.listView.addAction(checkableAction)
+    #     checkBox.setChecked(True)
+    #     checkBox.stateChanged.connect(self.slotSelect)
+
+    #     for i in range(self.parent.tableView.model().rowCount()):
+    #         if not self.parent.tableView.isRowHidden(i):
+    #             locateOfData = self.parent.tableView.model().index(i, self.columnIndex)
+    #             item = self.parent.tableView.model().data(locateOfData)
+    #             if item not in data_unique:
+    #                 data_unique.append(item)
+    #                 checkBox = QCheckBox(item, self.listView)
+    #                 checkBox.setChecked(True)
+    #                 checkableAction = QWidgetAction(self.listView)
+    #                 checkableAction.setDefaultWidget(checkBox)
+    #                 self.listView.addAction(checkableAction)
+    #                 self.checkBoxes.append(checkBox)
+    #     checkableAction = QWidgetAction(self.listView)
+
+    #     self.listView.addAction(checkableAction)
+    #     self.listView.show()
+
+    def setFilter(self):
+        # self.parent.filterHeader
+        print("clicked OK")
+
+    def slotSelect(self, state):
+        for checkbox in self.checkBoxes:
+            checkbox.setChecked(QtCore.Qt.Checked == state)
+
+
 class DetailWidget(QDialog):
     closed = False
 
@@ -823,33 +870,3 @@ class PdTableModel(QAbstractTableModel):
             # print("headerdata section: {} ret: {}".format(section, ret))
             return ret
         return QAbstractTableModel.headerData(self, section, orientation, role)
-
-
-class FilterMenuWidget(QWidget):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.setupUi(self)
-
-    def setupUi(self, FilterMenuWidget):
-        self.setObjectName("FilterMenuWidget")
-        self.resize(400, 300)
-        self.verticalLayout = QtWidgets.QVBoxLayout(FilterMenuWidget)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.listView = QtWidgets.QListView(FilterMenuWidget)
-        self.listView.setObjectName("listView")
-        self.verticalLayout.addWidget(self.listView)
-        self.buttonBox = QtWidgets.QDialogButtonBox(FilterMenuWidget)
-        self.buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
-        )
-        self.buttonBox.accepted.connect()
-        self.buttonBox.rejected.connect()
-        self.buttonBox.setObjectName("buttonBox")
-        self.verticalLayout.addWidget(self.buttonBox)
-
-        self.retranslateUi(self)
-        QtCore.QMetaObject.connectSlotsByName(self)
-
-    def retranslateUi(self):
-        title = "Filter Menu Widget"
-        self.setWindowTitle(title)

@@ -137,8 +137,9 @@ class TableWindow(QWidget):
 
     def horizontalHeader_sectionClicked(self, index):
         print("click header")
-        self.filterMenu = FilterMenuWidget(self, index)
-        self.filterMenu.show()
+        if index == 1:
+            self.filterMenu = FilterMenuWidget(self, index)
+            self.filterMenu.show()
 
         # posY = headerPos.y() + self.horizontalHeader.height()
         # posX = headerPos.x() + self.horizontalHeader.sectionPosition(index)
@@ -621,27 +622,73 @@ class FilterMenuWidget(QWidget):
         self.verticalLayout = QtWidgets.QVBoxLayout(FilterMenuWidget)
         self.verticalLayout.setObjectName("verticalLayout")
 
-        self.treeWidget = QTreeWidget(FilterMenuWidget)
-        self.treeWidget.setObjectName("treeWidget")
-        self.treeWidget.setHeaderLabel("Name")
-        self.treeWidget.setSortingEnabled(True)
-        self.verticalLayout.addWidget(self.treeWidget)
+        self.completer = QCompleter([])
+        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.completer.setModelSorting(QCompleter.CaseInsensitivelySortedModel)
+        self.completer.setCompletionMode(QCompleter.PopupCompletion)
+        self.completer.setMaxVisibleItems(10)
+
+        self.searchBox = QLineEdit(FilterMenuWidget)
+        self.searchBox.setCompleter(self.completer)
+        self.searchBox.setFixedHeight(24)
+        self.searchBox.setPlaceholderText("Search...")
+        self.verticalLayout.addWidget(self.searchBox)
+
+        # self.treeWidget = QTreeWidget(FilterMenuWidget)
+        # self.treeWidget.setObjectName("treeWidget")
+        # self.treeWidget.setHeaderLabel("Name")
+        # self.treeWidget.setSortingEnabled(True)
+        # self.verticalLayout.addWidget(self.treeWidget)
+
+        self.treeView = QTreeView(FilterMenuWidget)
+        self.verticalLayout.addWidget(self.treeView)
+
+        self.selectAllCb = QCheckBox(FilterMenuWidget)
+        self.selectAllCb.setText("Select All")
+        self.selectAllCb.setChecked(True)
+        self.verticalLayout.addWidget(self.selectAllCb)
+        self.selectAllCb.stateChanged.connect(self.selectAll)
 
         self.buttonBox = QtWidgets.QDialogButtonBox(FilterMenuWidget)
         self.buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
         )
-        self.buttonBox.accepted.connect(self.setFilter)
-        self.buttonBox.rejected.connect(self.close)
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout.addWidget(self.buttonBox)
 
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
+        self.setFocus()
+
+        self.searchBox.textChanged.connect(self.completer.setCompletionPrefix)
+        self.buttonBox.accepted.connect(self.setFilter)
+        self.buttonBox.rejected.connect(self.close)
 
     def retranslateUi(self):
         title = "Filter Menu Widget"
         self.setWindowTitle(title)
+
+    # def setupFilterMenu(self):
+    #     data_unique = []
+    #     for i in range(self.parent.tableView.model().rowCount()):
+    #         if not self.parent.tableView.isRowHidden(i):
+    #             locateOfData = self.parent.tableView.model().index(i, self.columnIndex)
+    #             data = self.parent.tableView.model().data(locateOfData)
+
+    #             if data not in data_unique:
+    #                 item = QTreeWidgetItem(self.treeWidget)
+    #                 item.setText(0, data)
+    #                 item.setFlags(
+    #                     item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable
+    #                 )
+    #                 item.setCheckState(0, Qt.Checked)
+    #                 data_unique.append(data)
+    #     self.proxyModel = SortFilterProxyModel(self)
+    #     self.proxyModel.setSourceModel(self.treeWidget.model())
+    #     self.proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
+    #     self.completer.setModel(self.proxyModel)
+    #     self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
+    # self.treeWidget.setModel(self.proxyModel)
 
     def setupFilterMenu(self):
         data_unique = []
@@ -649,47 +696,35 @@ class FilterMenuWidget(QWidget):
             if not self.parent.tableView.isRowHidden(i):
                 locateOfData = self.parent.tableView.model().index(i, self.columnIndex)
                 data = self.parent.tableView.model().data(locateOfData)
-
                 if data not in data_unique:
-                    item = QTreeWidgetItem(self.treeWidget)
-                    item.setText(0, data)
-                    item.setFlags(
-                        item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable
-                    )
-                    item.setCheckState(0, Qt.Checked)
                     data_unique.append(data)
 
-        # self.listView.setModel(model)
+        self.model = QStandardItemModel(self.treeView)
+        self.model.setHorizontalHeaderLabels(["Name"])
 
-    # def setupFilterMenu(self):
-    #     data_unique = []
-    #     self.checkBoxes = []
-    #     checkBox = QCheckBox("Select all", self.listView)
-    #     checkableAction = QWidgetAction(self.listView)
-    #     checkableAction.setDefaultWidget(checkBox)
-    #     self.listView.addAction(checkableAction)
-    #     checkBox.setChecked(True)
-    #     checkBox.stateChanged.connect(self.slotSelect)
+        for data in data_unique:
+            item = QStandardItem(data)
+            item.setCheckable(True)
+            item.setCheckState(Qt.Checked)
+            self.model.appendRow(item)
 
-    #     for i in range(self.parent.tableView.model().rowCount()):
-    #         if not self.parent.tableView.isRowHidden(i):
-    #             locateOfData = self.parent.tableView.model().index(i, self.columnIndex)
-    #             item = self.parent.tableView.model().data(locateOfData)
-    #             if item not in data_unique:
-    #                 data_unique.append(item)
-    #                 checkBox = QCheckBox(item, self.listView)
-    #                 checkBox.setChecked(True)
-    #                 checkableAction = QWidgetAction(self.listView)
-    #                 checkableAction.setDefaultWidget(checkBox)
-    #                 self.listView.addAction(checkableAction)
-    #                 self.checkBoxes.append(checkBox)
-    #     checkableAction = QWidgetAction(self.listView)
+        self.proxyModel = SortFilterProxyModel(self.treeView)
+        self.proxyModel.setSourceModel(self.model)
+        self.proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        # self.completer.setModel(self.proxyModel)
+        self.treeView.setModel(self.proxyModel)
+        self.treeView.setSortingEnabled(True)
+        self.treeView.sortByColumn(0, Qt.AscendingOrder)
 
-    #     self.listView.addAction(checkableAction)
-    #     self.listView.show()
+    def selectAll(self, state):
+        rowCount = self.treeView.model().rowCount()
+        for x in range(rowCount):
+            if state == 2:
+                self.treeView.model().item(0, x).setCheckState(Qt.Checked)
+            else:
+                self.treeView.model().item(0, x).setCheckState(Qt.Unchecked)
 
     def setFilter(self):
-        # self.parent.filterHeader
         print("clicked OK")
 
     def slotSelect(self, state):

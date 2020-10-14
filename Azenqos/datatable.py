@@ -59,6 +59,8 @@ class TableWindow(QWidget):
         self.dateString = ""
         self.tableViewCount = 0
         self.parentWindow = parent
+        self.filterList = None
+        self.filterMenu = None
         self.signal_ui_thread_emit_model_datachanged.connect(
             self.ui_thread_emit_model_datachanged
         )
@@ -79,9 +81,15 @@ class TableWindow(QWidget):
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
-        self.filterHeader = FilterHeader(self.tableView)
+        if self.title in ["Signaling_Events", "Signaling_Layer 3 Messages"]:
+            self.filterHeader = FilterHeader(self.tableView)
+            self.filterHeader.sectionClicked.connect(
+                self.horizontalHeader_sectionClicked
+            )
+        else:
+            self.filterHeader = FilterHeader(self.tableView)
+
         self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
-        self.filterHeader.sectionClicked.connect(self.horizontalHeader_sectionClicked)
 
         self.tableView.doubleClicked.connect(self.showDetail)
         # self.tableView.clicked.connect(self.updateSlider)  - now we use onselectionchanged from modelview instead
@@ -607,6 +615,9 @@ class TableWindow(QWidget):
         self.close()
         del self
 
+    def setFilterList(self, filterList):
+        print("test")
+
 
 class FilterMenuWidget(QWidget):
     def __init__(self, parent, columnIndex):
@@ -615,6 +626,7 @@ class FilterMenuWidget(QWidget):
         self.columnIndex = columnIndex
         self.setupUi(self)
         self.setupFilterMenu()
+        self.setupEvent()
 
     def setupUi(self, FilterMenuWidget):
         self.setObjectName("FilterMenuWidget")
@@ -622,23 +634,10 @@ class FilterMenuWidget(QWidget):
         self.verticalLayout = QtWidgets.QVBoxLayout(FilterMenuWidget)
         self.verticalLayout.setObjectName("verticalLayout")
 
-        self.completer = QCompleter([])
-        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer.setModelSorting(QCompleter.CaseInsensitivelySortedModel)
-        self.completer.setCompletionMode(QCompleter.PopupCompletion)
-        self.completer.setMaxVisibleItems(10)
-
         self.searchBox = QLineEdit(FilterMenuWidget)
-        self.searchBox.setCompleter(self.completer)
         self.searchBox.setFixedHeight(24)
         self.searchBox.setPlaceholderText("Search...")
         self.verticalLayout.addWidget(self.searchBox)
-
-        # self.treeWidget = QTreeWidget(FilterMenuWidget)
-        # self.treeWidget.setObjectName("treeWidget")
-        # self.treeWidget.setHeaderLabel("Name")
-        # self.treeWidget.setSortingEnabled(True)
-        # self.verticalLayout.addWidget(self.treeWidget)
 
         self.treeView = QTreeView(FilterMenuWidget)
         self.verticalLayout.addWidget(self.treeView)
@@ -660,35 +659,16 @@ class FilterMenuWidget(QWidget):
         QtCore.QMetaObject.connectSlotsByName(self)
         self.setFocus()
 
-        self.searchBox.textChanged.connect(self.completer.setCompletionPrefix)
-        self.buttonBox.accepted.connect(self.setFilter)
-        self.buttonBox.rejected.connect(self.close)
+        # self.searchBox.textChanged.connect(self.completer.setCompletionPrefix)
 
     def retranslateUi(self):
-        title = "Filter Menu Widget"
+        title = "Filter Menu Widget (" + self.parent.title + ")"
         self.setWindowTitle(title)
 
-    # def setupFilterMenu(self):
-    #     data_unique = []
-    #     for i in range(self.parent.tableView.model().rowCount()):
-    #         if not self.parent.tableView.isRowHidden(i):
-    #             locateOfData = self.parent.tableView.model().index(i, self.columnIndex)
-    #             data = self.parent.tableView.model().data(locateOfData)
-
-    #             if data not in data_unique:
-    #                 item = QTreeWidgetItem(self.treeWidget)
-    #                 item.setText(0, data)
-    #                 item.setFlags(
-    #                     item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable
-    #                 )
-    #                 item.setCheckState(0, Qt.Checked)
-    #                 data_unique.append(data)
-    #     self.proxyModel = SortFilterProxyModel(self)
-    #     self.proxyModel.setSourceModel(self.treeWidget.model())
-    #     self.proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
-    #     self.completer.setModel(self.proxyModel)
-    #     self.treeWidget.sortByColumn(0, Qt.AscendingOrder)
-    # self.treeWidget.setModel(self.proxyModel)
+    def setupEvent(self):
+        self.searchBox.textChanged.connect(self.proxyModel.setFilterRegExp)
+        self.buttonBox.accepted.connect(self.setFilter)
+        self.buttonBox.rejected.connect(self.close)
 
     def setupFilterMenu(self):
         data_unique = []
@@ -708,10 +688,10 @@ class FilterMenuWidget(QWidget):
             item.setCheckState(Qt.Checked)
             self.model.appendRow(item)
 
-        self.proxyModel = SortFilterProxyModel(self.treeView)
+        self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         self.proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        # self.completer.setModel(self.proxyModel)
+        self.proxyModel.setFilterKeyColumn(0)
         self.treeView.setModel(self.proxyModel)
         self.treeView.setSortingEnabled(True)
         self.treeView.sortByColumn(0, Qt.AscendingOrder)
@@ -720,16 +700,25 @@ class FilterMenuWidget(QWidget):
         rowCount = self.treeView.model().rowCount()
         for x in range(rowCount):
             if state == 2:
-                self.treeView.model().item(0, x).setCheckState(Qt.Checked)
+                self.model.item(x, 0).setCheckState(Qt.Checked)
             else:
-                self.treeView.model().item(0, x).setCheckState(Qt.Unchecked)
+                self.model.item(x, 0).setCheckState(Qt.Unchecked)
+
+    def search(self, text):
+        # self.proxyModel.setFilterRegExp(text)
+        print(text)
 
     def setFilter(self):
         print("clicked OK")
-
-    def slotSelect(self, state):
-        for checkbox in self.checkBoxes:
-            checkbox.setChecked(QtCore.Qt.Checked == state)
+        print("=====================================")
+        self.model.sort(0, Qt.AscendingOrder)
+        for i in range(self.model.rowCount()):
+            if self.model.item(i, 0).checkState() == 2:
+                print(self.model.data(self.model.index(i, 0)), "is Checked")
+            else:
+                print(self.model.data(self.model.index(i, 0)), "is Unchecked")
+        print("=====================================")
+        self.parentWidget.__setattr__()
 
 
 class DetailWidget(QDialog):

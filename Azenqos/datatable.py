@@ -146,12 +146,17 @@ class TableWindow(QWidget):
     def horizontalHeader_sectionClicked(self, index):
         print("click header")
         if index == 1:
-            self.filterMenu = FilterMenuWidget(self, index)
+            if not self.filterMenu:
+                self.filterMenu = FilterMenuWidget(self, index)
             self.filterMenu.show()
 
         # posY = headerPos.y() + self.horizontalHeader.height()
         # posX = headerPos.x() + self.horizontalHeader.sectionPosition(index)
         # self.menu.exec_(QtCore.QPoint(posX, posY))
+
+    def setFilterListModel(self, columnIndex, checkedRegexList):
+        self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
+        self.proxyModel.invalidateFilter()
 
     def ui_thread_emit_model_datachanged(self):
         print("ui_thread_emit_model_datachanged")
@@ -615,9 +620,6 @@ class TableWindow(QWidget):
         self.close()
         del self
 
-    def setFilterList(self, filterList):
-        print("test")
-
 
 class FilterMenuWidget(QWidget):
     def __init__(self, parent, columnIndex):
@@ -655,6 +657,9 @@ class FilterMenuWidget(QWidget):
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout.addWidget(self.buttonBox)
 
+        self.model = QStandardItemModel(self.treeView)
+        self.model.setHorizontalHeaderLabels(["Name"])
+
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
         self.setFocus()
@@ -672,21 +677,19 @@ class FilterMenuWidget(QWidget):
 
     def setupFilterMenu(self):
         data_unique = []
-        for i in range(self.parent.tableView.model().rowCount()):
-            if not self.parent.tableView.isRowHidden(i):
-                locateOfData = self.parent.tableView.model().index(i, self.columnIndex)
-                data = self.parent.tableView.model().data(locateOfData)
+        if self.model.rowCount() == 0:
+            for i in range(self.parent.tableModel.rowCount(0)):
+                # if not self.parent.tableView.isRowHidden(i):
+                locateOfData = self.parent.tableModel.index(i, self.columnIndex)
+                data = self.parent.tableModel.data(locateOfData)
                 if data not in data_unique:
                     data_unique.append(data)
 
-        self.model = QStandardItemModel(self.treeView)
-        self.model.setHorizontalHeaderLabels(["Name"])
-
-        for data in data_unique:
-            item = QStandardItem(data)
-            item.setCheckable(True)
-            item.setCheckState(Qt.Checked)
-            self.model.appendRow(item)
+            for data in data_unique:
+                item = QStandardItem(data)
+                item.setCheckable(True)
+                item.setCheckState(Qt.Checked)
+                self.model.appendRow(item)
 
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
@@ -697,7 +700,7 @@ class FilterMenuWidget(QWidget):
         self.treeView.sortByColumn(0, Qt.AscendingOrder)
 
     def selectAll(self, state):
-        rowCount = self.treeView.model().rowCount()
+        rowCount = self.model.rowCount()
         for x in range(rowCount):
             if state == 2:
                 self.model.item(x, 0).setCheckState(Qt.Checked)
@@ -709,16 +712,15 @@ class FilterMenuWidget(QWidget):
         print(text)
 
     def setFilter(self):
-        print("clicked OK")
-        print("=====================================")
+        checkedRegexList = []
         self.model.sort(0, Qt.AscendingOrder)
         for i in range(self.model.rowCount()):
             if self.model.item(i, 0).checkState() == 2:
-                print(self.model.data(self.model.index(i, 0)), "is Checked")
-            else:
-                print(self.model.data(self.model.index(i, 0)), "is Unchecked")
-        print("=====================================")
-        self.parentWidget.__setattr__()
+                text = self.model.data(self.model.index(i, 0))
+                # regex = QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString)
+                checkedRegexList.append(text)
+        self.parent.setFilterListModel(self.columnIndex, checkedRegexList)
+        self.close()
 
 
 class DetailWidget(QDialog):

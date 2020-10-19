@@ -777,6 +777,21 @@ class DetailWidget(QDialog):
                 + str(detail)
             )
 
+    def setUpPolqaMosScore(self):
+        print("do setup polqa mos score")
+        gridlayout = QGridLayout(self)
+        gridlayout_2 = QGridLayout()
+        playBtn = QPushButton(self)
+        saveBtn = QPushButton(self)
+        gridlayout.addWidget(playBtn, 0, 0, 1, 1)
+        gridlayout.addWidget(saveBtn,)
+
+    def saveWaveFile(self):
+        print("save wav file")
+
+    def playWavFile(self):
+        print("play wav file")
+
 
 class TableModel(QAbstractTableModel):
     def __init__(self, inputData, header, parent=None, *args):

@@ -14,12 +14,14 @@ class SignalingDataQuery:
     def getEvents(self, pd_mode=True):
         if pd_mode:
             df = pd.read_sql(
-                "SELECT time, name, info FROM events", gc.dbcon, parse_dates=["time"]
+                "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, pm.polqa_mos FROM polqa_mos pm ORDER BY time",
+                gc.dbcon,
+                parse_dates=["time"],
             )
             return df
 
         self.openConnection()
-        queryString = "SELECT time, name, info FROM events"
+        queryString = "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, pm.polqa_mos FROM polqa_mos pm ORDER BY time"
         query = QSqlQuery()
         query.exec_(queryString)
         timeField = query.record().indexOf("time")

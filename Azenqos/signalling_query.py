@@ -14,14 +14,14 @@ class SignalingDataQuery:
     def getEvents(self, pd_mode=True):
         if pd_mode:
             df = pd.read_sql(
-                "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, pm.polqa_mos FROM polqa_mos pm ORDER BY time",
+                "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, CAST(pm.polqa_mos AS CHAR) FROM polqa_mos pm WHERE pm.polqa_mos IS NOT NULL ORDER BY time",
                 gc.dbcon,
                 parse_dates=["time"],
             )
             return df
 
         self.openConnection()
-        queryString = "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, pm.polqa_mos FROM polqa_mos pm ORDER BY time"
+        queryString = "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, CAST(pm.polqa_mos AS CHAR) FROM polqa_mos pm WHERE pm.polqa_mos IS NOT NULL ORDER BY time"
         query = QSqlQuery()
         query.exec_(queryString)
         timeField = query.record().indexOf("time")
@@ -36,6 +36,7 @@ class SignalingDataQuery:
         self.closeConnection()
         return dataList
 
+    """
     def getLayerOneMessages(self, pd_mode=True):  ##ต้องแก้ query
         if pd_mode:
             df = pd.read_sql(
@@ -57,6 +58,7 @@ class SignalingDataQuery:
             dataList.append([timeValue, "", "MS1", nameValue, detailStrValue])
         self.closeConnection()
         return dataList
+        """
 
     def getLayerThreeMessages(self, pd_mode=True):
         if pd_mode:

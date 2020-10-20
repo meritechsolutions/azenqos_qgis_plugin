@@ -13,7 +13,7 @@ import numpy as np
 import global_config as gc
 
 from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, QtMultimedia
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import *
@@ -34,6 +34,7 @@ import lte_query
 import wcdma_query
 import gsm_query
 from .tsharkworker import TsharkDecodeWorker
+import polqa_query
 
 
 class TableWindow(QWidget):
@@ -512,7 +513,13 @@ class TableWindow(QWidget):
                 parentWindow, cellContent, name, side, protocol
             )
         else:
-            self.detailWidget = DetailWidget(parentWindow, cellContent)
+            if self.tablename == "events":
+                time = item.sibling(item.row(), 0).data()
+                name = item.sibling(item.row(), 1).data()
+                info = item.sibling(item.row(), 2).data()
+                self.detailWidget = DetailWidget(parentWindow, info, name, time)
+            else:
+                self.detailWidget = DetailWidget(parentWindow, cellContent)
 
     def updateSlider(self, item):
 
@@ -735,10 +742,14 @@ class DetailWidget(QDialog):
         self.protocol = protocol
         self.left = 10
         self.top = 10
+        self.parent = parent
         self.width = 640
         self.height = 480
         self.setWindowFlags(QtCore.Qt.Window)
-        self.setupUi()
+        if messageName == "MOS Score":
+            self.setUpPolqaMosScore()
+        else:
+            self.setupUi()
 
     def setupUi(self):
         self.setObjectName(self.title)
@@ -779,18 +790,66 @@ class DetailWidget(QDialog):
 
     def setUpPolqaMosScore(self):
         print("do setup polqa mos score")
+        self.polqaWavFile = None
+        self.setObjectName(self.title)
+        self.setWindowTitle(self.title)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
+        dirname = os.path.dirname(__file__)
+
         gridlayout = QGridLayout(self)
-        gridlayout_2 = QGridLayout()
-        playBtn = QPushButton(self)
-        saveBtn = QPushButton(self)
-        gridlayout.addWidget(playBtn, 0, 0, 1, 1)
-        gridlayout.addWidget(saveBtn,)
+        self.playBtn = QPushButton(self)
+        self.playBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "play.png"))))
+        self.playBtn.setText("Play sound")
+        self.saveBtn = QPushButton(self)
+        self.saveBtn.setIcon(
+            QIcon(QPixmap(os.path.join(dirname, "res", "save_wav.png")))
+        )
+        self.saveBtn.setText("Save file")
+
+        self.textEdit = QTextEdit()
+        self.textEdit.setReadOnly(True)
+
+        gridlayout.addWidget(self.playBtn, 0, 0, 1, 2)
+        gridlayout.addWidget(self.saveBtn, 0, 2, 1, 1)
+        gridlayout.addWidget(self.textEdit, 1, 0, 1, 3)
+
+        self.playBtn.clicked.connect(self.playWavFile)
+        self.saveBtn.clicked.connect(self.saveWaveFile)
+
+        self.setLayout(gridlayout)
+        self.getPolqa()
+        self.resize(self.width, self.height)
+        self.show()
+        self.raise_()
+        self.activateWindow()
 
     def saveWaveFile(self):
+        """
+        filename = QFileDialog.getSaveFileName(self, "Save file as ...")
+        file = open(filename, "w")
+        wavfile = open(self.polqaWavFile.fileName(), "r")
+        file.write(self.polqaWavFile)
+        file.close()
+        """
         print("save wav file")
 
     def playWavFile(self):
         print("play wav file")
+        if self.polqaWavFile:
+            self.polqaWavFile.play()
+
+    def getPolqa(self):
+        print("get polqa data")
+        if self.messageName:
+            polqaDict = polqa_query.PolqaQuery(
+                gc.azenqosDatabase, self.side, self.detailText
+            ).getPolqa()
+            if polqaDict:
+                self.textEdit.setPlainText(polqaDict["output_text"])
+                self.polqaWavFile = QtMultimedia.QSound(
+                    gc.CURRENT_PATH + "/file/" + polqaDict["wave_file"]
+                )
 
 
 class TableModel(QAbstractTableModel):

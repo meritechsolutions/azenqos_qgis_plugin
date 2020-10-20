@@ -1,6 +1,7 @@
 from PyQt5.QtSql import QSql, QSqlDatabase, QSqlQuery
 import csv, inspect, os, sys, datetime, json, io
 from zipfile import ZipFile
+import shutil
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -109,12 +110,14 @@ class Utils:
 
     def unzipToFile(self, currentPath, filePath):
         file_folder_path = currentPath + "/file"
-        if not os.path.exists(file_folder_path):
-            os.makedirs(file_folder_path)
-        file_list = os.listdir(file_folder_path)
-        if len(file_list) > 0:
-            for f in file_list:
-                os.remove(file_folder_path + "/" + f)
+        try:
+            if not os.path.exists(file_folder_path):
+                os.mkdir(file_folder_path)
+            else:
+                shutil.rmtree(file_folder_path)
+                os.mkdir(file_folder_path)
+        except Exception as e:
+            print(e)
         if len(os.listdir(file_folder_path)) == 0:
             with ZipFile(filePath, "r") as zip_obj:
                 filesContain = zip_obj.namelist()
@@ -160,59 +163,3 @@ class Utils:
         except Exception as ex:
             print(ex)
             return False
-
-
-# todo: dynamic data query object
-# class DataQuery:
-#     def __inti__(self, fieldArr, tableName, conditionStr):
-#         self.fieldArr = fieldArr
-#         self.tableName = tableName
-#         self.condition = conditionStr
-
-#     def countField(self):
-#         fieldCount = 0
-#         if self.fieldArr is not None:
-#             fieldCount = len(self.fieldArr)
-#         return fieldCount
-
-#     def selectFieldToQuery(self):
-#         selectField = '*'
-#         if self.fieldArr is not None:
-#             selectField = ",".join(self.fieldArr)
-#         return selectField
-
-#     def getData(self):
-#         result = dict()
-#         selectField = self.selectFieldToQuery()
-#         azenqosDatabase.open()
-#         query = QSqlQuery()
-#         queryString = 'select %s from %s' % (selectField, self.tableName)
-#         query.exec_(queryString)
-#         while query.next():
-#             for field in range(len(self.fieldArr)):
-#                 fieldName = fieldArr[field]
-#                 validatedValue = self.valueValidation(query.value(field))
-#                 if fieldName in result:
-#                     if isinstance(result[fieldName], list):
-#                         result[fieldName].append(validatedValue)
-#                     else:
-#                         result[fieldName] = [validatedValue]
-#                 else:
-#                     result[fieldName] = [validatedValue]
-#         azenqosDatabase.close()
-#         return result
-
-# def valueValidation(self, value):
-#     validatedValue = 0
-#     if value is not None:
-#         validatedValue = value
-#     return validatedValue
-
-
-# if __name__ == '__main__':
-#     addDatabase()
-#     element = ElementInfo()
-#     element.checkCsv()
-#     print(element.searchName('SINR\tRx[0]', elementData))
-#     element.getTableAttr('SINR\tRx[0]')
-# element.getTableAttr()

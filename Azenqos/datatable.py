@@ -1,4 +1,5 @@
 import datetime
+import shutil
 import threading
 import sys
 import os
@@ -82,13 +83,13 @@ class TableWindow(QWidget):
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
+
+        self.filterHeader = FilterHeader(self.tableView)
         if self.title in ["Signaling_Events", "Signaling_Layer 3 Messages"]:
-            self.filterHeader = FilterHeader(self.tableView)
-            self.filterHeader.sectionClicked.connect(
-                self.horizontalHeader_sectionClicked
-            )
-        else:
-            self.filterHeader = FilterHeader(self.tableView)
+            self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
+
+            # self.filterHeader.section.connect(self.horizontalHeader_sectionClicked)
 
         self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
 
@@ -144,12 +145,18 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
-    def horizontalHeader_sectionClicked(self, index):
-        print("click header")
-        if index == 1:
-            if not self.filterMenu:
-                self.filterMenu = FilterMenuWidget(self, index)
-            self.filterMenu.show()
+    def headerMenu(self, pos):
+        globalPos = self.mapToGlobal(pos)
+        menu = QMenu()
+        menu.addAction("Filter menu")
+        selectedItem = menu.exec_(globalPos)
+        if selectedItem:
+            self.horizontalHeader_sectionClicked()
+
+    def horizontalHeader_sectionClicked(self):
+        if not self.filterMenu:
+            self.filterMenu = FilterMenuWidget(self, 1)
+        self.filterMenu.show()
 
         # posY = headerPos.y() + self.horizontalHeader.height()
         # posX = headerPos.x() + self.horizontalHeader.sectionPosition(index)
@@ -674,7 +681,7 @@ class FilterMenuWidget(QWidget):
         # self.searchBox.textChanged.connect(self.completer.setCompletionPrefix)
 
     def retranslateUi(self):
-        title = "Filter Menu Widget (" + self.parent.title + ")"
+        title = "Filter Menu (" + self.parent.title + ")"
         self.setWindowTitle(title)
 
     def setupEvent(self):
@@ -729,6 +736,13 @@ class FilterMenuWidget(QWidget):
         self.parent.setFilterListModel(self.columnIndex, checkedRegexList)
         self.close()
 
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        self.close()
+        del self
+
 
 class DetailWidget(QDialog):
     closed = False
@@ -777,8 +791,12 @@ class DetailWidget(QDialog):
             gc.threadpool.start(worker)
         # messageName is not None and side is not None and protocol is not None :
 
-    def closeEvent(self, event):
-        self.closed = True
+    def closeEvent(self, QCloseEvent):
+        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        for index in indices:
+            gc.openedWindows.pop(index)
+        self.close()
+        del self
 
     def setDecodedDetail(self, detail):
         if self.closed == False:
@@ -825,14 +843,16 @@ class DetailWidget(QDialog):
         self.activateWindow()
 
     def saveWaveFile(self):
-        """
-        filename = QFileDialog.getSaveFileName(self, "Save file as ...")
-        file = open(filename, "w")
-        wavfile = open(self.polqaWavFile.fileName(), "r")
-        file.write(self.polqaWavFile)
-        file.close()
-        """
-        print("save wav file")
+        filename = QFileDialog.getSaveFileName(self, "Save file as ...", "", ".wav")
+        if filename:
+            if filename[0] and filename[1]:
+                filepath = str(filename[0]) + str(filename[1])
+                wavfilepath = str(self.polqaWavFile.fileName())
+                try:
+                    shutil.copyfile(wavfilepath, filepath)
+                except:
+                    pass
+            print("save wav file")
 
     def playWavFile(self):
         print("play wav file")

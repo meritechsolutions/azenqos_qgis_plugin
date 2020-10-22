@@ -23,7 +23,6 @@ class PolqaQuery:
             dataDict["output_text"] = query.value(outputText)
             dataDict["wave_file"] = query.value(outputFile)
         self.closeConnection()
-        print(dataDict)
         return dataDict
 
     def openConnection(self):

@@ -796,6 +796,8 @@ class DetailWidget(QDialog):
         for index in indices:
             gc.openedWindows.pop(index)
         self.close()
+        if self.polqaWavFile:
+            self.polqaWavFile.stop()
         del self
 
     def setDecodedDetail(self, detail):

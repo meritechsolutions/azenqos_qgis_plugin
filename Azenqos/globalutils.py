@@ -116,19 +116,15 @@ class Utils:
             else:
                 shutil.rmtree(file_folder_path)
                 os.mkdir(file_folder_path)
+            if len(os.listdir(file_folder_path)) == 0:
+                with ZipFile(filePath, "r") as zip_obj:
+                    filesContain = zip_obj.namelist()
+                    for fileName in filesContain:
+                        zip_obj.extract(fileName, file_folder_path)
+                db_file_path = file_folder_path + "/azqdata.db"
+                return db_file_path
         except Exception as e:
             print(e)
-        if len(os.listdir(file_folder_path)) == 0:
-            with ZipFile(filePath, "r") as zip_obj:
-                filesContain = zip_obj.namelist()
-                for fileName in filesContain:
-                    try:
-                        zip_obj.extract(fileName, file_folder_path)
-                    except:
-                        pass
-
-            db_file_path = file_folder_path + "/azqdata.db"
-            return db_file_path
 
     def cleanupFile(self, currentPath):
         file_folder_path = currentPath + "/file"

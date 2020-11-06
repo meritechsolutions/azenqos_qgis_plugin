@@ -16,7 +16,7 @@ class SignalingDataQuery:
             df = pd.read_sql(
                 "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, CAST(pm.polqa_mos AS CHAR) FROM polqa_mos pm WHERE pm.polqa_mos IS NOT NULL ORDER BY time",
                 gc.dbcon,
-                parse_dates=["time"],
+                # parse_dates=["time"], after comment millisecond of time is 3 decimals
             )
             return df
 
@@ -65,7 +65,7 @@ class SignalingDataQuery:
             df = pd.read_sql(
                 "SELECT time, name, symbol, protocol, detail_str FROM signalling",
                 gc.dbcon,
-                parse_dates=["time"],
+                # parse_dates=["time"], after comment millisecond of time is 3 decimals
             )
             return df
 

@@ -80,6 +80,7 @@ class TableWindow(QWidget):
 
         # Init table
         self.tableView = QTableView(self)
+        # self.tableView.setWordWrap(False)
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
@@ -128,8 +129,8 @@ class TableWindow(QWidget):
         self.tableView.horizontalHeader().setDefaultSectionSize(60)
         self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
 
-        self.tableView.verticalHeader().setMinimumSectionSize(10)
-        self.tableView.verticalHeader().setDefaultSectionSize(30)
+        # self.tableView.verticalHeader().setMinimumSectionSize(12)
+        self.tableView.verticalHeader().setDefaultSectionSize(14)
 
         # flayout = QFormLayout()
         # layout.addLayout(flayout)

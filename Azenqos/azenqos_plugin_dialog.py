@@ -1229,7 +1229,9 @@ class AzenqosDialog(QMainWindow):
         gc.currentTimestamp = timestampValue
         # print("%s: timeChange6" % os.path.basename(__file__))
         gc.currentDateTimeString = "%s" % (
-            datetime.datetime.fromtimestamp(gc.currentTimestamp)
+            datetime.datetime.fromtimestamp(gc.currentTimestamp).strftime(
+                "%Y-%m-%d %H:%M:%S.%f"
+            )[:-3]
         )
         # print("%s: timeChange7" % os.path.basename(__file__))
         # print("signal_ui_thread_emit_time_slider_updated.emit()")

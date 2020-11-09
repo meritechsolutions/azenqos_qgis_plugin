@@ -34,6 +34,7 @@ sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 import pyqtgraph as pg
 import numpy as np
 import global_config as gc
+
 import tasks
 import azq_utils
 import shutil
@@ -2760,8 +2761,8 @@ class AzenqosDialog(QMainWindow):
             mdiwindow.close()
         self.mdi.close()
         QgsMessageLog.logMessage("Close App")
-        shutil.rmtree(gc.logPath)
         tasks.close_db()
+        shutil.rmtree(gc.logPath)
         self.closed = True
 
 

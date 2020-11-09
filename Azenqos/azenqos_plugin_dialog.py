@@ -2434,8 +2434,8 @@ class AzenqosDialog(QMainWindow):
                         self.events_window = SubWindowArea(self.mdi)
                         self.mdi.addSubWindow(self.events_window)
 
-                    if events_widget:
-                        self.events_window.setWidget(events_widget)
+                    if tableWindow:
+                        self.events_window.setWidget(tableWindow)
                     self.events_window.show()
 
                 else:
@@ -2760,6 +2760,7 @@ class AzenqosDialog(QMainWindow):
             mdiwindow.close()
         self.mdi.close()
         QgsMessageLog.logMessage("Close App")
+        shutil.rmtree(gc.logPath)
         tasks.close_db()
         self.closed = True
 

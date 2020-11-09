@@ -846,11 +846,13 @@ class DetailWidget(QDialog):
         self.activateWindow()
 
     def saveWaveFile(self):
-        filename = QFileDialog.getSaveFileName(self, "Save file as ...", "", ".wav")
+        wavfilepath = str(self.polqaWavFile.fileName())
+        filename = QFileDialog.getSaveFileName(
+            self, "Save file as ...", wavfilepath.replace(".wav", ""), ".wav"
+        )
         if filename:
             if filename[0] and filename[1]:
                 filepath = str(filename[0]) + str(filename[1])
-                wavfilepath = str(self.polqaWavFile.fileName())
                 try:
                     shutil.copyfile(wavfilepath, filepath)
                 except:
@@ -871,7 +873,7 @@ class DetailWidget(QDialog):
             if polqaDict:
                 self.textEdit.setPlainText(polqaDict["output_text"])
                 self.polqaWavFile = QtMultimedia.QSound(
-                    gc.CURRENT_PATH + "/file/" + polqaDict["wave_file"]
+                    gc.logPath + "/" + polqaDict["wave_file"]
                 )
 
 

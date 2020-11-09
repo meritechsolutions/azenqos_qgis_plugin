@@ -109,30 +109,32 @@ class Utils:
         super().__init__()
 
     def unzipToFile(self, currentPath, filePath):
-        file_folder_path = currentPath + "/file"
+        gc.logPath = currentPath + "/file/" + str(os.getpid())
         try:
-            if not os.path.exists(file_folder_path):
-                os.mkdir(file_folder_path)
+            if not os.path.exists(currentPath + "/file"):
+                os.mkdir(currentPath + "/file")
+            if not os.path.exists(gc.logPath):
+                os.mkdir(gc.logPath)
             else:
-                shutil.rmtree(file_folder_path)
-                os.mkdir(file_folder_path)
-            if len(os.listdir(file_folder_path)) == 0:
+                shutil.rmtree(gc.logPath)
+                os.mkdir(gc.logPath)
+            if len(os.listdir(gc.logPath)) == 0:
                 with ZipFile(filePath, "r") as zip_obj:
                     filesContain = zip_obj.namelist()
                     for fileName in filesContain:
-                        zip_obj.extract(fileName, file_folder_path)
-                db_file_path = file_folder_path + "/azqdata.db"
+                        zip_obj.extract(fileName, gc.logPath)
+                db_file_path = gc.logPath + "/azqdata.db"
                 return db_file_path
         except Exception as e:
             print(e)
 
     def cleanupFile(self, currentPath):
-        file_folder_path = currentPath + "/file"
-        file_list = os.listdir(file_folder_path)
+        # gc.logPath = currentPath + "/" + os.path.basename(filePath)
+        file_list = os.listdir(gc.logPath)
         try:
             if len(file_list) > 0:
                 for f in file_list:
-                    os.remove(file_folder_path + "/" + f)
+                    os.remove(gc.logPath + "/" + f)
         except:
             return False
 

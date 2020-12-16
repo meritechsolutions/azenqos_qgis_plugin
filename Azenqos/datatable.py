@@ -14,7 +14,7 @@ import numpy as np
 import global_config as gc
 
 from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets, QtMultimedia
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import *
@@ -872,6 +872,7 @@ class DetailWidget(QDialog):
             ).getPolqa()
             if polqaDict:
                 self.textEdit.setPlainText(polqaDict["output_text"])
+                from PyQt5 import QtMultimedia
                 self.polqaWavFile = QtMultimedia.QSound(
                     gc.logPath + "/" + polqaDict["wave_file"]
                 )

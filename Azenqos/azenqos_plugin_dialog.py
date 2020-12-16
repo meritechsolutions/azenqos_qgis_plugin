@@ -2762,7 +2762,10 @@ class AzenqosDialog(QMainWindow):
         self.mdi.close()
         QgsMessageLog.logMessage("Close App")
         tasks.close_db()
-        shutil.rmtree(gc.logPath)
+        try:
+            shutil.rmtree(gc.logPath)
+        except:
+            pass
         self.closed = True
 
 

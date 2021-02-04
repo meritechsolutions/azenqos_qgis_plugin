@@ -22,20 +22,20 @@ from PyQt5.QtGui import *
 from qgis.core import *
 from qgis.utils import *
 from qgis.gui import *
-from .globalutils import Utils
-from .filter_header import *
-from .gsm_query import GsmDataQuery
-from .cdma_evdo_query import CdmaEvdoQuery
-from .lte_query import LteDataQuery
-from .nr_query import NrDataQuery
-from .signalling_query import SignalingDataQuery
-from .wcdma_query import WcdmaDataQuery
-from .worker import Worker
-from .customize_properties import *
+from globalutils import Utils
+from filter_header import *
+from gsm_query import GsmDataQuery
+from cdma_evdo_query import CdmaEvdoQuery
+from lte_query import LteDataQuery
+from nr_query import NrDataQuery
+from signalling_query import SignalingDataQuery
+from wcdma_query import WcdmaDataQuery
+from worker import Worker
+from customize_properties import *
 import lte_query
 import wcdma_query
 import gsm_query
-from .tsharkworker import TsharkDecodeWorker
+from tsharkworker import TsharkDecodeWorker
 import polqa_query
 
 

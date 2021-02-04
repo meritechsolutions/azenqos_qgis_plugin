@@ -5,7 +5,7 @@ from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QTh
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QColor
-from .worker import WorkerSignals
+from worker import WorkerSignals
 import subprocess
 import tempfile
 import os

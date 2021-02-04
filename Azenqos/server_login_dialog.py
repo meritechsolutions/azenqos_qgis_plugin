@@ -30,11 +30,9 @@ import azq_theme_manager
 from cell_layer_task import *
 
 
-class import_db_dialog(QDialog):
+class server_login_dialog(QDialog):
     def __init__(self, online_mode=True):
-        super(import_db_dialog, self).__init__()
-        self.online_mode = online_mode
-        print("import_db_dialog: online_mode: {}".format(online_mode))
+        super(server_login_dialog, self).__init__()
         self.setupUi(self)
 
     def setupUi(self, DatabaseDialog):

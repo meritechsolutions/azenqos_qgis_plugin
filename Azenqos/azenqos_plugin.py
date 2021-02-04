@@ -25,14 +25,16 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
 from PyQt5 import *
+from PyQt5.QtWidgets import *
 import sys
 import traceback
+from import_db_dialog import import_db_dialog
+from server_login_dialog import server_login_dialog
 
 # Initialize Qt resources from file resources.py
-from .resources import *
+from resources import *
 
 # Import the code for the dialog
-from .import_db_dialog import Ui_DatabaseDialog
 import os.path
 
 
@@ -47,22 +49,28 @@ class Azenqos:
             application at run time.
         :type iface: QgsInterface
         """
+        
+        from PyQt5.QtCore import QT_VERSION_STR    
+        print("qt_version: {}".format(QT_VERSION_STR))
+
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
-        locale = QSettings().value("locale/userLocale")[0:2]
-        locale_path = os.path.join(
-            self.plugin_dir, "i18n", "Azenqos_{}.qm".format(locale)
-        )
+        locale = QSettings().value("locale/userLocale")
+        if locale:
+            locale = locale[0:2]
+            locale_path = os.path.join(
+                self.plugin_dir, "i18n", "Azenqos_{}.qm".format(locale)
+            )
 
-        if os.path.exists(locale_path):
-            self.translator = QTranslator()
-            self.translator.load(locale_path)
+            if os.path.exists(locale_path):
+                self.translator = QTranslator()
+                self.translator.load(locale_path)
 
-            if qVersion() > "4.3.3":
-                QCoreApplication.installTranslator(self.translator)
+                if qVersion() > "4.3.3":
+                    QCoreApplication.installTranslator(self.translator)
 
         # Declare instance attributes
         self.actions = []
@@ -71,6 +79,7 @@ class Azenqos:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+        self.dlg = None
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -204,16 +213,39 @@ class Azenqos:
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start == True:
+        if self.dlg is None:
             self.first_start = False
-            self.dlg = Ui_DatabaseDialog()
+            reply = ask_operation_mode()
+            print("reply: {}".format(reply))
+            online_mode = not(reply == 1)
+            if online_mode:
+                login_token = server_login_dialog()
+                if login_token:
+                    self.dlg = import_db_dialog(online_mode=True)
+                else:
+                    raise Exception("login failed to get token")
+            else:
+                from import_db_dialog import import_db_dialog
+                self.dlg = import_db_dialog(online_mode=False)
+            
+        if self.dlg is not None:
+            # show the dialog
+            self.dlg.show()
+            # Run the dialog event loop
+            result = self.dlg.exec_()
+            # See if OK was pressed
+            print("self.dlg.exec_() result: {}".format(result))
+            if result:
+                # Do something useful here - delete the line containing pass and
+                # substitute with your code.
+                pass
 
-        # show the dialog
-        self.dlg.show()
-        # Run the dialog event loop
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            pass
+
+def ask_operation_mode():
+    msgBox = QMessageBox()
+    msgBox.setWindowTitle('Operation mode')
+    msgBox.setText('Please choose operation mode:')
+    msgBox.addButton(QPushButton('ONLINE - AZENQOS Cloud Analytics'), QMessageBox.YesRole)
+    msgBox.addButton(QPushButton('OFFLINE - AZENQOS .AZM logfile'), QMessageBox.NoRole)
+    reply = msgBox.exec_()
+    return reply

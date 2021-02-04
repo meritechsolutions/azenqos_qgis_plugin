@@ -7,10 +7,10 @@ from PyQt5.QtGui import *
 import pyqtgraph as pg
 import numpy as np
 import datetime
-from .globalutils import Utils
-from .linechart_query import LineChartQueryNew
+from globalutils import Utils
+from linechart_query import LineChartQueryNew
 import sys, os
-from .azq_utils import get_default_color_for_index
+from azq_utils import get_default_color_for_index
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))

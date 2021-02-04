@@ -48,12 +48,12 @@ from qgis.core import *
 from qgis.utils import *
 from qgis.gui import *
 
-from .cdma_evdo_query import CdmaEvdoQuery
-from .globalutils import Utils
-from .linechart import *
-from .worker import Worker
-from .timeslider import *
-from .datatable import *
+from cdma_evdo_query import CdmaEvdoQuery
+from globalutils import Utils
+from linechart import *
+from worker import Worker
+from timeslider import *
+from datatable import *
 from atomic_int import atomic_int
 
 GUI_SETTING_NAME_PREFIX = "azenqos_plugin_dialog/"
@@ -88,6 +88,7 @@ class AzenqosDialog(QMainWindow):
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
 
     def __init__(self, databaseUi):
+        assert iface is not None  # QGIS interface
         """Constructor."""
         self.settings = QSettings(
             azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat

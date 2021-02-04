@@ -24,6 +24,14 @@
 """
 
 
+def add_src_folder_to_import_path():    
+    import os
+    import sys
+    import inspect
+    currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    sys.path.insert(0, currentdir)
+
+
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
     """Load Azenqos class from file Azenqos.
@@ -31,7 +39,9 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
-    #
-    from .azenqos_plugin import Azenqos
+    add_src_folder_to_import_path()
+
+    
+    from azenqos_plugin import Azenqos
 
     return Azenqos(iface)

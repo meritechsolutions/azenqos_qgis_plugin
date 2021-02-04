@@ -6,8 +6,8 @@ from qgis.gui import *
 from qgis.PyQt.QtCore import QVariant
 from PyQt5.QtGui import *
 import pandas as pd
-from .azq_cell_file import read_cell_file, g_main_cell_col
-from .azq_utils import get_default_color_for_index
+from azq_cell_file import read_cell_file, g_main_cell_col
+from azq_utils import get_default_color_for_index
 import azq_utils
 
 MESSAGE_CATEGORY = "RandomIntegerSumTask"

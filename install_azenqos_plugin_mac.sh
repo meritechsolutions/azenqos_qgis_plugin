@@ -12,18 +12,17 @@ echo "Please make sure QGIS is closed first."
 echo "Any existing Azenqos plugins would get deleted and replaced"
 echo "== Finding local QGIS installation folder..."
 
-echo "== Installing required python packages into local python3 env..."
-python3 -m pip install -r requirements.txt
-exit_if_failed
-
-mkdir -p ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
-
-echo == Removing any existing plugin folders...
-rm -rf ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Azenqos
+echo "== Removing any existing plugin folders..."
+rm -rf /Applications/QGIS3.10.app/Contents/PlugIns/Azenqos
 
 echo == Copying new plugin from this folder...
-ln -s `pwd`/Azenqos ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Azenqos
+cp -a `pwd`/Azenqos /Applications/QGIS3.10.app/Contents/PlugIns/Azenqos
 exit_if_failed
+
+echo "== Installing required python packages into QGIS's python env..."
+/Applications/QGIS3.10.app/Contents/Frameworks/Python.framework/Versions/Current/bin/python3 -m pip install --prefix /Applications/QGIS3.10.app/Contents/Frameworks/Python.framework/Versions/Current -r requirements.txt
+exit_if_failed
+
 echo
 echo === INSTAL SUCCESS - you can start QGIS now
 echo "If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin"

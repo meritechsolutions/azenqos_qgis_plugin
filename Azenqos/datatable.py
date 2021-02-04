@@ -2,6 +2,7 @@ import datetime
 import shutil
 import threading
 import sys
+import traceback
 import os
 import pandas as pd
 import sqlite3
@@ -768,6 +769,7 @@ class DetailWidget(QDialog):
         self.width = 640
         self.height = 480
         self.setWindowFlags(QtCore.Qt.Window)
+        self.polqaWavFile = None
         if messageName == "MOS Score":
             self.setUpPolqaMosScore()
         else:

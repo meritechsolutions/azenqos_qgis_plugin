@@ -25,6 +25,8 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
 from PyQt5 import *
+import sys
+import traceback
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -176,14 +178,26 @@ class Azenqos:
 
     def unload(self):
         print("azenqos_plugin: unload()")
-        if self.dlg is not None:
-            if hasattr(self.dlg, "azenqosMainMenu") is True:
-                self.dlg.azenqosMainMenu.cleanup()
-                self.dlg.azenqosMainMenu.close()
+        try:
+            if self.dlg is not None:
+                if hasattr(self.dlg, "azenqosMainMenu") is True:
+                    self.dlg.azenqosMainMenu.cleanup()
+                    self.dlg.azenqosMainMenu.close()
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: unload()0  exception:", exstr)
+
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
-            self.iface.removePluginMenu(self.tr(u"&Azenqos"), action)
-            self.iface.removeToolBarIcon(action)
+            try:
+                self.iface.removePluginMenu(self.tr(u"&Azenqos"), action)
+                self.iface.removeToolBarIcon(action)
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: unload()1 itr exception:", exstr)
+
 
     def run(self):
         """Run method that performs all the real work"""

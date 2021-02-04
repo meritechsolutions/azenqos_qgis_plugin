@@ -12,7 +12,7 @@ echo "Please make sure QGIS is closed first."
 echo "Any existing Azenqos plugins would get deleted and replaced"
 echo "== Finding local QGIS installation folder..."
 
-echo "== Installing required python packages into QGIS's python env..."
+echo "== Installing required python packages into local python3 env..."
 python3 -m pip install -r requirements.txt
 exit_if_failed
 

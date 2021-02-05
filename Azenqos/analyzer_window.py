@@ -384,6 +384,8 @@ class analyzer_window(QMainWindow):
         self.menuWCDMA.setObjectName("menuWCDMA")
         self.menuLTE = QMenu(self.menuPresentation)
         self.menuLTE.setObjectName("menuLTE")
+        self.menuPCAP = QMenu(self.menuPresentation)
+        self.menuPCAP.setObjectName("menuPCAP")
         self.menuNR = QMenu(self.menuPresentation)
         self.menuNR.setObjectName("menuNR")
         self.menuCDMA_EVDO = QMenu(self.menuPresentation)
@@ -441,6 +443,9 @@ class analyzer_window(QMainWindow):
         self.actionLTE_VoLTE.setObjectName("actionLTE_VoLTE")
 
         self.actionlte_rrc_sib_states = QAction(analyzer_window)
+        self.actionPCAP_List = QAction(analyzer_window)
+        self.actionPCAP_List.setObjectName("actionPCAP_List")
+
         self.actionlte_rrc_sib_states.setObjectName("actionlte_rrc_sib_states")
 
         self.actionRadio_Parameters_4 = QAction(analyzer_window)
@@ -518,6 +523,8 @@ class analyzer_window(QMainWindow):
         self.menuLTE.addAction(self.actionData)
         self.menuLTE.addAction(self.actionLTE_Line_Chart)
 
+        self.menuPCAP.addAction(self.actionPCAP_List)
+
         self.menuNR.addAction(self.actionNR_Radio_Parameters)
         self.menuNR.addAction(self.actionNR_Serving_Neighbors)
         self.menuCDMA_EVDO.addAction(self.actionRadio_Parameters_4)
@@ -543,6 +550,7 @@ class analyzer_window(QMainWindow):
         self.menuPresentation.addAction(self.menuGSM.menuAction())
         self.menuPresentation.addAction(self.menuWCDMA.menuAction())
         self.menuPresentation.addAction(self.menuLTE.menuAction())
+        self.menuPresentation.addAction(self.menuPCAP.menuAction())
         self.menuPresentation.addAction(self.menuNR.menuAction())
         self.menuPresentation.addAction(self.menuCDMA_EVDO.menuAction())
         self.menuPresentation.addAction(self.menuData.menuAction())
@@ -560,7 +568,6 @@ class analyzer_window(QMainWindow):
 
         # translate for menubar
         _translate = QtCore.QCoreApplication.translate
-        
         self.menuPresentation.setTitle(_translate("analyzer_window", "Presentation"))
         self.menuWindows.setTitle(_translate("analyzer_window", "Windows"))
         self.menuGSM.setTitle(_translate("analyzer_window", "GSM"))
@@ -610,7 +617,7 @@ class analyzer_window(QMainWindow):
         self.actionLTE_Line_Chart.setText(_translate("analyzer_window", "LTE Line Chart"))
         self.actionLTE_RLC.setText(_translate("analyzer_window", "LTE RLC"))
         self.actionLTE_VoLTE.setText(_translate("analyzer_window", "LTE VoLTE"))
-
+        self.actionPCAP_List.setText(_translate("analyzer_window", "PCAP List"))
         self.actionlte_rrc_sib_states.setText(
             _translate("analyzer_window", "LTE RRC/SIB States")
         )
@@ -948,6 +955,10 @@ class analyzer_window(QMainWindow):
         lteLineChart = QTreeWidgetItem(lte, ["LTE Line Chart"])
         lteRlc = QTreeWidgetItem(lte, ["LTE RLC"])
         lteVo = QTreeWidgetItem(lte, ["LTE VoLTE"])
+
+        # LTE Section
+        pcap = QTreeWidgetItem(self.presentationTreeWidget, ["PCAP"])
+        pcapList = QTreeWidgetItem(pcap, ["PCAP List"])
 
         # CDMA/EVDO Section
         cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ["CDMA/EVDO"])
@@ -1987,6 +1998,31 @@ class analyzer_window(QMainWindow):
                     self.mdi.addSubWindow(self.lte_volte_window)
                     self.lte_volte_window.show()
                     self.gc.openedWindows.append(widget)
+
+        elif parent == "PCAP":
+            if child == "PCAP List":
+                tableWidget = None
+                if hasattr(self, "pcap_list_window") is True:
+                    tableWindow = self.pcap_list_window.widget()
+                    if not tableWindow:
+                        tableWidget = TableWindow(self.pcap_list_window, windowName)
+                        gc.openedWindows.append(tableWidget)
+
+                    if self.pcap_list_window not in subwindowList:
+                        self.pcap_list_window = SubWindowArea(self.mdi)
+                        self.mdi.addSubWindow(self.pcap_list_window)
+
+                    if tableWidget:
+                        self.pcap_list_window.setWidget(tableWidget)
+                    self.pcap_list_window.show()
+                else:
+                    # create new subwindow
+                    self.pcap_list_window = SubWindowArea(self.mdi)
+                    tableWidget = TableWindow(self.pcap_list_window, windowName)
+                    self.pcap_list_window.setWidget(tableWidget)
+                    self.mdi.addSubWindow(self.pcap_list_window)
+                    self.pcap_list_window.show()
+                    gc.openedWindows.append(tableWidget)
 
         elif parent == "5G NR":
             if child == "Radio Parameters":

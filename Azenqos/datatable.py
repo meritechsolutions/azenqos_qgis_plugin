@@ -43,6 +43,7 @@ import wcdma_query
 import gsm_query
 from tsharkworker import TsharkDecodeWorker
 import polqa_query
+import pcap_window
 
 
 class TableWindow(QWidget):
@@ -376,7 +377,13 @@ class TableWindow(QWidget):
                     self.dataList = CdmaEvdoQuery(
                         gc.azenqosDatabase, gc.currentDateTimeString
                     ).getEvdoParameters()
-
+            
+                # PCAP
+                elif self.title == "PCAP_PCAP List":
+                    # self.dataList = lte_query.get_volte_disp_df(
+                    #     dbcon, gc.currentDateTimeString
+                    # )
+                    self.dataList = pcap_window.get_all_pcap_content(gc.logPath)
                 # Data
                 elif self.title == "Data_GSM Data Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]

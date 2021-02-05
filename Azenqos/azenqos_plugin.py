@@ -225,7 +225,6 @@ class Azenqos:
                 else:
                     raise Exception("login failed to get token")
             else:
-                from import_db_dialog import import_db_dialog
                 self.dlg = import_db_dialog(online_mode=False)
             
         if self.dlg is not None:

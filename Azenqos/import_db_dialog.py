@@ -36,11 +36,9 @@ except:
 
 
 class import_db_dialog(QDialog):
-    def __init__(self, gc, online_mode=True):
+    def __init__(self, gc):
         super(import_db_dialog, self).__init__()
         self.gc = gc
-        self.online_mode = online_mode
-        print("import_db_dialog: online_mode: {}".format(online_mode))
         self.setupUi(self)
 
     def setupUi(self, DatabaseDialog):
@@ -232,13 +230,13 @@ class import_db_dialog(QDialog):
             return False
 
         try:
-            close_db()
+            close_db(self.gc)
             if hasattr(self, "azenqosMainMenu") is True:
                 self.azenqosMainMenu.newImport = True
                 self.azenqosMainMenu.killMainWindow()
                 self.clearCurrentProject()
 
-            self.databasePath = Utils().unzipToFile(
+            self.databasePath = Utils(self.gc).unzipToFile(
                 self.gc.CURRENT_PATH, self.dbPathLineEdit.text()
             )
             dbcon = (
@@ -265,11 +263,13 @@ class import_db_dialog(QDialog):
                     "Load cell file", self.cellPathLineEdit.text().split(",")
                 )
                 QgsApplication.taskManager().addTask(self.longTask)
-                self.hide()
+                self.close()
+                """
                 self.azenqosMainMenu = AzenqosDialog(self)
                 self.azenqosMainMenu.show()
                 self.azenqosMainMenu.raise_()
                 self.azenqosMainMenu.activateWindow()
+                """
                 return True
         except Exception as ex:
             type_, value_, traceback_ = sys.exc_info()

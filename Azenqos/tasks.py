@@ -156,7 +156,7 @@ class QuitTask(QgsTask):
                 raise self.exception
 
 
-def close_db():
+def close_db(gc):
     if gc.dbcon:
         gc.dbcon.close()
         gc.dbcon = None

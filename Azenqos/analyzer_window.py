@@ -94,8 +94,8 @@ class analyzer_window(QMainWindow):
         self.hilightList = []
         self.maxPosId = 0
         self.currentMaxPosId = 0
-        self.setupMenubar(self)
-        self.setupUi(self)
+        self.setupMenubar()
+        self.setupUi()
         self.initializeSchema()
         self.raise_()
         self.activateWindow()
@@ -353,20 +353,20 @@ class analyzer_window(QMainWindow):
         self.toolbar.addWidget(self.playSpeed)
 
     
-    def setupMenubar(self, analyzer_window):
+    def setupMenubar(self):
 
-        self.menubar = QMenuBar(analyzer_window)
+        self.menubar = QMenuBar(self)
 
         ######### file menu
         self.menuFile = QMenu(self.menubar)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menuFile.setTitle("File")        
         ### file > open logs
-        actionOpen = QAction(analyzer_window)
+        actionOpen = QAction(self)
         actionOpen.setText("Open logs")
         actionOpen.triggered.connect(self.open_logs)
         self.menuFile.addAction(actionOpen)
-        actionExit = QAction(analyzer_window)
+        actionExit = QAction(self)
         ### file > exit
         actionExit.setText("Exit")
         actionExit.triggered.connect(self.close)
@@ -395,109 +395,109 @@ class analyzer_window(QMainWindow):
         self.menuSignaling = QMenu(self.menuPresentation)
         self.menuSignaling.setObjectName("menuSignaling")
         self.setMenuBar(self.menubar)
-        self.statusbar = QStatusBar(analyzer_window)
+        self.statusbar = QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
         self.setStatusBar(self.statusbar)
 
-        self.actionRadio_Parameters = QAction(analyzer_window)
+        self.actionRadio_Parameters = QAction(self)
         self.actionRadio_Parameters.setObjectName("actionRadio_Parameters")
-        self.actionServing_Neighbors = QAction(analyzer_window)
+        self.actionServing_Neighbors = QAction(self)
         self.actionServing_Neighbors.setObjectName("actionServing_Neighbors")
-        self.actionCurrent_Channel = QAction(analyzer_window)
+        self.actionCurrent_Channel = QAction(self)
         self.actionCurrent_Channel.setObjectName("actionCurrent_Channel")
-        self.actionC_I = QAction(analyzer_window)
+        self.actionC_I = QAction(self)
         self.actionC_I.setObjectName("actionC_I")
-        self.actionGSM_Line_Chart = QAction(analyzer_window)
+        self.actionGSM_Line_Chart = QAction(self)
         self.actionGSM_Line_Chart.setObjectName("actionGSM_Line_Chart")
-        self.actionActive_Monitored_Sets = QAction(analyzer_window)
+        self.actionActive_Monitored_Sets = QAction(self)
         self.actionActive_Monitored_Sets.setObjectName("actionActive_Monitored_Sets")
-        self.actionRadio_Parameters_2 = QAction(analyzer_window)
+        self.actionRadio_Parameters_2 = QAction(self)
         self.actionRadio_Parameters_2.setObjectName("actionRadio_Parameters_2")
-        self.actionBLER_Summary = QAction(analyzer_window)
+        self.actionBLER_Summary = QAction(self)
         self.actionBLER_Summary.setObjectName("actionBLER_Summary")
-        self.actionLine_Chart = QAction(analyzer_window)
+        self.actionLine_Chart = QAction(self)
         self.actionLine_Chart.setObjectName("actionLine_Chart")
-        self.actionBearers = QAction(analyzer_window)
+        self.actionBearers = QAction(self)
         self.actionBearers.setObjectName("actionBearers")
-        self.actionPilot_Poluting_Cells = QAction(analyzer_window)
+        self.actionPilot_Poluting_Cells = QAction(self)
         self.actionPilot_Poluting_Cells.setObjectName("actionPilot_Poluting_Cells")
-        self.actionActive_Monitored_Bar = QAction(analyzer_window)
+        self.actionActive_Monitored_Bar = QAction(self)
         self.actionActive_Monitored_Bar.setObjectName("actionActive_Monitored_Bar")
-        self.actionPilot_Analyzer = QAction(analyzer_window)
+        self.actionPilot_Analyzer = QAction(self)
         self.actionPilot_Analyzer.setObjectName("actionPilot_Analyzer")
-        self.actionRadio_Parameters_3 = QAction(analyzer_window)
+        self.actionRadio_Parameters_3 = QAction(self)
         self.actionRadio_Parameters_3.setObjectName("actionRadio_Parameters_3")
-        self.actionNR_Radio_Parameters = QAction(analyzer_window)
+        self.actionNR_Radio_Parameters = QAction(self)
         self.actionNR_Radio_Parameters.setObjectName("actionNR_Radio_Parameters")
-        self.actionServing_Neighbors_2 = QAction(analyzer_window)
+        self.actionServing_Neighbors_2 = QAction(self)
         self.actionServing_Neighbors_2.setObjectName("actionServing_Neighbors_2")
-        self.actionPUCCH_PDSCH_Parameters = QAction(analyzer_window)
+        self.actionPUCCH_PDSCH_Parameters = QAction(self)
         self.actionPUCCH_PDSCH_Parameters.setObjectName("actionPUCCH_PDSCH_Parameters")
-        self.actionData = QAction(analyzer_window)
+        self.actionData = QAction(self)
         self.actionData.setObjectName("actionData")
-        self.actionLTE_Line_Chart = QAction(analyzer_window)
+        self.actionLTE_Line_Chart = QAction(self)
         self.actionLTE_Line_Chart.setObjectName("actionLTE_Line_Chart")
-        self.actionLTE_RLC = QAction(analyzer_window)
+        self.actionLTE_RLC = QAction(self)
         self.actionLTE_RLC.setObjectName("actionLTE_RLC")
-        self.actionLTE_VoLTE = QAction(analyzer_window)
+        self.actionLTE_VoLTE = QAction(self)
         self.actionLTE_VoLTE.setObjectName("actionLTE_VoLTE")
 
-        self.actionlte_rrc_sib_states = QAction(analyzer_window)
-        self.actionPCAP_List = QAction(analyzer_window)
+        self.actionlte_rrc_sib_states = QAction(self)
+        self.actionPCAP_List = QAction(self)
         self.actionPCAP_List.setObjectName("actionPCAP_List")
 
         self.actionlte_rrc_sib_states.setObjectName("actionlte_rrc_sib_states")
 
-        self.actionRadio_Parameters_4 = QAction(analyzer_window)
+        self.actionRadio_Parameters_4 = QAction(self)
         self.actionRadio_Parameters_4.setObjectName("actionRadio_Parameters_4")
-        self.actionServing_Neighbors_3 = QAction(analyzer_window)
+        self.actionServing_Neighbors_3 = QAction(self)
         self.actionServing_Neighbors_3.setObjectName("actionServing_Neighbors_3")
-        self.actionEVDO_Parameters = QAction(analyzer_window)
+        self.actionEVDO_Parameters = QAction(self)
         self.actionEVDO_Parameters.setObjectName("actionEVDO_Parameters")
-        self.actionGSM_Data_Line_Chart = QAction(analyzer_window)
+        self.actionGSM_Data_Line_Chart = QAction(self)
         self.actionGSM_Data_Line_Chart.setObjectName("actionGSM_Data_Line_Chart")
-        self.actionWCDMA_Data_Line_Chart = QAction(analyzer_window)
+        self.actionWCDMA_Data_Line_Chart = QAction(self)
         self.actionWCDMA_Data_Line_Chart.setObjectName("actionWCDMA_Data_Line_Chart")
-        self.actionGPRS_EDGE_Information = QAction(analyzer_window)
+        self.actionGPRS_EDGE_Information = QAction(self)
         self.actionGPRS_EDGE_Information.setObjectName("actionGPRS_EDGE_Information")
-        self.actionWeb_Browser = QAction(analyzer_window)
+        self.actionWeb_Browser = QAction(self)
         self.actionWeb_Browser.setObjectName("actionWeb_Browser")
-        self.actionHSDPA_HSPA_Statistics = QAction(analyzer_window)
+        self.actionHSDPA_HSPA_Statistics = QAction(self)
         self.actionHSDPA_HSPA_Statistics.setObjectName("actionHSDPA_HSPA_Statistics")
-        self.actionHSUPA_Statistics = QAction(analyzer_window)
+        self.actionHSUPA_Statistics = QAction(self)
         self.actionHSUPA_Statistics.setObjectName("actionHSUPA_Statistics")
-        self.actionLTE_Data_Statistics = QAction(analyzer_window)
+        self.actionLTE_Data_Statistics = QAction(self)
         self.actionLTE_Data_Statistics.setObjectName("actionLTE_Data_Statistics")
-        self.actionLTE_Data_Line_Chart = QAction(analyzer_window)
+        self.actionLTE_Data_Line_Chart = QAction(self)
         self.actionLTE_Data_Line_Chart.setObjectName("actionLTE_Data_Line_Chart")
-        self.actionWifi_Connected_AP = QAction(analyzer_window)
+        self.actionWifi_Connected_AP = QAction(self)
         self.actionWifi_Connected_AP.setObjectName("actionWifi_Connected_AP")
-        self.actionWifi_Scanned_APs = QAction(analyzer_window)
+        self.actionWifi_Scanned_APs = QAction(self)
         self.actionWifi_Scanned_APs.setObjectName("actionWifi_Scanned_APs")
-        self.actionWifi_Graph = QAction(analyzer_window)
+        self.actionWifi_Graph = QAction(self)
         self.actionWifi_Graph.setObjectName("actionWifi_Graph")
-        self.actionEvents = QAction(analyzer_window)
+        self.actionEvents = QAction(self)
         self.actionEvents.setObjectName("actionEvents")
-        self.actionLayer_3_Messages = QAction(analyzer_window)
+        self.actionLayer_3_Messages = QAction(self)
         self.actionLayer_3_Messages.setObjectName("actionLayer_3_Messages")
-        self.actionBenchmark = QAction(analyzer_window)
+        self.actionBenchmark = QAction(self)
         self.actionBenchmark.setObjectName("actionBenchmark")
-        self.actionMM_Reg_States = QAction(analyzer_window)
+        self.actionMM_Reg_States = QAction(self)
         self.actionMM_Reg_States.setObjectName("actionMM_Reg_States")
-        self.actionServing_System_Info = QAction(analyzer_window)
+        self.actionServing_System_Info = QAction(self)
         self.actionServing_System_Info.setObjectName("actionServing_System_Info")
-        self.actionNR_Data_Line_Chart = QAction(analyzer_window)
+        self.actionNR_Data_Line_Chart = QAction(self)
         self.actionNR_Data_Line_Chart.setObjectName("actionNR_Data_Line_Chart")
-        self.actionNR_Serving_Neighbors = QAction(analyzer_window)
+        self.actionNR_Serving_Neighbors = QAction(self)
         self.actionNR_Serving_Neighbors.setObjectName("actionNR_Serving_Neighbors")
 
-        self.actionCascadeWindow = QAction(analyzer_window)
+        self.actionCascadeWindow = QAction(self)
         self.actionCascadeWindow.setObjectName("cascadeWindow")
-        self.actionTileHorizontal = QAction(analyzer_window)
+        self.actionTileHorizontal = QAction(self)
         self.actionTileHorizontal.setObjectName("tileHorizontal")
-        self.actionTileVertical = QAction(analyzer_window)
+        self.actionTileVertical = QAction(self)
         self.actionTileVertical.setObjectName("tileVertical")
-        self.actionCloseAll = QAction(analyzer_window)
+        self.actionCloseAll = QAction(self)
         self.actionCloseAll.setObjectName("closeAll")
 
         self.menuGSM.addAction(self.actionRadio_Parameters)
@@ -734,21 +734,20 @@ class analyzer_window(QMainWindow):
                 subWindow.move(position)
                 position.setX(position.x() + subWindow.width())
 
-    def setupUi(self, analyzer_window):
+    def setupUi(self):
         try:
-            analyzer_window.setObjectName("analyzer_window")
-            analyzer_window.resize(640, 480)
-            # self.setupTreeWidget(analyzer_window)
+            self.setObjectName("analyzer_window")
+            #self.resize(640, 480)
             self.mdi = GroupArea()
             self.gc.mdi = self.mdi
             self.setCentralWidget(self.mdi)
             toolbar = self.addToolBar("toolbar")
             self.toolbar = toolbar
             dirname = os.path.dirname(__file__)
-            analyzer_window.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
+            self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
 
             # Time Slider
-            self.gc.timeSlider = timeSlider(analyzer_window)
+            self.gc.timeSlider = timeSlider(self)
             self.gc.timeSlider.setMinimumWidth(100)
             self.gc.timeSlider.setMaximumWidth(360)
             sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -767,11 +766,11 @@ class analyzer_window(QMainWindow):
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
 
             # Play Speed Textbox
-            self.speedLabel = QLabel(analyzer_window)
+            self.speedLabel = QLabel(self)
             self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
             self.speedLabel.setObjectName("Speed")
-            self.playSpeed = QLineEdit(analyzer_window)
-            self.onlyDouble = QDoubleValidator(analyzer_window)
+            self.playSpeed = QLineEdit(self)
+            self.onlyDouble = QDoubleValidator(self)
             self.onlyDouble.setRange(0.0, 120.0, 2)
             self.onlyDouble.setNotation(QDoubleValidator.StandardNotation)
             self.playSpeed.setValidator(self.onlyDouble)
@@ -786,7 +785,7 @@ class analyzer_window(QMainWindow):
             self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
             # Datetime Textbox
-            self.timeEdit = QDateTimeEdit(analyzer_window)
+            self.timeEdit = QDateTimeEdit(self)
             self.timeEdit.setGeometry(QtCore.QRect(480, 56, 140, 22))
             self.timeEdit.setObjectName("timeEdit")
             self.timeEdit.setDisplayFormat("hh:mm:ss.zzz")
@@ -794,11 +793,11 @@ class analyzer_window(QMainWindow):
             self.timeEdit.setReadOnly(True)
 
             # Time label
-            self.timeSliderLabel = QLabel(analyzer_window)
+            self.timeSliderLabel = QLabel(self)
             self.timeSliderLabel.setGeometry(QtCore.QRect(300, 30, 100, 16))
             self.timeSliderLabel.setObjectName("timeSliderLabel")
 
-            self.setupPlayStopButton(analyzer_window)
+            self.setupPlayStopButton()
 
             # Import Database Button
             self.importDatabaseBtn = QToolButton()
@@ -830,8 +829,8 @@ class analyzer_window(QMainWindow):
             )
             self.layerSelect.setObjectName("layerBtn")
 
-            self.retranslateUi(analyzer_window)
-            QtCore.QMetaObject.connectSlotsByName(analyzer_window)
+            self.retranslateUi()
+            QtCore.QMetaObject.connectSlotsByName(self)
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.loadBtn.clicked.connect(self.loadWorkspaceFile)
@@ -847,9 +846,9 @@ class analyzer_window(QMainWindow):
 
             
 
-    def retranslateUi(self, analyzer_window):
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        analyzer_window.setWindowTitle(_translate("analyzer_window", "AZENQOS Log Analyzer"))
+        self.setWindowTitle(_translate("analyzer_window", "AZENQOS Log Analyzer"))
         # self.presentationTreeWidget.headerItem().setText(
         #     0, _translate("analyzer_window", "Presentation")
         # )
@@ -916,120 +915,9 @@ class analyzer_window(QMainWindow):
         self.timeSliderLabel.setText(_translate("analyzer_window", "Time:"))
         self.speedLabel.setText(_translate("analyzer_window", "Speed:"))
 
-    def setupTreeWidget(self, analyzer_window):
-        # Presentation Tree Widget
-        self.presentationTreeWidget = QTreeWidget(analyzer_window)
-        self.presentationTreeWidget.setGeometry(QtCore.QRect(20, 20, 260, 300))
-        self.presentationTreeWidget.setFrameShape(QFrame.StyledPanel)
-        self.presentationTreeWidget.setAllColumnsShowFocus(True)
-        self.presentationTreeWidget.setObjectName("presentationTreeWidget")
-        self.presentationTreeWidget.itemDoubleClicked.connect(self.loadAllMessages)
 
-        # GSM Section
-        gsm = QTreeWidgetItem(self.presentationTreeWidget, ["GSM"])
-        gsmRadioParams = QTreeWidgetItem(gsm, ["Radio Parameters"])
-        gsmServeNeighbor = QTreeWidgetItem(gsm, ["Serving + Neighbors"])
-        gsmCurrentChannel = QTreeWidgetItem(gsm, ["Current Channel"])
-        gsmCI = QTreeWidgetItem(gsm, ["C/I"])
-        gsmLineChart = QTreeWidgetItem(gsm, ["GSM Line Chart"])
-        # gsmEventsCounter = QTreeWidgetItem(gsm, ["Events Counter"])
-
-        # WCDMA Section
-        wcdma = QTreeWidgetItem(self.presentationTreeWidget, ["WCDMA"])
-        wcdmaActiveMonitoredSets = QTreeWidgetItem(wcdma, ["Active + Monitored Sets"])
-        wcdmaRadioParams = QTreeWidgetItem(wcdma, ["Radio Parameters"])
-        wcdmaSummary = QTreeWidgetItem(wcdma, ["BLER Summary"])
-        wcdmaLineChart = QTreeWidgetItem(wcdma, ["Line Chart"])
-        wcdmaBearers = QTreeWidgetItem(wcdma, ["Bearers"])
-        wcdmaPilotPoluting = QTreeWidgetItem(wcdma, ["Pilot Poluting Cells"])
-        wcdmaActiveMonitoredBar = QTreeWidgetItem(wcdma, ["Active + Monitored Bar"])
-        wcdmaPilotAnalyzer = QTreeWidgetItem(wcdma, ["Pilot Analyzer"])
-
-        # LTE Section
-        lte = QTreeWidgetItem(self.presentationTreeWidget, ["LTE"])
-        lteRadioParams = QTreeWidgetItem(lte, ["Radio Parameters"])
-        lteServingNeighbors = QTreeWidgetItem(lte, ["Serving + Neighbors"])
-        QTreeWidgetItem(lte, ["LTE RRC/SIB States"])
-        ltePPParams = QTreeWidgetItem(lte, ["PUCCH/PDSCH Parameters"])
-        lteData = QTreeWidgetItem(lte, ["Data"])
-        lteLineChart = QTreeWidgetItem(lte, ["LTE Line Chart"])
-        lteRlc = QTreeWidgetItem(lte, ["LTE RLC"])
-        lteVo = QTreeWidgetItem(lte, ["LTE VoLTE"])
-
-        # LTE Section
-        pcap = QTreeWidgetItem(self.presentationTreeWidget, ["PCAP"])
-        pcapList = QTreeWidgetItem(pcap, ["PCAP List"])
-
-        # CDMA/EVDO Section
-        cdmaEvdo = QTreeWidgetItem(self.presentationTreeWidget, ["CDMA/EVDO"])
-        cdmaEvdoRadioParams = QTreeWidgetItem(cdmaEvdo, ["Radio Parameters"])
-        cdmaEvdoServingNeighbors = QTreeWidgetItem(cdmaEvdo, ["Serving + Neighbors"])
-        cdmaEvdoParams = QTreeWidgetItem(cdmaEvdo, ["EVDO Parameters"])
-
-        # Data Section
-        data = QTreeWidgetItem(self.presentationTreeWidget, ["Data"])
-        dataGsmLineChart = QTreeWidgetItem(data, ["GSM Data Line Chart"])
-        dataWcdmaLineChart = QTreeWidgetItem(data, ["WCDMA Data Line Chart"])
-        dataEdgeInfo = QTreeWidgetItem(data, ["GPRS/EDGE Information"])
-        dataWebBrowser = QTreeWidgetItem(data, ["Web Browser"])
-        dataStats = QTreeWidgetItem(data, ["HSDPA/HSPA + Statistics"])
-        dataHsupaStats = QTreeWidgetItem(data, ["HSUPA Statistics"])
-        dataLteStats = QTreeWidgetItem(data, ["LTE Data Statistics"])
-        dataLteLineChart = QTreeWidgetItem(data, ["LTE Data Line Chart"])
-        dataWifiConnectedAp = QTreeWidgetItem(data, ["Wifi Connected AP"])
-        dataWifiScannedAp = QTreeWidgetItem(data, ["Wifi Scanned APs"])
-        dataWifiGraph = QTreeWidgetItem(data, ["Wifi Graph"])
-
-        # Signaling Section
-        signaling = QTreeWidgetItem(self.presentationTreeWidget, ["Signaling"])
-        signalingEvents = QTreeWidgetItem(signaling, ["Events"])
-        signalingLayerThree = QTreeWidgetItem(signaling, ["Layer 3 Messages"])
-        signalingBenchmark = QTreeWidgetItem(signaling, ["Benchmark"])
-        signalingMM = QTreeWidgetItem(signaling, ["MM Reg States"])
-        signalingSystemInfo = QTreeWidgetItem(signaling, ["Serving System Info"])
-        # signalingDebug = QTreeWidgetItem(signaling, ['Debug Android/Event'])
-
-        # Positioning Section
-        # positioning = QTreeWidgetItem(self.presentationTreeWidget,
-        #                               ['Positioning'])
-        # positioningGps = QTreeWidgetItem(positioning, ['GPS'])
-        # positioningMap = QTreeWidgetItem(positioning, ['Map'])
-        # positioningPositioning = QTreeWidgetItem(positioning, ['Positioning'])
-
-        # Customized Window Section
-        # customizedWindow = QTreeWidgetItem(self.presentationTreeWidget,
-        #                                    ['Customized Window'])
-        # customizedWindowStatus = QTreeWidgetItem(customizedWindow,
-        #                                          ['Status Window'])
-        # customizedWindowMessage = QTreeWidgetItem(customizedWindow,
-        #                                           ['Message Window'])
-        # customizedWindowChart = QTreeWidgetItem(customizedWindow,
-        #                                         ['Line Chart'])
-
-        # NB-IoT Section
-        # nBIoT = QTreeWidgetItem(self.presentationTreeWidget, ['NB-IoT'])
-        # nBIoTParams = QTreeWidgetItem(nBIoT,
-        #                               ['NB-IoT Radio Parameters Window'])
-
-        self.presentationTreeWidget.header().setCascadingSectionResizes(True)
-        self.presentationTreeWidget.header().setHighlightSections(True)
-
-        # Configuration
-        # self.configurationTreeWidget = QTreeWidget(analyzer_window)
-        # self.configurationTreeWidget.setGeometry(
-        #     QtCore.QRect(20, 320, 260, 100))
-        # self.configurationTreeWidget.setFrameShape(QFrame.StyledPanel)
-        # self.configurationTreeWidget.setAllColumnsShowFocus(True)
-        # self.configurationTreeWidget.setObjectName("configurationTreeWidget")
-        # cellInformation = QTreeWidgetItem(self.configurationTreeWidget,
-        #                                   ['Cell Information'])
-        # equipmentConfiguration = QTreeWidgetItem(self.configurationTreeWidget,
-        #                                          ['Equipment Configuration'])
-        # self.configurationTreeWidget.itemDoubleClicked.connect(
-        #     self.selectConfiguration)
-
-    def setupPlayStopButton(self, analyzer_window):
-        self.horizontalLayout = QWidget(analyzer_window)
+    def setupPlayStopButton(self):
+        self.horizontalLayout = QWidget(self)
         self.horizontalLayout.setGeometry(QtCore.QRect(290, 70, 90, 48))
         self.playButton = QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
@@ -1188,7 +1076,10 @@ class analyzer_window(QMainWindow):
     def open_logs(self):
         dlg = import_db_dialog.import_db_dialog(self.gc)
         dlg.show()
-        dlg.exec()
+        ret = dlg.exec()
+        print("import_db_dialog ret: {}".format(ret))
+        # TODO move all import_db_dialog tasks here
+        self.setupUi()
 
     def timeChange(self):
         ret = self.timechange_to_service_counter.inc_and_get()

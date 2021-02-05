@@ -19,7 +19,10 @@ sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
 import global_config as gc
 from globalutils import Utils
-from tasks import *
+try:
+    from tasks import *
+except:
+    pass
 from timeslider import *
 from datatable import *
 from azenqos_plugin_dialog import *  # AzenqosDialog, clearAllSelectedFeatures
@@ -27,7 +30,10 @@ from version import VERSION
 import db_preprocess
 import azq_utils
 import azq_theme_manager
-from cell_layer_task import *
+try:
+    from cell_layer_task import *
+except:
+    pass
 
 
 class import_db_dialog(QDialog):

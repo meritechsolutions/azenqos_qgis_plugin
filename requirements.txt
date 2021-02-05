@@ -1,2 +1,3 @@
 pyqtgraph
 pandas
+matplotlib

@@ -34,8 +34,10 @@ sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 import pyqtgraph as pg
 import numpy as np
 import global_config as gc
-
-import tasks
+try:
+    import tasks
+except:
+    pass
 import azq_utils
 import shutil
 
@@ -44,9 +46,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import *
-from qgis.core import *
-from qgis.utils import *
-from qgis.gui import *
+try:
+    from qgis.core import *
+    from qgis.utils import *
+    from qgis.gui import *
+except:
+    pass
 
 from cdma_evdo_query import CdmaEvdoQuery
 from globalutils import Utils

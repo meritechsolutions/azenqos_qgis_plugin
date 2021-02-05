@@ -761,9 +761,6 @@ class analyzer_window(QMainWindow):
             self.gc.timeSlider.setOrientation(QtCore.Qt.Horizontal)
             self.gc.timeSlider.setObjectName("timeSlider")
             self.gc.timeSlider.setTracking(True)
-            if not self.gc.sliderLength:
-                self.gc.sliderLength = 99
-            self.gc.timeSlider.setRange(0, self.gc.sliderLength)
 
             # Play Speed Textbox
             self.speedLabel = QLabel(self)
@@ -776,12 +773,7 @@ class analyzer_window(QMainWindow):
             self.playSpeed.setValidator(self.onlyDouble)
             self.playSpeed.setMaximumWidth(50)
             self.playSpeed.setFixedWidth(60)
-            if not self.gc.slowDownValue == 1:
-                self.playSpeed.setText("{:.2f}".format(self.gc.slowDownValue))
-            elif not self.gc.fastForwardValue == 1:
-                self.playSpeed.setText("{:.2f}".format(self.gc.fastForwardValue))
-            else:
-                self.playSpeed.setText("{:.2f}".format(1))
+            
             self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
             # Datetime Textbox
@@ -789,7 +781,6 @@ class analyzer_window(QMainWindow):
             self.timeEdit.setGeometry(QtCore.QRect(480, 56, 140, 22))
             self.timeEdit.setObjectName("timeEdit")
             self.timeEdit.setDisplayFormat("hh:mm:ss.zzz")
-            self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(self.gc.minTimeValue))
             self.timeEdit.setReadOnly(True)
 
             # Time label
@@ -829,7 +820,6 @@ class analyzer_window(QMainWindow):
             )
             self.layerSelect.setObjectName("layerBtn")
 
-            self.retranslateUi()
             QtCore.QMetaObject.connectSlotsByName(self)
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
@@ -847,6 +837,18 @@ class analyzer_window(QMainWindow):
             
 
     def retranslateUi(self):
+        if not self.gc.sliderLength:
+            self.gc.sliderLength = 99
+        self.gc.timeSlider.setRange(0, self.gc.sliderLength)
+        
+        if not self.gc.slowDownValue == 1:
+            self.playSpeed.setText("{:.2f}".format(self.gc.slowDownValue))
+        elif not self.gc.fastForwardValue == 1:
+            self.playSpeed.setText("{:.2f}".format(self.gc.fastForwardValue))
+        else:
+            self.playSpeed.setText("{:.2f}".format(1))
+        self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(self.gc.minTimeValue))
+        
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("analyzer_window", "AZENQOS Log Analyzer"))
         # self.presentationTreeWidget.headerItem().setText(
@@ -1079,7 +1081,7 @@ class analyzer_window(QMainWindow):
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
         # TODO move all import_db_dialog tasks here
-        self.setupUi()
+        self.retranslateUi()
 
     def timeChange(self):
         ret = self.timechange_to_service_counter.inc_and_get()

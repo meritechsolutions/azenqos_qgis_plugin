@@ -12,7 +12,6 @@ sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
 import pyqtgraph as pg
 import numpy as np
-import global_config as gc
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets

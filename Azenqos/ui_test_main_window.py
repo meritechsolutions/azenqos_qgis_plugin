@@ -1,12 +1,13 @@
-import azenqos_qgis_plugin
 from PyQt5.QtWidgets import *
+import analyzer_window
 
 
 def test():
     app = QApplication([])
-    azq = azenqos_qgis_plugin.azenqos_qgis_plugin(app)
-    azq.run()
-
+    mw = analyzer_window.analyzer_window()
+    mw.show()
+    app.exec()
+    
 
 if __name__ == "__main__":
     test()

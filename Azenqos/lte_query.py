@@ -1,7 +1,6 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import pandas as pd
 import params_disp_df
-import global_config as gc
 
 
 class LteDataQuery:

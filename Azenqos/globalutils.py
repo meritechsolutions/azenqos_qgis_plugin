@@ -5,7 +5,6 @@ import shutil
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
-import global_config as gc
 
 db = None
 elementData = []
@@ -105,36 +104,37 @@ class Query(object):
 
 
 class Utils:
-    def __init__(self):
-        super().__init__()
+    gc = None
+    def __init__(self, gc):
+        self.gc = gc
 
     def unzipToFile(self, currentPath, filePath):
-        gc.logPath = currentPath + "/file/" + str(os.getpid())
+        self.gc.logPath = currentPath + "/file/" + str(os.getpid())
         try:
             if not os.path.exists(currentPath + "/file"):
                 os.mkdir(currentPath + "/file")
-            if not os.path.exists(gc.logPath):
-                os.mkdir(gc.logPath)
+            if not os.path.exists(self.gc.logPath):
+                os.mkdir(self.gc.logPath)
             else:
-                shutil.rmtree(gc.logPath)
-                os.mkdir(gc.logPath)
-            if len(os.listdir(gc.logPath)) == 0:
+                shutil.rmtree(self.gc.logPath)
+                os.mkdir(self.gc.logPath)
+            if len(os.listdir(self.gc.logPath)) == 0:
                 with ZipFile(filePath, "r") as zip_obj:
                     filesContain = zip_obj.namelist()
                     for fileName in filesContain:
-                        zip_obj.extract(fileName, gc.logPath)
-                db_file_path = gc.logPath + "/azqdata.db"
+                        zip_obj.extract(fileName, self.gc.logPath)
+                db_file_path = self.gc.logPath + "/azqdata.db"
                 return db_file_path
         except Exception as e:
             print(e)
 
     def cleanupFile(self, currentPath):
-        # gc.logPath = currentPath + "/" + os.path.basename(filePath)
-        file_list = os.listdir(gc.logPath)
+        # self.gc.logPath = currentPath + "/" + os.path.basename(filePath)
+        file_list = os.listdir(self.gc.logPath)
         try:
             if len(file_list) > 0:
                 for f in file_list:
-                    os.remove(gc.logPath + "/" + f)
+                    os.remove(self.gc.logPath + "/" + f)
         except:
             return False
 

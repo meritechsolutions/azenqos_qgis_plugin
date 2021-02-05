@@ -9,7 +9,6 @@ from worker import WorkerSignals
 import subprocess
 import tempfile
 import os
-import global_config as gc
 import uuid
 import re
 import tshark_util

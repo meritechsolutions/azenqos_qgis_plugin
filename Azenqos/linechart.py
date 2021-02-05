@@ -14,7 +14,6 @@ from azq_utils import get_default_color_for_index
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
-import global_config as gc
 
 
 class Ui_LTE_LCwidget(QWidget):

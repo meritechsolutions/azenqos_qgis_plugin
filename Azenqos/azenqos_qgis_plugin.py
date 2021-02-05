@@ -29,8 +29,6 @@ from PyQt5.QtWidgets import *
 import sys
 import traceback
 from import_db_dialog import import_db_dialog
-from server_login_dialog import server_login_dialog
-
 # Initialize Qt resources from file resources.py
 from resources import *
 
@@ -38,23 +36,23 @@ from resources import *
 import os.path
 
 
-class Azenqos:
+class azenqos_qgis_plugin:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface):
+    def __init__(self, qgis_iface):
         """Constructor.
 
-        :param iface: An interface instance that will be passed to this class
+        :param qgis_iface: An interface instance that will be passed to this class
             which provides the hook by which you can manipulate the QGIS
             application at run time.
-        :type iface: QgsInterface
+        :type qgis_iface: QgsInterface
         """
         
         from PyQt5.QtCore import QT_VERSION_STR    
         print("qt_version: {}".format(QT_VERSION_STR))
 
         # Save reference to the QGIS interface
-        self.iface = iface
+        self.qgis_iface = qgis_iface
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
@@ -160,10 +158,10 @@ class Azenqos:
 
         if add_to_toolbar:
             # Adds plugin icon to Plugins toolbar
-            self.iface.addToolBarIcon(action)
+            self.qgis_iface.addToolBarIcon(action)
 
         if add_to_menu:
-            self.iface.addPluginToMenu(self.menu, action)
+            self.qgis_iface.addPluginToMenu(self.menu, action)
 
         self.actions.append(action)
 
@@ -179,7 +177,7 @@ class Azenqos:
             icon_path,
             text=self.tr(u"Azenqos Log"),
             callback=self.run,
-            parent=self.iface.mainWindow(),
+            parent=self.qgis_iface.mainWindow(),
         )
 
         # will be set False in run()
@@ -200,8 +198,8 @@ class Azenqos:
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             try:
-                self.iface.removePluginMenu(self.tr(u"&Azenqos"), action)
-                self.iface.removeToolBarIcon(action)
+                self.qgis_iface.removePluginMenu(self.tr(u"&Azenqos"), action)
+                self.qgis_iface.removeToolBarIcon(action)
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -218,14 +216,7 @@ class Azenqos:
             reply = ask_operation_mode()
             print("reply: {}".format(reply))
             online_mode = not(reply == 1)
-            if online_mode:
-                login_token = server_login_dialog()
-                if login_token:
-                    self.dlg = import_db_dialog(online_mode=True)
-                else:
-                    raise Exception("login failed to get token")
-            else:
-                self.dlg = import_db_dialog(online_mode=False)
+            self.dlg = import_db_dialog(online_mode=online_mode)
             
         if self.dlg is not None:
             # show the dialog

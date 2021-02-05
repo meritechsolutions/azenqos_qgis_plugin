@@ -22,6 +22,7 @@
  ***************************************************************************/
  This script initializes the plugin, making it known to QGIS.
 """
+from azenqos_qgis_plugin import azenqos_qgis_plugin
 
 
 def add_src_folder_to_import_path():    
@@ -33,15 +34,12 @@ def add_src_folder_to_import_path():
 
 
 # noinspection PyPep8Naming
-def classFactory(iface):  # pylint: disable=invalid-name
+def classFactory(qgis_iface):  # pylint: disable=invalid-name
     """Load Azenqos class from file Azenqos.
 
-    :param iface: A QGIS interface instance.
-    :type iface: QgsInterface
+    :param qgis_iface: A QGIS interface instance.
+    :type qgis_iface: QgsInterface
     """
-    add_src_folder_to_import_path()
-
+    add_src_folder_to_import_path()    
     
-    from azenqos_plugin import Azenqos
-
-    return Azenqos(iface)
+    return azenqos_qgis_plugin(qgis_iface)

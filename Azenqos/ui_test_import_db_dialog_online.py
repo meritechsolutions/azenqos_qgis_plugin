@@ -1,4 +1,3 @@
-import azenqos_plugin
 from PyQt5.QtWidgets import *
 import import_db_dialog
 

@@ -4,8 +4,6 @@ import os
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
-import global_config as gc
-
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread

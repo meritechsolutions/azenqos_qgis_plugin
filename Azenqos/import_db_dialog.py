@@ -17,7 +17,6 @@ import sqlite3
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
-import global_config as gc
 from globalutils import Utils
 try:
     from tasks import *
@@ -25,7 +24,7 @@ except:
     pass
 from timeslider import *
 from datatable import *
-from azenqos_plugin_dialog import *  # AzenqosDialog, clearAllSelectedFeatures
+from analyzer_window import *
 from version import VERSION
 import db_preprocess
 import azq_utils
@@ -37,8 +36,9 @@ except:
 
 
 class import_db_dialog(QDialog):
-    def __init__(self, online_mode=True):
+    def __init__(self, gc, online_mode=True):
         super(import_db_dialog, self).__init__()
+        self.gc = gc
         self.online_mode = online_mode
         print("import_db_dialog: online_mode: {}".format(online_mode))
         self.setupUi(self)
@@ -155,9 +155,9 @@ class import_db_dialog(QDialog):
         )
 
     def clearCurrentProject(self):
-        for hi in gc.h_list:
+        for hi in self.gc.h_list:
             hi.hide()
-        gc.h_list = []
+        self.gc.h_list = []
         clearAllSelectedFeatures()
 
         project = QgsProject.instance()
@@ -168,7 +168,7 @@ class import_db_dialog(QDialog):
 
         QgsProject.instance().reloadAllLayers()
         QgsProject.instance().clear()
-        gc.tableList = []
+        self.gc.tableList = []
 
     def choose_azm(self):
         fileName, _ = QFileDialog.getOpenFileName(
@@ -239,12 +239,12 @@ class import_db_dialog(QDialog):
                 self.clearCurrentProject()
 
             self.databasePath = Utils().unzipToFile(
-                gc.CURRENT_PATH, self.dbPathLineEdit.text()
+                self.gc.CURRENT_PATH, self.dbPathLineEdit.text()
             )
             dbcon = (
                 self.addDatabase()
             )  # this will create views/tables per param as per specified theme so must check theme before here
-            if not dbcon or not gc.azenqosDatabase.open():
+            if not dbcon or not self.gc.azenqosDatabase.open():
                 QtWidgets.QMessageBox.critical(
                     None,
                     "Invalid file",
@@ -287,7 +287,7 @@ class import_db_dialog(QDialog):
 
     def getTimeForSlider(self):
         dataList = []
-        gc.azenqosDatabase.open()
+        self.gc.azenqosDatabase.open()
         subQuery = QSqlQuery()
         queryString = "SELECT log_start_time, log_end_time FROM logs"
         subQuery.exec_(queryString)
@@ -297,16 +297,16 @@ class import_db_dialog(QDialog):
             if subQuery.value(0).strip() and subQuery.value(1).strip():
                 startTime = subQuery.value(0)
                 endTime = subQuery.value(1)
-        gc.azenqosDatabase.close()
+        self.gc.azenqosDatabase.close()
 
-        gc.minTimeValue = datetime.datetime.strptime(
+        self.gc.minTimeValue = datetime.datetime.strptime(
             str(startTime), "%Y-%m-%d %H:%M:%S.%f"
         ).timestamp()
-        gc.maxTimeValue = datetime.datetime.strptime(
+        self.gc.maxTimeValue = datetime.datetime.strptime(
             str(endTime), "%Y-%m-%d %H:%M:%S.%f"
         ).timestamp()
-        gc.currentDateTimeString = "%s" % (
-            datetime.datetime.fromtimestamp(gc.minTimeValue)
+        self.gc.currentDateTimeString = "%s" % (
+            datetime.datetime.fromtimestamp(self.gc.minTimeValue)
         )
         self.setIncrementValue()
         return True
@@ -343,15 +343,15 @@ class import_db_dialog(QDialog):
         db_preprocess.prepare_spatialite_views(dbcon)
         dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
         dbcon = sqlite3.connect(self.databasePath)
-        gc.databasePath = self.databasePath
-        gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
-        gc.azenqosDatabase.setDatabaseName(self.databasePath)
-        gc.dbcon = dbcon
+        self.gc.databasePath = self.databasePath
+        self.gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
+        self.gc.azenqosDatabase.setDatabaseName(self.databasePath)
+        self.gc.dbcon = dbcon
         return dbcon
 
     def setIncrementValue(self):
-        gc.sliderLength = gc.maxTimeValue - gc.minTimeValue
-        gc.sliderLength = round(gc.sliderLength, 3)
+        self.gc.sliderLength = self.gc.maxTimeValue - self.gc.minTimeValue
+        self.gc.sliderLength = round(self.gc.sliderLength, 3)
 
     def removeMainMenu(self):
         if hasattr(self, "azenqosMainMenu") is True:

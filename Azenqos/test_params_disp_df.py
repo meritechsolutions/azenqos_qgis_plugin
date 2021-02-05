@@ -4,7 +4,6 @@ import shutil
 import params_disp_df
 import sqlite3
 import integration_test_helpers
-import global_config as gc
 import pandas as pd
 
 

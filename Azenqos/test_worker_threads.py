@@ -1,5 +1,4 @@
 import worker
-import global_config as gc
 import time
 
 

@@ -2,7 +2,6 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import pandas as pd
 import numpy as np
 import params_disp_df
-import global_config as gc
 import os
 import azq_utils
 import shutil

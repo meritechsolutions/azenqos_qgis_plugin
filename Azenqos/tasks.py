@@ -80,7 +80,7 @@ class LayerTask(QgsTask):
 
     def finished(self, result):
         if result:
-            gc.mostFeaturesLayer = None
+            #gc.mostFeaturesLayer = None
             self.addMapToQgis()
             geom_column = "geom"
             vlayer = iface.addVectorLayer(self.dbPath, None, "ogr")
@@ -137,8 +137,10 @@ class QuitTask(QgsTask):
             QgsMessageLog.logMessage(
                 "[-- End Removing Dependencies --]", tag="Processing"
             )
+            '''
             if self.azqMain.newImport is False:
                 self.azqMain.databaseUi.removeMainMenu()
+            '''
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(

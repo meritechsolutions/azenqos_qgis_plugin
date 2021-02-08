@@ -29,12 +29,6 @@ try:
     from filter_header import *
 except:
     pass
-from gsm_query import GsmDataQuery
-from cdma_evdo_query import CdmaEvdoQuery
-from lte_query import LteDataQuery
-from nr_query import NrDataQuery
-from signalling_query import SignalingDataQuery
-from wcdma_query import WcdmaDataQuery
 from worker import Worker
 from customize_properties import *
 import lte_query

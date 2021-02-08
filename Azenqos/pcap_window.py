@@ -9,6 +9,7 @@ import zipfile
 from os import path
 import subprocess
 import tshark_util
+import azq_utils
 
 
 def get_pcap_path_list(azm_path):
@@ -38,7 +39,7 @@ def get_pcap_df(pcap_path_list):
         else:
             env = tshark_util.prepare_env_and_libs()
             tsharkPath = os.path.join(
-                gc.CURRENT_PATH,
+                azq_utils.get_module_path(),
                 os.path.join(
                     "wireshark_" + os.name,
                     "tshark" + ("" if os.name == "posix" else ".exe"),

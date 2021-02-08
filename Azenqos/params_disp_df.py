@@ -6,6 +6,8 @@ import traceback
 import collections
 from datetime import datetime
 
+DEFAULT_LOOKBACK_DUR_MILLIS = 2000
+
 # get pandas dataframe suitable for show in 'datatable.py' through PdTableModel
 """ parameter_to_column_table_set:
         PARAMS = [

@@ -257,6 +257,7 @@ class import_db_dialog(QDialog):
                     "config_prev_azm", self.dbPathLineEdit.text()
                 )
                 self.getTimeForSlider()
+                print("getTimeForSlider() done")
                 self.layerTask = LayerTask(u"Add layers", self.databasePath)
                 QgsApplication.taskManager().addTask(self.layerTask)
                 self.longTask = CellLayerTask(

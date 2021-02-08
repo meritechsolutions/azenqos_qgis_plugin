@@ -606,7 +606,7 @@ def get_lte_radio_params_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=True,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
 
@@ -640,7 +640,7 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
         time_before,
         default_table="lte_cell_meas",
         not_null_first_col=True,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
     df.columns = ["CellGroup"] + pcell_scell_col_prefix_renamed
@@ -685,7 +685,7 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=True,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
     df.columns = ["CellGroup"] + pcell_scell_col_prefix_renamed
@@ -744,7 +744,7 @@ def get_lte_rlc_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=True,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
 
@@ -900,7 +900,7 @@ def get_lte_pucch_pdsch_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
 
@@ -962,7 +962,7 @@ def get_volte_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
 
@@ -978,7 +978,7 @@ def get_lte_data_disp_df(dbcon, time_before):
         time_before,
         default_table="lte_rrc_state",
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     df_list.append(df_rrc)
 
@@ -1005,7 +1005,7 @@ def get_lte_data_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
     df_t = pd.DataFrame(columns=["param", 1, 2])
@@ -1042,7 +1042,7 @@ def get_lte_data_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     df_list.append(df_pdcp)
 
@@ -1058,7 +1058,7 @@ def get_lte_data_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     df_list.append(df_tran)
 
@@ -1310,7 +1310,7 @@ def get_lte_data_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     df_list.append(df_tran)
 

@@ -838,7 +838,7 @@ class analyzer_window(QMainWindow):
 
     def retranslateUi(self):
         if not self.gc.sliderLength:
-            self.gc.sliderLength = 99
+            self.gc.sliderLength = 1
         self.gc.timeSlider.setRange(0, self.gc.sliderLength)
         
         if not self.gc.slowDownValue == 1:

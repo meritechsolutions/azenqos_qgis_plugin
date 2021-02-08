@@ -633,7 +633,7 @@ def get_wcdma_acive_monitored_df(dbcon, time_before):
         time_before,
         default_table="wcdma_cell_meas",
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
     df.columns = ["CellGroup"] + cell_col_prefix_renamed
@@ -671,7 +671,7 @@ def get_wcdma_acive_monitored_df(dbcon, time_before):
         time_before,
         default_table="wcdma_cell_meas",
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     df.columns = ["CellGroup"] + cell_col_prefix_renamed
     df_list.append(df)
@@ -707,7 +707,7 @@ def get_wcdma_acive_monitored_df(dbcon, time_before):
         time_before,
         default_table="wcdma_cell_meas",
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     df.columns = ["CellGroup"] + cell_col_prefix_renamed
     df_list.append(df)
@@ -742,7 +742,7 @@ def get_wcdma_radio_params_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
 
@@ -768,7 +768,7 @@ def get_bler_sum_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
 
@@ -802,7 +802,7 @@ def get_wcdma_bler_transport_channel_df(dbcon, time_before):
         time_before,
         default_table="wcdma_bler",
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
     df.columns = ["Channel"] + cell_col_prefix_renamed
@@ -846,7 +846,7 @@ def get_wcdma_bearers_df(dbcon, time_before):
         time_before,
         default_table="wcdma_bearers",
         not_null_first_col=False,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
     df.columns = ["Bearer"] + cell_col_prefix_renamed

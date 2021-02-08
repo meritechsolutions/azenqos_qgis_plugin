@@ -24,7 +24,7 @@ except:
 
 
 class timeSlider(QSlider):
-    def __init__(self, parent=None):
+    def __init__(self, parent, gc):
         super().__init__(parent)
         self.gc = parent.gc
 
@@ -77,8 +77,9 @@ class timeSlider(QSlider):
 class timeSliderThread(QThread):
     changeValue = pyqtSignal(float)
 
-    def __init__(self):
+    def __init__(self, gc):
         QThread.__init__(self)
+        self.gc = gc
         self.currentSliderValue = None
 
     def __del__(self):
@@ -117,6 +118,7 @@ class timeSliderThread(QThread):
                         value = self.gc.timeSlider.value() + (
                             (1 * self.gc.slowDownValue) + timeskip
                         )
+                        print("timeslider upper emit: {}".format(value))
                         self.changeValue.emit(value)
 
                     if x >= self.gc.sliderLength:
@@ -133,6 +135,7 @@ class timeSliderThread(QThread):
                         value = self.gc.timeSlider.value() + (
                             (1 * self.gc.slowDownValue) + timeskip
                         )
+                        print("timeslider lower emit: {}".format(value))
                         self.changeValue.emit(value)
 
                     if x >= self.gc.sliderLength:

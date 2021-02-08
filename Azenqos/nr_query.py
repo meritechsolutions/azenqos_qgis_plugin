@@ -83,7 +83,7 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
         time_before,
         default_table="nr_cell_meas",
         not_null_first_col=True,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
 
@@ -129,7 +129,7 @@ def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
         time_before,
         default_table="nr_cell_meas",
         not_null_first_col=True,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
     df.columns = ["CellGroup"] + pcell_scell_col_prefix_renamed
@@ -155,7 +155,7 @@ def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
         time_before,
         default_table="nr_cell_meas",
         not_null_first_col=True,
-        custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("0dcell_df.head():\n%s" % dcell_df.head())
     dcell_df.columns = ["CellGroup"] + dcell_col_renamed

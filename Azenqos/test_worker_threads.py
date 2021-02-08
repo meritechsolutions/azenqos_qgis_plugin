@@ -1,8 +1,10 @@
 import worker
 import time
+import analyzer_vars
 
 
 def test():
+    gc = analyzer_vars.analyzer_vars()
     w = worker.Worker(work_func, 1)
     gc.threadpool.start(w)
     print("gc.threadpool.activeThreadCount0:", gc.threadpool.activeThreadCount())

@@ -28,7 +28,6 @@ from PyQt5 import *
 from PyQt5.QtWidgets import *
 import sys
 import traceback
-from import_db_dialog import import_db_dialog
 # Initialize Qt resources from file resources.py
 from resources import *
 
@@ -213,10 +212,8 @@ class azenqos_qgis_plugin:
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
         if self.dlg is None:
             self.first_start = False
-            reply = ask_operation_mode()
-            print("reply: {}".format(reply))
-            online_mode = not(reply == 1)
-            self.dlg = import_db_dialog(online_mode=online_mode)
+            import main_window            
+            self.dlg = main_window.main_window(self.qgis_iface)
             
         if self.dlg is not None:
             # show the dialog

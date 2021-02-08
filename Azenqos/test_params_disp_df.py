@@ -181,7 +181,7 @@ def test():
             time_before,
             default_table="nr_cell_meas",
             not_null_first_col=True,
-            custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+            custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
         )
         print("query together ret.head(10):\n", ret.head(10))
         df = ret
@@ -196,7 +196,7 @@ def test():
             time_before,
             default_table="non_existant_table",
             not_null_first_col=True,
-            custom_lookback_dur_millis=gc.DEFAULT_LOOKBACK_DUR_MILLIS,
+            custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
         )
         df = ret
         print("query together ret.head(10):\n", ret.head(10))

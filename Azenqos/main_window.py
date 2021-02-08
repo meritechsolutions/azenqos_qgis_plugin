@@ -107,13 +107,17 @@ class main_window(QMainWindow):
     @pyqtSlot()
     def on_actionLTE_Radio_Parameters_triggered(self):
         print("action lte radio params0")
-        self.lte_param_window = SubWindowArea(self.mdi, self.gc)
-        tableWidget = TableWindow(self.lte_param_window, "LTE_Radio Parameters")
-        self.lte_param_window.setWidget(tableWidget)
-        self.mdi.addSubWindow(self.lte_param_window)
-        self.lte_param_window.show()
-        self.gc.openedWindows.append(tableWidget)
+        import lte_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "LTE_Radio Parameters", lte_query.get_lte_radio_params_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
 
+        
+    def add_subwindow_with_widget(self, swa, widget):                
+        swa.setWidget(widget)
+        self.mdi.addSubWindow(swa)
+        swa.show()
+        self.gc.openedWindows.append(widget)    
 
     def setupUi(self):
         self.ui = loadUi("main_window.ui", self)
@@ -855,8 +859,6 @@ class SubWindowArea(QMdiSubWindow):
 
     def closeEvent(self, QCloseEvent):
         self.gc.mdi.removeSubWindow(self)
-
-
 
 
 

@@ -44,6 +44,7 @@ class TableWindow(QWidget):
 
     def __init__(self, parent, windowName):
         super().__init__(parent)
+        self.gc = parent.gc
         self.title = windowName
         self.rows = 0
         self.columns = 0
@@ -71,7 +72,7 @@ class TableWindow(QWidget):
         # self.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.customContextMenuRequested.connect(self.generateMenu)
         # self.properties_window = PropertiesWindow(
-        #     self, gc.azenqosDatabase, self.dataList, self.tableHeader
+        #     self, self.gc.azenqosDatabase, self.dataList, self.tableHeader
         # )
 
     def setupUi(self):
@@ -117,7 +118,7 @@ class TableWindow(QWidget):
             self.tableView.verticalHeader().sizeHint().width()
         )"""
         if self.tableHeader and len(self.tableHeader) > 0:
-            self.filterHeader.setFilterBoxes(gc.maxColumns, self)
+            self.filterHeader.setFilterBoxes(self.gc.maxColumns, self)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
@@ -257,25 +258,27 @@ class TableWindow(QWidget):
             self.columnCount = sizelist[1]
 
     def refreshTableContents(self, create_table_model=False):
-        with sqlite3.connect(gc.databasePath) as dbcon:
+        if not self.gc.databasePath:
+            return
+        with sqlite3.connect(self.gc.databasePath) as dbcon:
             if self.title is not None:
                 # GSM
                 if self.title == "GSM_Radio Parameters":
                     self.dataList = gsm_query.get_gsm_radio_params_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "GSM_Serving + Neighbors":
                     self.dataList = gsm_query.get_gsm_serv_and_neigh__df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "GSM_Current Channel":
                     self.tableHeader = ["Element", "Value"]
                     self.dataList = gsm_query.get_gsm_current_channel_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "GSM_C/I":
                     self.dataList = gsm_query.get_coi_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 # TODO: find the way to find event counter
                 # elif self.title == "GSM_Events Counter":
@@ -284,31 +287,31 @@ class TableWindow(QWidget):
                 # WCDMA
                 if self.title == "WCDMA_Active + Monitored Sets":
                     self.dataList = wcdma_query.get_wcdma_acive_monitored_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "WCDMA_Radio Parameters":
                     self.dataList = wcdma_query.get_wcdma_radio_params_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "WCDMA_BLER Summary":
                     self.dataList = wcdma_query.get_bler_sum_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "WCDMA_Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
                 elif self.title == "WCDMA_Bearers":
                     self.dataList = wcdma_query.get_wcdma_bearers_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "WCDMA_Pilot Poluting Cells":
                     self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
                     self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getPilotPolutingCells()
                 elif self.title == "WCDMA_Active + Monitored Bar":
                     self.tableHeader = ["Cell Type", "Ec/Io", "RSCP"]
                     self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getActiveMonitoredBar()
                 elif self.title == "WCDMA_Pilot Analyzer":
                     self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
@@ -316,67 +319,67 @@ class TableWindow(QWidget):
                 # LTE
                 elif self.title == "LTE_Radio Parameters":
                     self.dataList = lte_query.get_lte_radio_params_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "LTE_Serving + Neighbors":
                     self.dataList = lte_query.get_lte_serv_and_neigh_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "LTE_PUCCH/PDSCH Parameters":
                     self.dataList = lte_query.get_lte_pucch_pdsch_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "LTE_Data":
                     self.dataList = lte_query.get_lte_data_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "LTE_LTE Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
                 elif self.title == "LTE_LTE RLC":
                     self.dataList = lte_query.get_lte_rlc_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "LTE_LTE VoLTE":
                     self.dataList = lte_query.get_volte_disp_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "LTE_LTE RRC/SIB States":
                     print("LTE_LTE RRC/SIB States gen datalist")
                     self.dataList = lte_query.get_lte_rrc_sib_states_df(
-                        dbcon, gc.currentDateTimeString
+                        dbcon, self.gc.currentDateTimeString
                     )
                 elif self.title == "5G NR_Radio Parameters":
                     self.dataList = NrDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getRadioParameters()
                 elif self.title == "5G NR_Serving + Neighbors":
                     self.dataList = NrDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getServingAndNeighbors()
 
                 # CDMA/EVDO
                 elif self.title == "CDMA/EVDO_Radio Parameters":
                     self.tableHeader = ["Element", "Value"]
                     self.dataList = CdmaEvdoQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getRadioParameters()
                 elif self.title == "CDMA/EVDO_Serving + Neighbors":
                     self.tableHeader = ["Time", "PN", "Ec/Io", "Type"]
                     self.dataList = CdmaEvdoQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getServingAndNeighbors()
                 elif self.title == "CDMA/EVDO_EVDO Parameters":
                     self.tableHeader = ["Element", "Value"]
                     self.dataList = CdmaEvdoQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getEvdoParameters()
             
                 # PCAP
                 elif self.title == "PCAP_PCAP List":
                     # self.dataList = lte_query.get_volte_disp_df(
-                    #     dbcon, gc.currentDateTimeString
+                    #     dbcon, self.gc.currentDateTimeString
                     # )
-                    self.dataList = pcap_window.get_all_pcap_content(gc.logPath)
+                    self.dataList = pcap_window.get_all_pcap_content(self.gc.logPath)
                 # Data
                 elif self.title == "Data_GSM Data Line Chart":
                     self.tableHeader = ["Element", "Value", "MS", "Color"]
@@ -417,37 +420,37 @@ class TableWindow(QWidget):
                     self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
                     self.tablename = "events"
                     self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getEvents()
                 elif self.title == "Signaling_Layer 3 Messages":
                     self.tableHeader = ["Time", "", "Eq.", "Protocol", "Name", "Detail"]
                     self.tablename = "signalling"
                     self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getLayerThreeMessages()
                 elif self.title == "Signaling_Benchmark":
                     self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
                     # self.tablename = 'signalling'
                     self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getBenchmark()
                 elif self.title == "Signaling_MM Reg States":
                     self.tableHeader = ["Element", "Value"]
                     self.tablename = "mm_state"
                     self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getMmRegStates()
                 elif self.title == "Signaling_Serving System Info":
                     self.tableHeader = ["Element", "Value"]
                     self.tablename = "serving_system"
                     self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getServingSystemInfo()
                 elif self.title == "Signaling_Debug Android/Event":
                     self.tableHeader = ["Element", "Value"]
                     # self.tablename = 'serving_system'
                     self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
+                        self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getDebugAndroidEvent()
 
                 if self.dataList is not None:
@@ -510,7 +513,7 @@ class TableWindow(QWidget):
                 self.findCurrentRow()
 
         if threading and worker:
-            gc.threadpool.start(worker)
+            self.gc.threadpool.start(worker)
         # elapse_time = time.time() - start_time
         # del worker
         # QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
@@ -582,9 +585,9 @@ class TableWindow(QWidget):
         finally:
             if timeCell is not None:
                 try:
-                    sliderValue = timeCell - gc.minTimeValue
+                    sliderValue = timeCell - self.gc.minTimeValue
                     sliderValue = round(sliderValue, 3)
-                    gc.timeSlider.setValue(sliderValue)
+                    self.gc.timeSlider.setValue(sliderValue)
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -607,22 +610,22 @@ class TableWindow(QWidget):
         indexList = []
         timeDiffList = []
 
-        if self.currentRow and gc.isSliderPlay == True:
+        if self.currentRow and self.gc.isSliderPlay == True:
             startRange = self.currentRow
 
         for row in range(0, self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
             if Utils().datetimeStringtoTimestamp(value):
-                gc.currentTimestamp = datetime.datetime.strptime(
+                self.gc.currentTimestamp = datetime.datetime.strptime(
                     self.dateString, "%Y-%m-%d %H:%M:%S.%f"
                 ).timestamp()
                 timestamp = datetime.datetime.strptime(
                     value, "%Y-%m-%d %H:%M:%S.%f"
                 ).timestamp()
-                if timestamp <= gc.currentTimestamp:
+                if timestamp <= self.gc.currentTimestamp:
                     indexList.append(row)
-                    timeDiffList.append(abs(gc.currentTimestamp - timestamp))
+                    timeDiffList.append(abs(self.gc.currentTimestamp - timestamp))
 
         if not len(timeDiffList) == 0:
             if indexList[timeDiffList.index(min(timeDiffList))] < self.tableViewCount:
@@ -634,11 +637,11 @@ class TableWindow(QWidget):
         self.currentRow = currentTimeindex
 
     def closeEvent(self, QCloseEvent):
-        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
-            gc.openedWindows.pop(index)
-        # if self.tablename and self.tablename in gc.tableList:
-        #     gc.tableList.remove(self.tablename)
+            self.gc.openedWindows.pop(index)
+        # if self.tablename and self.tablename in self.gc.tableList:
+        #     self.gc.tableList.remove(self.tablename)
         self.close()
         del self
 
@@ -745,9 +748,9 @@ class FilterMenuWidget(QWidget):
         self.close()
 
     def closeEvent(self, QCloseEvent):
-        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
-            gc.openedWindows.pop(index)
+            self.gc.openedWindows.pop(index)
         self.close()
         del self
 
@@ -797,13 +800,13 @@ class DetailWidget(QDialog):
                 self.messageName, self.side, self.protocol, self.detailText
             )
             worker.signals.result.connect(self.setDecodedDetail)
-            gc.threadpool.start(worker)
+            self.gc.threadpool.start(worker)
         # messageName is not None and side is not None and protocol is not None :
 
     def closeEvent(self, QCloseEvent):
-        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
-            gc.openedWindows.pop(index)
+            self.gc.openedWindows.pop(index)
         self.close()
         if self.polqaWavFile:
             self.polqaWavFile.stop()
@@ -876,13 +879,13 @@ class DetailWidget(QDialog):
         print("get polqa data")
         if self.messageName:
             polqaDict = polqa_query.PolqaQuery(
-                gc.azenqosDatabase, self.side, self.detailText
+                self.gc.azenqosDatabase, self.side, self.detailText
             ).getPolqa()
             if polqaDict:
                 self.textEdit.setPlainText(polqaDict["output_text"])
                 from PyQt5 import QtMultimedia
                 self.polqaWavFile = QtMultimedia.QSound(
-                    gc.logPath + "/" + polqaDict["wave_file"]
+                    self.gc.logPath + "/" + polqaDict["wave_file"]
                 )
 
 

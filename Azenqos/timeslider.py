@@ -27,7 +27,9 @@ class timeSlider(QSlider):
     def __init__(self, parent, gc):
         super().__init__(parent)
         self.gc = parent.gc
+        self.update()
 
+    def update(self):        
         # Set integer max and min on parent. These stay constant.
         # self._min_int = self.gc.minTimeValue
         super().setMinimum(0)
@@ -39,6 +41,7 @@ class timeSlider(QSlider):
             self._max_value = self.gc.maxTimeValue - self.gc.minTimeValue
         except:
             self._max_value = 99
+
 
     @property
     def _value_range(self):
@@ -53,6 +56,7 @@ class timeSlider(QSlider):
         return value
 
     def setValue(self, value):
+        print("ts setValue:", value, "self._value_range", self._value_range, "self._max_int", self._max_int)
         resultValue = value / self._value_range * self._max_int
         resultValue = round(resultValue)
         super().setValue(resultValue)
@@ -69,6 +73,7 @@ class timeSlider(QSlider):
         self._min_value = minimum
         self._max_value = maximum
         self.setValue(old_value)  # Put slider in correct position
+        self.update()
 
     def proportion(self):
         return (self.value() - self._min_value) / self._value_range
@@ -116,6 +121,7 @@ class timeSliderThread(QThread):
                         break
                     else:
                         time.sleep(sleeptime)
+                        print("valupper timeskip", timeskip, "gc.timeSlider.value()", self.gc.timeSlider.value(), "gc.slowDownValue", self.gc.slowDownValue)
                         value = self.gc.timeSlider.value() + (
                             (1 * self.gc.slowDownValue) + timeskip
                         )
@@ -133,6 +139,7 @@ class timeSliderThread(QThread):
                         break
                     else:
                         time.sleep(sleeptime)
+                        print("vallower timeskip", timeskip, "gc.timeSlider.value()", self.gc.timeSlider.value(), "gc.slowDownValue", self.gc.slowDownValue)
                         value = self.gc.timeSlider.value() + (
                             (1 * self.gc.slowDownValue) + timeskip
                         )

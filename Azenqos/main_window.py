@@ -40,7 +40,9 @@ import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
 
-class main_window(QMainWindow):    
+class main_window(QMainWindow):
+
+    signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
 
     def __init__(self, qgis_iface):
         super(main_window, self).__init__(None)
@@ -50,8 +52,10 @@ class main_window(QMainWindow):
         self.gc = analyzer_vars.analyzer_vars()
         self.timechange_service_thread = None
         self.timechange_to_service_counter = atomic_int(0)
-        self.closed = False
-        self.signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
+        self.closed = False        
+        self.signal_ui_thread_emit_time_slider_updated.connect(
+            self.ui_thread_emit_time_slider_updated
+        )
         self.gc = analyzer_vars.analyzer_vars()
         self.dbfp = None
         self.qgis_iface = qgis_iface
@@ -92,7 +96,6 @@ class main_window(QMainWindow):
     def on_actionOpen_log_triggered(self):
         print("open log")
 
-
     @pyqtSlot()
     def on_actionOpen_workspace_triggered(self):
         print("open workspace")
@@ -101,11 +104,22 @@ class main_window(QMainWindow):
     def on_actionSave_workspace_triggered(self):
         print("save workspace")
 
+    @pyqtSlot()
+    def on_actionLTE_Radio_Parameters_triggered(self):
+        print("action lte radio params0")
+        self.lte_param_window = SubWindowArea(self.mdi, self.gc)
+        tableWidget = TableWindow(self.lte_param_window, "LTE_Radio Parameters")
+        self.lte_param_window.setWidget(tableWidget)
+        self.mdi.addSubWindow(self.lte_param_window)
+        self.lte_param_window.show()
+        self.gc.openedWindows.append(tableWidget)
+
+
     def setupUi(self):
         self.ui = loadUi("main_window.ui", self)
         self.toolbar = self.ui.toolBar        
         try:
-            self.mdi = self.ui.mdiArea
+            self.mdi = self.ui.mdi
             self.gc.mdi = self.mdi
             dirname = os.path.dirname(__file__)
             self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
@@ -184,7 +198,7 @@ class main_window(QMainWindow):
             )
             self.layerSelect.setObjectName("layerBtn")
 
-            QtCore.QMetaObject.connectSlotsByName(self)
+            #caused duplicated calls to pyqtslots funcs above so not using: QtCore.QMetaObject.connectSlotsByName(self)
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.loadBtn.clicked.connect(self.loadWorkspaceFile)
@@ -223,18 +237,16 @@ class main_window(QMainWindow):
         self.toolbar.addWidget(self.playSpeed)
 
 
-    def updateUi(self):
-        if not self.gc.sliderLength:
-            self.gc.sliderLength = 99
-        self.gc.timeSlider.setRange(0, self.gc.sliderLength)
-        
+    def updateUi(self):        
         if not self.gc.slowDownValue == 1:
             self.playSpeed.setText("{:.2f}".format(self.gc.slowDownValue))
         elif not self.gc.fastForwardValue == 1:
             self.playSpeed.setText("{:.2f}".format(self.gc.fastForwardValue))
         else:
             self.playSpeed.setText("{:.2f}".format(1))
-        self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(self.gc.minTimeValue))
+        print("updateui self.gc.currentTimestamp", self.gc.currentTimestamp)
+        if self.gc.currentTimestamp:
+            self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(self.gc.currentTimestamp))
 
         
     def setPlaySpeed(self, value):
@@ -268,6 +280,8 @@ class main_window(QMainWindow):
         print("self.gc.sliderLength {}".format(self.gc.sliderLength))
         print("self.gc.minTimeValue {}".format(self.gc.minTimeValue))
         print("self.gc.maxTimeValue {}".format(self.gc.maxTimeValue))
+        print("self.timeSliderThread.getCurrentValue()", self.timeSliderThread.getCurrentValue())
+        print("self.gc.sliderLength", self.gc.sliderLength)
         if self.timeSliderThread.getCurrentValue() < self.gc.sliderLength:
             self.gc.isSliderPlay = True
             self.playButton.setDisabled(True)
@@ -299,9 +313,16 @@ class main_window(QMainWindow):
     def setTimeValue(self, value):
         print("%s: setTimeValue %s" % (os.path.basename(__file__), value))
         self.gc.timeSlider.setValue(value)
+        print("mw self.gc.timeSlider.value()", self.gc.timeSlider.value())
         self.gc.timeSlider.update()
         if value >= self.gc.sliderLength:
             self.pauseTime()
+
+    def ui_thread_emit_time_slider_updated(self, timestamp):
+        print("ui_thread_emit_time_slider_updated")
+        sampledate = datetime.datetime.fromtimestamp(timestamp)
+        self.timeEdit.setDateTime(sampledate)
+
             
     def clickCanvas(self, point, button):
         layerData = []
@@ -403,6 +424,7 @@ class main_window(QMainWindow):
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
         # TODO move all import_db_dialog tasks here
+        self.gc.timeSlider.setRange(0, self.gc.sliderLength)
         self.updateUi()
 
     def timeChange(self):
@@ -627,48 +649,58 @@ class main_window(QMainWindow):
         """
 
     def cleanup(self):
-        self._gui_save()
-        # saving = Utils().saveState(self.gc.CURRENT_PATH)
-        if self.qgis_iface:
-            self.qgis_iface.actionPan().trigger()
-        self.pauseTime()
-        self.timeSliderThread.exit()
-        self.removeToolBarActions()
-        self.quitTask = tasks.QuitTask(u"Quiting Plugin", self)
-        QgsApplication.taskManager().addTask(self.quitTask)
-
-        # Begin removing layer (which cause db issue)
-        project = QgsProject.instance()
-        for (id_l, layer) in project.mapLayers().items():
-            if layer.type() == layer.VectorLayer:
-                layer.removeSelection()
-            to_be_deleted = project.mapLayersByName(layer.name())[0]
-            project.removeMapLayer(to_be_deleted.id())
-            layer = None
-
-        QgsProject.instance().reloadAllLayers()
-        QgsProject.instance().clear()
-        # self.gc.tableList = []
-        self.gc.activeLayers = []
-
-        if len(self.gc.openedWindows) > 0:
-            for window in self.gc.openedWindows:
-                window.close()
-            self.gc.openedWindows = []
-        QgsProject.removeAllMapLayers(QgsProject.instance())
-        # End removing layer
-
-        self.removeAzenqosGroup()
-        for mdiwindow in self.mdi.subWindowList():
-            mdiwindow.close()
-        self.mdi.close()
-        QgsMessageLog.logMessage("Close App")
-        tasks.close_db(self.gc)
         try:
-            shutil.rmtree(self.gc.logPath)
+            self._gui_save()
+            # saving = Utils().saveState(self.gc.CURRENT_PATH)
+            if self.qgis_iface:
+                self.qgis_iface.actionPan().trigger()
+            self.pauseTime()
+            self.timeSliderThread.exit()
+            #self.removeToolBarActions()
+            self.quitTask = tasks.QuitTask(u"Quiting Plugin", self)
+            QgsApplication.taskManager().addTask(self.quitTask)
+
+            # Begin removing layer (which cause db issue)
+            if self.qgis_iface:
+                project = QgsProject.instance()
+                for (id_l, layer) in project.mapLayers().items():
+                    if layer.type() == layer.VectorLayer:
+                        layer.removeSelection()
+                    to_be_deleted = project.mapLayersByName(layer.name())[0]
+                    project.removeMapLayer(to_be_deleted.id())
+                    layer = None
+
+                QgsProject.instance().reloadAllLayers()
+                QgsProject.instance().clear()
+                # self.gc.tableList = []
+                self.gc.activeLayers = []
+                QgsProject.removeAllMapLayers(QgsProject.instance())
+
+
+            if len(self.gc.openedWindows) > 0:
+                for window in self.gc.openedWindows:
+                    window.close()
+                self.gc.openedWindows = []
+
+            # End removing layer
+            self.removeAzenqosGroup()
+            for mdiwindow in self.mdi.subWindowList():
+                print("mdiwindow close ", mdiwindow)
+                mdiwindow.close()
+            self.mdi.close()
+            print("Close App")
+            tasks.close_db(self.gc)
+            try:
+                shutil.rmtree(self.gc.logPath)
+            except:
+                pass
+            self.closed = True
+            print("cleanup done")
         except:
-            pass
-        self.closed = True
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: cleanup() exception:", exstr)
+
 
 
     def removeToolBarActions(self):
@@ -814,6 +846,15 @@ class main_window(QMainWindow):
                 print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
 
+class SubWindowArea(QMdiSubWindow):
+    def __init__(self, item, gc):
+        super().__init__(item)
+        self.gc = gc
+        dirname = os.path.dirname(__file__)
+        self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
+
+    def closeEvent(self, QCloseEvent):
+        self.gc.mdi.removeSubWindow(self)
 
 
 

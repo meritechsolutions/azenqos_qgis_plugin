@@ -22,7 +22,6 @@ try:
     from tasks import *
 except:
     pass
-from timeslider import *
 from datatable import *
 from analyzer_window import *
 from version import VERSION
@@ -308,7 +307,9 @@ class import_db_dialog(QDialog):
         ).timestamp()
         self.gc.currentDateTimeString = "%s" % (
             datetime.datetime.fromtimestamp(self.gc.minTimeValue)
-        )
+        )        
+        self.gc.currentTimestamp = self.gc.minTimeValue
+        print("gettimeforslider self.gc.currentTimestamp", self.gc.currentTimestamp)
         self.setIncrementValue()
         return True
 

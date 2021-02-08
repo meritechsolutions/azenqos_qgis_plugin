@@ -46,7 +46,7 @@
      <number>1</number>
     </property>
     <item>
-     <widget class="QMdiArea" name="mdiArea"/>
+     <widget class="QMdiArea" name="mdi"/>
     </item>
    </layout>
   </widget>
@@ -73,7 +73,13 @@
     <property name="title">
      <string>Presentation</string>
     </property>
-    <addaction name="actionLTE"/>
+    <widget class="QMenu" name="menuLTE">
+     <property name="title">
+      <string>LTE</string>
+     </property>
+     <addaction name="actionLTE_Radio_Parameters"/>
+    </widget>
+    <addaction name="menuLTE"/>
     <addaction name="actionNR"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
@@ -123,14 +129,14 @@
     <string>Save workspace</string>
    </property>
   </action>
-  <action name="actionLTE">
-   <property name="text">
-    <string>LTE</string>
-   </property>
-  </action>
   <action name="actionNR">
    <property name="text">
     <string>NR</string>
+   </property>
+  </action>
+  <action name="actionLTE_Radio_Parameters">
+   <property name="text">
+    <string>LTE Radio Parameters</string>
    </property>
   </action>
  </widget>

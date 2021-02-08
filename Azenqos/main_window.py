@@ -134,9 +134,17 @@ class main_window(QMainWindow):
         print("action lte radio params0")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE_Radio Parameters", lte_query.get_lte_radio_params_disp_df)
+        widget = TableWindow(swa, "LTE Radio Parameters", lte_query.get_lte_radio_params_disp_df)
         self.add_subwindow_with_widget(swa, widget)
 
+    @pyqtSlot()
+    def on_actionLTE_Serving_Neighbors_triggered(self):
+        print("action lte serving neigh")
+        import lte_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "LTE Serving + Neighbors", lte_query.get_lte_serv_and_neigh_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+        
     ############# WCDMA menu slots
     ############# GSM menu slots
         

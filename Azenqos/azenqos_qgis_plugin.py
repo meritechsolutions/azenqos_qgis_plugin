@@ -48,7 +48,7 @@ class azenqos_qgis_plugin:
         """
         
         from PyQt5.QtCore import QT_VERSION_STR    
-        print("qt_version: {}".format(QT_VERSION_STR))
+        print("azenqos_qgis_plugin start - detected qt_version: {}".format(QT_VERSION_STR))
 
         # Save reference to the QGIS interface
         self.qgis_iface = qgis_iface
@@ -218,14 +218,6 @@ class azenqos_qgis_plugin:
         if self.dlg is not None:
             # show the dialog
             self.dlg.show()
-            # Run the dialog event loop
-            result = self.dlg.exec_()
-            # See if OK was pressed
-            print("self.dlg.exec_() result: {}".format(result))
-            if result:
-                # Do something useful here - delete the line containing pass and
-                # substitute with your code.
-                pass
 
 
 def ask_operation_mode():

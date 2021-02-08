@@ -984,7 +984,7 @@ class analyzer_window(QMainWindow):
     def clickCanvas(self, point, button):
         layerData = []
         selectedTime = None
-        clearAllSelectedFeatures()
+        self.clearAllSelectedFeatures()
 
         for layerName in self.gc.activeLayers:
             layer = None

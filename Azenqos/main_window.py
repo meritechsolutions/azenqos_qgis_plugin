@@ -35,6 +35,7 @@ from timeslider import *
 from datatable import *
 from atomic_int import atomic_int
 import import_db_dialog
+import params_disp_df
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
@@ -155,7 +156,7 @@ class main_window(QMainWindow):
         self.gc.openedWindows.append(widget)    
 
     def setupUi(self):
-        self.ui = loadUi("main_window.ui", self)
+        self.ui = loadUi(azq_utils.get_local_fp("main_window.ui"), self)
         self.toolbar = self.ui.toolBar        
         try:
             self.mdi = self.ui.mdi
@@ -276,6 +277,90 @@ class main_window(QMainWindow):
         self.toolbar.addWidget(self.playSpeed)
 
 
+    def renamingLayers(self, layers):
+
+        # Configure layers data source + rename layers
+        # uri = QgsDataSourceUri()
+        # uri.setDatabase(self.databaseUi.databasePath)
+        root = QgsProject.instance().layerTreeRoot()
+        treeGroups = root.findGroups()
+        geom_column = "geom"
+        for layer in layers:
+            print("renamingLayers: ", layer.name())
+            name = layer.name().split(" ")
+            if name[0] == "azqdata":
+
+                # Handle duplicate layers
+                if " ".join(name[1:]) in self.gc.activeLayers:
+                    toBeRemoved = QgsProject.instance().mapLayersByName(
+                        " ".join(name[1:])
+                    )
+                    if len(toBeRemoved) > 0:
+                        QgsProject.instance().removeMapLayer(toBeRemoved[0])
+                        self.gc.activeLayers.remove(" ".join(name[1:]))
+
+                # Setting up layer data source
+                layer.setName(" ".join(name[1:]))
+                self.gc.activeLayers.append(" ".join(name[1:]))
+                # uri.setDataSource("", " ".join(name[1:]), geom_column)
+                # layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
+
+                # Force adding layer to root node
+                # cloneLayer = layer.clone()
+                # root.insertChildNode(0, cloneLayer)
+        pass
+
+        # self.zoomToActiveLayer()
+
+    def mergeLayerGroup(self, node, iFrom=None, iTo=None):
+        if type(node) is QgsLayerTreeGroup:
+            rootNode = QgsProject.instance().layerTreeRoot()
+            treeGroups = rootNode.findGroups()
+            layerOrder = rootNode.customLayerOrder()
+            if len(treeGroups) > 0:
+                for group in treeGroups:
+                    groupLayers = group.findLayers()
+                    for gl in groupLayers:
+                        cloneLayer = gl.clone()
+                        rootNode.insertChildNode(0, cloneLayer)
+                    group.removeAllChildren()
+            if len(self.gc.activeLayers) + 1 == len(layerOrder):
+                rootNode.removeChildrenGroupWithoutLayers()
+
+        pass
+
+    def removingTreeLayer(self, id):
+        try:
+            layer = QgsProject.instance().mapLayer(id)
+            self.gc.activeLayers.remove(layer.name())
+        except:
+            pass
+
+    def selectChanged(self):
+        if self.gc.h_list:
+            for hi in self.gc.h_list:
+                hi.hide()
+        self.gc.h_list = []
+        layer = iface.activeLayer()
+
+        # layer = QgsProject.instance().mapLayersByName(layerName)[0]
+        if not layer:
+            return False
+        if layer.type() == layer.VectorLayer:
+            for i in layer.selectedFeatures():
+                h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
+
+                # set highlight symbol properties
+                h.setColor(QColor(255, 0, 0, 255))
+                h.setWidth(2)
+                h.setFillColor(QColor(255, 255, 255, 0))
+
+                # write the object to the list
+                self.gc.h_list.append(h)
+
+        iface.mapCanvas().refresh()
+
+
     def updateUi(self):        
         if not self.gc.slowDownValue == 1:
             self.playSpeed.setText("{:.2f}".format(self.gc.slowDownValue))
@@ -366,7 +451,7 @@ class main_window(QMainWindow):
     def clickCanvas(self, point, button):
         layerData = []
         selectedTime = None
-        clearAllSelectedFeatures()
+        self.clearAllSelectedFeatures()
 
         for layerName in self.gc.activeLayers:
             layer = None
@@ -585,7 +670,7 @@ class main_window(QMainWindow):
                 # print("selectFeatureOnLayersByTime layer: %s" % layer.name())
                 end_dt = datetime.datetime.fromtimestamp(self.gc.currentTimestamp)
                 start_dt = end_dt - datetime.timedelta(
-                    seconds=(self.params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS / 1000.0)
+                    seconds=(params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS / 1000.0)
                 )
                 # 2020-10-08 15:35:55.431000
                 filt_expr = "time >= '%s' and time <= '%s'" % (start_dt, end_dt)

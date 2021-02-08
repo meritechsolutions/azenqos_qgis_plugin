@@ -105,6 +105,7 @@ class timeSliderThread(QThread):
 
         # self.gc.isSliderPlay = True
         if self.gc.isSliderPlay:
+            print("timeslider self.currentSliderValue: {}".format(self.currentSliderValue))
             if self.currentSliderValue:
                 for x in np.arange(
                     self.currentSliderValue,

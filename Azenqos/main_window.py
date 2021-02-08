@@ -61,11 +61,26 @@ class main_window(QMainWindow):
         )
         ########################
         
-        if self.qgis_iface is None:
-            print("analyzer_window: standalone mode")
-        else:
-            print("analyzer_window: qgis mode")        
         self.setupUi()
+
+        if self.qgis_iface is None:
+            print("analyzer_window: standalone mode")            
+        else:
+            print("analyzer_window: qgis mode")
+            self.canvas = qgis_iface.mapCanvas()
+            self.clickTool = QgsMapToolEmitPoint(self.canvas)
+            self.canvas.setMapTool(self.clickTool)
+            self.clickTool.canvasClicked.connect(self.clickCanvas)
+            self.canvas.selectionChanged.connect(self.selectChanged)
+            QgsProject.instance().layersAdded.connect(self.renamingLayers)
+            root = QgsProject.instance().layerTreeRoot()
+            root.addedChildren.connect(self.mergeLayerGroup)
+            QgsProject.instance().layerWillBeRemoved.connect(self.removingTreeLayer)
+
+
+        self.timechange_service_thread = Worker(self.timeChangedWorkerFunc)
+        self.gc.threadpool.start(self.timechange_service_thread)
+
         print("main_window __init__() done")
 
     @pyqtSlot()
@@ -251,6 +266,8 @@ class main_window(QMainWindow):
     def startPlaytimeThread(self):
         print("%s: startPlaytimeThread" % os.path.basename(__file__))
         print("self.gc.sliderLength {}".format(self.gc.sliderLength))
+        print("self.gc.minTimeValue {}".format(self.gc.minTimeValue))
+        print("self.gc.maxTimeValue {}".format(self.gc.maxTimeValue))
         if self.timeSliderThread.getCurrentValue() < self.gc.sliderLength:
             self.gc.isSliderPlay = True
             self.playButton.setDisabled(True)
@@ -402,6 +419,7 @@ class main_window(QMainWindow):
                 if self.closed:
                     break
                 ret = self.timechange_to_service_counter.get()
+                #print(print("timeChangedWorkerFunc : {}", ret))
                 if ret > 1:
                     self.timechange_to_service_counter.dec_and_get()
                     continue  # skip until we remain 1 then do work

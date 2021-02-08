@@ -2,9 +2,12 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import pandas as pd
 import params_disp_df
 
+L3_SQL = "SELECT time, name, symbol, protocol, detail_str FROM signalling"
+EVENTS_SQL = "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, CAST(pm.polqa_mos AS CHAR) FROM polqa_mos pm WHERE pm.polqa_mos IS NOT NULL ORDER BY time"
 
 class SignalingDataQuery:
-    def __init__(self, database, currentDateTimeString):
+    def __init__(self, gc, database, currentDateTimeString):
+        self.gc = gc
         self.timeFilter = ""
         self.azenqosDatabase = database
         if currentDateTimeString:
@@ -13,8 +16,8 @@ class SignalingDataQuery:
     def getEvents(self, pd_mode=True):
         if pd_mode:
             df = pd.read_sql(
-                "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, CAST(pm.polqa_mos AS CHAR) FROM polqa_mos pm WHERE pm.polqa_mos IS NOT NULL ORDER BY time",
-                gc.dbcon,
+                EVENTS_SQL,
+                self.gc.dbcon,
                 # parse_dates=["time"], after comment millisecond of time is 3 decimals
             )
             return df
@@ -62,8 +65,8 @@ class SignalingDataQuery:
     def getLayerThreeMessages(self, pd_mode=True):
         if pd_mode:
             df = pd.read_sql(
-                "SELECT time, name, symbol, protocol, detail_str FROM signalling",
-                gc.dbcon,
+                L3_SQL,
+                self.gc.dbcon,
                 # parse_dates=["time"], after comment millisecond of time is 3 decimals
             )
             return df
@@ -426,3 +429,19 @@ class SignalingDataQuery:
                 value = ""
                 dataList.append([columnName, value, "", ""])
             return dataList
+
+
+def get_signalling(dbcon, time_before):
+    # TODO: cache per dbcon
+    return pd.read_sql(
+        L3_SQL,
+        dbcon
+    )
+
+
+def get_events(dbcon, time_before):
+    # TODO: cache per dbcon
+    return pd.read_sql(
+        EVENTS_SQL,
+        dbcon
+    )

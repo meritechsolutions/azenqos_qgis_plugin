@@ -42,18 +42,19 @@ import pcap_window
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
 
-    def __init__(self, parent, title, refresh_data_func, tableHeader=None):
+    def __init__(self, parent, title, refresh_data_func, tableHeader=None, custom_df=None, tablename=""):
         super().__init__(parent)
         self.tableModel = None
         self.gc = parent.gc
         self.title = title
         self.refresh_data_func = refresh_data_func
+        self.custom_df = custom_df
         self.tableHeader = tableHeader
         self.rows = 0
         self.columns = 0
         self.fetchRows = 0
         self.fetchColumns = 0
-        self.tablename = ""
+        self.tablename = tablename
         self.tableHeader = None
         self.left = 10
         self.top = 10
@@ -267,8 +268,10 @@ class TableWindow(QWidget):
             return
         with sqlite3.connect(self.gc.databasePath) as dbcon:
             try:
-                self.dataList = self.refresh_data_func(dbcon, self.gc.currentDateTimeString)
-            
+                if self.custom_df is not None:
+                    self.dataList = self.custom_df
+                else:
+                    self.dataList = self.refresh_data_func(dbcon, self.gc.currentDateTimeString)            
                 if self.dataList is not None:
                     if create_table_model:
                         self.setTableModel(self.dataList)
@@ -280,7 +283,7 @@ class TableWindow(QWidget):
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: datatable title {} refreshTableContents() failed exception: {}".format(self.title, self.exstr))
+                print("WARNING: datatable title {} refreshTableContents() failed exception: {}".format(self.title, exstr))
 
 
     def setHeader(self, headers):
@@ -343,22 +346,23 @@ class TableWindow(QWidget):
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
         cellContent = str(item.data())
+        print("showdetail self.tablename {}".format(self.tablename))
         if self.tablename == "signalling":
             name = item.sibling(item.row(), 1).data()
             side = item.sibling(item.row(), 2).data()
             protocol = item.sibling(item.row(), 3).data()
             cellContent = item.sibling(item.row(), 4).data()
             self.detailWidget = DetailWidget(
-                parentWindow, cellContent, name, side, protocol
+                self.gc, parentWindow, cellContent, name, side, protocol
             )
         else:
             if self.tablename == "events":
                 time = item.sibling(item.row(), 0).data()
                 name = item.sibling(item.row(), 1).data()
                 info = item.sibling(item.row(), 2).data()
-                self.detailWidget = DetailWidget(parentWindow, info, name, time)
+                self.detailWidget = DetailWidget(self.gc, parentWindow, info, name, time)
             else:
-                self.detailWidget = DetailWidget(parentWindow, cellContent)
+                self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
 
     def updateSlider(self, item):
 
@@ -579,9 +583,10 @@ class FilterMenuWidget(QWidget):
 class DetailWidget(QDialog):
     closed = False
 
-    def __init__(self, parent, detailText, messageName=None, side=None, protocol=None):
+    def __init__(self, gc, parent, detailText, messageName=None, side=None, protocol=None):
         super().__init__(None)
         self.title = "Details"
+        self.gc = gc
         self.detailText = detailText
         self.messageName = messageName
         self.side = side
@@ -618,7 +623,7 @@ class DetailWidget(QDialog):
         ):
             print("Need to decode")
             worker = TsharkDecodeWorker(
-                self.messageName, self.side, self.protocol, self.detailText
+                self.gc, self.messageName, self.side, self.protocol, self.detailText
             )
             worker.signals.result.connect(self.setDecodedDetail)
             self.gc.threadpool.start(worker)

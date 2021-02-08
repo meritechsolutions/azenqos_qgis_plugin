@@ -17,12 +17,13 @@ import tshark_util
 class TsharkDecodeWorker(QRunnable):
     ret = None
 
-    def __init__(self, name, side, protocol, detail):
+    def __init__(self, gc, name, side, protocol, detail):
         assert name is not None
         assert side is not None
         assert protocol is not None
         assert detail is not None
         super(TsharkDecodeWorker, self).__init__()
+        self.gc = gc
         self.name = name
         self.side = side
         self.protocol = protocol
@@ -35,14 +36,14 @@ class TsharkDecodeWorker(QRunnable):
         try:
             env = tshark_util.prepare_env_and_libs()
             tsharkPath = os.path.join(
-                gc.CURRENT_PATH,
+                self.gc.CURRENT_PATH,
                 os.path.join(
                     "wireshark_" + os.name,
                     "tshark" + ("" if os.name == "posix" else ".exe"),
                 ),
             )
             text2pcapPath = os.path.join(
-                gc.CURRENT_PATH,
+                self.gc.CURRENT_PATH,
                 os.path.join(
                     "wireshark_" + os.name,
                     "text2pcap" + ("" if os.name == "posix" else ".exe"),
@@ -61,8 +62,8 @@ class TsharkDecodeWorker(QRunnable):
             print("text2pcap input content:", hexStr)
 
             tempName = uuid.uuid4().hex
-            tempHexPath = os.path.join(gc.FILE_PATH, tempName + ".txt")
-            tempPcapPath = os.path.join(gc.FILE_PATH, tempName + ".pcap")
+            tempHexPath = os.path.join(self.gc.FILE_PATH, tempName + ".txt")
+            tempPcapPath = os.path.join(self.gc.FILE_PATH, tempName + ".pcap")
             print("tempHexPath", tempHexPath)
             print("tempPcapPath", tempPcapPath)
 

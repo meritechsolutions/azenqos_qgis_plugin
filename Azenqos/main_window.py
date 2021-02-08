@@ -95,15 +95,40 @@ class main_window(QMainWindow):
     @pyqtSlot()
     def on_actionOpen_log_triggered(self):
         print("open log")
+        self.open_logs()
 
     @pyqtSlot()
     def on_actionOpen_workspace_triggered(self):
         print("open workspace")
-
+        self.loadWorkspaceFile()
+        
     @pyqtSlot()
     def on_actionSave_workspace_triggered(self):
         print("save workspace")
+        self.saveWorkspaceFile()
 
+    ############# signalling menu slots
+    @pyqtSlot()
+    def on_actionLayer_3_Messages_triggered(self):
+        print("action l3")
+        import signalling_query
+        headers = ["Time", "", "Eq.", "Protocol", "Name", "Detail"]
+        swa = SubWindowArea(self.mdi, self.gc)        
+        widget = TableWindow(swa, "Layer-3 Messages", signalling_query.get_signalling, tableHeader=headers, tablename="signalling")
+        self.add_subwindow_with_widget(swa, widget)
+        
+    @pyqtSlot()
+    def on_actionEvents_triggered(self):
+        print("action events")
+        import signalling_query
+        headers = ["Time", "", "Eq.", "Name", "Info."]
+        swa = SubWindowArea(self.mdi, self.gc)        
+        widget = TableWindow(swa, "Events", signalling_query.get_events, tableHeader=headers, tablename="events")
+        self.add_subwindow_with_widget(swa, widget)
+
+    ############# NR menu slots
+    
+    ############# LTE menu slots
     @pyqtSlot()
     def on_actionLTE_Radio_Parameters_triggered(self):
         print("action lte radio params0")
@@ -112,6 +137,8 @@ class main_window(QMainWindow):
         widget = TableWindow(swa, "LTE_Radio Parameters", lte_query.get_lte_radio_params_disp_df)
         self.add_subwindow_with_widget(swa, widget)
 
+    ############# WCDMA menu slots
+    ############# GSM menu slots
         
     def add_subwindow_with_widget(self, swa, widget):                
         swa.setWidget(widget)
@@ -427,7 +454,6 @@ class main_window(QMainWindow):
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
-        # TODO move all import_db_dialog tasks here
         self.gc.timeSlider.setRange(0, self.gc.sliderLength)
         self.updateUi()
 

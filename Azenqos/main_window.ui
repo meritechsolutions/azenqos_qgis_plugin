@@ -78,9 +78,53 @@
       <string>LTE</string>
      </property>
      <addaction name="actionLTE_Radio_Parameters"/>
+     <addaction name="actionLTE_Serving_Neighbors"/>
+     <addaction name="actionLTE_Data_Params"/>
+     <addaction name="actionLTE_PUCCH_PDSCH_Params"/>
+     <addaction name="actionLTE_RRC_SIB_States"/>
+     <addaction name="actionLTE_VoLTE"/>
+     <addaction name="actionLTE_Line_Chart"/>
     </widget>
+    <widget class="QMenu" name="menuNR">
+     <property name="title">
+      <string>NR</string>
+     </property>
+     <addaction name="action5GNR_Radio_Parameters"/>
+     <addaction name="action5GNR_Serving_Neighbors"/>
+    </widget>
+    <widget class="QMenu" name="menuSignalling">
+     <property name="title">
+      <string>Signalling</string>
+     </property>
+     <addaction name="actionLayer_3_Messages"/>
+     <addaction name="actionEvents"/>
+    </widget>
+    <widget class="QMenu" name="menuWCDMA">
+     <property name="title">
+      <string>WCDMA</string>
+     </property>
+     <addaction name="actionWCDMA_Radio_Parameters"/>
+     <addaction name="actionWCDMA_Active_Monitored_sets"/>
+     <addaction name="actionWCDMA_BLER_Summary"/>
+     <addaction name="actionWCDMA_Bearers"/>
+     <addaction name="actionWCDMA_Pilot_Polluting_Cells"/>
+     <addaction name="actionWCDMA_Line_chart"/>
+    </widget>
+    <widget class="QMenu" name="menuGSM">
+     <property name="title">
+      <string>GSM</string>
+     </property>
+     <addaction name="actionGSM_Physical_Parameters"/>
+     <addaction name="actionGSM_Serving_Neighbors"/>
+     <addaction name="actionGSM_Current_Channel"/>
+     <addaction name="actionGSM_C_I"/>
+     <addaction name="actionGSM_Line_chart"/>
+    </widget>
+    <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
-    <addaction name="actionNR"/>
+    <addaction name="menuWCDMA"/>
+    <addaction name="menuGSM"/>
+    <addaction name="menuSignalling"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -111,12 +155,12 @@
   </widget>
   <action name="actionOpen_log">
    <property name="text">
-    <string>Open log</string>
+    <string>Open log file...</string>
    </property>
   </action>
   <action name="actionOpen_workspace">
    <property name="text">
-    <string>Open workspace</string>
+    <string>Open workspace...</string>
    </property>
   </action>
   <action name="actionExit">
@@ -126,17 +170,117 @@
   </action>
   <action name="actionSave_workspace">
    <property name="text">
-    <string>Save workspace</string>
-   </property>
-  </action>
-  <action name="actionNR">
-   <property name="text">
-    <string>NR</string>
+    <string>Save workspace...</string>
    </property>
   </action>
   <action name="actionLTE_Radio_Parameters">
    <property name="text">
-    <string>LTE Radio Parameters</string>
+    <string>LTE Physical Parameters</string>
+   </property>
+  </action>
+  <action name="actionLTE_Serving_Neighbors">
+   <property name="text">
+    <string>LTE Serving + Neighbors</string>
+   </property>
+  </action>
+  <action name="actionLTE_Data_Params">
+   <property name="text">
+    <string>LTE Data Params</string>
+   </property>
+  </action>
+  <action name="actionLTE_PUCCH_PDSCH_Params">
+   <property name="text">
+    <string>LTE PUCCH/PDSCH Params</string>
+   </property>
+  </action>
+  <action name="actionLTE_RRC_SIB_States">
+   <property name="text">
+    <string>LTE RRC/SIB States</string>
+   </property>
+  </action>
+  <action name="actionLTE_VoLTE">
+   <property name="text">
+    <string>LTE VoLTE</string>
+   </property>
+  </action>
+  <action name="actionLTE_Line_Chart">
+   <property name="text">
+    <string>LTE Line chart</string>
+   </property>
+  </action>
+  <action name="action5GNR_Radio_Parameters">
+   <property name="text">
+    <string>5GNR Physical Parameters</string>
+   </property>
+  </action>
+  <action name="action5GNR_Serving_Neighbors">
+   <property name="text">
+    <string>5GNR Serving + Neighbors</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Active_Monitored_sets">
+   <property name="text">
+    <string>WCDMA Active + Monitored sets</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Radio_Parameters">
+   <property name="text">
+    <string>WCDMA Physical Parameters</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_BLER_Summary">
+   <property name="text">
+    <string>WCDMA BLER Summary</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Bearers">
+   <property name="text">
+    <string>WCDMA Bearers</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Pilot_Polluting_Cells">
+   <property name="text">
+    <string>WCDMA Pilot Polluting Cells</string>
+   </property>
+  </action>
+  <action name="actionGSM_Physical_Parameters">
+   <property name="text">
+    <string>GSM Physical Parameters</string>
+   </property>
+  </action>
+  <action name="actionGSM_Serving_Neighbors">
+   <property name="text">
+    <string>GSM Serving + Neighbors</string>
+   </property>
+  </action>
+  <action name="actionGSM_Current_Channel">
+   <property name="text">
+    <string>GSM Current Channel</string>
+   </property>
+  </action>
+  <action name="actionGSM_C_I">
+   <property name="text">
+    <string>GSM C/I</string>
+   </property>
+  </action>
+  <action name="actionGSM_Line_chart">
+   <property name="text">
+    <string>GSM Line chart</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Line_chart">
+   <property name="text">
+    <string>WCDMA Line chart</string>
+   </property>
+  </action>
+  <action name="actionLayer_3_Messages">
+   <property name="text">
+    <string>Layer-3 Messages</string>
+   </property>
+  </action>
+  <action name="actionEvents">
+   <property name="text">
+    <string>Events</string>
    </property>
   </action>
  </widget>

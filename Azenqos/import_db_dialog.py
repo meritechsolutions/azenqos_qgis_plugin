@@ -229,7 +229,7 @@ class import_db_dialog(QDialog):
             return False
 
         try:
-            close_db(self.gc)
+            self.gc.close_db()
             if hasattr(self, "azenqosMainMenu") is True:
                 self.azenqosMainMenu.newImport = True
                 self.azenqosMainMenu.killMainWindow()
@@ -257,12 +257,19 @@ class import_db_dialog(QDialog):
                 )
                 self.getTimeForSlider()
                 print("getTimeForSlider() done")
-                self.layerTask = LayerTask(u"Add layers", self.databasePath)
-                QgsApplication.taskManager().addTask(self.layerTask)
-                self.longTask = CellLayerTask(
-                    "Load cell file", self.cellPathLineEdit.text().split(",")
-                )
-                QgsApplication.taskManager().addTask(self.longTask)
+
+                if self.gc.qgis_iface:
+                    print("starting layertask")
+                    self.layerTask = LayerTask(u"Add layers", self.databasePath, self.gc)
+                    QgsApplication.taskManager().addTask(self.layerTask)
+                    self.longTask = CellLayerTask(
+                        "Load cell file", self.cellPathLineEdit.text().split(","),
+                        self.gc
+                    )
+                    QgsApplication.taskManager().addTask(self.longTask)
+                else:
+                    print("NOT starting layertask because no self.gc.qgis_iface")
+                    
                 self.close()
                 """
                 self.azenqosMainMenu = AzenqosDialog(self)

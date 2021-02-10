@@ -2691,7 +2691,7 @@ class analyzer_window(QMainWindow):
             mdiwindow.close()
         self.mdi.close()
         QgsMessageLog.logMessage("Close App")
-        tasks.close_db()
+        self.gc.close_db()
         try:
             shutil.rmtree(self.gc.logPath)
         except:

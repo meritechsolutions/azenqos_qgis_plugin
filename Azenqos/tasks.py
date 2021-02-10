@@ -19,13 +19,14 @@ from globalutils import Utils
 
 
 class LayerTask(QgsTask):
-    def __init__(self, desc, databasePath):
+    def __init__(self, desc, databasePath, gc):
         QgsTask.__init__(self, desc)
         self.dbPath = databasePath
         self.start_time = None
         self.desc = desc
         self.exception = None
         self.vLayers = []
+        self.gc = gc
 
     def addMapToQgis(self):
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
@@ -70,10 +71,12 @@ class LayerTask(QgsTask):
                         if child.layer().type() == 0:
                             extent.combineExtentWith(child.layer().extent())
 
-            iface.mapCanvas().setExtent(extent)
-            iface.mapCanvas().refresh()
+            self.gc.qgis_iface.mapCanvas().setExtent(extent)
+            self.gc.qgis_iface.mapCanvas().refresh()
 
     def run(self):
+        if not self.gc.qgis_iface:
+            return
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         return True
@@ -83,7 +86,7 @@ class LayerTask(QgsTask):
             #gc.mostFeaturesLayer = None
             self.addMapToQgis()
             geom_column = "geom"
-            vlayer = iface.addVectorLayer(self.dbPath, None, "ogr")
+            vlayer = self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
 
             # Setting CRS
             my_crs = QgsCoordinateReferenceSystem(4326)
@@ -158,15 +161,3 @@ class QuitTask(QgsTask):
                 raise self.exception
 
 
-def close_db(gc):
-    if gc.dbcon:
-        gc.dbcon.close()
-        gc.dbcon = None
-    if gc.azenqosDatabase:
-        gc.azenqosDatabase.close()
-        QSqlDatabase.removeDatabase(gc.azenqosDatabase.connectionName())
-        names = QSqlDatabase.connectionNames()
-        for name in names:
-            QSqlDatabase.database(name).close()
-            QSqlDatabase.removeDatabase(name)
-        gc.azenqosDatabase = None

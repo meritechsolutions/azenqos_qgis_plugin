@@ -1,6 +1,7 @@
 import os
 from PyQt5.QtCore import *
 from PyQt5 import QtCore
+from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
 
 class analyzer_vars:
@@ -10,6 +11,7 @@ class analyzer_vars:
     schemaList = []
     activeLayers = []
     mdi = None
+    qgis_iface = None
     mostFeaturesLayer = None
     azenqosDatabase = None
     databasePath = None
@@ -42,3 +44,16 @@ class analyzer_vars:
     CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
     FILE_PATH = os.path.join(CURRENT_PATH, "file")
     logPath = None
+
+    def close_db(gc):
+        if gc.dbcon:
+            gc.dbcon.close()
+            gc.dbcon = None
+        if gc.azenqosDatabase:
+            gc.azenqosDatabase.close()
+            QSqlDatabase.removeDatabase(gc.azenqosDatabase.connectionName())
+            names = QSqlDatabase.connectionNames()
+            for name in names:
+                QSqlDatabase.database(name).close()
+                QSqlDatabase.removeDatabase(name)
+            gc.azenqosDatabase = None

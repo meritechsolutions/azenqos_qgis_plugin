@@ -51,13 +51,13 @@ class main_window(QMainWindow):
         ######## instance vars
         self.closed = False        
         self.gc = analyzer_vars.analyzer_vars()
+        self.gc.qgis_iface = qgis_iface
         self.timechange_service_thread = None
         self.timechange_to_service_counter = atomic_int(0)
         self.closed = False        
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
         )
-        self.gc = analyzer_vars.analyzer_vars()
         self.dbfp = None
         self.qgis_iface = qgis_iface
         self.timeSliderThread = timeSliderThread(self.gc)        
@@ -780,8 +780,9 @@ class main_window(QMainWindow):
             self.pauseTime()
             self.timeSliderThread.exit()
             #self.removeToolBarActions()
-            self.quitTask = tasks.QuitTask(u"Quiting Plugin", self)
-            QgsApplication.taskManager().addTask(self.quitTask)
+            if self.qgis_iface:
+                self.quitTask = tasks.QuitTask(u"Quiting Plugin", self)
+                QgsApplication.taskManager().addTask(self.quitTask)
 
             # Begin removing layer (which cause db issue)
             if self.qgis_iface:
@@ -812,7 +813,7 @@ class main_window(QMainWindow):
                 mdiwindow.close()
             self.mdi.close()
             print("Close App")
-            tasks.close_db(self.gc)
+            self.gc.close_db()
             try:
                 shutil.rmtree(self.gc.logPath)
             except:

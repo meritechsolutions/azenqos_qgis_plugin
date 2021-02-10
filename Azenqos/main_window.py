@@ -35,6 +35,7 @@ from timeslider import *
 from datatable import *
 from atomic_int import atomic_int
 import import_db_dialog
+import time
 import params_disp_df
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
@@ -132,7 +133,7 @@ class main_window(QMainWindow):
     ############# LTE menu slots
     @pyqtSlot()
     def on_actionLTE_Radio_Parameters_triggered(self):
-        print("action lte radio params0")
+        print("action lte radio params")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(swa, "LTE Radio Parameters", lte_query.get_lte_radio_params_disp_df)
@@ -145,6 +146,39 @@ class main_window(QMainWindow):
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(swa, "LTE Serving + Neighbors", lte_query.get_lte_serv_and_neigh_disp_df)
         self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionLTE_Data_Params_triggered(self):
+        print("action lte data param")
+        import lte_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "LTE Data Params", lte_query.get_lte_data_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionLTE_PUCCH_PDSCH_Params_triggered(self):
+        print("action lte pucch pdsch param")
+        import lte_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "LTE PUCCH/PDSCH Params", lte_query.get_lte_pucch_pdsch_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionLTE_RRC_SIB_States_triggered(self):
+        print("action lte rrc sib states")
+        import lte_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "LTE RRC/SIB States", lte_query.get_lte_rrc_sib_states_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionLTE_VoLTE_triggered(self):
+        print("action lte volte")
+        import lte_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "LTE VoLTE", lte_query.get_volte_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+
         
     ############# WCDMA menu slots
     ############# GSM menu slots

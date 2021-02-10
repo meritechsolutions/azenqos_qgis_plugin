@@ -126,7 +126,7 @@ class TableWindow(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
-        layout.setMargin(0)
+        # layout.setMargin(0)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.tableView)
 

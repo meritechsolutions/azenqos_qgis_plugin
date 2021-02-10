@@ -21,7 +21,10 @@ sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 import pyqtgraph as pg
 import numpy as np
 import analyzer_vars
-import tasks
+try:
+    import tasks
+except:
+    pass
 import azq_utils
 import shutil
 from cdma_evdo_query import CdmaEvdoQuery

@@ -165,7 +165,7 @@
   </action>
   <action name="actionExit">
    <property name="text">
-    <string>Exit</string>
+    <string>Close / Exit</string>
    </property>
   </action>
   <action name="actionSave_workspace">

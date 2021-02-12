@@ -13,6 +13,7 @@ import sys
 import traceback
 import os
 import sqlite3
+import threading
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -38,6 +39,7 @@ class import_db_dialog(QDialog):
     def __init__(self, gc):
         super(import_db_dialog, self).__init__()
         self.gc = gc
+        self.import_thread = None
         self.setupUi(self)
 
     def setupUi(self, DatabaseDialog):
@@ -49,22 +51,45 @@ class import_db_dialog(QDialog):
 
         vbox = QVBoxLayout()
         DatabaseDialog.setLayout(vbox)
-
         vbox.addStretch()
 
+        mode_gb = QGroupBox(
+            "Logs access mode"
+        )
+        vbox.addWidget(mode_gb)
+        vbox.addStretch()
+        
+        ########
+        layout = QGridLayout()
+        radiobutton = QRadioButton("AZENQOS Server login")
+        radiobutton.setChecked(True)
+        radiobutton.mode = "server"
+        radiobutton.toggled.connect(self.onRadioClicked)
+        layout.addWidget(radiobutton, 0, 0)
+
+        radiobutton = QRadioButton("Local .azm log file")
+        radiobutton.mode = "local"
+        radiobutton.toggled.connect(self.onRadioClicked)
+        layout.addWidget(radiobutton, 0, 1)
+        mode_gb.setLayout(layout)
+        #####################
+
+        #######################
         azm_gb = QGroupBox(
             "Log file (.azm from Server > Download > Processed AZM file)"
         )
         vbox.addWidget(azm_gb)
         vbox.addStretch()
+        azm_gb.setEnabled(False)
+        self.azm_gb = azm_gb
 
         theme_gb = QGroupBox(
-            "Theme file (.xml from Server > Manage phone > Manage theme)"
+            "Theme file (.xml from Server > Manage theme) - params/colors to create QGIS layers"
         )
         vbox.addWidget(theme_gb)
         vbox.addStretch()
 
-        cell_gb = QGroupBox("Cell file")
+        cell_gb = QGroupBox("Cell files - select one for each RAT (2G,3G,4G,5G) to appear as QGIS layers")
         vbox.addWidget(cell_gb)
         vbox.addStretch()
 
@@ -123,17 +148,25 @@ class import_db_dialog(QDialog):
         self.browseButtonCell.clicked.connect(self.choose_cell)
 
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
-            self.checkDatabase
+            self.check_and_start_import
         )
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Cancel).clicked.connect(
             self.reject
         )
         #################################
 
+
+    def onRadioClicked(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            print("log access mode is %s" % (radioButton.mode))
+            self.azm_gb.setEnabled(radioButton.mode == "local")
+
+
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
         DatabaseDialog.setWindowTitle(
-            _translate("DatabaseDialog", "Azenqos Replay QGIS Plugin v.%.03f" % VERSION)
+            _translate("DatabaseDialog", "Choose log file to replay...")
         )
         self.browseButton.setText(_translate("DatabaseDialog", "Choose Log..."))
         self.browseButtonTheme.setText(_translate("DatabaseDialog", "Choose Theme..."))
@@ -189,7 +222,8 @@ class import_db_dialog(QDialog):
             ",".join(fileNames)
         ) if fileNames else self.cellPathLineEdit.setText("")
 
-    def checkDatabase(self):
+        
+    def check_and_start_import(self):
         if not self.dbPathLineEdit.text():
             QtWidgets.QMessageBox.critical(
                 None,
@@ -230,54 +264,32 @@ class import_db_dialog(QDialog):
 
         try:
             self.gc.close_db()
+            """
             if hasattr(self, "azenqosMainMenu") is True:
                 self.azenqosMainMenu.newImport = True
                 self.azenqosMainMenu.killMainWindow()
                 self.clearCurrentProject()
-
-            self.databasePath = Utils(self.gc).unzipToFile(
-                self.gc.CURRENT_PATH, self.dbPathLineEdit.text()
-            )
-            dbcon = (
-                self.addDatabase()
-            )  # this will create views/tables per param as per specified theme so must check theme before here
-            if not dbcon or not self.gc.azenqosDatabase.open():
+            """
+            if self.import_thread is None or (self.import_thread.is_alive() == False):                
+                self.import_thread = threading.Thread(target=self.import_selection, args=())
+                self.import_thread.start()
+            else:
+                print("already importing - please wait...")
                 QtWidgets.QMessageBox.critical(
                     None,
-                    "Invalid file",
-                    "Failed to open azqdata.db file inside the unzipped supplied azm file",
-                    QtWidgets.QMessageBox.Cancel,
+                    "Please wait...",
+                    "Log import is still loading...",
+                    QtWidgets.QMessageBox.Ok,
                 )
-                return False
-            else:
-                import azq_utils
 
-                azq_utils.write_local_file(
-                    "config_prev_azm", self.dbPathLineEdit.text()
-                )
-                self.getTimeForSlider()
-                print("getTimeForSlider() done")
-
-                if self.gc.qgis_iface:
-                    print("starting layertask")
-                    self.layerTask = LayerTask(u"Add layers", self.databasePath, self.gc)
-                    QgsApplication.taskManager().addTask(self.layerTask)
-                    self.longTask = CellLayerTask(
-                        "Load cell file", self.cellPathLineEdit.text().split(","),
-                        self.gc
-                    )
-                    QgsApplication.taskManager().addTask(self.longTask)
-                else:
-                    print("NOT starting layertask because no self.gc.qgis_iface")
-                    
-                self.close()
-                """
-                self.azenqosMainMenu = AzenqosDialog(self)
-                self.azenqosMainMenu.show()
-                self.azenqosMainMenu.raise_()
-                self.azenqosMainMenu.activateWindow()
-                """
-                return True
+                
+            """
+            self.azenqosMainMenu = AzenqosDialog(self)
+            self.azenqosMainMenu.show()
+            self.azenqosMainMenu.raise_()
+            self.azenqosMainMenu.activateWindow()
+            """
+            return True
         except Exception as ex:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -292,6 +304,48 @@ class import_db_dialog(QDialog):
 
         raise Exception("invalid state")
 
+    
+    def import_selection(self):
+
+        Utils(self.gc).cleanup_died_processes_tmp_folders()
+        
+        self.databasePath = Utils(self.gc).unzipToFile(
+            self.gc.CURRENT_PATH, self.dbPathLineEdit.text()
+        )            
+        dbcon = self.addDatabase() # this will create views/tables per param as per specified theme so must check theme before here        
+        if not dbcon or not self.gc.azenqosDatabase.open():
+            QtWidgets.QMessageBox.critical(
+                None,
+                "Invalid file",
+                "Failed to open azqdata.db file inside the unzipped supplied azm file",
+                QtWidgets.QMessageBox.Cancel,
+            )
+            return False
+        else:
+            import azq_utils
+
+            azq_utils.write_local_file(
+                "config_prev_azm", self.dbPathLineEdit.text()
+            )
+            self.getTimeForSlider()
+            print("getTimeForSlider() done")
+
+            if self.gc.qgis_iface:
+                print("starting layertask")
+                self.layerTask = LayerTask(u"Add layers", self.databasePath, self.gc)
+                QgsApplication.taskManager().addTask(self.layerTask)
+                self.longTask = CellLayerTask(
+                    "Load cell file", self.cellPathLineEdit.text().split(","),
+                    self.gc
+                )
+                QgsApplication.taskManager().addTask(self.longTask)
+            else:
+                print("NOT starting layertask because no self.gc.qgis_iface")
+
+            self.close()
+
+
+    
     def getTimeForSlider(self):
         dataList = []
         self.gc.azenqosDatabase.open()

@@ -20,6 +20,8 @@ import csv
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 import pyqtgraph as pg
 import numpy as np
+import time
+
 import analyzer_vars
 try:
     import tasks
@@ -35,8 +37,8 @@ from timeslider import *
 from datatable import *
 from atomic_int import atomic_int
 import import_db_dialog
-import time
 import params_disp_df
+from version import VERSION
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
@@ -49,13 +51,14 @@ class main_window(QMainWindow):
     def __init__(self, qgis_iface):
         super(main_window, self).__init__(None)
 
+        azq_utils.cleanup_died_processes_tmp_folders()
+
         ######## instance vars
         self.closed = False        
         self.gc = analyzer_vars.analyzer_vars()
         self.gc.qgis_iface = qgis_iface
         self.timechange_service_thread = None
         self.timechange_to_service_counter = atomic_int(0)
-        self.closed = False        
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
         )
@@ -191,7 +194,8 @@ class main_window(QMainWindow):
 
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_local_fp("main_window.ui"), self)
-        self.toolbar = self.ui.toolBar        
+        self.toolbar = self.ui.toolBar
+        self.ui.statusbar.showMessage("Please open a log to start...")
         try:
             self.mdi = self.ui.mdi
             self.gc.mdi = self.mdi
@@ -200,6 +204,9 @@ class main_window(QMainWindow):
             
             # Time Slider
             self.gc.timeSlider = timeSlider(self, self.gc)
+            self.gc.timeSlider.setToolTip(
+                "<b>Time Bar</b><br> <i>Drag</i> to jump replay to desired time."
+            )
             self.gc.timeSlider.setMinimumWidth(100)
             self.gc.timeSlider.setMaximumWidth(360)
             sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -248,21 +255,32 @@ class main_window(QMainWindow):
                 QIcon(QPixmap(os.path.join(dirname, "res", "import.png")))
             )
             self.importDatabaseBtn.setObjectName("importDatabaseBtn")
-
+            self.importDatabaseBtn.setToolTip(
+                "<b>Open logs</b><br>Open test logs to analyze/replay its data."
+            )
             # Load Button
             self.loadBtn = QToolButton()
             self.loadBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "folder.png"))))
             self.loadBtn.setObjectName("loadBtn")
+            self.loadBtn.setToolTip(
+                "<b>Load workspace</b><br>Change the workspace windows from a saved setting"
+            )
 
             # Save Button
             self.saveBtn = QToolButton()
             self.saveBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "save.png"))))
             self.saveBtn.setObjectName("saveBtn")
+            self.saveBtn.setToolTip(
+                "<b>Save workspace</b><br>Save current workspace windows to a workspace setting file."
+            )
 
             # Map tool Button
             resourcePath = os.path.join(dirname, "res", "crosshair.png")
             self.maptool = QToolButton()
             self.maptool.setIcon(QIcon(QPixmap(resourcePath)))
+            self.maptool.setToolTip(
+                "<b>QGIS map select tool</b><br>Click on a QGIS map layer to do time-sync with all open analyzer windows."
+            )
             self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
             # Layer Select Button
@@ -284,7 +302,7 @@ class main_window(QMainWindow):
 
             self._gui_restore()
             
-            self.setWindowTitle("AZENQOS Log Replay & Analyzer tool")
+            self.setWindowTitle("AZENQOS Log Replay & Analyzer tool      v.%.03f" % VERSION)
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -424,8 +442,14 @@ class main_window(QMainWindow):
         self.horizontalLayout.setGeometry(QtCore.QRect(290, 70, 90, 48))
         self.playButton = QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+        self.playButton.setToolTip(
+            "<b>Play</b><br><i>Start</i> or <i>Resume</i> log replay."
+        )
         self.pauseButton = QToolButton()
         self.pauseButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
+        self.pauseButton.setToolTip(
+            "<b>Pause</b><br> <i>Pause</i> log replay"
+        )
         layout = QHBoxLayout(self.horizontalLayout)
         layout.addStretch(1)
         layout.addWidget(self.playButton)
@@ -577,11 +601,24 @@ class main_window(QMainWindow):
                 self.classifySelectedItems(getParentNode, getChildNode)
 
     def open_logs(self):
+        if self.gc.databasePath:
+            msgBox = QMessageBox()
+            msgBox.setWindowTitle('Log already open')
+            msgBox.setText('To open a new log, please close/exit first...')
+            msgBox.addButton(QPushButton('OK'), QMessageBox.YesRole)
+            reply = msgBox.exec_()
+            return
+        
         dlg = import_db_dialog.import_db_dialog(self.gc)
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
-        self.gc.timeSlider.setRange(0, self.gc.sliderLength)
+        if self.gc.sliderLength:
+            self.gc.timeSlider.setRange(0, self.gc.sliderLength)
+        if self.gc.databasePath:
+            self.ui.statusbar.showMessage("Opened log db: {}".format(self.gc.databasePath))
+        else:
+            self.ui.statusbar.showMessage("Log not opened...")
         self.updateUi()
 
     def timeChange(self):
@@ -846,12 +883,15 @@ class main_window(QMainWindow):
                 print("mdiwindow close ", mdiwindow)
                 mdiwindow.close()
             self.mdi.close()
-            print("Close App")
-            self.gc.close_db()
+            print("Close App")            
             try:
-                shutil.rmtree(self.gc.logPath)
+                self.gc.close_db()
+                if self.gc.logPath:
+                    shutil.rmtree(self.gc.logPath)
             except:
-                pass
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: cleanup_tmp_dir() exception: %s" % exstr)
             self.closed = True
             print("cleanup done")
         except:

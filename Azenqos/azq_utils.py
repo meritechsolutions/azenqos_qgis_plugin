@@ -3,6 +3,7 @@ import sys
 import traceback
 import os
 import dprint
+import shutil
 
 
 def debug(s):
@@ -1353,3 +1354,37 @@ def get_default_color_for_index(i):
         return "#" + color_list[i]
     else:
         return "#%02x%02x%02x" % (r(), r(), r())
+
+
+
+def tmp_gen_path():
+    import globalutils
+    return os.path.join(get_module_path(), globalutils.TMP_FOLDER_NAME)
+
+def get_current_tmp_gen_dp():
+    return os.path.join(tmp_gen_path(), str(os.getpid()))
+
+def cleanup_died_processes_tmp_folders():
+    import psutil
+    print("cleanup_died_processes_tmp_folders() START")    
+    tgp = tmp_gen_path()
+    dirlist = os.listdir(tgp)
+    print("dirlist:", dirlist)
+    dirlist_no_pid = []
+    for dpid in dirlist:
+        if psutil.pid_exists(int(dpid)):
+            continue
+        else:
+            dirlist_no_pid.append(dpid)
+    dp_list = [os.path.join(tgp, x) for x in dirlist_no_pid]
+    dp_list_dirs = [x for x in dp_list if os.path.isdir(x)]
+    print("dp_list_dirs:", dp_list)
+    for dp in dp_list_dirs:
+        try:
+            shutil.rmtree(dp)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: cleanup_died_processes_tmp_folders rmtree - exception: {}".format(exstr))
+    print("cleanup_died_processes_tmp_folders() DONE")    
+    

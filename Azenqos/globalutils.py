@@ -6,6 +6,8 @@ import shutil
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
+TMP_FOLDER_NAME = "tmp_gen"
+
 db = None
 elementData = []
 
@@ -108,37 +110,27 @@ class Utils:
     def __init__(self, gc):
         self.gc = gc
 
+    def tmp_gen_path():
+        return os.path.join(self.gc.CURRENT_PATH, TMP_FOLDER_NAME)
+
     def unzipToFile(self, currentPath, filePath):
-        self.gc.logPath = currentPath + "/file/" + str(os.getpid())
-        try:
-            if not os.path.exists(currentPath + "/file"):
-                os.mkdir(currentPath + "/file")
-            if not os.path.exists(self.gc.logPath):
-                os.mkdir(self.gc.logPath)
-            else:
-                shutil.rmtree(self.gc.logPath)
-                os.mkdir(self.gc.logPath)
-            if len(os.listdir(self.gc.logPath)) == 0:
-                with ZipFile(filePath, "r") as zip_obj:
-                    filesContain = zip_obj.namelist()
-                    for fileName in filesContain:
-                        zip_obj.extract(fileName, self.gc.logPath)
-                db_file_path = self.gc.logPath + "/azqdata.db"
-                return db_file_path
-        except Exception as e:
-            print(e)
+        self.gc.logPath = os.path.join(self.tmp_gen_path(), str(os.getpid()))
+        if not os.path.exists(self.gc.logPath):
+            os.makedirs(self.gc.logPath)
+        else:
+            shutil.rmtree(self.gc.logPath)
+            os.makedirs(self.gc.logPath)
+            
+        if len(os.listdir(self.gc.logPath)) == 0:
+            with ZipFile(filePath, "r") as zip_obj:
+                filesContain = zip_obj.namelist()
+                for fileName in filesContain:
+                    zip_obj.extract(fileName, self.gc.logPath)
+            db_file_path = self.gc.logPath + "/azqdata.db"
+            return db_file_path
+        else:
+            raise Exception("target tmp folder not empty: {}".format(self.gc.logPath))        
 
-    def cleanupFile(self, currentPath):
-        # self.gc.logPath = currentPath + "/" + os.path.basename(filePath)
-        file_list = os.listdir(self.gc.logPath)
-        try:
-            if len(file_list) > 0:
-                for f in file_list:
-                    os.remove(self.gc.logPath + "/" + f)
-        except:
-            return False
-
-        return True
 
     def openConnection(self, db: QSqlDatabase):
         print("%s: openConnection" % os.path.basename(__file__))

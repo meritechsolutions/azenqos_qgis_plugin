@@ -1,3 +1,5 @@
 pyqtgraph
 pandas
 matplotlib
+setuptools
+psutil

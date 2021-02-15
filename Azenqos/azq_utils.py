@@ -4,6 +4,8 @@ import traceback
 import os
 import dprint
 import shutil
+import hashlib
+import requests
 
 
 def debug(s):
@@ -1387,4 +1389,32 @@ def cleanup_died_processes_tmp_folders():
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: cleanup_died_processes_tmp_folders rmtree - exception: {}".format(exstr))
     print("cleanup_died_processes_tmp_folders() DONE")    
-    
+
+
+def calc_sha(src):
+    if src is None:
+        return None
+    if isinstance(src, str):
+        src = src.encode('ascii')
+    hasho = hashlib.sha1()
+    hasho.update(src)            
+    return hasho.hexdigest()
+
+
+def login_get_token(user, passwd, host, passwd_sha=None):
+    auth_token = calc_sha(user) + (calc_sha(passwd) if passwd_sha is None else passwd_sha)
+    #print("send auth_token: %s" % auth_token)    
+    resp = requests.get(
+        "https://{}/api/login".format(host),
+        headers={
+            "Authorization": "Bearer {}".format(auth_token),
+        }
+    )
+    if resp.status_code == 200:
+        if resp.text:
+            return resp.text
+        else:
+            raise Exception("Got empty response")
+    else:
+        from http.client import responses
+        raise Exception("Got response status: %s" % responses[resp.status_code])

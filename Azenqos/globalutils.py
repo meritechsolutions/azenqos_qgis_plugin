@@ -110,7 +110,7 @@ class Utils:
     def __init__(self, gc):
         self.gc = gc
 
-    def tmp_gen_path():
+    def tmp_gen_path(self):
         return os.path.join(self.gc.CURRENT_PATH, TMP_FOLDER_NAME)
 
     def unzipToFile(self, currentPath, filePath):

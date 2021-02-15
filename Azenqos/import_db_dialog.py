@@ -37,18 +37,24 @@ except:
 
 
 class import_db_dialog(QDialog):
+
+    import_done_signal = pyqtSignal(str)
+    
     def __init__(self, gc):
         super(import_db_dialog, self).__init__()
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
         self.import_thread = None
+        self.import_done_signal.connect(
+            self.ui_handler_import_done
+        )
         self.setupUi(self)
+
 
     def setupUi(self, DatabaseDialog):
         dirname = os.path.dirname(__file__)
         DatabaseDialog.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         DatabaseDialog.setObjectName("DatabaseDialog")
-        DatabaseDialog.setWindowModality(QtCore.Qt.ApplicationModal)
         DatabaseDialog.resize(640, 300)
 
         vbox = QVBoxLayout()
@@ -64,7 +70,7 @@ class import_db_dialog(QDialog):
         ########
         layout = QGridLayout()
         radiobutton = QRadioButton("AZENQOS Server login")
-        self.radioButton = radiobutton
+        self.radioButtonServer = radiobutton
         radiobutton.setChecked(True)
         radiobutton.mode = "server"
         radiobutton.toggled.connect(self.onRadioClicked)
@@ -227,23 +233,24 @@ class import_db_dialog(QDialog):
 
         
     def check_and_start_import(self):
-        if not self.dbPathLineEdit.text():
-            QtWidgets.QMessageBox.critical(
-                None,
-                "No log chosen",
-                "Please choose a log to open...",
-                QtWidgets.QMessageBox.Cancel,
-            )
-            return False
+        if self.radioButtonServer.isChecked() == False:
+            if not self.dbPathLineEdit.text():
+                QtWidgets.QMessageBox.critical(
+                    None,
+                    "No log chosen",
+                    "Please choose a log to open...",
+                    QtWidgets.QMessageBox.Cancel,
+                )
+                return False
 
-        if not os.path.isfile(self.dbPathLineEdit.text()):
-            QtWidgets.QMessageBox.critical(
-                None,
-                "File not found",
-                "Failed to find specified azm file...",
-                QtWidgets.QMessageBox.Cancel,
-            )
-            return False
+            if not os.path.isfile(self.dbPathLineEdit.text()):
+                QtWidgets.QMessageBox.critical(
+                    None,
+                    "File not found",
+                    "Failed to find specified azm file...",
+                    QtWidgets.QMessageBox.Cancel,
+                )
+                return False
 
         if not self.themePathLineEdit.text():
             QtWidgets.QMessageBox.critical(
@@ -273,7 +280,27 @@ class import_db_dialog(QDialog):
                 self.azenqosMainMenu.killMainWindow()
                 self.clearCurrentProject()
             """
-            if self.import_thread is None or (self.import_thread.is_alive() == False):                
+
+            print("self.radioButtonServer.isChecked() %s", self.radioButtonServer.isChecked())
+            zip_fp = self.dbPathLineEdit.text()
+            if self.radioButtonServer.isChecked():
+                while True:
+                    dlg = login_dialog.login_dialog(self, self.gc)
+                    dlg.show()
+                    dlg.raise_()
+                    ret = dlg.exec()
+                    if ret == 0:  # dismissed
+                        return
+                    # ok we have a successful login
+                    ret_dict = dlg.ret_dict
+                    print("ret:", ret)
+                    print("ret_dict: {}".format(ret_dict))
+                    zip_fp = ret_dict["zip_fp"]
+                    break
+            
+            if self.import_thread is None or (self.import_thread.is_alive() == False):
+                self.zip_fp = zip_fp
+                self.buttonBox.setEnabled(False)
                 self.import_thread = threading.Thread(target=self.import_selection, args=())
                 self.import_thread.start()
             else:
@@ -284,8 +311,6 @@ class import_db_dialog(QDialog):
                     "Log import is still loading...",
                     QtWidgets.QMessageBox.Ok,
                 )
-
-                
             """
             self.azenqosMainMenu = AzenqosDialog(self)
             self.azenqosMainMenu.show()
@@ -307,36 +332,20 @@ class import_db_dialog(QDialog):
 
         raise Exception("invalid state")
 
-    
-    def import_selection(self):
 
-        if self.radioButton.mode == "server":
-            while True:
-                dlg = login_dialog.login_dialog(self, self.gc)
-                dlg.show()
-                dlg.raise_()
-                ret = dlg.exec()
-                if ret == 0:
-                    return
-                ret_dict = dlg.get_result_dict()
-                print("ret:", ret)
-                print("ret_dict: {}".format(ret_dict))
-
-        Utils(self.gc).cleanup_died_processes_tmp_folders()
-        
-        self.databasePath = Utils(self.gc).unzipToFile(
-            self.gc.CURRENT_PATH, self.dbPathLineEdit.text()
-        )            
-        dbcon = self.addDatabase() # this will create views/tables per param as per specified theme so must check theme before here        
-        if not dbcon or not self.gc.azenqosDatabase.open():
+    def ui_handler_import_done(self, error):
+        if error:
+            print("ui_handler_import_done() error: %s" % error)        
             QtWidgets.QMessageBox.critical(
                 None,
-                "Invalid file",
-                "Failed to open azqdata.db file inside the unzipped supplied azm file",
+                "Failed",
+                error,
                 QtWidgets.QMessageBox.Cancel,
             )
-            return False
+            self.buttonBox.setEnabled(True)
+            return False        
         else:
+            print("ui_handler_import_done() success")
             import azq_utils
 
             azq_utils.write_local_file(
@@ -359,6 +368,24 @@ class import_db_dialog(QDialog):
 
             self.close()
 
+    
+    def import_selection(self):
+        zip_fp = self.zip_fp
+        try:
+            azq_utils.cleanup_died_processes_tmp_folders()
+            self.databasePath = Utils(self.gc).unzipToFile(
+                self.gc.CURRENT_PATH, zip_fp
+            )            
+            dbcon = self.addDatabase() # this will create views/tables per param as per specified theme so must check theme before here        
+            if not dbcon:
+                raise Exception("Failed to open azqdata.db file inside the unzipped supplied azm file")
+            else:
+                self.import_done_signal.emit("")                
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: import_selection() failed exception:", exstr)
+            self.import_done_signal.emit(exstr)
 
     
     def getTimeForSlider(self):

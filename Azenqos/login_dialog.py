@@ -65,7 +65,7 @@ class login_dialog(QDialog):
         if self.validate():
             self.ui.buttonBox.setEnabled(False)
             if self.login_thread is None or (self.login_thread.is_alive() == False):
-                self.login_thread = threading.Thread(target=self.login, args=())
+                self.login_thread = threading.Thread(target=self.login_and_dl_db_zip, args=())
                 self.login_thread.start()
             else:
                 QtWidgets.QMessageBox.critical(
@@ -133,9 +133,12 @@ class login_dialog(QDialog):
         return True
 
     
-    def login(self):
+    def login_and_dl_db_zip(self):
         try:
             self.server_token = login(self.ret_dict)
+
+            # TODO: call azq_json_api prepare db zip for the selection of log_hash_list, then dl zip to tmp
+            
             self.login_done_signal.emit("")
         except:
             type_, value_, traceback_ = sys.exc_info()

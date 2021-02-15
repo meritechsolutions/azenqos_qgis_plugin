@@ -29,6 +29,7 @@ from version import VERSION
 import db_preprocess
 import azq_utils
 import azq_theme_manager
+import login_dialog
 try:
     from cell_layer_task import *
 except:
@@ -38,6 +39,7 @@ except:
 class import_db_dialog(QDialog):
     def __init__(self, gc):
         super(import_db_dialog, self).__init__()
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
         self.import_thread = None
         self.setupUi(self)
@@ -62,6 +64,7 @@ class import_db_dialog(QDialog):
         ########
         layout = QGridLayout()
         radiobutton = QRadioButton("AZENQOS Server login")
+        self.radioButton = radiobutton
         radiobutton.setChecked(True)
         radiobutton.mode = "server"
         radiobutton.toggled.connect(self.onRadioClicked)
@@ -306,6 +309,18 @@ class import_db_dialog(QDialog):
 
     
     def import_selection(self):
+
+        if self.radioButton.mode == "server":
+            while True:
+                dlg = login_dialog.login_dialog(self, self.gc)
+                dlg.show()
+                dlg.raise_()
+                ret = dlg.exec()
+                if ret == 0:
+                    return
+                ret_dict = dlg.get_result_dict()
+                print("ret:", ret)
+                print("ret_dict: {}".format(ret_dict))
 
         Utils(self.gc).cleanup_died_processes_tmp_folders()
         

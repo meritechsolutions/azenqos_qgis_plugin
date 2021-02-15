@@ -9,9 +9,8 @@ def test():
     from import_db_dialog import import_db_dialog
     gc = analyzer_vars.analyzer_vars()
     dlg = import_db_dialog(gc)    
-    dlg.show()
-    
-    result = dlg.exec_()
+    dlg.show()    
+    result = dlg.exec()
     print("result: {}".format(result))
 
 

@@ -68,7 +68,7 @@ class login_dialog(QDialog):
             QtWidgets.QMessageBox.critical(
                 None,
                 "Please wait...",
-                "Trying to log to server...",
+                "Already trying to log to server...",
                 QtWidgets.QMessageBox.Ok,
             )
         

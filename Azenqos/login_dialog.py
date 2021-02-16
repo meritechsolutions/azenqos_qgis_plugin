@@ -58,6 +58,7 @@ class login_dialog(QDialog):
         dirname = os.path.dirname(__file__)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         self.ui = loadUi(azq_utils.get_local_fp("login_dialog.ui"), self)
+        self.ui.pass_le.setEchoMode(QLineEdit.Password)
         self.ui.progressbar.setVisible(False)
         self.setWindowTitle("AZENQOS Server login")
         self.ui.server_url_le.setText(azq_utils.read_local_file("prev_login_dialog_server_url"))

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>407</width>
-    <height>270</height>
+    <height>281</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
         <x>0</x>
         <y>0</y>
         <width>382</width>
-        <height>171</height>
+        <height>180</height>
        </rect>
       </property>
       <layout class="QFormLayout" name="formLayout">
@@ -35,24 +35,15 @@
        <property name="topMargin">
         <number>20</number>
        </property>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="server_url_le"/>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="login_le"/>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="pass_le"/>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="lhl_le"/>
-       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>Server URL</string>
          </property>
         </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="server_url_le"/>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label">
@@ -61,12 +52,18 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="login_le"/>
+       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
           <string>Password</string>
          </property>
         </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="pass_le"/>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_3">
@@ -75,13 +72,16 @@
          </property>
         </widget>
        </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="lhl_le"/>
+       </item>
       </layout>
      </widget>
      <widget class="QDialogButtonBox" name="buttonBox">
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>220</y>
+        <y>230</y>
         <width>382</width>
         <height>27</height>
        </rect>
@@ -92,6 +92,49 @@
       <property name="standardButtons">
        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
       </property>
+     </widget>
+     <widget class="QWidget" name="verticalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>170</y>
+        <width>381</width>
+        <height>64</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="bottomMargin">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QProgressBar" name="progressbar">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_status">
+         <property name="font">
+          <font>
+           <italic>true</italic>
+          </font>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="text">
+          <string>Press OK to start login to server...</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </widget>
    </item>

@@ -283,20 +283,21 @@ class import_db_dialog(QDialog):
 
             print("self.radioButtonServer.isChecked() %s", self.radioButtonServer.isChecked())
             zip_fp = self.dbPathLineEdit.text()
+            self.gc.login_ret_dict = None
             if self.radioButtonServer.isChecked():
-                while True:
-                    dlg = login_dialog.login_dialog(self, self.gc)
-                    dlg.show()
-                    dlg.raise_()
-                    ret = dlg.exec()
-                    if ret == 0:  # dismissed
-                        return
-                    # ok we have a successful login
-                    ret_dict = dlg.ret_dict
-                    print("ret:", ret)
-                    print("ret_dict: {}".format(ret_dict))
-                    zip_fp = ret_dict["zip_fp"]
-                    break
+                dlg = login_dialog.login_dialog(self, self.gc)
+                dlg.show()
+                dlg.raise_()
+                ret = dlg.exec()
+                if ret == 0:  # dismissed
+                    return
+                # ok we have a successful login
+                ret_dict = dlg.ret_dict
+                self.gc.login_ret_dict = ret_dict
+                print("ret:", ret)
+                print("ret_dict: {}".format(ret_dict))
+                zip_fp = ret_dict["zip_fp"]
+                
             
             if self.import_thread is None or (self.import_thread.is_alive() == False):
                 self.zip_fp = zip_fp

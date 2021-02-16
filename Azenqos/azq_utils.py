@@ -1408,7 +1408,8 @@ def login_get_token(user, passwd, host, passwd_sha=None):
         "https://{}/api/login".format(host),
         headers={
             "Authorization": "Bearer {}".format(auth_token),
-        }
+        },
+        verify=False,
     )
     if resp.status_code == 200:
         if resp.text:

@@ -45,6 +45,8 @@ class analyzer_vars:
     FILE_PATH = os.path.join(CURRENT_PATH, "file")
     logPath = None
 
+    login_ret_dict = None
+
     def close_db(gc):
         if gc.dbcon:
             gc.dbcon.close()

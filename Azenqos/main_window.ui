@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>258</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>25</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -83,7 +83,6 @@
      <addaction name="actionLTE_PUCCH_PDSCH_Params"/>
      <addaction name="actionLTE_RRC_SIB_States"/>
      <addaction name="actionLTE_VoLTE"/>
-     <addaction name="actionLTE_Line_Chart"/>
     </widget>
     <widget class="QMenu" name="menuNR">
      <property name="title">

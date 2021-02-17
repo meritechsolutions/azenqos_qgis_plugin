@@ -1,15 +1,13 @@
-import login_dialog
+import azq_server_api
 
 
 def test():
     raised = False
     try:
-        login_dialog.login(
-            {
-                "server_url": "https://test0.azenqos.com/import_status",
-                "login": "wronguser",
-                "pass": "wrongpass",
-            }
+        azq_server_api.api_login_get_token(
+                "https://test0.azenqos.com/some_path",
+                "wronguser",
+                "wrongpass",
         )        
     except Exception as exstr:
         raised = True

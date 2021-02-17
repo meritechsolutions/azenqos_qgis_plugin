@@ -1364,7 +1364,10 @@ def tmp_gen_path():
     return os.path.join(get_module_path(), globalutils.TMP_FOLDER_NAME)
 
 def get_current_tmp_gen_dp():
-    return os.path.join(tmp_gen_path(), str(os.getpid()))
+    dp = os.path.join(tmp_gen_path(), str(os.getpid()))
+    if not os.path.isdir(dp):
+        os.makedirs(dp)
+    return dp
 
 def cleanup_died_processes_tmp_folders():
     import psutil
@@ -1401,21 +1404,22 @@ def calc_sha(src):
     return hasho.hexdigest()
 
 
-def login_get_token(user, passwd, host, passwd_sha=None):
-    auth_token = calc_sha(user) + (calc_sha(passwd) if passwd_sha is None else passwd_sha)
-    #print("send auth_token: %s" % auth_token)    
-    resp = requests.get(
-        "https://{}/api/login".format(host),
-        headers={
-            "Authorization": "Bearer {}".format(auth_token),
-        },
-        verify=False,
-    )
-    if resp.status_code == 200:
-        if resp.text:
-            return resp.text
-        else:
-            raise Exception("Got empty response")
-    else:
-        from http.client import responses
-        raise Exception("Got response status: %s" % responses[resp.status_code])
+def download_file(url, local_fp):
+    # NOTE the stream=True parameter below
+    with requests.get(url, stream=True, verify=False) as r:
+        r.raise_for_status()
+        with open(local_fp, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=2048*1000): 
+                # If you have chunk encoded response uncomment if
+                # and set chunk_size parameter to None.
+                #if chunk: 
+                f.write(chunk)
+    return local_fp
+
+
+# helper func that wont emit if signal is None
+def signal_emit(signal_obj, emit_obj):
+    print("signal_emit: {}: {}".format(signal_obj, emit_obj))
+    if signal_obj is not None:
+        signal_obj.emit(emit_obj)
+

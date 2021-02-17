@@ -10,10 +10,7 @@ def test():
     dlg = login_dialog.login_dialog(None, gc)
     dlg.show()    
     ret = dlg.exec()
-    ret_dict = dlg.ret_dict
     print("ret:", ret)
-    print("ret_dict: {}".format(ret_dict))
-
     
 
 if __name__ == "__main__":

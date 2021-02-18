@@ -35,16 +35,17 @@ class login_dialog(QDialog):
         self.gc = gc                
         self.setupUi()
         self.valid = False
+        self.downloaded_zip_fp = None
 
         self.login_thread = None
         self.login_done_signal.connect(
-            self.ui_thread_handler_login_completed
+            self.on_login_done
         )
         self.status_update_signal.connect(
-            self.status_update
+            self.on_status_update
         )
         self.progress_update_signal.connect(
-            self.progress_update
+            self.on_progress_update
         )
 
         
@@ -68,24 +69,24 @@ class login_dialog(QDialog):
         self.lhl = self.ui.lhl_le.text()
         return [self.server, self.user, self.passwd, self.lhl]
 
-    def progress_update(self, val):
+    def on_progress_update(self, val):
         print("progress_update: {}".format(val))
         self.ui.progressbar.setValue(val)
 
-    def status_update(self, val):
+    def on_status_update(self, val):
         print("status_update: {}".format(val))
         self.ui.label_status.setText(val)
 
     def ui_login_thread_start(self):
         self.ui.buttonBox.setEnabled(False)
-        self.progress_update(0)
-        self.status_update("")
+        self.on_progress_update(0)
+        self.on_status_update("")
         self.ui.progressbar.setVisible(True)
 
     def ui_login_thread_failed(self):
         self.ui.buttonBox.setEnabled(True)
-        self.progress_update(0)
-        self.status_update("Operation failed...")
+        self.on_progress_update(0)
+        self.on_status_update("Operation failed...")
         self.ui.progressbar.setVisible(False)
     
     def accept(self):
@@ -102,7 +103,8 @@ class login_dialog(QDialog):
                         self.lhl,
                         self.progress_update_signal,
                         self.status_update_signal,
-                        self.login_done_signal
+                        self.login_done_signal,
+                        self.on_zip_downloaded,
                     )
                 )
                 self.login_thread.start()
@@ -170,8 +172,13 @@ class login_dialog(QDialog):
         self.valid = True
         return True
 
+    
+    def on_zip_downloaded(self, zip_fp):
+        print("on_zip_downloaded: self %s zip_fp %s" % (self, zip_fp))
+        self.downloaded_zip_fp = zip_fp
 
-    def ui_thread_handler_login_completed(self, error):
+
+    def on_login_done(self, error):
         if error:
             QtWidgets.QMessageBox.critical(
                 None,
@@ -180,7 +187,8 @@ class login_dialog(QDialog):
                 QtWidgets.QMessageBox.Ok,
             )
             self.ui_login_thread_failed()
-        else:            
+        else:
+            print("on_login_done self.downloaded_zip_fp: %s" % self.downloaded_zip_fp)
             self.done(QtWidgets.QDialog.Accepted)
 
 

@@ -15,6 +15,7 @@ class analyzer_vars:
     mostFeaturesLayer = None
     azenqosDatabase = None
     databasePath = None
+    db_fp = None  # same as databasePath but in snake_case
     dbcon = None
     minTimeValue = 0
     maxTimeValue = 99
@@ -42,10 +43,10 @@ class analyzer_vars:
     ]
     threadpool = QThreadPool.globalInstance()
     CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-    FILE_PATH = os.path.join(CURRENT_PATH, "file")
-    logPath = None
+    FILE_PATH = os.path.join(CURRENT_PATH, "file")    
 
-    login_ret_dict = None
+    # server mode vars (stored in login_dialog class like server, token, user, lhl etc)
+    login_dialog = None
 
     def close_db(gc):
         if gc.dbcon:

@@ -158,14 +158,14 @@ def parse_api_dump_db_stdout_get_zip_url(server, proc_stdout_str):
     return None
 
 
-def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=None, status_update_signal=None, done_signal=None):
+def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=None, status_update_signal=None, done_signal=None, on_zip_downloaded_func=None):
 
     # for cleanup
     proc_uuid = None
     
     try:
         # the emit() below would fail/raise if login_dialog/ui was closed as signal would be invalid and raise and trigger finally cleanup - so no need to check dialog closed flag etc
-
+        
         # login
         signal_emit(progress_update_signal, 0)
         signal_emit(status_update_signal, "Connecting to server...")        
@@ -189,8 +189,8 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
             print('resp_dict["returncode"]:', resp_dict["returncode"])
             if resp_dict["returncode"] is not None:        
                 break
-            signal_emit(status_update_signal, "Server dumping data for specified log_hash list - loop_count: {}".format(loop_count))        
-        signal_emit(status_update_signal, "server dump data process completed...")
+            signal_emit(status_update_signal, "Server dumping data - loop_count: {}".format(loop_count))        
+        signal_emit(status_update_signal, "Server dump data process completed...")
         print('server process complete - resp_dict:', resp_dict)
         signal_emit(progress_update_signal, 50)
 
@@ -214,21 +214,20 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
         # download db zip from server
         azq_utils.cleanup_died_processes_tmp_folders()
         signal_emit(status_update_signal, "Downloading db zip from server...")
-        tmp_dir = azq_utils.get_current_tmp_gen_dp()
+        tmp_dir = azq_utils.tmp_gen_path()
         target_fp = os.path.join(tmp_dir, "server_db.zip")
         assert os.path.isfile(target_fp) == False
-        azq_utils.download_file(zip_url, target_fp)        
+        azq_utils.download_file(zip_url, target_fp)
         assert os.path.isfile(target_fp) == True
         signal_emit(progress_update_signal, 80)
         signal_emit(status_update_signal, "Download complete...")
 
-        # extract db zip and open database
-        signal_emit(status_update_signal, "Extracting db zip and opening database...")
-        # TODO
-
-        signal_emit(progress_update_signal, 100)
-        signal_emit(done_signal, "")
-        return True
+        if on_zip_downloaded_func:
+            signal_emit(status_update_signal, "Processing downloaded zip/data...")
+            on_zip_downloaded_func(target_fp)
+        
+        signal_emit(done_signal, "")  # empty string means success
+        return target_fp
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -248,5 +247,5 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: api_login_and_dl_db_zip api_delte_process failed exception: {}", exstr)
 
-    return False
+    return None
 

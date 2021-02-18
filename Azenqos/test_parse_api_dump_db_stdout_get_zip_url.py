@@ -1,4 +1,4 @@
-import login_dialog
+import azq_server_api
 
 
 def test():
@@ -214,7 +214,7 @@ successfully closed all pg dbcons
 SUCCESS == please visit us again soon"""
     
     server = "https://localhost/"
-    url = login_dialog.parse_api_dump_db_stdout_get_zip_url(server, proc_stdout_str)
+    url = azq_server_api.parse_api_dump_db_stdout_get_zip_url(server, proc_stdout_str)
     print("url:", url)
     assert url == "https://localhost//tmp_gen/tmp_dump_db_4cc941c9-b76c-4a99-ac59-c9d54c8f4c1f.db.zip"
     

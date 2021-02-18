@@ -6,6 +6,9 @@ import dprint
 import shutil
 import hashlib
 import requests
+import azq_utils
+
+TMP_FOLDER_NAME = "tmp_gen"
 
 
 def debug(s):
@@ -1358,21 +1361,24 @@ def get_default_color_for_index(i):
         return "#%02x%02x%02x" % (r(), r(), r())
 
 
-
-def tmp_gen_path():
-    import globalutils
-    return os.path.join(get_module_path(), globalutils.TMP_FOLDER_NAME)
-
-def get_current_tmp_gen_dp():
-    dp = os.path.join(tmp_gen_path(), str(os.getpid()))
+def tmp_gen_path_parent():
+    dp = os.path.join(get_module_path(), TMP_FOLDER_NAME)
     if not os.path.isdir(dp):
         os.makedirs(dp)
     return dp
 
+
+def tmp_gen_path():
+    dp = os.path.join(tmp_gen_path_parent(), str(os.getpid()))
+    if not os.path.isdir(dp):
+        os.makedirs(dp)
+    return dp
+
+
 def cleanup_died_processes_tmp_folders():
     import psutil
     print("cleanup_died_processes_tmp_folders() START")    
-    tgp = tmp_gen_path()
+    tgp = tmp_gen_path_parent()
     dirlist = os.listdir(tgp)
     print("dirlist:", dirlist)
     dirlist_no_pid = []
@@ -1381,11 +1387,13 @@ def cleanup_died_processes_tmp_folders():
             continue
         else:
             dirlist_no_pid.append(dpid)
+    print("dirlist_no_pid:", dirlist_no_pid)
     dp_list = [os.path.join(tgp, x) for x in dirlist_no_pid]
     dp_list_dirs = [x for x in dp_list if os.path.isdir(x)]
     print("dp_list_dirs:", dp_list)
     for dp in dp_list_dirs:
         try:
+            print("rmtree dir:", dp)
             shutil.rmtree(dp)
         except:
             type_, value_, traceback_ = sys.exc_info()
@@ -1423,3 +1431,14 @@ def signal_emit(signal_obj, emit_obj):
     if signal_obj is not None:
         signal_obj.emit(emit_obj)
 
+        
+def datetimeStringtoTimestamp(datetimeString: str):
+    try:
+        element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+        timestamp = datetime.datetime.timestamp(element)
+        return timestamp
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("datetimestringtotimestamp exception: %s" % exstr)
+    return None

@@ -31,6 +31,7 @@ except:
     pass
 from worker import Worker
 from customize_properties import *
+import azq_utils
 import lte_query
 import wcdma_query
 import gsm_query
@@ -619,7 +620,7 @@ class TableWindow(QWidget):
         for row in range(0, self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
-            if Utils().datetimeStringtoTimestamp(value):
+            if azq_utils.datetimeStringtoTimestamp(value):
                 self.gc.currentTimestamp = datetime.datetime.strptime(
                     self.dateString, "%Y-%m-%d %H:%M:%S.%f"
                 ).timestamp()

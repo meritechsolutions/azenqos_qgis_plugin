@@ -10,6 +10,8 @@ import numpy as np
 
 
 def test():
+    return
+
     azmfp = (
         "../example_logs/pcap/354569110523269 2_2_2021 11.28.6.azm"
     )

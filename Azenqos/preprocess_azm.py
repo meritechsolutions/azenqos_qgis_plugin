@@ -1666,6 +1666,10 @@ def extract_entry_from_zip(zip_fp, entry_name, target_folder, try_7za_first=Fals
     # below is py unzip code - would raise exception on failure
     with zipfile.ZipFile(zip_fp, "r") as zf:
         zf.extract(entry_name, target_folder)
+        ret_fp = os.path.join(target_folder, entry_name)
+        assert os.path.isfile(ret_fp)
+        return ret_fp
+    return None
 
 
 def apk_verstr_to_ver_int(ver):

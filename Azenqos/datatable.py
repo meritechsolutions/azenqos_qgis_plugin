@@ -6,6 +6,7 @@ import traceback
 import os
 import pandas as pd
 import sqlite3
+import azq_utils
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -441,7 +442,7 @@ class TableWindow(QWidget):
         for row in range(0, self.tableViewCount):
             index = self.tableView.model().index(row, 0)
             value = self.tableView.model().data(index)
-            if Utils().datetimeStringtoTimestamp(value):
+            if azq_utils.datetimeStringtoTimestamp(value):
                 self.gc.currentTimestamp = datetime.datetime.strptime(
                     self.dateString, "%Y-%m-%d %H:%M:%S.%f"
                 ).timestamp()
@@ -711,7 +712,7 @@ class DetailWidget(QDialog):
                 self.textEdit.setPlainText(polqaDict["output_text"])
                 from PyQt5 import QtMultimedia
                 self.polqaWavFile = QtMultimedia.QSound(
-                    self.gc.logPath + "/" + polqaDict["wave_file"]
+                    os.path.join(azq_utils.tmp_gen_path(), polqaDict["wave_file"])
                 )
 
 

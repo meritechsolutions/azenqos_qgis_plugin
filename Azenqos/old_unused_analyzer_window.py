@@ -1044,11 +1044,11 @@ class analyzer_window(QMainWindow):
             selectedTime = time
             break
         try:
-            selectedTimestamp = Utils(self.gc).datetimeStringtoTimestamp(
+            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(
                 selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")
             )
         except:
-            selectedTimestamp = Utils(self.gc).datetimeStringtoTimestamp(selectedTime)
+            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selectedTime)
         if selectedTimestamp:
             timeSliderValue = self.gc.sliderLength - (self.gc.maxTimeValue - selectedTimestamp)
             self.gc.timeSlider.setValue(timeSliderValue)
@@ -2693,7 +2693,7 @@ class analyzer_window(QMainWindow):
         QgsMessageLog.logMessage("Close App")
         self.gc.close_db()
         try:
-            shutil.rmtree(self.gc.logPath)
+            shutil.rmtree(azq_utils.tmp_gen_path())
         except:
             pass
         self.closed = True

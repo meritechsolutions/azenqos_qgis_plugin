@@ -5,10 +5,10 @@ import shutil
 
 
 def unzip_azm_to_tmp_get_dbfp(azmfp):
-    tmpdir = os.path.join(azq_utils.get_module_path(), "tmp_test")
+    tmpdir = azq_utils.tmp_gen_path()
     if os.path.isdir(tmpdir):
         shutil.rmtree(tmpdir)
-    os.mkdir(tmpdir)
+    os.makedirs(tmpdir)
     with zipfile.ZipFile(azmfp, "r") as zip_ref:
         zip_ref.extract("azqdata.db", tmpdir)
     dbfp = os.path.join(tmpdir, "azqdata.db")

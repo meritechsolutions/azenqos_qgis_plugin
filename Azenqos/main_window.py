@@ -569,11 +569,11 @@ class main_window(QMainWindow):
             selectedTime = time
             break
         try:
-            selectedTimestamp = Utils(self.gc).datetimeStringtoTimestamp(
+            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(
                 selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")
             )
         except:
-            selectedTimestamp = Utils(self.gc).datetimeStringtoTimestamp(selectedTime)
+            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selectedTime)
         if selectedTimestamp:
             timeSliderValue = self.gc.sliderLength - (self.gc.maxTimeValue - selectedTimestamp)
             self.gc.timeSlider.setValue(timeSliderValue)
@@ -885,9 +885,8 @@ class main_window(QMainWindow):
             self.mdi.close()
             print("Close App")            
             try:
-                self.gc.close_db()
-                if self.gc.logPath:
-                    shutil.rmtree(self.gc.logPath)
+                self.gc.close_db()                
+                shutil.rmtree(azq_utils.tmp_gen_path())
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))

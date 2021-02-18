@@ -14,6 +14,7 @@ import traceback
 import os
 import sqlite3
 import threading
+import time
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -24,7 +25,6 @@ try:
 except:
     pass
 from datatable import *
-from analyzer_window import *
 from version import VERSION
 import db_preprocess
 import azq_utils
@@ -291,17 +291,16 @@ class import_db_dialog(QDialog):
                 ret = dlg.exec()
                 if ret == 0:  # dismissed
                     return
-                # ok we have a successful login
-                ret_dict = dlg.ret_dict
-                self.gc.login_ret_dict = ret_dict
-                print("ret:", ret)
-                print("ret_dict: {}".format(ret_dict))
-                zip_fp = ret_dict["zip_fp"]
-                
+                # ok we have a successful login and downloaded the db zip
+                zip_fp = dlg.downloaded_zip_fp                
+                if (not zip_fp) or (not os.path.isfile(zip_fp)):
+                    raise Exception("Failed to get downloaded data from server login process...")
+                self.gc.login_dialog = dlg  # so others can access server/token when needed for other api calls                
             
             if self.import_thread is None or (self.import_thread.is_alive() == False):
                 self.zip_fp = zip_fp
                 self.buttonBox.setEnabled(False)
+                print("start import db zip thread...")
                 self.import_thread = threading.Thread(target=self.import_selection, args=())
                 self.import_thread.start()
             else:
@@ -373,10 +372,13 @@ class import_db_dialog(QDialog):
     def import_selection(self):
         zip_fp = self.zip_fp
         try:
+            import preprocess_azm
+            
+            assert os.path.isfile(zip_fp)
             azq_utils.cleanup_died_processes_tmp_folders()
-            self.databasePath = Utils(self.gc).unzipToFile(
-                self.gc.CURRENT_PATH, zip_fp
-            )            
+            assert os.path.isfile(zip_fp)
+            self.databasePath = preprocess_azm.extract_entry_from_zip(zip_fp, "azqdata.db", azq_utils.tmp_gen_path())
+            assert os.path.isfile(self.databasePath)
             dbcon = self.addDatabase() # this will create views/tables per param as per specified theme so must check theme before here        
             if not dbcon:
                 raise Exception("Failed to open azqdata.db file inside the unzipped supplied azm file")
@@ -448,8 +450,9 @@ class import_db_dialog(QDialog):
 
         db_preprocess.prepare_spatialite_views(dbcon)
         dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
-        dbcon = sqlite3.connect(self.databasePath)
+        dbcon = sqlite3.connect(self.databasePath)        
         self.gc.databasePath = self.databasePath
+        self.gc.db_fp = self.gc.databasePath
         self.gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
         self.gc.azenqosDatabase.setDatabaseName(self.databasePath)
         self.gc.dbcon = dbcon

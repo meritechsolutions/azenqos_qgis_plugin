@@ -1,10 +1,10 @@
-import login_dialog
 import sys
-import traceback
-import time
-import azq_utils
 import os
 import azq_server_api
+import db_preprocess
+import pandas as pd
+import sqlite3
+import integration_test_helpers
 
 
 def test(server, user, passwd, lhl):
@@ -14,6 +14,20 @@ def test(server, user, passwd, lhl):
     ret = azq_server_api.api_login_and_dl_db_zip(server, user, passwd, lhl)
     print("ret:", ret)
     assert os.path.isfile(ret)
+
+    azmfp = ret
+    dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
+
+    with sqlite3.connect(dbfp) as dbcon:
+        db_preprocess.prepare_spatialite_views(dbcon)
+
+        df = pd.read_sql("select * from lte_inst_rsrp_1", dbcon)
+        assert "geom" in df.columns
+        print("len df rsrp:", len(df))
+
+        df = pd.read_sql("select * from layer_styles", dbcon)
+        print("df.head() %s" % df)
+
 
 
 if __name__ == "__main__":

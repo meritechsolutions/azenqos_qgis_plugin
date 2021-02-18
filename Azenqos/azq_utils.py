@@ -1382,11 +1382,16 @@ def cleanup_died_processes_tmp_folders():
     dirlist = os.listdir(tgp)
     print("dirlist:", dirlist)
     dirlist_no_pid = []
-    for dpid in dirlist:
-        if psutil.pid_exists(int(dpid)):
+    for folder_name in dirlist:
+        int_folder_name = None
+        try:
+            int_folder_name = int(folder_name)
+        except:
+            continue
+        if psutil.pid_exists(int_folder_name):
             continue
         else:
-            dirlist_no_pid.append(dpid)
+            dirlist_no_pid.append(str(int_folder_name))
     print("dirlist_no_pid:", dirlist_no_pid)
     dp_list = [os.path.join(tgp, x) for x in dirlist_no_pid]
     dp_list_dirs = [x for x in dp_list if os.path.isdir(x)]

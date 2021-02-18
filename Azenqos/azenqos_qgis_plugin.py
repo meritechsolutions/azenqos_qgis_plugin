@@ -186,23 +186,26 @@ class azenqos_qgis_plugin:
         print("azenqos_plugin: unload()")
         try:
             if self.dlg is not None:
-                if hasattr(self.dlg, "azenqosMainMenu") is True:
-                    self.dlg.azenqosMainMenu.cleanup()
-                    self.dlg.azenqosMainMenu.close()
+                self.dlg.close()
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: unload()0  exception:", exstr)
 
         """Removes the plugin menu item and icon from QGIS GUI."""
-        for action in self.actions:
-            try:
-                self.qgis_iface.removePluginMenu(self.tr(u"&Azenqos"), action)
-                self.qgis_iface.removeToolBarIcon(action)
-            except:
+        try:
+            for action in self.actions:
+                try:
+                    self.qgis_iface.removePluginMenu(self.tr(u"&Azenqos"), action)
+                    self.qgis_iface.removeToolBarIcon(action)
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: unload()1 itr exception:", exstr)
+        except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: unload()1 itr exception:", exstr)
+                print("WARNING: unload() remove plugin icons exception:", exstr)
 
 
     def run(self):
@@ -210,13 +213,12 @@ class azenqos_qgis_plugin:
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.dlg is None:
+        if self.dlg is None or self.dlg.closed:
             self.first_start = False
             import main_window            
             self.dlg = main_window.main_window(self.qgis_iface)
             
         if self.dlg is not None:
-            # show the dialog
             self.dlg.show()
 
 

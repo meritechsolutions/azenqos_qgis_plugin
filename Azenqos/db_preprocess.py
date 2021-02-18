@@ -58,7 +58,9 @@ def prepare_spatialite_views(dbcon):
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: del from geom cols exception: ", exstr)
-    
+
+    ### get list of log_hash, posids where location table's positioning_lat is -1.0 and positioning_lon is -1.0 caused by pressing load indoor logs
+    df_posids_indoor_start = pd.read_sql("select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0", dbcon)
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
@@ -66,7 +68,7 @@ def prepare_spatialite_views(dbcon):
     print("params_to_gen:", params_to_gen)
 
     # create layer_styles table if not exist
-
+    tables_to_rm_stray_neg1_rows = ["signalling", "events"]
     layer_style_id = 0
     for param in params_to_gen:
         layer_style_id += 1
@@ -75,16 +77,18 @@ def prepare_spatialite_views(dbcon):
             table = preprocess_azm.get_table_for_column(param)
             assert table
             view = param
-            sqlstr = "create table {col} as select log_hash, time, modem_time, geom, {col} from {table} ;".format(
+            sqlstr = "create table {col} as select log_hash, time, modem_time, posid, geom, {col} from {table} ;".format(
                 col=view, table=table
             )
             print("create view sqlstr: %s" % sqlstr)
             dbcon.execute(sqlstr)
+            tables_to_rm_stray_neg1_rows.append(view)
+
             sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
                 view
             )
             dbcon.execute(sqlstr)
-
+            
             # get theme df for this param
             theme_df = azq_theme_manager.get_theme_df_for_column(param)
             if theme_df is None:
@@ -190,24 +194,21 @@ def prepare_spatialite_views(dbcon):
                 continue
             print("WARNING: prepare_spatialte_views exception:", exstr)
 
+            
+    # remove stray -1 -1 rows
+    for view in tables_to_rm_stray_neg1_rows:
+        for index, row in df_posids_indoor_start.iterrows():
+            for posid in [row.posid, row.posid+1]:  # del with same posid and next posid as found in log case: 354985102910027 20_1_2021 7.57.38.azm
+                sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
+                    view, row.log_hash, posid
+                )
+                print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)
+                dbcon.execute(sqlstr)
+                dbcon.commit()
+
+
     ## for each param
     # create view for param
     # put param view into geometry_columns to register for display
     # create param QML theme based on default_style.qml
     # put qml entry into 'layer_styles' table
-
-
-def add_qgis_spatial_tables(dbcon, exported_table_name):
-    sqlstr = """
-    INSERT INTO geometry_columns VALUES('{}','geom','POINT',2,4326,0);
-    """.format(exported_table_name)
-        
-    for sp in sqlstr.split("\n"):
-        #print "create qgis db sqlpart:", sp
-        try:
-            dbcon.execute(sp)
-        except Exception as e:
-            if "already exists" in str(e) or "UNIQUE constraint failed" in str(e):
-                pass
-            else:
-                raise e

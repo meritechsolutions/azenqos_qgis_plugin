@@ -121,6 +121,7 @@
     <addaction name="menuWCDMA"/>
     <addaction name="menuGSM"/>
     <addaction name="menuSignalling"/>
+    <addaction name="actionPCAP"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -277,6 +278,11 @@
   <action name="actionEvents">
    <property name="text">
     <string>Events</string>
+   </property>
+  </action>
+  <action name="actionPCAP">
+   <property name="text">
+    <string>PCAP</string>
    </property>
   </action>
  </widget>

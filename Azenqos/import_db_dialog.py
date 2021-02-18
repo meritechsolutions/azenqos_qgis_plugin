@@ -378,6 +378,7 @@ class import_db_dialog(QDialog):
             azq_utils.cleanup_died_processes_tmp_folders()
             assert os.path.isfile(zip_fp)
             self.databasePath = preprocess_azm.extract_entry_from_zip(zip_fp, "azqdata.db", azq_utils.tmp_gen_path())
+            preprocess_azm.extract_all_from_zip(zip_fp, azq_utils.tmp_gen_path())
             assert os.path.isfile(self.databasePath)
             dbcon = self.addDatabase() # this will create views/tables per param as per specified theme so must check theme before here        
             if not dbcon:

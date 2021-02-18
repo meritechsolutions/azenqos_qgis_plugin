@@ -72,6 +72,17 @@ def get_all_pcap_content(azm_path):
     pcap_path_list = get_pcap_path_list(azm_path)
     return get_pcap_df(pcap_path_list)
 
+pcap_path_list =None
+def new_get_all_pcap_content(azm_path):
+    global pcap_path_list
+    pcap_path_list = get_pcap_path_list(azm_path)
+    return tmp
+    
+def tmp(time,dbcon):
+    global pcap_path_list
+    return get_pcap_df(pcap_path_list)
+
+
 
 
 # def get_pcap_path_list_df(azm_path):

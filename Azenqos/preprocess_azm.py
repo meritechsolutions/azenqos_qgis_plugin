@@ -1671,6 +1671,10 @@ def extract_entry_from_zip(zip_fp, entry_name, target_folder, try_7za_first=Fals
         return ret_fp
     return None
 
+def extract_all_from_zip(zip_fp, target_folder):
+    with zipfile.ZipFile(zip_fp, "r") as zip_file:
+        zip_file.extractall(target_folder)
+
 
 def apk_verstr_to_ver_int(ver):
     ver = ver.replace("v", "")

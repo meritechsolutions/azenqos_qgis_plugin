@@ -267,6 +267,16 @@ class main_window(QMainWindow):
         widget = TableWindow(swa, "GSM C/I", gsm_query.get_coi_df)
         self.add_subwindow_with_widget(swa, widget)
 
+    ############# PCAP menu slots
+
+    @pyqtSlot()
+    def on_actionPCAP_triggered(self):
+        print("action pcap")
+        import pcap_window
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()))
+        self.add_subwindow_with_widget(swa, widget)
+
         
         
     def add_subwindow_with_widget(self, swa, widget):                

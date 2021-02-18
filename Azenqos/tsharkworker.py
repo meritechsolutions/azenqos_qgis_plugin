@@ -81,6 +81,7 @@ class TsharkDecodeWorker(QRunnable):
                 print("text2pcap failed - abort")
             else:
                 channelType = None
+                print("self.name %s type %s" % (self.name, type(self.name)))
                 match = re.search(r"\((.*)\)", self.name)
                 if match is not None:
                     channelType = match.group(1)

@@ -336,9 +336,21 @@ class TableWindow(QWidget):
             
 
     def showDetail(self, item):
+        row_index = item.row()        
+        print("showDetail row_index: %d" % row_index)
+        row_sr = self.dataList.iloc[row_index]
+        #cellContent = str(item.data())
+        cellContent = ""
+        for index, val in row_sr.items():
+            cellContent += "[{}]: {}\n".format(index, val)
         parentWindow = self.parentWindow.parentWidget()
-        cellContent = str(item.data())
-        self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
+        if self.l3_alt_wireshark_decode:
+            name = row_sr["name"]
+            side = row_sr["dir"]
+            protocol = row_sr["protocol"]
+            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side, protocol)
+        else:
+            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
         """
         print("showdetail self.tablename {}".format(self.tablename))
         if self.tablename == "signalling":

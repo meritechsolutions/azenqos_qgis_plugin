@@ -337,7 +337,7 @@ class SignalingDataQuery:
 
 
 def get_signalling(dbcon, time_before):
-    L3_SQL = "SELECT log_hash, time, name, symbol, protocol, detail_str FROM signalling order by time"    
+    L3_SQL = "SELECT log_hash, time, name, symbol as dir, protocol, detail_str FROM signalling order by time"    
     return pd.read_sql(
         L3_SQL,
         dbcon,

@@ -2,6 +2,7 @@ import datetime
 import threading
 import sys
 import os
+import time
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -21,6 +22,7 @@ try:
     from qgis.gui import *
 except:
     pass
+
 
 
 class timeSlider(QSlider):

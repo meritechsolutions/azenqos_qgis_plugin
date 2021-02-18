@@ -378,6 +378,7 @@ class import_db_dialog(QDialog):
             azq_utils.cleanup_died_processes_tmp_folders()
             assert os.path.isfile(zip_fp)
             self.databasePath = preprocess_azm.extract_entry_from_zip(zip_fp, "azqdata.db", azq_utils.tmp_gen_path())
+            preprocess_azm.extract_all_from_zip(zip_fp, azq_utils.tmp_gen_path())
             assert os.path.isfile(self.databasePath)
             dbcon = self.addDatabase() # this will create views/tables per param as per specified theme so must check theme before here        
             if not dbcon:
@@ -392,19 +393,16 @@ class import_db_dialog(QDialog):
 
     
     def getTimeForSlider(self):
-        dataList = []
-        self.gc.azenqosDatabase.open()
-        subQuery = QSqlQuery()
-        queryString = "SELECT log_start_time, log_end_time FROM logs"
-        subQuery.exec_(queryString)
         startTime = None
         endTime = None
-        while subQuery.next():
-            if subQuery.value(0).strip() and subQuery.value(1).strip():
-                startTime = subQuery.value(0)
-                endTime = subQuery.value(1)
-        self.gc.azenqosDatabase.close()
-
+        with sqlite3.connect(self.databasePath) as dbcon:
+            df = pd.read_sql("select min(log_start_time) as startTime, max(log_end_time) as endTime from logs", dbcon)
+            assert len(df) == 1
+            startTime = df.iloc[0].startTime
+            endTime = df.iloc[0].endTime
+        
+        assert startTime
+        assert endTime
         self.gc.minTimeValue = datetime.datetime.strptime(
             str(startTime), "%Y-%m-%d %H:%M:%S.%f"
         ).timestamp()
@@ -450,10 +448,13 @@ class import_db_dialog(QDialog):
 
         db_preprocess.prepare_spatialite_views(dbcon)
         dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
+        assert self.databasePath
         dbcon = sqlite3.connect(self.databasePath)        
         self.gc.databasePath = self.databasePath
         self.gc.db_fp = self.gc.databasePath
         self.gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
+        assert self.gc.azenqosDatabase
+
         self.gc.azenqosDatabase.setDatabaseName(self.databasePath)
         return dbcon
 

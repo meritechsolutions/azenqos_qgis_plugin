@@ -274,7 +274,7 @@ class main_window(QMainWindow):
         print("action pcap")
         import pcap_window
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()))
+        widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), time_list_mode=True)
         self.add_subwindow_with_widget(swa, widget)
 
         

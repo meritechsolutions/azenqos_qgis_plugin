@@ -15,16 +15,20 @@ def test():
         "../example_logs/pcap/354569110523269 2_2_2021 11.28.6.azm"
     )
 
-    tmp_dir = azq_utils.tmp_gen_path()
-    if os.path.isdir(tmp_dir):
-        shutil.rmtree(tmp_dir)
-    os.mkdir(tmp_dir)
+    tmpdir = os.path.join(azq_utils.get_module_path(), "tmp_test")
+    if os.path.isdir(tmpdir):
+        shutil.rmtree(tmpdir)
+    os.mkdir(tmpdir)
     with zipfile.ZipFile(azmfp, "r") as zip_file:
-        zip_file.extractall(tmp_dir)
+        zip_file.extractall(tmpdir)
 
-    pcap_path_list = pcap_window.get_pcap_path_list(tmp_dir)
+    pcap_path_list = pcap_window.get_pcap_path_list(tmpdir)
     print(pcap_path_list)
 
+    # pcap_path_list_df = pcap_window.get_pcap_path_list_df(tmpdir)
+    # print(pcap_path_list_df)
+
+    # pcap_path = pcap_path_list[1]
     pcap_df = pcap_window.get_pcap_df(pcap_path_list)
     print(pcap_df)
 

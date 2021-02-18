@@ -11,6 +11,9 @@ import numpy as np
 
 def test():
 
+    if os.name != 'nt':
+        return
+
     azmfp = (
         "../example_logs/pcap/354569110523269 2_2_2021 11.28.6.azm"
     )
@@ -31,6 +34,10 @@ def test():
     # pcap_path = pcap_path_list[1]
     pcap_df = pcap_window.get_pcap_df(pcap_path_list)
     print(pcap_df)
+    
+    if os.path.isdir(tmpdir):
+        shutil.rmtree(tmpdir)
+
 
 
 

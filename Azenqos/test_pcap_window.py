@@ -15,7 +15,7 @@ def test():
         "../example_logs/pcap/354569110523269 2_2_2021 11.28.6.azm"
     )
 
-    tmpdir = os.path.join(azq_utils.get_module_path(), "tmp_test")
+    tmpdir = azq_utils.tmp_gen_path()
     if os.path.isdir(tmpdir):
         shutil.rmtree(tmpdir)
     os.mkdir(tmpdir)

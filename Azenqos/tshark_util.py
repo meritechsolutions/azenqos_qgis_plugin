@@ -107,11 +107,7 @@ text2pcap -l 161 tmp_prev.txt tmp_prev.pcap
 tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\"\"" -r tmp_prev.pcap -V
     """
 
-    tmp_proc_dir = azq_utils.get_local_fp("tmp_tshark")
-    if os.path.isdir(tmp_proc_dir):
-        pass
-    else:
-        os.makedirs(tmp_proc_dir)
+    tmp_proc_dir = azq_utils.tmp_gen_path()
     tmpfn = os.path.join(tmp_proc_dir, "tmp_tshark_dec_" + str(uuid.uuid4()))
     tmp_txt_fp = tmpfn + ".txt"
     tmp_pcap_fp = tmpfn + ".pcap"

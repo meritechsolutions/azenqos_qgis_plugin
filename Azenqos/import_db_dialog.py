@@ -456,7 +456,6 @@ class import_db_dialog(QDialog):
         assert self.gc.azenqosDatabase
 
         self.gc.azenqosDatabase.setDatabaseName(self.databasePath)
-        self.gc.dbcon = dbcon
         return dbcon
 
     def setIncrementValue(self):

@@ -2,10 +2,12 @@ import requests
 import os
 import sys
 import traceback
-import azq_utils
 from urllib.parse import urlparse
 import time
 import re
+import pandas as pd
+
+import azq_utils
 from azq_utils import signal_emit
 
 
@@ -126,8 +128,34 @@ def api_delete_process(server, token, proc_uuid):
     return resp_dict
 
 
-def api_dump_db_get_proc_uuid(server, token, lhl):
-    proc_uuid = api_create_process(server, token, lhl, "dump_db.process_cell(dbcon, '')")["proc_uuid"]
+def api_dump_db_get_proc_uuid(
+        server,
+        token,
+        lhl,
+        tables=[
+            "logs",
+            "location",
+            "events",
+            "signalling",
+
+            "nr_cell_meas",
+            
+            "lte_cell_meas",
+            "lte_frame_timing",
+            "lte_cqi",
+            "lte_pdsch_meas",
+            "lte_l1_dl_tp",
+            "lte_l1_ul_tp",
+            "lte_pdcch_dec_result",
+            "lte_mib_info",
+            
+            "wcdma_cell_meas",
+            
+            "gsm_cell_meas",
+            
+        ],
+):
+    proc_uuid = api_create_process(server, token, lhl, "dump_db.process_cell(dbcon, '', tables=[{}])".format(",".join("'"+pd.Series(tables)+"'")))["proc_uuid"]
     print("task_uuid:", proc_uuid)
     assert proc_uuid
     return proc_uuid
@@ -184,7 +212,7 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
         loop_count = 0        
         while True:
             loop_count += 1
-            time.sleep(3)
+            time.sleep(1)
             resp_dict = api_get_process(server, token, proc_uuid)
             print('resp_dict["returncode"]:', resp_dict["returncode"])
             if resp_dict["returncode"] is not None:        

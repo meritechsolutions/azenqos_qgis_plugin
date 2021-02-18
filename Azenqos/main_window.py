@@ -132,6 +132,22 @@ class main_window(QMainWindow):
         self.add_subwindow_with_widget(swa, widget)
 
     ############# NR menu slots
+
+    @pyqtSlot()
+    def on_action5GNR_Radio_Parameters_triggered(self):
+        print("action nr radio params")
+        import nr_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "5GNR Radio Parameters", nr_query.get_nr_radio_params_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_action5GNR_Serving_Neighbors_triggered(self):
+        print("action nr serving neigh")
+        import nr_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "5GNR Serving + Neighbors", nr_query.get_nr_serv_and_neigh_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
     
     ############# LTE menu slots
     @pyqtSlot()
@@ -184,7 +200,74 @@ class main_window(QMainWindow):
 
         
     ############# WCDMA menu slots
+
+    @pyqtSlot()
+    def on_actionWCDMA_Radio_Parameters_triggered(self):
+        print("action wcdma radio params")
+        import wcdma_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "WCDMA Radio Parameters", wcdma_query.get_wcdma_radio_params_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionWCDMA_Active_Monitored_sets_triggered(self):
+        print("action wcdma active monitored")
+        import wcdma_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "WCDMA Active + Monitored sets", wcdma_query.get_wcdma_acive_monitored_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionWCDMA_BLER_Summary_triggered(self):
+        print("action wcdma bler summary")
+        import wcdma_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "WCDMA BLER Summary", wcdma_query.get_bler_sum_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionWCDMA_Bearers_triggered(self):
+        print("action wcdma bearers")
+        import wcdma_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "WCDMA Bearers", wcdma_query.get_wcdma_bearers_df)
+        self.add_subwindow_with_widget(swa, widget)
+        
     ############# GSM menu slots
+
+    @pyqtSlot()
+    def on_actionGSM_Physical_Parameters_triggered(self):
+        print("action gsm radio params")
+        import gsm_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "GSM Radio Parameters", gsm_query.get_gsm_radio_params_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionGSM_Physical_Parameters_triggered(self):
+        print("action gsm serving neigh")
+        import gsm_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "GSM Serving + Neighbors", gsm_query.get_gsm_serv_and_neigh__df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionGSM_Current_Channel_triggered(self):
+        print("action gsm current channel")
+        import gsm_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "GSM Current Channel", gsm_query.get_gsm_current_channel_disp_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionGSM_C_I_triggered(self):
+        print("action gsm coi")
+        import gsm_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "GSM C/I", gsm_query.get_coi_df)
+        self.add_subwindow_with_widget(swa, widget)
+
+        
         
     def add_subwindow_with_widget(self, swa, widget):                
         swa.setWidget(widget)

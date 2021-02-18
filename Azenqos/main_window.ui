@@ -106,8 +106,6 @@
      <addaction name="actionWCDMA_Active_Monitored_sets"/>
      <addaction name="actionWCDMA_BLER_Summary"/>
      <addaction name="actionWCDMA_Bearers"/>
-     <addaction name="actionWCDMA_Pilot_Polluting_Cells"/>
-     <addaction name="actionWCDMA_Line_chart"/>
     </widget>
     <widget class="QMenu" name="menuGSM">
      <property name="title">
@@ -117,7 +115,6 @@
      <addaction name="actionGSM_Serving_Neighbors"/>
      <addaction name="actionGSM_Current_Channel"/>
      <addaction name="actionGSM_C_I"/>
-     <addaction name="actionGSM_Line_chart"/>
     </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>

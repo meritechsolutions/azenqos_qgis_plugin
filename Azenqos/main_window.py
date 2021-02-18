@@ -244,7 +244,7 @@ class main_window(QMainWindow):
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
-    def on_actionGSM_Physical_Parameters_triggered(self):
+    def on_actionGSM_Serving_Neighbors_triggered(self):
         print("action gsm serving neigh")
         import gsm_query
         swa = SubWindowArea(self.mdi, self.gc)

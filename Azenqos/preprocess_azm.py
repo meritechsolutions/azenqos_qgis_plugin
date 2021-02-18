@@ -1672,8 +1672,10 @@ def extract_entry_from_zip(zip_fp, entry_name, target_folder, try_7za_first=Fals
     return None
 
 def extract_all_from_zip(zip_fp, target_folder):
+    extensions = ('.csv','.pcap')
     with zipfile.ZipFile(zip_fp, "r") as zip_file:
-        zip_file.extractall(target_folder)
+        [zip_file.extract(file, target_folder) for file in zip_file.namelist() if file.endswith(extensions)]
+        
 
 
 def apk_verstr_to_ver_int(ver):

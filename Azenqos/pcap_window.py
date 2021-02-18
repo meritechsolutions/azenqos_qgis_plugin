@@ -16,7 +16,10 @@ def get_pcap_path_list(azm_path):
     pcap_path_list = []
     azm_path = azm_path.replace("\\", os.path.sep)
     azm_path = azm_path.replace("/", os.path.sep)
-    extensions = ('.csv', '.pcap')
+    if os.name != 'nt':
+        extensions=('.csv')
+    else:
+        extensions = ('.csv', '.pcap')
     for root, dirs, files in os.walk(azm_path):
         for name in files:
             pcap_file = os.path.join(root, name)

@@ -43,8 +43,10 @@ import pcap_window
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
 
-    def __init__(self, parent, title, refresh_data_func, tableHeader=None, custom_df=None, tablename=""):
+    def __init__(self, parent, title, refresh_data_func, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False):
         super().__init__(parent)
+        self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
+        self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
         self.tableModel = None
         self.gc = parent.gc
         self.title = title
@@ -55,8 +57,6 @@ class TableWindow(QWidget):
         self.columns = 0
         self.fetchRows = 0
         self.fetchColumns = 0
-        self.tablename = tablename
-        self.tableHeader = None
         self.left = 10
         self.top = 10
         self.width = 640
@@ -305,28 +305,22 @@ class TableWindow(QWidget):
             self.properties_window.setupUi()
             self.properties_window.setupComboBox()
             self.properties_window.show()
+            
 
     def hilightRow(self, sampledate, threading=False):
-
+        print("hilightRow: sampledate: %s" % sampledate)
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
         self.dateString = str(sampledate)
-        # self.findCurrentRow()
-        if (self.dataList is None) or self.title not in [
-            "Signaling_Events",
-            "Signaling_Layer 3 Messages",
-        ]:
-            print(
-                "datatable: threading: {} self.title: {} hilightRow: refreshTableContents()".format(
-                    threading, self.title
-                )
-            )
+        if not self.time_list_mode:
+            # table data mode like measurements of that time needs refresh
             if threading:
                 worker = Worker(self.refreshTableContents)
             else:
                 self.refreshTableContents()
         else:
+            # time_list_mode needs findCurrentRow()
             print(
                 "datatable: threading: {} self.title: {} hilightRow: findCurrentRow()".format(
                     threading, self.title
@@ -339,31 +333,31 @@ class TableWindow(QWidget):
 
         if threading and worker:
             self.gc.threadpool.start(worker)
-        # elapse_time = time.time() - start_time
-        # del worker
-        # QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
-        # QgsMessageLog.logMessage('[-- End hilight row --]', tag="Processing")
+            
 
     def showDetail(self, item):
         parentWindow = self.parentWindow.parentWidget()
         cellContent = str(item.data())
+        self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
+        """
         print("showdetail self.tablename {}".format(self.tablename))
         if self.tablename == "signalling":
-            name = item.sibling(item.row(), 1).data()
-            side = item.sibling(item.row(), 2).data()
-            protocol = item.sibling(item.row(), 3).data()
-            cellContent = item.sibling(item.row(), 4).data()
+            name = item.sibling(item.row(), 2).data()
+            side = item.sibling(item.row(), 3).data()
+            protocol = item.sibling(item.row(), 4).data()
+            cellContent = item.sibling(item.row(), 5).data()
             self.detailWidget = DetailWidget(
                 self.gc, parentWindow, cellContent, name, side, protocol
             )
         else:
             if self.tablename == "events":
-                time = item.sibling(item.row(), 0).data()
-                name = item.sibling(item.row(), 1).data()
-                info = item.sibling(item.row(), 2).data()
+                time = item.sibling(item.row(), 1).data()
+                name = item.sibling(item.row(), 2).data()
+                info = item.sibling(item.row(), 3).data()
                 self.detailWidget = DetailWidget(self.gc, parentWindow, info, name, time)
             else:
                 self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
+        """
 
     def updateSlider(self, item):
 
@@ -420,54 +414,23 @@ class TableWindow(QWidget):
                     print("WARNING: updateSlider timecell exception:", exstr)
 
     def findCurrentRow(self):
-
         if isinstance(self.dataList, pd.DataFrame):
             if self.dateString:
                 df = self.dataList
                 ts_query = """time <= '{}'""".format(self.dateString)
                 print("ts_query:", ts_query)
                 df = df.query(ts_query)
-                # print('findcurrentrow filt df.index:', df.index)
+                print('findcurrentrow after query df len: %d', len(df))
                 if len(df):
-                    self.tableView.selectRow(df.index[-1])
+                    self.currentRow = df.index[-1]
+                    self.tableView.selectRow(self.currentRow)
                 return
-
-        startRange = 0
-        indexList = []
-        timeDiffList = []
-
-        if self.currentRow and self.gc.isSliderPlay == True:
-            startRange = self.currentRow
-
-        for row in range(0, self.tableViewCount):
-            index = self.tableView.model().index(row, 0)
-            value = self.tableView.model().data(index)
-            if azq_utils.datetimeStringtoTimestamp(value):
-                self.gc.currentTimestamp = datetime.datetime.strptime(
-                    self.dateString, "%Y-%m-%d %H:%M:%S.%f"
-                ).timestamp()
-                timestamp = datetime.datetime.strptime(
-                    value, "%Y-%m-%d %H:%M:%S.%f"
-                ).timestamp()
-                if timestamp <= self.gc.currentTimestamp:
-                    indexList.append(row)
-                    timeDiffList.append(abs(self.gc.currentTimestamp - timestamp))
-
-        if not len(timeDiffList) == 0:
-            if indexList[timeDiffList.index(min(timeDiffList))] < self.tableViewCount:
-                currentTimeindex = indexList[timeDiffList.index(min(timeDiffList))]
-                self.tableView.selectRow(currentTimeindex)
-        else:
-            currentTimeindex = 0
-            self.tableView.selectRow(currentTimeindex)
-        self.currentRow = currentTimeindex
+            
 
     def closeEvent(self, QCloseEvent):
         indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
             self.gc.openedWindows.pop(index)
-        # if self.tablename and self.tablename in self.gc.tableList:
-        #     self.gc.tableList.remove(self.tablename)
         self.close()
         del self
 

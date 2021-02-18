@@ -1,9 +1,9 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import pandas as pd
 import params_disp_df
+import sys
+import traceback
 
-L3_SQL = "SELECT time, name, symbol, protocol, detail_str FROM signalling"
-EVENTS_SQL = "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, CAST(pm.polqa_mos AS CHAR) FROM polqa_mos pm WHERE pm.polqa_mos IS NOT NULL ORDER BY time"
 
 class SignalingDataQuery:
     def __init__(self, gc, database, currentDateTimeString):
@@ -337,16 +337,31 @@ class SignalingDataQuery:
 
 
 def get_signalling(dbcon, time_before):
-    # TODO: cache per dbcon
+    L3_SQL = "SELECT log_hash, time, name, symbol, protocol, detail_str FROM signalling order by time"    
     return pd.read_sql(
         L3_SQL,
-        dbcon
+        dbcon,
+        parse_dates=["time"]
     )
 
 
 def get_events(dbcon, time_before):
-    # TODO: cache per dbcon
-    return pd.read_sql(
-        EVENTS_SQL,
-        dbcon
-    )
+    sqls = [
+        "select log_hash, time, name, info from events",
+        "select log_hash, time, polqa_mos as name, polqa_output_text as info from polqa_mos"
+    ]
+    df_list = []
+    for sql in sqls:
+        try:            
+            df = pd.read_sql(sql, dbcon, parse_dates=["time"])
+            df_list.append(df)
+        except Exception as e:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            if "no such table" in exstr or "no such column" in exstr:  # some dbs dont have polqa_mos table, some dont have polqa_output_text col...
+                continue
+            else:
+                print("ERROR: get_events exception: %s", exstr)
+                raise e
+    return pd.concat(df_list, ignore_index=True)
+

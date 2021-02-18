@@ -43,15 +43,11 @@ class analyzer_vars:
     ]
     threadpool = QThreadPool.globalInstance()
     CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-    FILE_PATH = os.path.join(CURRENT_PATH, "file")    
 
     # server mode vars (stored in login_dialog class like server, token, user, lhl etc)
     login_dialog = None
 
     def close_db(gc):
-        if gc.dbcon:
-            gc.dbcon.close()
-            gc.dbcon = None
         if gc.azenqosDatabase:
             gc.azenqosDatabase.close()
             QSqlDatabase.removeDatabase(gc.azenqosDatabase.connectionName())

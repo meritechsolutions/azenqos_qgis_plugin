@@ -455,7 +455,6 @@ class import_db_dialog(QDialog):
         self.gc.db_fp = self.gc.databasePath
         self.gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
         self.gc.azenqosDatabase.setDatabaseName(self.databasePath)
-        self.gc.dbcon = dbcon
         return dbcon
 
     def setIncrementValue(self):

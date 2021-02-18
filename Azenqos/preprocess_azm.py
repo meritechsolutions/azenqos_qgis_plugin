@@ -1334,7 +1334,7 @@ def get_table_for_column(param_col_with_arg):
     row = get_elm_info(param_col_with_arg)
     if row is None:
         return None
-    return row.db_table.strip()
+    return str(row.db_table).strip()
 
 
 def get_elm_info(param_col_with_arg):

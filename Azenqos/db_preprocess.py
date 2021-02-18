@@ -13,6 +13,32 @@ def prepare_spatialite_views(dbcon):
     assert dbcon is not None
 
     dbcon.execute(
+        """
+        CREATE TABLE IF NOT EXISTS spatial_ref_sys (srid INTEGER NOT NULL PRIMARY KEY,auth_name VARCHAR(256) NOT NULL,auth_srid INTEGER NOT NULL,ref_sys_name VARCHAR(256),proj4text VARCHAR(2048) NOT NULL);
+        """        
+    )
+    
+    try:
+        dbcon.execute(
+            """
+            INSERT INTO spatial_ref_sys VALUES(4326,'epsg',4326,'WGS 84','+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');
+            """
+        )
+    except Exception as ex:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        if 'UNIQUE constraint failed' in exstr:
+            pass
+        else:
+            print("ERROR: insert failed with exception: %s", exstr)
+            raise ex
+        
+    dbcon.execute(
+        """
+        CREATE TABLE IF NOT EXISTS geometry_columns (f_table_name VARCHAR(256) NOT NULL,f_geometry_column VARCHAR(256) NOT NULL,type VARCHAR(30) NOT NULL,coord_dimension INTEGER NOT NULL,srid INTEGER,spatial_index_enabled INTEGER NOT NULL);
+        """
+    )
+    dbcon.execute(
         """CREATE TABLE IF NOT EXISTS 'layer_styles' ( "id" INTEGER PRIMARY KEY AUTOINCREMENT, 'f_table_catalog' VARCHAR(256), 'f_table_schema' VARCHAR(256), 'f_table_name' VARCHAR(256), 'f_geometry_column' VARCHAR(256), 'stylename' VARCHAR(30), 'styleqml' VARCHAR, 'stylesld' VARCHAR, 'useasdefault' INTEGER_BOOLEAN, 'description' VARCHAR, 'owner' VARCHAR(30), 'ui' VARCHAR(30), 'update_time' TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"""
     )
     dbcon.execute("delete from layer_styles;")
@@ -24,9 +50,15 @@ def prepare_spatialite_views(dbcon):
     default_qml_param = "lte_inst_rsrp_1"
 
     ### we will make views one per param so drop all existing tables from geom_columns
-    dbcon.execute(
-        """ delete from geometry_columns where f_table_name not in ('events','signalling'); """
-    )
+    try:    
+        dbcon.execute(
+            """ delete from geometry_columns where f_table_name not in ('events','signalling'); """
+        )
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: del from geom cols exception: ", exstr)
+    
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
@@ -55,6 +87,8 @@ def prepare_spatialite_views(dbcon):
 
             # get theme df for this param
             theme_df = azq_theme_manager.get_theme_df_for_column(param)
+            if theme_df is None:
+                continue
             # print("theme_df:\n%s" % theme_df)
 
             ranges_xml = "<ranges>\n"
@@ -149,9 +183,11 @@ def prepare_spatialite_views(dbcon):
 
             dbcon.commit()
             print("create view success")
-        except:
+        except:            
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
+            if "no such table" in exstr:
+                continue
             print("WARNING: prepare_spatialte_views exception:", exstr)
 
     ## for each param
@@ -159,3 +195,19 @@ def prepare_spatialite_views(dbcon):
     # put param view into geometry_columns to register for display
     # create param QML theme based on default_style.qml
     # put qml entry into 'layer_styles' table
+
+
+def add_qgis_spatial_tables(dbcon, exported_table_name):
+    sqlstr = """
+    INSERT INTO geometry_columns VALUES('{}','geom','POINT',2,4326,0);
+    """.format(exported_table_name)
+        
+    for sp in sqlstr.split("\n"):
+        #print "create qgis db sqlpart:", sp
+        try:
+            dbcon.execute(sp)
+        except Exception as e:
+            if "already exists" in str(e) or "UNIQUE constraint failed" in str(e):
+                pass
+            else:
+                raise e

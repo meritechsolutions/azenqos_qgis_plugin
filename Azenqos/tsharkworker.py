@@ -12,6 +12,7 @@ import os
 import uuid
 import re
 import tshark_util
+import azq_utils
 
 
 class TsharkDecodeWorker(QRunnable):
@@ -62,8 +63,8 @@ class TsharkDecodeWorker(QRunnable):
             print("text2pcap input content:", hexStr)
 
             tempName = uuid.uuid4().hex
-            tempHexPath = os.path.join(self.gc.FILE_PATH, tempName + ".txt")
-            tempPcapPath = os.path.join(self.gc.FILE_PATH, tempName + ".pcap")
+            tempHexPath = os.path.join(azq_utils.tmp_gen_path(), tempName + ".txt")
+            tempPcapPath = os.path.join(azq_utils.tmp_gen_path(), tempName + ".pcap")
             print("tempHexPath", tempHexPath)
             print("tempPcapPath", tempPcapPath)
 

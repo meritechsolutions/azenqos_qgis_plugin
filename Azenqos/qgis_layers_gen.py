@@ -12,6 +12,7 @@ import qt_utils
 import preprocess_azm
 import azq_utils
 import uuid
+import pathlib
 
 
 def create_qgis_layer_df(df, dbcon, layer_name="layer", auto_add_lat_lon=True):
@@ -45,7 +46,8 @@ def create_qgis_layer_df(df, dbcon, layer_name="layer", auto_add_lat_lon=True):
 
 def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="lat"):
     print("create_qgis_layer_csv() START")
-    uri = "file://{}?crs=epsg:4326&xField={}&yField={}".format(csv_fp, x_field, y_field)
+    uri = pathlib.Path(csv_fp).as_uri()
+    uri += "?crs=epsg:4326&xField={}&yField={}".format(x_field, y_field)
     print("csv uri: {}".format(uri))
     layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
     QgsProject.instance().addMapLayers([layer])

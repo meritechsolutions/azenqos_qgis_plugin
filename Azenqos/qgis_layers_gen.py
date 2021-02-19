@@ -11,9 +11,9 @@ except:
 import qt_utils
 
 
-def create_qgis_layer_csv(csv_fp, layer_name="layer"):
+def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="lat"):
     print("create_qgis_layer_csv() START")
-    uri = "{}?crs=epsg:4326".format(csv_fp)
+    uri = "file://{}?crs=epsg:4326&xField={}&yField={}".format(csv_fp, x_field, y_field)
     print("csv uri: {}".format(uri))
     layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
     QgsProject.instance().addMapLayers([layer])

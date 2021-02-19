@@ -62,6 +62,8 @@ class TableWindow(QWidget):
         self.width = 640
         self.height = 480
         self.dataList = []
+        self.df = None  # if pandas mode this will be set
+        self.df_str = None  # if pandas mode this will be set - for easy string filter/search
         self.customData = []
         self.customHeader = []
         self.currentRow = 0
@@ -171,6 +173,7 @@ class TableWindow(QWidget):
         # self.menu.exec_(QtCore.QPoint(posX, posY))
 
     def setFilterListModel(self, columnIndex, checkedRegexList):
+        print("setFilterListModel: columnIndex {}, checkedRegexList {}".format())
         self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
         self.proxyModel.invalidateFilter()
 
@@ -234,6 +237,7 @@ class TableWindow(QWidget):
 
         self.dataList = dataList
         if isinstance(dataList, pd.DataFrame):
+            self.set_pd_df(dataList)
             self.tableModel = PdTableModel(dataList, self)
         else:
             self.tableModel = TableModel(dataList, self.tableHeader, self)
@@ -256,6 +260,16 @@ class TableWindow(QWidget):
             # print("resizeColumnsToContents()")
             # self.tableView.resizeColumnsToContents()
 
+    
+    def set_pd_df(self, dataList):
+        self.dataList = dataList
+        if isinstance(dataList, pd.DataFrame):
+            self.df = dataList
+            self.df_str = self.df.astype(str)
+        else:
+            self.df = None
+            self.df_str = None
+        
     def setDataSet(self, data_set: list):
         self.dataList = data_set
 
@@ -265,18 +279,23 @@ class TableWindow(QWidget):
             self.columnCount = sizelist[1]
 
     def refreshTableContents(self, create_table_model=False):
+        print("datatable refreshTableContents()")
         if self.gc.databasePath is None:
             return
         with sqlite3.connect(self.gc.databasePath) as dbcon:
             try:
                 if self.custom_df is not None:
-                    self.dataList = self.custom_df
+                    print("datatable refreshTableContents() custom_df")
+                    self.set_pd_df(custom_df)
                 else:
-                    self.dataList = self.refresh_data_func(dbcon, self.gc.currentDateTimeString)            
+                    print("datatable refreshTableContents() refresh_data_func")
+                    self.set_pd_df(self.refresh_data_func(dbcon, self.gc.currentDateTimeString))
                 if self.dataList is not None:
                     if create_table_model:
+                        print("datatable refreshTableContents() settablemodel")
                         self.setTableModel(self.dataList)
                     else:
+                        print("datatable refreshTableContents() updatetablemodeldata")
                         self.updateTableModelData(
                             self.dataList
                         )  # applies new self.dataList
@@ -526,6 +545,7 @@ class FilterMenuWidget(QWidget):
         self.treeView.sortByColumn(0, Qt.AscendingOrder)
 
     def selectAll(self, state):
+        print("filtermenuwidget: selectAll")
         rowCount = self.model.rowCount()
         for x in range(rowCount):
             if state == 2:
@@ -535,9 +555,10 @@ class FilterMenuWidget(QWidget):
 
     def search(self, text):
         # self.proxyModel.setFilterRegExp(text)
-        print(text)
+        print("filtermenuwidget: search: text:",text)
 
     def setFilter(self):
+        print("filtermenuwidget: setFilter")
         checkedRegexList = []
         self.model.sort(0, Qt.AscendingOrder)
         for i in range(self.model.rowCount()):
@@ -549,6 +570,7 @@ class FilterMenuWidget(QWidget):
         self.close()
 
     def closeEvent(self, QCloseEvent):
+        print("filtermenuwidget: closeEvent")
         indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
             self.gc.openedWindows.pop(index)
@@ -746,7 +768,9 @@ class PdTableModel(QAbstractTableModel):
         assert df is not None
         assert isinstance(df, pd.DataFrame)
         QAbstractTableModel.__init__(self, parent, *args)
-        self.df = df
+        self.df_full = df
+        self.df = df  # filtered data for display
+        self.parent = parent
 
     def rowCount(self, parent):
         return len(self.df)
@@ -754,15 +778,45 @@ class PdTableModel(QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.df.columns)
 
+
+    def setStrColFilters(self, filters):
+        print("pdtablemodel setStrColFilters filteres START")
+        self.df = self.df_full
+        changed = True
+        for col_index in filters.keys():
+            col = self.df.columns[col_index]
+            regex = filters[col_index].pattern()  # QRegExp
+            if col and regex:
+                print("setStrColFilters col: {} regex: {}".format(col, regex))
+                self.df = self.df[self.df[col].astype(str).str.contains(regex, case=False)]
+        if changed:
+            """
+            index_topleft = self.index(0, 0)
+            index_bottomright = self.index(len(self.df), len(self.df.columns))
+            self.dataChanged.emit(
+                index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
+            )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
+            """
+            self.parent.signal_ui_thread_emit_model_datachanged.emit()
+            print("pdtablemodel setStrColFilters emit done")
+        else:
+            print("pdtablemodel setStrColFilters not changed")
+            
+        print("pdtablemodel setStrColFilters filteres DONE len(self.df_full) {} len(self.df) {}".format(len(self.df_full), len(self.df)))
+
     # override
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
         if isinstance(data, pd.DataFrame):
+            self.df_full = data
             self.df = data
+            """
             index_topleft = self.index(0, 0)
             index_bottomright = self.index(100, 100)
             self.dataChanged.emit(
                 index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
             )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
+            """
+            self.parent.signal_ui_thread_emit_model_datachanged.emit()
             print("pdtablemodel setdata emit done")
             return True
         return False

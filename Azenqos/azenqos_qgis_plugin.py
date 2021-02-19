@@ -33,6 +33,7 @@ from resources import *
 
 # Import the code for the dialog
 import os.path
+import azq_utils
 
 
 class azenqos_qgis_plugin:
@@ -213,6 +214,25 @@ class azenqos_qgis_plugin:
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
+
+        debug_exec_str = azq_utils.read_local_file("debug_qgis_pyexec")
+        if debug_exec_str is None or debug_exec_str.strip() == "":
+            pass
+        else:                            
+            print("debug_qgis_pyexec flagged - running...")
+            try:
+                lines = debug_exec_str.split("\n") if "\n" in debug_exec_str else [debug_exec_str]
+                for line in lines:
+                    print("exec line: {}".format(line))
+                    exec(line.strip())
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: debug_qgis_pyexec exception:", exstr)
+
+            print("debug_qgis_pyexec flagged - running... DONE")
+            return
+        
         if self.dlg is None or self.dlg.closed:
             self.first_start = False
             import main_window            

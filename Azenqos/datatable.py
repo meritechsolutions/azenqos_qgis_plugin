@@ -7,6 +7,7 @@ import os
 import pandas as pd
 import sqlite3
 import azq_utils
+import qt_utils
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -155,6 +156,24 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
+        
+    def contextMenuEvent(self, event):
+        menu = QMenu(self)
+        create_qgis_layer_action = menu.addAction("Create QGIS Map layer...")
+        action = menu.exec_(self.mapToGlobal(event.pos()))
+        if action == create_qgis_layer_action:
+            if qgis_iface is None:
+                qt_utils.msgbox("Not running in QGIS-plugin mode...")
+                return
+            if self.tableModel is None:
+                qt_utils.msgbox("No data/log loaded yet...")
+                return
+            if not len(self.tableModel.df):
+                qt_utils.msgbox("No rows to use...")
+                return
+            raise Exception("TODO")
+
+    
     def headerMenu(self, pos):
         globalPos = self.mapToGlobal(pos)
         menu = QMenu()

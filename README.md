@@ -27,6 +27,13 @@ Installation instructions for Ubuntu GNU/Linux
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.
 - Repeat the same when you want to upgrade the plugin
 
+Running tests
+-------------
+
+- Non-ui tests: run `./test.sh` in 'Azenqos' folder for GNU/Linux, otherwise use pytest.
+- Testing specific ui dialogs/windows: run ui_test_* files with python3, for example - to launch main window in standalone (non-QGIS) mode - do: `python3 ui_test_main_window.py`
+- Testing specific QGIS functions at start of pressing the qgis plugin button (instead of launching the main_window): create a file named `debug_qgis_pyexec` in this folder and put your python code to test in there, for example: `import qgis_test_csv_layer`. Then launch QGIS, tap on the azenqos plugin icon in toolbar - it would run your code only.
+
 
 License
 -------

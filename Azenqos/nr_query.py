@@ -31,15 +31,20 @@ class NrDataQuery:
 
 ################################## df get functions
 
-
 def get_nr_radio_params_disp_df(dbcon, time_before):
     n_param_args = 8
     parameter_to_columns_list = [
         ("Time", ["time"]),
+        (
+            ["Beam ID"],
+            list(map(lambda x: "nr_servingbeam_ssb_index_{}".format(x + 1), range(n_param_args))),
+        ),
         (  # these params below come together so query them all in one query
-            ["Band", "ARFCN", "PCI", "RSRP", "RSRQ", "SINR"],
+            ["Band", "Band Type", "ARFCN", "Frequency", "PCI", "RSRP", "RSRQ", "SINR", "Bandwidth", "SSB SCS", "Numerology SCS"],
             list(map(lambda x: "nr_band_{}".format(x + 1), range(n_param_args)))
+            +list(map(lambda x: "nr_band_type_{}".format(x + 1), range(n_param_args)))
             + list(map(lambda x: "nr_dl_arfcn_{}".format(x + 1), range(n_param_args)))
+            + list(map(lambda x: "nr_dl_frequency_{}".format(x + 1), range(n_param_args)))
             + list(
                 map(
                     lambda x: "nr_servingbeam_pci_{}".format(x + 1), range(n_param_args)
@@ -62,6 +67,15 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
                     lambda x: "nr_servingbeam_ss_sinr_{}".format(x + 1),
                     range(n_param_args),
                 )
+            )
+            +list(
+                map(lambda x: "nr_bw_{}".format(x + 1), range(n_param_args))
+            )
+            + list(
+                map(lambda x: "nr_ssb_scs_{}".format(x + 1), range(n_param_args))
+            )
+            + list(
+                map(lambda x: "nr_numerology_scs_{}".format(x + 1), range(n_param_args))
             ),
         ),
         (  # these params below come together but not same row with rsrp etc above so query them all in their own set below

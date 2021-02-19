@@ -6,8 +6,6 @@ import traceback
 import os
 import pandas as pd
 import sqlite3
-import azq_utils
-import qt_utils
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -39,6 +37,9 @@ import gsm_query
 from tsharkworker import TsharkDecodeWorker
 import polqa_query
 import pcap_window
+import azq_utils
+import qt_utils
+import qgis_layers_gen
 
 
 class TableWindow(QWidget):
@@ -158,20 +159,26 @@ class TableWindow(QWidget):
 
         
     def contextMenuEvent(self, event):
+        if not self.time_list_mode:
+            return
         menu = QMenu(self)
         create_qgis_layer_action = menu.addAction("Create QGIS Map layer...")
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action == create_qgis_layer_action:
-            if qgis_iface is None:
+            if self.gc.qgis_iface is None:
                 qt_utils.msgbox("Not running in QGIS-plugin mode...")
                 return
             if self.tableModel is None:
                 qt_utils.msgbox("No data/log loaded yet...")
                 return
             if not len(self.tableModel.df):
-                qt_utils.msgbox("No rows to use...")
+                qt_utils.msgbox("This table is empty - no rows to use...")
                 return
-            raise Exception("TODO")
+            layer_name = qt_utils.ask_text(self, "New layer", "Please specify layer name:")
+            if layer_name:
+                with sqlite3.connect(self.gc.databasePath) as dbcon:
+                    # load it into qgis as new layer
+                    qgis_layers_gen.create_qgis_layer_df(self.tableModel.df, dbcon, layer_name=layer_name)
 
     
     def headerMenu(self, pos):
@@ -466,10 +473,10 @@ class TableWindow(QWidget):
     def findCurrentRow(self):
         if isinstance(self.dataList, pd.DataFrame):
             if self.dateString:
-                df = self.dataList
+                df = self.tableModel.df  #self.dataList
                 ts_query = """time <= '{}'""".format(self.dateString)
                 print("ts_query:", ts_query)
-                df = df.query(ts_query)
+                df = df.query(ts_query).reset_index()
                 print('findcurrentrow after query df len: %d', len(df))
                 if len(df):
                     self.currentRow = df.index[-1]

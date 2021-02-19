@@ -4,9 +4,17 @@ from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QTh
 from PyQt5.QtGui import *
 
 
-def msgbox(self, msg, title="Message"):
+def msgbox(msg, title="Message"):
     msgBox = QMessageBox()
     msgBox.setWindowTitle(title)
     msgBox.setText(msg)
     msgBox.addButton(QPushButton('OK'), QMessageBox.YesRole)
     reply = msgBox.exec_()
+
+    
+def ask_text(parent, title, msg):
+    text, okPressed = QInputDialog.getText(parent, title, msg, QLineEdit.Normal, "")
+    if okPressed:
+        return text
+    return None
+        

@@ -7,6 +7,7 @@ import shutil
 import hashlib
 import requests
 import azq_utils
+import datetime
 
 TMP_FOLDER_NAME = "tmp_gen"
 

@@ -1828,11 +1828,6 @@ def merge_lat_lon_into_df(
         df.to_csv("tmp/merge_lat_lon_into_df_df.csv", quoting=csv.QUOTE_ALL)
 
     location_df = get_dbcon_location_df(dbcon, is_indoor=is_indoor)
-    location_df = location_df[
-        ["log_hash", "time", "positioning_lat", "positioning_lon"]
-    ]
-    location_df["time"] = pd.to_datetime(location_df["time"])
-    location_df["log_hash"] = location_df["log_hash"].astype(np.int64)
     location_df = location_df.sort_values("time")
     if debug_file_flag:
         location_df.to_csv(
@@ -1858,6 +1853,22 @@ def merge_lat_lon_into_df(
         df["log_hash"] = df["log_hash_x"]
 
     return df
+
+
+g_location_df_cache = {}
+def get_dbcon_location_df(dbcon, is_indoor):
+    global g_location_df_cache
+    if dbcon in g_location_df_cache:
+        return g_location_df_cache[dbcon]    
+    sqlstr = "select log_hash, time, posid, positioning_lat, positioning_lon from location"
+    location_df = pd.read_sql(sqlstr, dbcon, parse_dates=["time"])
+    location_df["log_hash"] = location_df["log_hash"].astype(np.int64)
+
+    location_df.sort_values("time", inplace=True)
+    location_df["positioning_lat"] = pd.to_numeric(location_df["positioning_lat"])
+    location_df["positioning_lon"] = pd.to_numeric(location_df["positioning_lon"])
+    g_location_df_cache[dbcon] = location_df
+    return location_df
 
 
 def get_azqdata_dat_first_azqml_flow_ts():

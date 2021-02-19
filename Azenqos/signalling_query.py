@@ -3,6 +3,7 @@ import pandas as pd
 import params_disp_df
 import sys
 import traceback
+import numpy as np
 
 
 class SignalingDataQuery:
@@ -338,11 +339,13 @@ class SignalingDataQuery:
 
 def get_signalling(dbcon, time_before):
     L3_SQL = "SELECT log_hash, time, name, symbol as dir, protocol, detail_str FROM signalling order by time"    
-    return pd.read_sql(
+    df = pd.read_sql(
         L3_SQL,
         dbcon,
         parse_dates=["time"]
     )
+    df["log_hash"] = df["log_hash"].astype(np.int64)
+    return df
 
 
 def get_events(dbcon, time_before):
@@ -363,5 +366,7 @@ def get_events(dbcon, time_before):
             else:
                 print("ERROR: get_events exception: %s", exstr)
                 raise e
-    return pd.concat(df_list, ignore_index=True)
+    df = pd.concat(df_list, ignore_index=True)
+    df["log_hash"] = df["log_hash"].astype(np.int64)
+    return df
 

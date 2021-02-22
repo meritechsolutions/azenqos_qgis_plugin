@@ -29,6 +29,7 @@ class login_dialog(QDialog):
     progress_update_signal = pyqtSignal(int)
     status_update_signal = pyqtSignal(str)
     login_done_signal = pyqtSignal(str)
+
     
     def __init__(self, parent, gc, download_db_zip=True):
         super(login_dialog, self).__init__(parent)

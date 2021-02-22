@@ -130,6 +130,7 @@ Log_hash list: {}""".format(
             )
         qt_utils.msgbox(msg, parent=self)
 
+        
     @pyqtSlot()
     def on_actionLogin_triggered(self):
         if self.is_logged_in():
@@ -142,6 +143,7 @@ Log_hash list: {}""".format(
             return
         self.gc.login_dialog = dlg
 
+        
     @pyqtSlot()
     def on_actionLogout_triggered(self):
         msg = "Logged out..."
@@ -151,22 +153,49 @@ Log_hash list: {}""".format(
             self.gc.login_dialog.token = None
         qt_utils.msgbox(msg, parent=self)
 
+        
     @pyqtSlot()
     def on_actionRun_server_modules_triggered(self):
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
+            return
             
 
     @pyqtSlot()
     def on_actionRun_PY_EVAL_code_triggered(self):
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
+            return
+        py_eval_code = qt_utils.ask_text(self, "PY_EVAL code", "Please enter PY_EVAL code to run:")
+        if py_eval_code:
+            swa = SubWindowArea(self.mdi, self.gc)
+            widget = TableWindow(swa, "test df", None, gc=self.gc, custom_df=pd.DataFrame({'status':["Loading"]}), time_list_mode=True)
+            self.add_subwindow_with_widget(swa, widget)
+            
+            gen_thread = threading.Thread(
+                target=self.run_py_eval_code_code_and_emit_to_window_once_done,
+                args=(
+                    py_eval_code,
+                    widget,
+                )
+            )
+            gen_thread.start()
+            
+
+    def run_py_eval_code_code_and_emit_to_window_once_done(self, py_eval_code, window):
+        time.sleep(1)
+        df = pd.DataFrame({'status':["done"],'status2':["done2"]})
+        window.df = df
+        window.tableHeader=df.columns.values.tolist()
+        window.signal_ui_thread_emit_new_df.emit()
+        
 
 
     @pyqtSlot()
     def on_actionRun_SQL_code_triggered(self):
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
+            return
 
 
     def is_logged_in(self):

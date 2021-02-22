@@ -264,7 +264,7 @@ def api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expressio
             print('resp_dict["returncode"]:', resp_dict["returncode"])
             if resp_dict["returncode"] is not None:        
                 break
-            signal_emit(status_update_signal, "Server processing running - loop_count: {}".format(loop_count))        
+            signal_emit(status_update_signal, "Server process running - loop_count: {}".format(loop_count))        
         signal_emit(status_update_signal, "Server process completed...")
         #print('server process complete - resp_dict:', resp_dict)
         signal_emit(progress_update_signal, 50)

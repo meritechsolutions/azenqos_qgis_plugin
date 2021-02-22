@@ -44,16 +44,28 @@ import qgis_layers_gen
 
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
+    signal_ui_thread_emit_new_df = pyqtSignal()
 
-    def __init__(self, parent, title, refresh_data_func, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False):
+    progress_update_signal = pyqtSignal(int)
+    status_update_signal = pyqtSignal(str)
+    init_done_signal = pyqtSignal(str)
+
+    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, gc=None):
         super().__init__(parent)
         self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
         self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
         self.event_mos_score = event_mos_score
         self.tableModel = None
-        self.gc = parent.gc
+
+        try:
+            self.gc = parent.gc
+        except:
+            self.gc = gc
+        assert self.gc is not None
+
+        
         self.title = title
-        self.refresh_data_func = refresh_data_func
+        self.refresh_data_from_dbcon_and_time_func = refresh_data_from_dbcon_and_time_func
         self.custom_df = custom_df
         self.tableHeader = tableHeader
         self.rows = 0
@@ -76,8 +88,12 @@ class TableWindow(QWidget):
         self.filterList = None
         self.filterMenu = None
         self.signal_ui_thread_emit_model_datachanged.connect(
-            self.ui_thread_emit_model_datachanged
+            self.ui_thread_model_datachanged
         )
+        self.signal_ui_thread_emit_new_df.connect(
+            self.ui_thread_new_df
+        )
+        self.prev_layout = None
         self.setupUi()
         # self.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.customContextMenuRequested.connect(self.generateMenu)
@@ -98,9 +114,13 @@ class TableWindow(QWidget):
         # Init filter header
 
         self.filterHeader = FilterHeader(self.tableView)
+        """
         if self.title in ["Signaling_Events", "Signaling_Layer 3 Messages"]:
             self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
+        """
+        self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
 
             # self.filterHeader.section.connect(self.horizontalHeader_sectionClicked)
 
@@ -204,8 +224,9 @@ class TableWindow(QWidget):
         self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
         self.proxyModel.invalidateFilter()
 
-    def ui_thread_emit_model_datachanged(self):
-        print("ui_thread_emit_model_datachanged")
+        
+    def ui_thread_model_datachanged(self):
+        print("ui_thread_model_datachanged")
         # this func is supposed to be called as a slot by ui thread - triggered by signal from non-ui thread
         index_topleft = self.tableModel.index(0, 0)
         index_bottomright = self.tableModel.index(100, 100)
@@ -213,6 +234,15 @@ class TableWindow(QWidget):
         self.proxyModel.dataChanged.emit(
             index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
         )
+
+        
+    def ui_thread_new_df(self):
+        print("ui_thread_new_df")
+        self.setTableModel(self.df)
+        self.tableView.horizontalHeader().setDefaultSectionSize(70)
+        if self.tableHeader is not None and len(self.tableHeader) and len(self.tableHeader) > 0:
+            self.filterHeader.setFilterBoxes(self.gc.maxColumns, self)
+        #self.tableView.resizeColumnsToContents()
 
     def updateTableModelData(self, data):
         if self.tableModel is None:            
@@ -305,32 +335,35 @@ class TableWindow(QWidget):
             self.rowCount = sizelist[0]
             self.columnCount = sizelist[1]
 
+
     def refreshTableContents(self, create_table_model=False):
         print("datatable refreshTableContents()")
-        if self.gc.databasePath is None:
-            return
-        with sqlite3.connect(self.gc.databasePath) as dbcon:
+        
+        if self.custom_df is not None:
+            print("datatable refreshTableContents() custom_df")
+            self.set_pd_df(self.custom_df)
+        elif self.gc.databasePath is not None and self.refresh_data_from_dbcon_and_time_func is not None:
             try:
-                if self.custom_df is not None:
-                    print("datatable refreshTableContents() custom_df")
-                    self.set_pd_df(custom_df)
-                else:
-                    print("datatable refreshTableContents() refresh_data_func")
-                    self.set_pd_df(self.refresh_data_func(dbcon, self.gc.currentDateTimeString))
-                if self.dataList is not None:
-                    if create_table_model:
-                        print("datatable refreshTableContents() settablemodel")
-                        self.setTableModel(self.dataList)
-                    else:
-                        print("datatable refreshTableContents() updatetablemodeldata")
-                        self.updateTableModelData(
-                            self.dataList
-                        )  # applies new self.dataList
-                    self.tableViewCount = self.tableView.model().rowCount()
+                with sqlite3.connect(self.gc.databasePath) as dbcon:
+                    print("datatable refreshTableContents() refresh_data_from_dbcon_and_time_func")
+                    self.set_pd_df(self.refresh_data_from_dbcon_and_time_func(dbcon, self.gc.currentDateTimeString))
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: datatable title {} refreshTableContents() failed exception: {}".format(self.title, exstr))
+                self.set_pd_df(pd.DataFrame({"status", exstr}))
+            
+        if self.dataList is not None:
+            if create_table_model:
+                print("datatable refreshTableContents() settablemodel")
+                self.setTableModel(self.dataList)
+            else:
+                print("datatable refreshTableContents() updatetablemodeldata")
+                self.updateTableModelData(
+                    self.dataList
+                )  # applies new self.dataList
+            self.tableViewCount = self.tableView.model().rowCount()
+
 
 
     def setHeader(self, headers):

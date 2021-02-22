@@ -5,6 +5,7 @@ import traceback
 from urllib.parse import urlparse
 import time
 import re
+import json
 import pandas as pd
 
 import azq_utils
@@ -128,10 +129,7 @@ def api_delete_process(server, token, proc_uuid):
     return resp_dict
 
 
-def api_dump_db_get_proc_uuid(
-        server,
-        token,
-        lhl,
+def api_dump_db_expression(
         tables=[
             "logs",
             "location",
@@ -155,17 +153,14 @@ def api_dump_db_get_proc_uuid(
             
         ],
 ):
-    proc_uuid = api_create_process(server, token, lhl, "dump_db.process_cell(dbcon, '', tables=[{}])".format(",".join("'"+pd.Series(tables)+"'")))["proc_uuid"]
-    print("task_uuid:", proc_uuid)
-    assert proc_uuid
-    return proc_uuid
+    return "dump_db.process_cell(dbcon, '', tables=[{}])".format(",".join("'"+pd.Series(tables)+"'"))
 
 
 def api_wait_until_process_completed(server, token, proc_uuid):
     resp_dict = None    
     # loop check task status until success
     while True:
-        time.sleep(3)
+        time.sleep(1)
         resp_dict = api_get_process(server, token, proc_uuid)
         print('resp_dict["returncode"]:', resp_dict["returncode"])
         if resp_dict["returncode"] is not None:        
@@ -173,24 +168,24 @@ def api_wait_until_process_completed(server, token, proc_uuid):
     return resp_dict
 
 
-def parse_api_dump_db_stdout_get_zip_url(server, proc_stdout_str):
-    host = urlparse(server).netloc
-    match_list = re.findall(r"GET_PYPROCESS_OUTPUT result:\n{'py_eval': {'\w+': '(.+)'", proc_stdout_str)
-    if match_list:
-        fp = match_list[0]
-        url = "https://{}/{}".format(
-            host,
-            fp.replace("/host_shared_dir", "", 1)
-        )
-        return url
-    return None
+def parse_py_eval_ret_dict_from_stdout_log(proc_stdout_str):
+    str_split_token = "---### GET_PYPROCESS_OUTPUT JSON ###---"
+    assert str_split_token in proc_stdout_str
+    parts = proc_stdout_str.split(str_split_token)
+    assert len(parts) >= 3
+    json_resp = parts[1]
+    ret_dict = json.loads(json_resp)
+    return ret_dict
+
+
+def api_relative_path_to_url(server, path):
+    host = urlparse(server).netloc    
+    url = "https://{}{}".format(host, path)
+    return url
 
 
 def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=None, status_update_signal=None, done_signal=None, on_zip_downloaded_func=None):
 
-    # for cleanup
-    proc_uuid = None
-    
     try:
         # the emit() below would fail/raise if login_dialog/ui was closed as signal would be invalid and raise and trigger finally cleanup - so no need to check dialog closed flag etc
         
@@ -201,41 +196,13 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
         signal_emit(status_update_signal, "Login success...")
         signal_emit(progress_update_signal, 10)
 
-        # create dump db process on server
-        proc_uuid = api_dump_db_get_proc_uuid(server, token, lhl)
-        signal_emit(status_update_signal, "Requested server for specifed log_hash list data...")
-        signal_emit(progress_update_signal, 15)
+        py_eval_ret_dict = api_py_eval_get_parsed_ret_dict(server, token, lhl, api_dump_db_expression(), progress_update_signal, status_update_signal, done_signal)
 
-
-        # loop check server process until success
-        resp_dict = None
-        loop_count = 0        
-        while True:
-            loop_count += 1
-            time.sleep(1)
-            resp_dict = api_get_process(server, token, proc_uuid)
-            print('resp_dict["returncode"]:', resp_dict["returncode"])
-            if resp_dict["returncode"] is not None:        
-                break
-            signal_emit(status_update_signal, "Server dumping data - loop_count: {}".format(loop_count))        
-        signal_emit(status_update_signal, "Server dump data process completed...")
-        print('server process complete - resp_dict:', resp_dict)
-        signal_emit(progress_update_signal, 50)
-
-        # cleanup server process immediately and set proc_uuid as None so no need re-cleanup in finally block
-        signal_emit(status_update_signal, "Server process cleanup...")
-        cret = api_delete_process(server, token, proc_uuid)
-        proc_uuid = None # as process was already cleanedup...                
-        signal_emit(progress_update_signal, 55)
+        assert py_eval_ret_dict is not None
         
         # check that server process succeeded
         signal_emit(status_update_signal, "Check server response for db zip...")
-        if resp_dict["returncode"] != 0:
-            raise Exception('Server process failed with code: {}, stdout_log_tail: {}'.format(resp_dict["returncode"], resp_dict["stdout_log_tail"]))
-        # get server process resp_dicts' stdout
-        proc_stdout_str = api_resp_get_stdout(server, token, resp_dict)        
-        # parse for zip url
-        zip_url = parse_api_dump_db_stdout_get_zip_url(server, proc_stdout_str)
+        zip_url = api_relative_path_to_url(server, py_eval_ret_dict['ret_dump'])
         print("zip_url:", zip_url)
         signal_emit(progress_update_signal, 60)
 
@@ -256,7 +223,7 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
         
         signal_emit(done_signal, "")  # empty string means success
         return target_fp
-    except:
+    except Exception as ex:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: api_login_and_dl_db_zip exception: {}", exstr)
@@ -264,16 +231,77 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
             signal_emit(done_signal, exstr)
         except:
             pass
+        raise ex
+
+    return None
+
+
+def api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expression, progress_update_signal=None, status_update_signal=None, done_signal=None, parse_stdout_log_for_py_eval_output_and_return=True):
+
+    # for cleanup
+    proc_uuid = None
+    
+    try:
+        # the emit() below would fail/raise if login_dialog/ui was closed as signal would be invalid and raise and trigger finally cleanup - so no need to check dialog closed flag etc 
+
+        # create process on server
+        print("azq_report_gen_expression:", azq_report_gen_expression)
+        proc_uuid = api_create_process(server, token, lhl, azq_report_gen_expression)['proc_uuid']
+        print("servr proc_uuid:", proc_uuid)
+        signal_emit(status_update_signal, "Requested server for specifed log_hash list data...")
+        signal_emit(progress_update_signal, 15)
+
+        # loop check server process until success
+        resp_dict = None
+        loop_count = 0        
+        while True:
+            loop_count += 1
+            time.sleep(1)
+            resp_dict = api_get_process(server, token, proc_uuid)
+            print('resp_dict["returncode"]:', resp_dict["returncode"])
+            if resp_dict["returncode"] is not None:        
+                break
+            signal_emit(status_update_signal, "Server processing data - loop_count: {}".format(loop_count))        
+        signal_emit(status_update_signal, "Server process completed...")
+        #print('server process complete - resp_dict:', resp_dict)
+        signal_emit(progress_update_signal, 50)
+
+        # cleanup server process immediately and set proc_uuid as None so no need re-cleanup in finally block
+        signal_emit(status_update_signal, "Server process cleanup...")
+        cret = api_delete_process(server, token, proc_uuid)
+        proc_uuid = None # as process was already cleanedup...                
+        signal_emit(progress_update_signal, 55)
+        
+        signal_emit(done_signal, "")  # empty string means success
+        assert resp_dict
+
+        if parse_stdout_log_for_py_eval_output_and_return:
+            # get server process resp_dicts' stdout
+            proc_stdout_str = api_resp_get_stdout(server, token, resp_dict)        
+            # parse for GET_PYPROCESS_OUTPUT json result
+            py_eval_resp_dict = parse_py_eval_ret_dict_from_stdout_log(proc_stdout_str)
+            return py_eval_resp_dict
+        else:
+            return resp_dict
+    except Exception as ex:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: api_py_eval_and_wait_completion exception: {}", exstr)
+        try:
+            signal_emit(done_signal, exstr)
+        except:
+            pass
+        raise ex
     finally:
         if proc_uuid:
-            print("api_login_and_dl_db_zip: cleanup server proc_uuid as we had exception above - START")
+            print("api_py_eval_and_wait_completion: cleanup server proc_uuid as we had exception above - START")
             try:
                 cret = api_delete_process(server, token, proc_uuid)
-                print("login_and_dl_db_zip: cleanup server proc_uuid as we had exception above - DONE ret: {}".format(cret))
+                print("api_py_eval_and_wait_completion: cleanup server proc_uuid as we had exception above - DONE ret: {}".format(cret))
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: api_login_and_dl_db_zip api_delte_process failed exception: {}", exstr)
+                print("WARNING: api_py_eval_and_wait_completion api_delte_process failed exception: {}", exstr)
 
     return None
 

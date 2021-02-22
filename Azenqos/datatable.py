@@ -384,7 +384,7 @@ class TableWindow(QWidget):
     def showDetail(self, item):
         row_index = item.row()        
         print("showDetail row_index: %d" % row_index)
-        row_sr = self.dataList.iloc[row_index]
+        row_sr = self.tableModel.df.iloc[row_index]
         #cellContent = str(item.data())
         cellContent = ""
         for index, val in row_sr.items():

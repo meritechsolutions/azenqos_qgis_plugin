@@ -35,13 +35,10 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
     n_param_args = 8
     parameter_to_columns_list = [
         ("Time", ["time"]),
-        (
-            ["Beam ID"],
-            list(map(lambda x: "nr_servingbeam_ssb_index_{}".format(x + 1), range(n_param_args))),
-        ),
         (  # these params below come together so query them all in one query
-            ["Band", "Band Type", "ARFCN", "Frequency", "PCI", "RSRP", "RSRQ", "SINR", "Bandwidth", "SSB SCS", "Numerology SCS"],
-            list(map(lambda x: "nr_band_{}".format(x + 1), range(n_param_args)))
+            ["Beam ID", "Band", "Band Type", "ARFCN", "Frequency", "PCI", "RSRP", "RSRQ", "SINR", "Bandwidth", "SSB SCS", "Numerology SCS"],
+            list(map(lambda x: "nr_servingbeam_ssb_index_{}".format(x + 1), range(n_param_args)))
+            +list(map(lambda x: "nr_band_{}".format(x + 1), range(n_param_args)))
             +list(map(lambda x: "nr_band_type_{}".format(x + 1), range(n_param_args)))
             + list(map(lambda x: "nr_dl_arfcn_{}".format(x + 1), range(n_param_args)))
             + list(map(lambda x: "nr_dl_frequency_{}".format(x + 1), range(n_param_args)))
@@ -96,7 +93,6 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         default_table="nr_cell_meas",
-        not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
@@ -142,7 +138,6 @@ def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         default_table="nr_cell_meas",
-        not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
@@ -168,7 +163,6 @@ def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
         dparameter_to_columns_list,
         time_before,
         default_table="nr_cell_meas",
-        not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("0dcell_df.head():\n%s" % dcell_df.head())

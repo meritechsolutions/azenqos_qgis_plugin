@@ -350,8 +350,8 @@ def get_signalling(dbcon, time_before):
 
 def get_events(dbcon, time_before):
     sqls = [
-        "select log_hash, time, name, info, '' as wave_file from events",
-        "select log_hash, time, 'MOS Score' || ' ' ||  polqa_mos as name, polqa_output_text as info, wav_filename as wave_file from polqa_mos"
+        "select log_hash, time, name, info, '' as output_text, '' as wave_file from events",
+        "select log_hash, time, 'MOS Score' as name, polqa_mos as info, polqa_output_text as output_text, wav_filename as wave_file from polqa_mos"
     ]
     df_list = []
     for sql in sqls:

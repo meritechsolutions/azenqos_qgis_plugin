@@ -137,11 +137,11 @@
     <property name="title">
      <string>Server modules</string>
     </property>
-    <addaction name="actionRun_an_module_from_list"/>
-    <addaction name="actionRun_manual_PY_EVAL_code"/>
-    <addaction name="actionRun_SQL_Code"/>
+    <addaction name="actionRun_server_modules"/>
+    <addaction name="actionRun_PY_EVAL_code"/>
+    <addaction name="actionRun_SQL_code"/>
     <addaction name="separator"/>
-    <addaction name="actionCurrent_log_hash_list"/>
+    <addaction name="actionSession_info"/>
     <addaction name="actionLogin"/>
     <addaction name="actionLogout"/>
    </widget>
@@ -298,17 +298,17 @@
     <string>PCAP</string>
    </property>
   </action>
-  <action name="actionRun_an_module_from_list">
+  <action name="actionRun_server_modules">
    <property name="text">
-    <string>List &amp;&amp; run server modules...</string>
+    <string>Run server calculation modules...</string>
    </property>
   </action>
-  <action name="actionRun_manual_PY_EVAL_code">
+  <action name="actionRun_PY_EVAL_code">
    <property name="text">
-    <string>Run PY_EVAL code...</string>
+    <string>Run PY_EVAL module code...</string>
    </property>
   </action>
-  <action name="actionRun_SQL_Code">
+  <action name="actionRun_SQL_code">
    <property name="text">
     <string>Run SQL code...</string>
    </property>
@@ -323,7 +323,7 @@
     <string>Logout</string>
    </property>
   </action>
-  <action name="actionCurrent_log_hash_list">
+  <action name="actionSession_info">
    <property name="text">
     <string>Session info...</string>
    </property>

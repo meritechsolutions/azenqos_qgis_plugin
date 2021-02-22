@@ -112,6 +112,69 @@ class main_window(QMainWindow):
         print("save workspace")
         self.saveWorkspaceFile()
 
+    
+    ############# server_modules menu slots
+    @pyqtSlot()
+    def on_actionSession_info_triggered(self):
+        msg = "Not logged in"
+        if self.is_logged_in():
+            msg = """
+Logged in: {}
+Server: {}
+User: {}
+Log_hash list: {}""".format(
+                "Yes" if self.gc.login_dialog.token else "No",
+                self.gc.login_dialog.server,
+                self.gc.login_dialog.user,    
+                self.gc.login_dialog.lhl
+            )
+        qt_utils.msgbox(msg, parent=self)
+
+    @pyqtSlot()
+    def on_actionLogin_triggered(self):
+        if self.is_logged_in():
+            qt_utils.msgbox("WARNING: You are already logged in - close login dialog to cancel re-login...", parent=self)
+        import login_dialog
+        dlg = login_dialog.login_dialog(self, self.gc, download_db_zip=False)
+        dlg.show()
+        ret = dlg.exec()
+        if ret == 0:  # dismissed
+            return
+        self.gc.login_dialog = dlg
+
+    @pyqtSlot()
+    def on_actionLogout_triggered(self):
+        msg = "Logged out..."
+        if not self.is_logged_in():
+            msg = "Not logged in yet..."
+        else:
+            self.gc.login_dialog.token = None
+        qt_utils.msgbox(msg, parent=self)
+
+    @pyqtSlot()
+    def on_actionRun_server_modules_triggered(self):
+        if not self.is_logged_in():
+            qt_utils.msgbox("Please login to server first...", parent=self)
+            
+
+    @pyqtSlot()
+    def on_actionRun_PY_EVAL_code_triggered(self):
+        if not self.is_logged_in():
+            qt_utils.msgbox("Please login to server first...", parent=self)
+
+
+    @pyqtSlot()
+    def on_actionRun_SQL_code_triggered(self):
+        if not self.is_logged_in():
+            qt_utils.msgbox("Please login to server first...", parent=self)
+
+
+    def is_logged_in(self):
+        return self.gc.login_dialog and self.gc.login_dialog.token
+    
+    
+    
+        
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):

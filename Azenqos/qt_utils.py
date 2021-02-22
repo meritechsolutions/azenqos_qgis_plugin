@@ -4,8 +4,8 @@ from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QTh
 from PyQt5.QtGui import *
 
 
-def msgbox(msg, title="Message"):
-    msgBox = QMessageBox()
+def msgbox(msg, title="Message", parent=None):
+    msgBox = QMessageBox(parent)
     msgBox.setWindowTitle(title)
     msgBox.setText(msg)
     msgBox.addButton(QPushButton('OK'), QMessageBox.YesRole)

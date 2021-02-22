@@ -184,7 +184,7 @@ def api_relative_path_to_url(server, path):
     return url
 
 
-def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=None, status_update_signal=None, done_signal=None, on_zip_downloaded_func=None):
+def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=None, status_update_signal=None, done_signal=None, on_zip_downloaded_func=None, download_db_zip=True):
 
     try:
         # the emit() below would fail/raise if login_dialog/ui was closed as signal would be invalid and raise and trigger finally cleanup - so no need to check dialog closed flag etc
@@ -196,32 +196,35 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
         signal_emit(status_update_signal, "Login success...")
         signal_emit(progress_update_signal, 10)
 
-        py_eval_ret_dict = api_py_eval_get_parsed_ret_dict(server, token, lhl, api_dump_db_expression(), progress_update_signal, status_update_signal, done_signal)
+        py_eval_ret_dict = api_py_eval_get_parsed_ret_dict(server, token, lhl, "PY_EVAL sql_helpers.read_sql('select * from logs', dbcon)" if (not download_db_zip) else api_dump_db_expression(), progress_update_signal, status_update_signal)
+        print("login py_eval_ret_dict: {}".format(py_eval_ret_dict))
 
         assert py_eval_ret_dict is not None
-        
-        # check that server process succeeded
-        signal_emit(status_update_signal, "Check server response for db zip...")
-        zip_url = api_relative_path_to_url(server, py_eval_ret_dict['ret_dump'])
-        print("zip_url:", zip_url)
-        signal_emit(progress_update_signal, 60)
 
-        # download db zip from server
-        azq_utils.cleanup_died_processes_tmp_folders()
-        signal_emit(status_update_signal, "Downloading db zip from server...")
-        tmp_dir = azq_utils.tmp_gen_path()
-        target_fp = os.path.join(tmp_dir, "server_db.zip")
-        assert os.path.isfile(target_fp) == False
-        azq_utils.download_file(zip_url, target_fp)
-        assert os.path.isfile(target_fp) == True
-        signal_emit(progress_update_signal, 80)
-        signal_emit(status_update_signal, "Download complete...")
+        target_fp = None
+        if download_db_zip:
+            # check that server process succeeded
+            signal_emit(status_update_signal, "Check server response for db zip...")
+            zip_url = api_relative_path_to_url(server, py_eval_ret_dict['ret_dump'])
+            print("zip_url:", zip_url)
+            signal_emit(progress_update_signal, 60)
 
-        if on_zip_downloaded_func:
-            signal_emit(status_update_signal, "Processing downloaded zip/data...")
-            on_zip_downloaded_func(target_fp)
+            # download db zip from server
+            azq_utils.cleanup_died_processes_tmp_folders()
+            signal_emit(status_update_signal, "Downloading db zip from server...")
+            tmp_dir = azq_utils.tmp_gen_path()
+            target_fp = os.path.join(tmp_dir, "server_db.zip")
+            assert os.path.isfile(target_fp) == False
+            azq_utils.download_file(zip_url, target_fp)
+            assert os.path.isfile(target_fp) == True
+            signal_emit(progress_update_signal, 80)
+            signal_emit(status_update_signal, "Download complete...")
+
+            if on_zip_downloaded_func:
+                signal_emit(status_update_signal, "Processing downloaded zip/data...")
+                on_zip_downloaded_func(target_fp)
         
-        signal_emit(done_signal, "")  # empty string means success
+        signal_emit(done_signal, "SUCCESS,{}".format(token))  # empty string means success
         return target_fp
     except Exception as ex:
         type_, value_, traceback_ = sys.exc_info()
@@ -261,7 +264,7 @@ def api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expressio
             print('resp_dict["returncode"]:', resp_dict["returncode"])
             if resp_dict["returncode"] is not None:        
                 break
-            signal_emit(status_update_signal, "Server processing data - loop_count: {}".format(loop_count))        
+            signal_emit(status_update_signal, "Server processing running - loop_count: {}".format(loop_count))        
         signal_emit(status_update_signal, "Server process completed...")
         #print('server process complete - resp_dict:', resp_dict)
         signal_emit(progress_update_signal, 50)
@@ -277,9 +280,15 @@ def api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expressio
 
         if parse_stdout_log_for_py_eval_output_and_return:
             # get server process resp_dicts' stdout
-            proc_stdout_str = api_resp_get_stdout(server, token, resp_dict)        
+            proc_stdout_str = api_resp_get_stdout(server, token, resp_dict)
             # parse for GET_PYPROCESS_OUTPUT json result
-            py_eval_resp_dict = parse_py_eval_ret_dict_from_stdout_log(proc_stdout_str)
+            py_eval_resp_dict = None
+            try:
+                py_eval_resp_dict = parse_py_eval_ret_dict_from_stdout_log(proc_stdout_str)
+            except:
+                if resp_dict['stdout_log_tail'] and "ERROR: likely invalid log_hash_list" in resp_dict['stdout_log_tail']:
+                    raise Exception("Server process failed: ERROR: likely invalid log_hash_list")
+                raise Exception("Server process failed: {}".format(resp_dict['stdout_log_tail']))
             return py_eval_resp_dict
         else:
             return resp_dict

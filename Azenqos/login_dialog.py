@@ -21,6 +21,7 @@ GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 import time
+import qt_utils
 
 
 class login_dialog(QDialog):
@@ -29,13 +30,19 @@ class login_dialog(QDialog):
     status_update_signal = pyqtSignal(str)
     login_done_signal = pyqtSignal(str)
     
-    def __init__(self, parent, gc):
+    def __init__(self, parent, gc, download_db_zip=True):
         super(login_dialog, self).__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc                
         self.setupUi()
         self.valid = False
         self.downloaded_zip_fp = None
+        self.download_db_zip = download_db_zip
+
+        self.server = None
+        self.user = None
+        self.lhl = None
+        self.token = None
 
         self.login_thread = None
         self.login_done_signal.connect(
@@ -105,6 +112,7 @@ class login_dialog(QDialog):
                         self.status_update_signal,
                         self.login_done_signal,
                         self.on_zip_downloaded,
+                        self.download_db_zip,
                     )
                 )
                 self.login_thread.start()
@@ -179,29 +187,21 @@ class login_dialog(QDialog):
 
 
     def on_login_done(self, error):
-        if error:
+        print("on_login_done: error: {}".format(error))
+        success = False
+        if error.startswith("SUCCESS,"):
+            self.token = error.split(",")[1]
+            success = True
+        if not success:
             QtWidgets.QMessageBox.critical(
-                None,
+                self,
                 "Operation failed...",
                 error,
                 QtWidgets.QMessageBox.Ok,
             )
             self.ui_login_thread_failed()
         else:
+            qt_utils.msgbox("Login successful", parent=self)
             print("on_login_done self.downloaded_zip_fp: %s" % self.downloaded_zip_fp)
             self.done(QtWidgets.QDialog.Accepted)
 
-
-"""
-def login(args_dict):
-    token = None
-    host = urlparse(args_dict["server_url"]).netloc
-    print("login host: %s" % host)
-    assert args_dict["server_url"]
-    assert args_dict["login"]
-    assert args_dict["pass"]
-    token = api_login_get_token(args_dict["login"], args_dict["pass"], host)
-    return token
-
-
-"""

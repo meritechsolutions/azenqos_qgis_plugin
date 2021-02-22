@@ -397,7 +397,9 @@ class TableWindow(QWidget):
             self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side, protocol)
         elif self.event_mos_score and row_sr["name"].find("MOS Score") != -1:
             name = row_sr["name"]
-            side = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"])
+            side = {}
+            side["wav_file"] = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"])
+            side["text_file"] = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"].replace(".wav", "_polqa.txt"))
             self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side)
         else:
             self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
@@ -705,9 +707,11 @@ class DetailWidget(QDialog):
         self.saveBtn.clicked.connect(self.saveWaveFile)
 
         self.setLayout(gridlayout)
-        self.textEdit.setPlainText(self.detailText)
+        f = open(self.side["text_file"], "r")
+        self.textEdit.setPlainText(self.detailText+'\n'+f.read())
+        f.close()
         from PyQt5 import QtMultimedia
-        self.polqaWavFile = QtMultimedia.QSound(self.side)
+        self.polqaWavFile = QtMultimedia.QSound(self.side["wav_file"])
         self.resize(self.width, self.height)
         self.show()
         self.raise_()

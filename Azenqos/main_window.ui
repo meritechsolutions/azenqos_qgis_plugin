@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>18</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -133,8 +133,21 @@
      <string>Help</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuServer_modules">
+    <property name="title">
+     <string>Server modules</string>
+    </property>
+    <addaction name="actionRun_an_module_from_list"/>
+    <addaction name="actionRun_manual_PY_EVAL_code"/>
+    <addaction name="actionRun_SQL_Code"/>
+    <addaction name="separator"/>
+    <addaction name="actionCurrent_log_hash_list"/>
+    <addaction name="actionLogin"/>
+    <addaction name="actionLogout"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuPresentation"/>
+   <addaction name="menuServer_modules"/>
    <addaction name="menuWindows"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -283,6 +296,36 @@
   <action name="actionPCAP">
    <property name="text">
     <string>PCAP</string>
+   </property>
+  </action>
+  <action name="actionRun_an_module_from_list">
+   <property name="text">
+    <string>List &amp;&amp; run server modules...</string>
+   </property>
+  </action>
+  <action name="actionRun_manual_PY_EVAL_code">
+   <property name="text">
+    <string>Run PY_EVAL code...</string>
+   </property>
+  </action>
+  <action name="actionRun_SQL_Code">
+   <property name="text">
+    <string>Run SQL code...</string>
+   </property>
+  </action>
+  <action name="actionLogin">
+   <property name="text">
+    <string>Login</string>
+   </property>
+  </action>
+  <action name="actionLogout">
+   <property name="text">
+    <string>Logout</string>
+   </property>
+  </action>
+  <action name="actionCurrent_log_hash_list">
+   <property name="text">
+    <string>Session info...</string>
    </property>
   </action>
  </widget>

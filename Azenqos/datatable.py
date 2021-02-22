@@ -45,10 +45,11 @@ import qgis_layers_gen
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
 
-    def __init__(self, parent, title, refresh_data_func, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False):
+    def __init__(self, parent, title, refresh_data_func, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False):
         super().__init__(parent)
         self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
         self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
+        self.event_mos_score = event_mos_score
         self.tableModel = None
         self.gc = parent.gc
         self.title = title
@@ -394,6 +395,10 @@ class TableWindow(QWidget):
             side = row_sr["dir"]
             protocol = row_sr["protocol"]
             self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side, protocol)
+        elif self.event_mos_score and row_sr["name"].find("MOS Score") != -1:
+            name = row_sr["name"]
+            side = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"])
+            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side)
         else:
             self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
         """
@@ -622,7 +627,7 @@ class DetailWidget(QDialog):
         self.height = 480
         self.setWindowFlags(QtCore.Qt.Window)
         self.polqaWavFile = None
-        if messageName == "MOS Score":
+        if self.messageName is not None and self.messageName.find("MOS Score") != -1:
             self.setUpPolqaMosScore()
         else:
             self.setupUi()
@@ -700,7 +705,9 @@ class DetailWidget(QDialog):
         self.saveBtn.clicked.connect(self.saveWaveFile)
 
         self.setLayout(gridlayout)
-        self.getPolqa()
+        self.textEdit.setPlainText(self.detailText)
+        from PyQt5 import QtMultimedia
+        self.polqaWavFile = QtMultimedia.QSound(self.side)
         self.resize(self.width, self.height)
         self.show()
         self.raise_()
@@ -724,19 +731,6 @@ class DetailWidget(QDialog):
         print("play wav file")
         if self.polqaWavFile:
             self.polqaWavFile.play()
-
-    def getPolqa(self):
-        print("get polqa data")
-        if self.messageName:
-            polqaDict = polqa_query.PolqaQuery(
-                self.gc.azenqosDatabase, self.side, self.detailText
-            ).getPolqa()
-            if polqaDict:
-                self.textEdit.setPlainText(polqaDict["output_text"])
-                from PyQt5 import QtMultimedia
-                self.polqaWavFile = QtMultimedia.QSound(
-                    os.path.join(azq_utils.tmp_gen_path(), polqaDict["wave_file"])
-                )
 
 
 class TableModel(QAbstractTableModel):

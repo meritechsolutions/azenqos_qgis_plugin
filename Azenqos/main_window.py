@@ -128,7 +128,7 @@ class main_window(QMainWindow):
         import signalling_query
         headers = ["log_hash", "time", "name", "info"]
         swa = SubWindowArea(self.mdi, self.gc)        
-        widget = TableWindow(swa, "Events", signalling_query.get_events, tableHeader=headers, time_list_mode=True)
+        widget = TableWindow(swa, "Events", signalling_query.get_events, tableHeader=headers, time_list_mode=True, event_mos_score=True)
         self.add_subwindow_with_widget(swa, widget)
 
     ############# NR menu slots

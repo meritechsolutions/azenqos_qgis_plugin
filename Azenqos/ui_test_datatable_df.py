@@ -21,27 +21,15 @@ def test(server, user, passwd, lhl):
     gc.login_dialog = login_dialog.login_dialog(None, gc, download_db_zip=False)
     gc.login_dialog.token = token
     gc.login_dialog.server = server
-    gc.login_dialog.lhl = lhl    
-    window = TableWindow(None, "test df", None, gc=gc, custom_df=pd.DataFrame({'status':["Loading"]}), time_list_mode=True)
-    window.show()
+    gc.login_dialog.lhl = lhl
 
-    gen_thread = threading.Thread(
-        target=test_gen_df_func,
-                    args=(
-                        window,
-                    )
-    )
-    gen_thread.start()
-    
+
+    azq_report_gen_expression = "sql_helpers.read_sql('select log_hash, time, lte_inst_rsrp_1 from lte_cell_meas', dbcon)"
+    window = create_table_window_from_api_expression_ret(None, "title", gc, server, token, lhl, azq_report_gen_expression)    
+    window.show()
     app.exec_()
 
-
-def test_gen_df_func(window):
-    time.sleep(1)
-    df = pd.DataFrame({'status':["done"],'status2':["done2"]})
-    window.df = df
-    window.tableHeader=df.columns.values.tolist()
-    window.signal_ui_thread_emit_new_df.emit()
+    
     
 
 if __name__ == "__main__":

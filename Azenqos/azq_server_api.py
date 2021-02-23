@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 import time
 import re
 import json
+import uuid
 import pandas as pd
 
 import azq_utils
@@ -282,14 +283,14 @@ def api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expressio
             # get server process resp_dicts' stdout
             proc_stdout_str = api_resp_get_stdout(server, token, resp_dict)
             # parse for GET_PYPROCESS_OUTPUT json result
-            py_eval_resp_dict = None
+            py_eval_ret_dict = None
             try:
-                py_eval_resp_dict = parse_py_eval_ret_dict_from_stdout_log(proc_stdout_str)
-            except:
+                py_eval_ret_dict = parse_py_eval_ret_dict_from_stdout_log(proc_stdout_str)
+            except Exception as pe:
                 if resp_dict['stdout_log_tail'] and "ERROR: likely invalid log_hash_list" in resp_dict['stdout_log_tail']:
                     raise Exception("Server process failed: ERROR: likely invalid log_hash_list")
-                raise Exception("Server process failed: {}".format(resp_dict['stdout_log_tail']))
-            return py_eval_resp_dict
+                raise pe
+            return py_eval_ret_dict
         else:
             return resp_dict
     except Exception as ex:
@@ -314,3 +315,16 @@ def api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expressio
 
     return None
 
+
+def parse_py_eval_ret_dict_for_df(server, token, py_eval_ret_dict: dict):
+    if py_eval_ret_dict['ret_dump'] is not None and py_eval_ret_dict['ret_type'] is not None and 'pandas.core.frame.DataFrame' in py_eval_ret_dict['ret_type']:
+        pq_url = api_relative_path_to_url(server, py_eval_ret_dict['ret_dump'])
+        tmp_dir = azq_utils.tmp_gen_path()
+        target_fp = os.path.join(tmp_dir, "tmp_server_py_eval_df_{}.parquet".format(uuid.uuid4()))
+        azq_utils.download_file(pq_url, target_fp)
+        assert os.path.isfile(target_fp) == True
+        df = pd.read_parquet(target_fp)
+        return df
+    else:
+        return None
+    

@@ -169,17 +169,9 @@ Log_hash list: {}""".format(
         py_eval_code = qt_utils.ask_text(self, "PY_EVAL code", "Please enter PY_EVAL code to run:")
         if py_eval_code:
             swa = SubWindowArea(self.mdi, self.gc)
-            widget = TableWindow(swa, "test df", None, gc=self.gc, custom_df=pd.DataFrame({'status':["Loading"]}), time_list_mode=True)
+            widget = create_table_window_from_api_expression_ret(swa, "PY_EVAL server run", self.gc, self.gc.login_dialog.server, self.gc.login_dialog.token, self.gc.login_dialog.lhl, py_eval_code)
             self.add_subwindow_with_widget(swa, widget)
             
-            gen_thread = threading.Thread(
-                target=self.run_py_eval_code_code_and_emit_to_window_once_done,
-                args=(
-                    py_eval_code,
-                    widget,
-                )
-            )
-            gen_thread.start()
             
 
     def run_py_eval_code_code_and_emit_to_window_once_done(self, py_eval_code, window):
@@ -196,6 +188,12 @@ Log_hash list: {}""".format(
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
             return
+        py_eval_code = qt_utils.ask_text(self, "SQL code", "Please enter SQL code to run:")        
+        if py_eval_code:
+            py_eval_code = "sql_helpers.read_sql('''{}''', dbcon)".format(py_eval_code)
+            swa = SubWindowArea(self.mdi, self.gc)
+            widget = create_table_window_from_api_expression_ret(swa, "SQL run from server", self.gc, self.gc.login_dialog.server, self.gc.login_dialog.token, self.gc.login_dialog.lhl, py_eval_code)
+            self.add_subwindow_with_widget(swa, widget)
 
 
     def is_logged_in(self):

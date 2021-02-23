@@ -6,6 +6,7 @@ import traceback
 import os
 import pandas as pd
 import sqlite3
+import azq_server_api
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -44,18 +45,18 @@ import qgis_layers_gen
 
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
-    signal_ui_thread_emit_new_df = pyqtSignal()
+    signal_ui_thread_setup_ui = pyqtSignal()  # use with skip_setup_ui in ctor
 
     progress_update_signal = pyqtSignal(int)
-    status_update_signal = pyqtSignal(str)
-    init_done_signal = pyqtSignal(str)
+    status_update_signal = pyqtSignal(str)    
 
-    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, gc=None):
+    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, gc=None, skip_setup_ui=False):
         super().__init__(parent)
         self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
         self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
         self.event_mos_score = event_mos_score
         self.tableModel = None
+        self.skip_setup_ui = skip_setup_ui
 
         try:
             self.gc = parent.gc
@@ -90,18 +91,30 @@ class TableWindow(QWidget):
         self.signal_ui_thread_emit_model_datachanged.connect(
             self.ui_thread_model_datachanged
         )
-        self.signal_ui_thread_emit_new_df.connect(
-            self.ui_thread_new_df
+        self.signal_ui_thread_setup_ui.connect(
+            self.ui_thread_sutup_ui
         )
         self.prev_layout = None
-        self.setupUi()
+        if not skip_setup_ui:
+            self.setupUi()
+        else:
+            self.setupUiDry()
         # self.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.customContextMenuRequested.connect(self.generateMenu)
         # self.properties_window = PropertiesWindow(
         #     self, self.gc.azenqosDatabase, self.dataList, self.tableHeader
         # )
 
+    def setupUiDry(self):
+        print("tablewindow setupuidry()")
+        self.setObjectName(self.title)
+        self.setWindowTitle(self.title)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.resize(self.width, self.height)
+
+
     def setupUi(self):
+        print("tablewindow setupui()")
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -235,14 +248,21 @@ class TableWindow(QWidget):
             index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
         )
 
+
+    def setup_ui_with_custom_df(self, custom_df):
+        self.custom_df = custom_df
+        if self.time_list_mode:
+            self.tableHeader = custom_df.columns.values.tolist()
+        self.signal_ui_thread_setup_ui.emit()
+
         
-    def ui_thread_new_df(self):
-        print("ui_thread_new_df")
-        self.setTableModel(self.df)
-        self.tableView.horizontalHeader().setDefaultSectionSize(70)
-        if self.tableHeader is not None and len(self.tableHeader) and len(self.tableHeader) > 0:
-            self.filterHeader.setFilterBoxes(self.gc.maxColumns, self)
-        #self.tableView.resizeColumnsToContents()
+    """
+    for trigger like window.signal_ui_thread_setup_ui.emit() when skip_setup_ui flagged in ctor
+    """
+    def ui_thread_sutup_ui(self):
+        print("ui_thread_sutup_ui")
+        self.setupUi()
+        
 
     def updateTableModelData(self, data):
         if self.tableModel is None:            
@@ -422,7 +442,11 @@ class TableWindow(QWidget):
         cellContent = ""
         for index, val in row_sr.items():
             cellContent += "[{}]: {}\n".format(index, val)
-        parentWindow = self.parentWindow.parentWidget()
+        parentWindow = None
+        if self.parentWindow:
+            self.parentWindow.parentWidget()
+        else:
+            parentWindow = self
         if self.l3_alt_wireshark_decode:
             name = row_sr["name"]
             side = row_sr["dir"]
@@ -676,8 +700,7 @@ class DetailWidget(QDialog):
         self.textEdit.setReadOnly(True)
         layout = QVBoxLayout(self)
         layout.addWidget(self.textEdit)
-        self.setLayout(layout)
-        self.resize(self.width, self.height)
+        self.setLayout(layout)        
         self.show()
         self.raise_()
         self.activateWindow()
@@ -824,6 +847,8 @@ class PdTableModel(QAbstractTableModel):
     def __init__(self, df, parent=None, *args):
         assert df is not None
         assert isinstance(df, pd.DataFrame)
+        if "time" in df.columns:
+            df["time"] = pd.to_datetime(df["time"])
         QAbstractTableModel.__init__(self, parent, *args)
         self.df_full = df
         self.df = df  # filtered data for display
@@ -920,3 +945,39 @@ class PdTableModel(QAbstractTableModel):
             # print("headerdata section: {} ret: {}".format(section, ret))
             return ret
         return QAbstractTableModel.headerData(self, section, orientation, role)
+
+
+
+def create_table_window_from_api_expression_ret(parent, title, gc, server, token, lhl, azq_report_gen_expression):
+    window = TableWindow(parent, title, None, gc=gc, time_list_mode=True, skip_setup_ui=True)
+    gen_thread = threading.Thread(
+        target=run_api_expression_and_set_results_to_table_window,
+                    args=(
+                        window,
+                        server, token, lhl, azq_report_gen_expression
+                    )
+    )
+    gen_thread.start()
+    return window
+
+
+def run_api_expression_and_set_results_to_table_window(window, server, token, lhl, azq_report_gen_expression):
+    try:
+        ret_dict = azq_server_api.api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expression, progress_update_signal=window.progress_update_signal, status_update_signal=window.status_update_signal, done_signal=None)
+        #time.sleep(1)
+        print("api call ret_dict: {}".format(ret_dict))
+        df = azq_server_api.parse_py_eval_ret_dict_for_df(server, token, ret_dict)
+        if df is None:
+            df = pd.DataFrame(
+                {
+                    "result": [ret_dict["ret"]],
+                }
+            )
+        window.setup_ui_with_custom_df(df)
+    except Exception as ex:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: api_py_eval_and_wait_completion exception: {}", exstr)
+        df = pd.DataFrame({'FAILED':[exstr]})
+        window.setup_ui_with_custom_df(df)
+

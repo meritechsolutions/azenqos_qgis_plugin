@@ -208,11 +208,14 @@ class TableWindow(QWidget):
             if not len(self.tableModel.df):
                 qt_utils.msgbox("This table is empty - no rows to use...")
                 return
-            layer_name = qt_utils.ask_text(self, "New layer", "Please specify layer name:")
-            if layer_name:
-                with sqlite3.connect(self.gc.databasePath) as dbcon:
-                    # load it into qgis as new layer
-                    qgis_layers_gen.create_qgis_layer_df(self.tableModel.df, dbcon, layer_name=layer_name)
+            if self.tableModel.df is None or (not ("log_hash" in self.tableModel.df.columns and "time" in self.tableModel.df.columns)):
+                qt_utils.msgbox("This table doesn't contain required columns to add lat/lon: log_hash, time")
+            else:
+                layer_name = qt_utils.ask_text(self, "New layer", "Please specify layer name:")
+                if layer_name:
+                    with sqlite3.connect(self.gc.databasePath) as dbcon:
+                        # load it into qgis as new layer
+                        qgis_layers_gen.create_qgis_layer_df(self.tableModel.df, dbcon, layer_name=layer_name)
 
     
     def headerMenu(self, pos):

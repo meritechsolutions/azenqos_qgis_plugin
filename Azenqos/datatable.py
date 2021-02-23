@@ -110,6 +110,7 @@ class TableWindow(QWidget):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setMinimumSize(self.width, self.height)
         self.resize(self.width, self.height)
 
 

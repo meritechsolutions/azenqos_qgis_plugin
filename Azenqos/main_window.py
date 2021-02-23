@@ -159,7 +159,10 @@ Log_hash list: {}""".format(
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
             return
-            
+        azq_report_gen_expression = "list_modules_with_process_cell_func.run()"
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = create_table_window_from_api_expression_ret(swa, "Server processing modules", self.gc, self.gc.login_dialog.server, self.gc.login_dialog.token, self.gc.login_dialog.lhl, azq_report_gen_expression)
+        self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionRun_PY_EVAL_code_triggered(self):

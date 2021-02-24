@@ -325,6 +325,9 @@ def parse_py_eval_ret_dict_for_df(server, token, py_eval_ret_dict: dict):
         azq_utils.download_file(pq_url, target_fp)
         assert os.path.isfile(target_fp) == True
         df = pd.read_parquet(target_fp)
+        df.columns = [x.decode("utf-8") for x in df.columns]
+        for col in df.columns:
+            df[col] = df[col].apply(lambda x: x.decode("utf-8"))
         return df
     else:
         return None

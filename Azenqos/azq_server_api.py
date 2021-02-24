@@ -171,7 +171,8 @@ def api_wait_until_process_completed(server, token, proc_uuid):
 
 def parse_py_eval_ret_dict_from_stdout_log(proc_stdout_str):
     str_split_token = "---### GET_PYPROCESS_OUTPUT JSON ###---"
-    assert str_split_token in proc_stdout_str
+    if str_split_token not in proc_stdout_str:
+        raise Exception("failed to find str_split_token: {} in proc_stdout_str: {}".format(str_split_token, proc_stdout_str))
     parts = proc_stdout_str.split(str_split_token)
     assert len(parts) >= 3
     json_resp = parts[1]

@@ -327,7 +327,10 @@ def parse_py_eval_ret_dict_for_df(server, token, py_eval_ret_dict: dict):
         df = pd.read_parquet(target_fp)
         df.columns = [x.decode("utf-8") for x in df.columns]
         for col in df.columns:
-            df[col] = df[col].apply(lambda x: x.decode("utf-8"))
+            try:
+                df[col] = df[col].apply(lambda x: x.decode("utf-8"))
+            except:
+                pass
         return df
     else:
         return None

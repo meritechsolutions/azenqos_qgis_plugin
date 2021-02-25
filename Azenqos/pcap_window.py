@@ -63,8 +63,11 @@ def get_pcap_df(pcap_path_list):
         pcap_df = pd.read_csv(f)
         f.close()
         pcap_df["file_name"] = pcap_file_name
+        if '_ws.col.Time' not in pcap_df.columns:
+            return
         pcap_df_list.append(pcap_df)
-
+    if len(pcap_df_list) == 0:
+        return
     pcap_df_all = pd.concat(pcap_df_list)
     pcap_df_all = pcap_df_all.drop_duplicates(keep="first").rename(columns={'_ws.col.Time': 'time'}).sort_values(by="time").drop(columns=['_ws.col.No.']).reset_index(drop=True)
     tdelta = pd.Timedelta(np.timedelta64(25200000, "ms"))

@@ -161,7 +161,7 @@ Log_hash list: {}""".format(
             return
         azq_report_gen_expression = "list_modules_with_process_cell_func.run()"
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = create_table_window_from_api_expression_ret(swa, "Server processing modules", self.gc, self.gc.login_dialog.server, self.gc.login_dialog.token, self.gc.login_dialog.lhl, azq_report_gen_expression)
+        widget = create_table_window_from_api_expression_ret(swa, "Server processing modules", self.gc, self.gc.login_dialog.server, self.gc.login_dialog.token, self.gc.login_dialog.lhl, azq_report_gen_expression, mdi = self.mdi, list_module=True)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()

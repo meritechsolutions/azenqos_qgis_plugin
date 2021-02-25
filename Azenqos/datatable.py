@@ -41,6 +41,7 @@ import pcap_window
 import azq_utils
 import qt_utils
 import qgis_layers_gen
+import module_dialog
 
 
 class TableWindow(QWidget):
@@ -50,13 +51,15 @@ class TableWindow(QWidget):
     progress_update_signal = pyqtSignal(int)
     status_update_signal = pyqtSignal(str)    
 
-    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, gc=None, skip_setup_ui=False):
+    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, list_module=False, gc=None, skip_setup_ui=False, mdi=None):
         super().__init__(parent)
         self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
         self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
         self.event_mos_score = event_mos_score
+        self.list_module = list_module
         self.tableModel = None
         self.skip_setup_ui = skip_setup_ui
+        self.mdi = mdi
 
         try:
             self.gc = parent.gc
@@ -462,6 +465,9 @@ class TableWindow(QWidget):
             side["wav_file"] = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"])
             side["text_file"] = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"].replace(".wav", "_polqa.txt"))
             self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side)
+        elif self.list_module:
+            dlg = module_dialog.module_dialog(self, row_sr, self.gc, self.mdi)
+            dlg.show()
         else:
             self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
         """
@@ -952,8 +958,8 @@ class PdTableModel(QAbstractTableModel):
 
 
 
-def create_table_window_from_api_expression_ret(parent, title, gc, server, token, lhl, azq_report_gen_expression):
-    window = TableWindow(parent, title, None, gc=gc, time_list_mode=True, skip_setup_ui=True)
+def create_table_window_from_api_expression_ret(parent, title, gc, server, token, lhl, azq_report_gen_expression, mdi=None, list_module=False):
+    window = TableWindow(parent, title, None, gc=gc, time_list_mode=True, skip_setup_ui=True, mdi=mdi, list_module=list_module)
     gen_thread = threading.Thread(
         target=run_api_expression_and_set_results_to_table_window,
                     args=(

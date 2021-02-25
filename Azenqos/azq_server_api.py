@@ -216,7 +216,8 @@ def api_login_and_dl_db_zip(server, user, passwd, lhl, progress_update_signal=No
             signal_emit(status_update_signal, "Downloading db zip from server...")
             tmp_dir = azq_utils.tmp_gen_path()
             target_fp = os.path.join(tmp_dir, "server_db.zip")
-            assert os.path.isfile(target_fp) == False
+            if os.path.isfile(target_fp):
+                os.remove(target_fp)
             azq_utils.download_file(zip_url, target_fp)
             assert os.path.isfile(target_fp) == True
             signal_emit(progress_update_signal, 80)

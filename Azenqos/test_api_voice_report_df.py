@@ -12,7 +12,7 @@ def test(server, user, passwd, lhl):
         passwd
     )
     assert token
-    ret_dict = azq_server_api.api_py_eval_get_parsed_ret_dict(server, token, lhl, "voice_report.process_cell(dbcon, '', problem_report=False, add_generic_params=True, rtp_mute_above_nsecs=2.0)")
+    ret_dict = azq_server_api.api_py_eval_get_parsed_ret_dict(server, token, lhl, """PY_EVAL voice_report.process_cell(dbcon, "", problem_report=False, add_generic_params=True, rtp_mute_above_nsecs=2.0)""")
     print("ret_dict: {}".format(ret_dict))
     assert ret_dict
     assert ret_dict['ret_type'] == "<class 'pandas.core.frame.DataFrame'>"

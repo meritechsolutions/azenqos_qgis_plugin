@@ -368,5 +368,6 @@ def get_events(dbcon, time_before):
                 raise e
     df = pd.concat(df_list, ignore_index=True)
     df["log_hash"] = df["log_hash"].astype(np.int64)
+    df = df.sort_values(by="time")
     return df
 

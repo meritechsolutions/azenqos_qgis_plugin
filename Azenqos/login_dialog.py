@@ -71,10 +71,10 @@ class login_dialog(QDialog):
         
 
     def read_ui_input_to_vars(self):
-        self.server = self.ui.server_url_le.text()
-        self.user = self.ui.login_le.text()
-        self.passwd = self.ui.pass_le.text()
-        self.lhl = self.ui.lhl_le.text()
+        self.server = self.ui.server_url_le.text().strip()
+        self.user = self.ui.login_le.text().strip()
+        self.passwd = self.ui.pass_le.text().strip()
+        self.lhl = self.ui.lhl_le.text().strip()
         return [self.server, self.user, self.passwd, self.lhl]
 
     def on_progress_update(self, val):
@@ -150,7 +150,7 @@ class login_dialog(QDialog):
         )
 
         ###### check lhl
-        lhl = self.lhl.strip()
+        lhl = self.lhl
         if "," in lhl:
             lhl = lhl.split(",")
         else:

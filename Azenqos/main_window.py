@@ -366,8 +366,9 @@ Log_hash list: {}""".format(
     def on_actionPCAP_triggered(self):
         print("action pcap")
         import pcap_window
+        headers = ["log_hash", "time", "source", "destination", "protocol", "tcp.srcport", "tcp.dstport", "udp.srcport", "udp0.dstport", "packet.size", "info", "file_name"]
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), time_list_mode=True)
+        widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True)
         self.add_subwindow_with_widget(swa, widget)
 
         

@@ -10,6 +10,7 @@ from os import path
 import subprocess
 import tshark_util
 import azq_utils
+import sqlite3
 
 
 def get_pcap_path_list(azm_path):
@@ -31,7 +32,7 @@ def get_pcap_path_list(azm_path):
     return pcap_path_list
 
 
-def get_pcap_df(pcap_path_list):
+def get_pcap_df(pcap_path_list, log_hash):
     pcap_df_list = []
     for pcap_path in pcap_path_list:
         pcap_file_name = os.path.basename(pcap_path)
@@ -69,9 +70,10 @@ def get_pcap_df(pcap_path_list):
     if len(pcap_df_list) == 0:
         return
     pcap_df_all = pd.concat(pcap_df_list)
-    pcap_df_all = pcap_df_all.drop_duplicates(keep="first").rename(columns={'_ws.col.Time': 'time'}).sort_values(by="time").drop(columns=['_ws.col.No.']).reset_index(drop=True)
+    pcap_df_all = pcap_df_all.drop_duplicates(keep="first").rename(columns={'_ws.col.Time':'time', '_ws.col.Source':'source', '_ws.col.Destination':'destination', '_ws.col.Protocol':'protocol', '_ws.col.Length':'packet_size', '_ws.col.Info':'info'}).sort_values(by="time").drop(columns=['_ws.col.No.']).reset_index(drop=True)
     tdelta = pd.Timedelta(np.timedelta64(25200000, "ms"))
     pcap_df_all["time"] = pd.to_datetime(pcap_df_all["time"]) + tdelta
+    pcap_df_all.insert(0,'log_hash',log_hash)
     return pcap_df_all
 
 def get_all_pcap_content(azm_path):
@@ -79,14 +81,22 @@ def get_all_pcap_content(azm_path):
     return get_pcap_df(pcap_path_list)
 
 pcap_path_list =None
+log_hash = None 
 def new_get_all_pcap_content(azm_path):
     global pcap_path_list
+    global log_hash
+    db_path = os.path.join(azm_path,"azqdata.db")
+    with sqlite3.connect(db_path) as dbcon:
+        log_hash = pd.read_sql("select log_hash from log_info limit 1", dbcon).iloc[0,0]
+        print(log_hash)
     pcap_path_list = get_pcap_path_list(azm_path)
+    
     return tmp
     
 def tmp(time,dbcon):
     global pcap_path_list
-    return get_pcap_df(pcap_path_list)
+    global log_hash
+    return get_pcap_df(pcap_path_list, log_hash)
 
 
 

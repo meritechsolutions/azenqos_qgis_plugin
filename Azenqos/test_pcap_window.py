@@ -24,15 +24,8 @@ def test():
     os.mkdir(tmpdir)
     with zipfile.ZipFile(azmfp, "r") as zip_file:
         zip_file.extractall(tmpdir)
-
-    pcap_path_list = pcap_window.get_pcap_path_list(tmpdir)
-    print(pcap_path_list)
-
-    # pcap_path_list_df = pcap_window.get_pcap_path_list_df(tmpdir)
-    # print(pcap_path_list_df)
-
-    # pcap_path = pcap_path_list[1]
-    pcap_df = pcap_window.get_pcap_df(pcap_path_list)
+        
+    pcap_df = pcap_window.new_get_all_pcap_content(tmpdir)(None,None)
     print(pcap_df)
     
     if os.path.isdir(tmpdir):

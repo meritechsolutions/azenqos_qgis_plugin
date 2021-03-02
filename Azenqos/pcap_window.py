@@ -33,6 +33,7 @@ def get_pcap_path_list(azm_path):
 
 
 def get_pcap_df(pcap_path_list, log_hash):
+    global time_offset
     pcap_df_list = []
     for pcap_path in pcap_path_list:
         pcap_file_name = os.path.basename(pcap_path)
@@ -71,7 +72,7 @@ def get_pcap_df(pcap_path_list, log_hash):
         return
     pcap_df_all = pd.concat(pcap_df_list)
     pcap_df_all = pcap_df_all.drop_duplicates(keep="first").rename(columns={'_ws.col.Time':'time', '_ws.col.Source':'source', '_ws.col.Destination':'destination', '_ws.col.Protocol':'protocol', '_ws.col.Length':'packet_size', '_ws.col.Info':'info'}).sort_values(by="time").drop(columns=['_ws.col.No.']).reset_index(drop=True)
-    tdelta = pd.Timedelta(np.timedelta64(25200000, "ms"))
+    tdelta = pd.Timedelta(np.timedelta64(time_offset, "ms"))
     pcap_df_all["time"] = pd.to_datetime(pcap_df_all["time"]) + tdelta
     pcap_df_all.insert(0,'log_hash',log_hash)
     return pcap_df_all
@@ -82,12 +83,16 @@ def get_all_pcap_content(azm_path):
 
 pcap_path_list =None
 log_hash = None 
+time_offset = None
 def new_get_all_pcap_content(azm_path):
     global pcap_path_list
     global log_hash
+    global time_offset
     db_path = os.path.join(azm_path,"azqdata.db")
     with sqlite3.connect(db_path) as dbcon:
         log_hash = pd.read_sql("select log_hash from log_info limit 1", dbcon).iloc[0,0]
+        time_offset = pd.read_sql("select log_timezone_offset from logs limit 1", dbcon).iloc[0,0]
+        print(time_offset)
         print(log_hash)
     pcap_path_list = get_pcap_path_list(azm_path)
     

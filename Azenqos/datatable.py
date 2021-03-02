@@ -113,7 +113,7 @@ class TableWindow(QWidget):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.setMinimumSize(self.width, self.height)
+        self.setMinimumSize(self.width, self.height/2)
         self.resize(self.width, self.height)
 
 
@@ -365,7 +365,7 @@ class TableWindow(QWidget):
 
     def refreshTableContents(self, create_table_model=False):
         print("datatable refreshTableContents()")
-        
+        self.setMinimumSize(0, 0)
         if self.custom_df is not None:
             print("datatable refreshTableContents() custom_df")
             self.set_pd_df(self.custom_df)

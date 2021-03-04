@@ -42,6 +42,8 @@ from version import VERSION
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
+import inspect
+import configparser
 
 
 class main_window(QMainWindow):
@@ -212,7 +214,7 @@ Log_hash list: {}""".format(
         import signalling_query
         headers = ["log_hash", "time", "name", "dir", "protocol", "detail"]
         swa = SubWindowArea(self.mdi, self.gc)        
-        widget = TableWindow(swa, "Layer-3 Messages", signalling_query.get_signalling, tableHeader=headers, time_list_mode=True, l3_alt_wireshark_decode=True)
+        widget = TableWindow(swa, "Layer-3 Messages", signalling_query.get_signalling, tableHeader=headers, time_list_mode=True, l3_alt_wireshark_decode=True, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
         
     @pyqtSlot()
@@ -221,7 +223,7 @@ Log_hash list: {}""".format(
         import signalling_query
         headers = ["log_hash", "time", "name", "info"]
         swa = SubWindowArea(self.mdi, self.gc)        
-        widget = TableWindow(swa, "Events", signalling_query.get_events, tableHeader=headers, time_list_mode=True, event_mos_score=True)
+        widget = TableWindow(swa, "Events", signalling_query.get_events, tableHeader=headers, time_list_mode=True, event_mos_score=True, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     ############# NR menu slots
@@ -231,7 +233,7 @@ Log_hash list: {}""".format(
         print("action nr radio params")
         import nr_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "5GNR Radio Parameters", nr_query.get_nr_radio_params_disp_df)
+        widget = TableWindow(swa, "5GNR Radio Parameters", nr_query.get_nr_radio_params_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -239,7 +241,7 @@ Log_hash list: {}""".format(
         print("action nr serving neigh")
         import nr_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "5GNR Serving + Neighbors", nr_query.get_nr_serv_and_neigh_disp_df)
+        widget = TableWindow(swa, "5GNR Serving + Neighbors", nr_query.get_nr_serv_and_neigh_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
     
     ############# LTE menu slots
@@ -248,7 +250,7 @@ Log_hash list: {}""".format(
         print("action lte radio params")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE Radio Parameters", lte_query.get_lte_radio_params_disp_df)
+        widget = TableWindow(swa, "LTE Radio Parameters", lte_query.get_lte_radio_params_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -256,7 +258,7 @@ Log_hash list: {}""".format(
         print("action lte serving neigh")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE Serving + Neighbors", lte_query.get_lte_serv_and_neigh_disp_df)
+        widget = TableWindow(swa, "LTE Serving + Neighbors", lte_query.get_lte_serv_and_neigh_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -264,7 +266,7 @@ Log_hash list: {}""".format(
         print("action lte data param")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE Data Params", lte_query.get_lte_data_disp_df)
+        widget = TableWindow(swa, "LTE Data Params", lte_query.get_lte_data_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -272,7 +274,7 @@ Log_hash list: {}""".format(
         print("action lte pucch pdsch param")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE PUCCH/PDSCH Params", lte_query.get_lte_pucch_pdsch_disp_df)
+        widget = TableWindow(swa, "LTE PUCCH PDSCH Params", lte_query.get_lte_pucch_pdsch_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -280,7 +282,7 @@ Log_hash list: {}""".format(
         print("action lte rrc sib states")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE RRC/SIB States", lte_query.get_lte_rrc_sib_states_df)
+        widget = TableWindow(swa, "LTE RRC SIB States", lte_query.get_lte_rrc_sib_states_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -288,7 +290,7 @@ Log_hash list: {}""".format(
         print("action lte volte")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE VoLTE", lte_query.get_volte_disp_df)
+        widget = TableWindow(swa, "LTE VoLTE", lte_query.get_volte_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
         
@@ -299,7 +301,7 @@ Log_hash list: {}""".format(
         print("action wcdma radio params")
         import wcdma_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WCDMA Radio Parameters", wcdma_query.get_wcdma_radio_params_disp_df)
+        widget = TableWindow(swa, "WCDMA Radio Parameters", wcdma_query.get_wcdma_radio_params_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -307,7 +309,7 @@ Log_hash list: {}""".format(
         print("action wcdma active monitored")
         import wcdma_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WCDMA Active + Monitored sets", wcdma_query.get_wcdma_acive_monitored_df)
+        widget = TableWindow(swa, "WCDMA Active + Monitored sets", wcdma_query.get_wcdma_acive_monitored_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -315,7 +317,7 @@ Log_hash list: {}""".format(
         print("action wcdma bler summary")
         import wcdma_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WCDMA BLER Summary", wcdma_query.get_bler_sum_disp_df)
+        widget = TableWindow(swa, "WCDMA BLER Summary", wcdma_query.get_bler_sum_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -323,7 +325,7 @@ Log_hash list: {}""".format(
         print("action wcdma bearers")
         import wcdma_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WCDMA Bearers", wcdma_query.get_wcdma_bearers_df)
+        widget = TableWindow(swa, "WCDMA Bearers", wcdma_query.get_wcdma_bearers_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
         
     ############# GSM menu slots
@@ -333,7 +335,7 @@ Log_hash list: {}""".format(
         print("action gsm radio params")
         import gsm_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM Radio Parameters", gsm_query.get_gsm_radio_params_disp_df)
+        widget = TableWindow(swa, "GSM Radio Parameters", gsm_query.get_gsm_radio_params_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -341,7 +343,7 @@ Log_hash list: {}""".format(
         print("action gsm serving neigh")
         import gsm_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM Serving + Neighbors", gsm_query.get_gsm_serv_and_neigh__df)
+        widget = TableWindow(swa, "GSM Serving + Neighbors", gsm_query.get_gsm_serv_and_neigh__df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -349,7 +351,7 @@ Log_hash list: {}""".format(
         print("action gsm current channel")
         import gsm_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM Current Channel", gsm_query.get_gsm_current_channel_disp_df)
+        widget = TableWindow(swa, "GSM Current Channel", gsm_query.get_gsm_current_channel_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -357,7 +359,7 @@ Log_hash list: {}""".format(
         print("action gsm coi")
         import gsm_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM C/I", gsm_query.get_coi_df)
+        widget = TableWindow(swa, "GSM CoI", gsm_query.get_coi_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     ############# PCAP menu slots
@@ -368,7 +370,7 @@ Log_hash list: {}""".format(
         import pcap_window
         headers = ["log_hash", "time", "source", "destination", "protocol", "tcp.srcport", "tcp.dstport", "udp.srcport", "udp0.dstport", "packet.size", "info", "file_name"]
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True)
+        widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
         
@@ -487,7 +489,7 @@ Log_hash list: {}""".format(
             self.maptool.clicked.connect(self.setMapTool)
             self.setupToolBar()
 
-            self._gui_restore()
+            # self._gui_restore()
             
             self.setWindowTitle("AZENQOS Log Replay & Analyzer tool      v.%.03f" % VERSION)
         except:
@@ -981,29 +983,86 @@ Log_hash list: {}""".format(
                     layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
             """
     def loadWorkspaceFile(self):
-        print("loadFile()")
         fp, _ = QFileDialog.getOpenFileName(
             self, "Open workspace file", QtCore.QDir.rootPath(), "*.ini"
         )
-        if fp:
-            print("loadWorkspaceFile:", fp)
-            if len(self.gc.openedWindows) > 0:
-                for mdiwindow in self.mdi.subWindowList():
-                    mdiwindow.close()
-                self.gc.openedWindows = []
-            shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
-            self.settings.sync()  # load changes
-            self._gui_restore()
+        shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
+        # finfo = QFileInfo(self.settings.fileName())
+        self.settings.sync()
+
+        config = configparser.ConfigParser()
+        config.read(self.settings.fileName())
+        for i in config.sections():
+            try:
+                func_key = "self."+config.get(i,'func_key')+"()"
+                print(func_key)
+                eval(func_key)
+            except:
+                pass
+        self.settings.sync()
+        shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
+        for w in qApp.allWidgets():
+            # print("aaaa", w.objectName())
+            mo = w.metaObject()
+            if w.objectName() != "":
+                for i in range(mo.propertyCount()):
+                    name = mo.property(i).name() 
+                    val = self.settings.value("{}/{}".format(w.objectName(), name), w.property(name))
+                    w.setProperty(name, val)
+            # try:
+            #     if w.func_key:
+            #         geometry = w.geometry()
+            #         print("aaaa",geometry)
+            #         self.restoreGeometry(geometry)
+            #         self.settings.sync()
+            #         # val = self.settings.value("{}/{}".format(w.objectName(), name), w.property(name))
+            #         # w.setProperty(name, val)
+            #         # print("aaaaaaaaaaaaaaaaaaaa",w.func_key)
+            # except:
+            #     pass
+
+        self.settings.sync()
+        
+        # print("loadFile()")
+        # fp, _ = QFileDialog.getOpenFileName(
+        #     self, "Open workspace file", QtCore.QDir.rootPath(), "*.ini"
+        # )
+        # if fp:
+        #     print("loadWorkspaceFile:", fp)
+        #     if len(self.gc.openedWindows) > 0:
+        #         for mdiwindow in self.mdi.subWindowList():
+        #             mdiwindow.close()
+        #         self.gc.openedWindows = []
+        #     shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
+        #     self.settings.sync()  # load changes
+        #     self._gui_restore()
 
     def saveWorkspaceFile(self):
         fp, _ = QFileDialog.getSaveFileName(
             self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
         )
         if fp:
-            print("saveWorkspaceFile:", fp)
-            self._gui_save()
-            self.settings.sync()  # save changes
+            for w in qApp.allWidgets():
+                mo = w.metaObject()
+                if w.objectName() != "":
+
+                    for i in range(mo.propertyCount()):
+                        name = mo.property(i).name()
+                        self.settings.setValue("{}/{}".format(w.objectName(), name), w.property(name))
+                    try:
+                        self.settings.setValue("{}/{}".format(w.objectName(), "func_key"), w.func_key)
+                    except:
+                        pass
+            self.settings.sync()
             shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
+        # fp, _ = QFileDialog.getSaveFileName(
+        #     self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
+        # )
+        # if fp:
+        #     print("saveWorkspaceFile:", fp)
+        #     # self._gui_save()
+        #     self.settings.sync()  # save changes
+        #     shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
 
     def closeEvent(self, event):
         print("analyzer_window: closeEvent:", event)
@@ -1031,7 +1090,7 @@ Log_hash list: {}""".format(
 
     def cleanup(self):
         try:
-            self._gui_save()
+            # self._gui_save()
             # saving = Utils().saveState(self.gc.CURRENT_PATH)
             if self.qgis_iface:
                 self.qgis_iface.actionPan().trigger()
@@ -1070,6 +1129,7 @@ Log_hash list: {}""".format(
                 print("mdiwindow close ", mdiwindow)
                 mdiwindow.close()
             self.mdi.close()
+            self.settings.clear()
             print("Close App")            
             try:
                 self.gc.close_db()                
@@ -1112,122 +1172,128 @@ Log_hash list: {}""".format(
                 root.removeChildNode(azqGroup)
 
 
-    def _gui_save(self):
-        # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
-        """
-        save "ui" controls and values to registry "setting"
-        :return:
-        """
-        try:
-            print("_gui_save() START")
-            print("_gui_save() geom")
-            self.settings.setValue(
-                GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry()
-            )
-            print("_gui_save() state")
-            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
+    # def _gui_save(self):
+    #     # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
+    #     """
+    #     save "ui" controls and values to registry "setting"
+    #     :return:
+    #     """
+    #     try:
+    #         print("_gui_save() START")
+    #         print("_gui_save() geom")
+    #         self.settings.setValue(
+    #             GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry()
+    #         )
+    #         print("_gui_save() state")
+    #         self.settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
 
-            swl = self.mdi.subWindowList()
-            swl = [w for w in swl if (w is not None and w.widget() is not None)]
-            print(
-                "_gui_save() len(swl)",
-                len(swl),
-                "len(gc.openedWindows)",
-                len(self.gc.openedWindows),
-            )
-            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
-            if swl:
-                self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
-                i = -1
-                for window in swl:
-                    # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
-                    if not window.widget():
-                        continue
-                    print(
-                        "_gui_save() window_{}_title".format(i), window.widget().title
-                    )
-                    i += 1
-                    self.settings.setValue(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i),
-                        window.widget().title,
-                    )
-                    self.settings.setValue(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
-                        window.saveGeometry(),
-                    )
-                    # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
+    #         swl = self.mdi.subWindowList()
+    #         swl = [w for w in swl if (w is not None and w.widget() is not None)]
+    #         print(
+    #             "_gui_save() len(swl)",
+    #             len(swl),
+    #             "len(gc.openedWindows)",
+    #             len(self.gc.openedWindows),
+    #         )
+    #         self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+    #         if swl:
+    #             self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+    #             i = -1
+    #             for window in swl:
+    #                 # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
+    #                 if not window.widget():
+    #                     continue
+    #                 print(
+    #                     "_gui_save() window_{}_title".format(i), window.widget().title
+    #                 )
+    #                 i += 1
+    #                 self.settings.setValue(
+    #                     GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i),
+    #                     window.widget().title,
+    #                 )
+    #                 self.settings.setValue(
+    #                     GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i),
+    #                     window.widget().func_key,
+    #                 )
+    #                 self.settings.setValue(
+    #                     GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
+    #                     window.saveGeometry(),
+    #                 )
+    #                 # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
 
-            self.settings.sync()  # save to disk
-            print("_gui_save() DONE")
-        except:
-            type_, value_, traceback_ = sys.exc_info()
-            exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: _gui_save() - exception: {}".format(exstr))
+    #         self.settings.sync()  # save to disk
+    #         print("_gui_save() DONE")
+    #     except:
+    #         type_, value_, traceback_ = sys.exc_info()
+    #         exstr = str(traceback.format_exception(type_, value_, traceback_))
+    #         print("WARNING: _gui_save() - exception: {}".format(exstr))
 
-    def _gui_restore(self):
-        """
-        restore "ui" controls with values stored in registry "settings"
-        :return:
-        """
-        try:
-            print("_gui_restore() START")
-            self.settings.sync()  # load from disk
-            window_geom = self.settings.value(GUI_SETTING_NAME_PREFIX + "geom")
-            if window_geom:
-                print("_gui_restore() geom")
-                self.restoreGeometry(window_geom)
-            """
-            state_value = self.settings.value(GUI_SETTING_NAME_PREFIX + "state")
-            if state_value:
-                print("_gui_restore() state")
-                self.restoreState(state_value)
-            """
-            n_windows = self.settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
-            if n_windows:
-                n_windows = int(n_windows)
-                for i in range(n_windows):
-                    title = self.settings.value(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i)
-                    )
-                    geom = self.settings.value(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i)
-                    )
-                    print("_gui_restore() window i {} title {}".format(i, title))
-                    if title and "_" in title:
-                        parts = title.split("_", 1)
-                        if len(parts) == 2:
-                            print("")
-                            print(
-                                "_gui_restore() window i {} title {} openwindow".format(
-                                    i, title
-                                )
-                            )
-                            self.classifySelectedItems(parts[0], parts[1])
-                    if geom:
-                        for window in self.mdi.subWindowList():
-                            if not window.widget():
-                                continue
-                            if window.widget().title == title:
-                                print(
-                                    "_gui_restore() window i {} title {} setgeom".format(
-                                        i, title
-                                    )
-                                )
-                                window.restoreGeometry(geom)
-                                break
+    # def _gui_restore(self):
+    #     """
+    #     restore "ui" controls with values stored in registry "settings"
+    #     :return:
+    #     """
+    #     try:
+    #         print("_gui_restore() START")
+    #         self.settings.sync()  # load from disk
+    #         window_geom = self.settings.value(GUI_SETTING_NAME_PREFIX + "geom")
+    #         if window_geom:
+    #             print("_gui_restore() geom")
+    #             self.restoreGeometry(window_geom)
+    #         """
+    #         state_value = self.settings.value(GUI_SETTING_NAME_PREFIX + "state")
+    #         if state_value:
+    #             print("_gui_restore() state")
+    #             self.restoreState(state_value)
+    #         """
+    #         n_windows = self.settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
+    #         if n_windows:
+    #             n_windows = int(n_windows)
+    #             for i in range(n_windows):
+    #                 title = self.settings.value(
+    #                     GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i)
+    #                 )
+    #                 geom = self.settings.value(
+    #                     GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i)
+    #                 )
+    #                 print("_gui_restore() window i {} title {}".format(i, title))
+    #                 if title and "_" in title:
+    #                     print("tttttttt")
+    #                     parts = title.split("_", 1)
+    #                     if len(parts) == 2:
+    #                         print("")
+    #                         print(
+    #                             "_gui_restore() window i {} title {} openwindow".format(
+    #                                 i, title
+    #                             )
+    #                         )
+    #                         self.classifySelectedItems(parts[0], parts[1])
+    #                 if geom:
+    #                     print("aaaaaaaaaaaa")
+    #                     for window in self.mdi.subWindowList():
+    #                         if not window.widget():
+    #                             continue
+    #                         if window.widget().title == title:
+    #                             print(
+    #                                 "_gui_restore() window i {} title {} setgeom".format(
+    #                                     i, title
+    #                                 )
+    #                             )
+    #                             window.restoreGeometry(geom)
+    #                             break
 
-            print("_gui_restore() DONE")
-        except:
-            type_, value_, traceback_ = sys.exc_info()
-            exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: _gui_restore() - exception: {}".format(exstr))
-            try:
-                print("doing qsettings clear()")
-                self.settings.clear()
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: qsettings clear() - exception: {}".format(exstr))
+    #         print("_gui_restore() DONE")
+    #     except:
+    #         type_, value_, traceback_ = sys.exc_info()
+    #         exstr = str(traceback.format_exception(type_, value_, traceback_))
+    #         print("WARNING: _gui_restore() - exception: {}".format(exstr))
+    #         try:
+    #             print("doing qsettings clear()")
+    #             self.settings.clear()
+    #         except:
+    #             type_, value_, traceback_ = sys.exc_info()
+    #             exstr = str(traceback.format_exception(type_, value_, traceback_))
+    #             print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
 
 class SubWindowArea(QMdiSubWindow):

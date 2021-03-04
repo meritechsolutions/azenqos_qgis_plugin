@@ -49,9 +49,9 @@ class TableWindow(QWidget):
     signal_ui_thread_setup_ui = pyqtSignal()  # use with skip_setup_ui in ctor
 
     progress_update_signal = pyqtSignal(int)
-    status_update_signal = pyqtSignal(str)    
+    status_update_signal = pyqtSignal(str)   
 
-    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, list_module=False, gc=None, skip_setup_ui=False, mdi=None):
+    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, list_module=False, gc=None, skip_setup_ui=False, mdi=None, func_key=None ):
         super().__init__(parent)
         self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
         self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
@@ -60,6 +60,8 @@ class TableWindow(QWidget):
         self.tableModel = None
         self.skip_setup_ui = skip_setup_ui
         self.mdi = mdi
+        self.func_key = func_key
+        # self.settings.setValue("func_key",self.func_key)
 
         try:
             self.gc = parent.gc
@@ -113,7 +115,7 @@ class TableWindow(QWidget):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.setMinimumSize(self.width, self.height/2)
+        self.setMinimumSize(self.width, self.height)
         self.resize(self.width, self.height)
 
 

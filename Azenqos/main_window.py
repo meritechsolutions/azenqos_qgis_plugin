@@ -274,7 +274,7 @@ Log_hash list: {}""".format(
         print("action lte pucch pdsch param")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE PUCCH PDSCH Params", lte_query.get_lte_pucch_pdsch_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(swa, "LTE PUCCH/PDSCH Params", lte_query.get_lte_pucch_pdsch_disp_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -282,7 +282,7 @@ Log_hash list: {}""".format(
         print("action lte rrc sib states")
         import lte_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE RRC SIB States", lte_query.get_lte_rrc_sib_states_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(swa, "LTE RRC/SIB States", lte_query.get_lte_rrc_sib_states_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -359,7 +359,7 @@ Log_hash list: {}""".format(
         print("action gsm coi")
         import gsm_query
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM CoI", gsm_query.get_coi_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(swa, "GSM C/I", gsm_query.get_coi_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
     ############# PCAP menu slots
@@ -982,87 +982,32 @@ Log_hash list: {}""".format(
                 if len(selected_ids) > 0:
                     layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
             """
+
     def loadWorkspaceFile(self):
+        print("loadFile()")
         fp, _ = QFileDialog.getOpenFileName(
             self, "Open workspace file", QtCore.QDir.rootPath(), "*.ini"
         )
-        shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
-        # finfo = QFileInfo(self.settings.fileName())
-        self.settings.sync()
-
-        config = configparser.ConfigParser()
-        config.read(self.settings.fileName())
-        for i in config.sections():
-            try:
-                func_key = "self."+config.get(i,'func_key')+"()"
-                print(func_key)
-                eval(func_key)
-            except:
-                pass
-        self.settings.sync()
-        shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
-        for w in qApp.allWidgets():
-            # print("aaaa", w.objectName())
-            mo = w.metaObject()
-            if w.objectName() != "":
-                for i in range(mo.propertyCount()):
-                    name = mo.property(i).name() 
-                    val = self.settings.value("{}/{}".format(w.objectName(), name), w.property(name))
-                    w.setProperty(name, val)
-            # try:
-            #     if w.func_key:
-            #         geometry = w.geometry()
-            #         print("aaaa",geometry)
-            #         self.restoreGeometry(geometry)
-            #         self.settings.sync()
-            #         # val = self.settings.value("{}/{}".format(w.objectName(), name), w.property(name))
-            #         # w.setProperty(name, val)
-            #         # print("aaaaaaaaaaaaaaaaaaaa",w.func_key)
-            # except:
-            #     pass
-
-        self.settings.sync()
-        
-        # print("loadFile()")
-        # fp, _ = QFileDialog.getOpenFileName(
-        #     self, "Open workspace file", QtCore.QDir.rootPath(), "*.ini"
-        # )
-        # if fp:
-        #     print("loadWorkspaceFile:", fp)
-        #     if len(self.gc.openedWindows) > 0:
-        #         for mdiwindow in self.mdi.subWindowList():
-        #             mdiwindow.close()
-        #         self.gc.openedWindows = []
-        #     shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
-        #     self.settings.sync()  # load changes
-        #     self._gui_restore()
+        if fp:
+            print("loadWorkspaceFile:", fp)
+            if len(self.gc.openedWindows) > 0:
+                for mdiwindow in self.mdi.subWindowList():
+                    mdiwindow.close()
+                self.gc.openedWindows = []
+            shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
+            self.settings.sync()  # load changes
+            self._gui_restore()
+            self.settings.sync()
 
     def saveWorkspaceFile(self):
         fp, _ = QFileDialog.getSaveFileName(
             self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
         )
         if fp:
-            for w in qApp.allWidgets():
-                mo = w.metaObject()
-                if w.objectName() != "":
-
-                    for i in range(mo.propertyCount()):
-                        name = mo.property(i).name()
-                        self.settings.setValue("{}/{}".format(w.objectName(), name), w.property(name))
-                    try:
-                        self.settings.setValue("{}/{}".format(w.objectName(), "func_key"), w.func_key)
-                    except:
-                        pass
-            self.settings.sync()
+            print("saveWorkspaceFile:", fp)
+            self._gui_save()
+            self.settings.sync()  # save changes
             shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
-        # fp, _ = QFileDialog.getSaveFileName(
-        #     self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
-        # )
-        # if fp:
-        #     print("saveWorkspaceFile:", fp)
-        #     # self._gui_save()
-        #     self.settings.sync()  # save changes
-        #     shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
 
     def closeEvent(self, event):
         print("analyzer_window: closeEvent:", event)
@@ -1172,128 +1117,122 @@ Log_hash list: {}""".format(
                 root.removeChildNode(azqGroup)
 
 
-    # def _gui_save(self):
-    #     # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
-    #     """
-    #     save "ui" controls and values to registry "setting"
-    #     :return:
-    #     """
-    #     try:
-    #         print("_gui_save() START")
-    #         print("_gui_save() geom")
-    #         self.settings.setValue(
-    #             GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry()
-    #         )
-    #         print("_gui_save() state")
-    #         self.settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
+    def _gui_save(self):
+        # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
+        """
+        save "ui" controls and values to registry "setting"
+        :return:
+        """
+        try:
+            print("_gui_save() START")
+            print("_gui_save() geom")
+            self.settings.setValue(
+                GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry()
+            )
+            print("_gui_save() state")
+            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
 
-    #         swl = self.mdi.subWindowList()
-    #         swl = [w for w in swl if (w is not None and w.widget() is not None)]
-    #         print(
-    #             "_gui_save() len(swl)",
-    #             len(swl),
-    #             "len(gc.openedWindows)",
-    #             len(self.gc.openedWindows),
-    #         )
-    #         self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
-    #         if swl:
-    #             self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
-    #             i = -1
-    #             for window in swl:
-    #                 # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
-    #                 if not window.widget():
-    #                     continue
-    #                 print(
-    #                     "_gui_save() window_{}_title".format(i), window.widget().title
-    #                 )
-    #                 i += 1
-    #                 self.settings.setValue(
-    #                     GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i),
-    #                     window.widget().title,
-    #                 )
-    #                 self.settings.setValue(
-    #                     GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i),
-    #                     window.widget().func_key,
-    #                 )
-    #                 self.settings.setValue(
-    #                     GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
-    #                     window.saveGeometry(),
-    #                 )
-    #                 # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
+            swl = self.mdi.subWindowList()
+            swl = [w for w in swl if (w is not None and w.widget() is not None)]
+            print(
+                "_gui_save() len(swl)",
+                len(swl),
+                "len(gc.openedWindows)",
+                len(self.gc.openedWindows),
+            )
+            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+            if swl:
+                self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+                i = -1
+                for window in swl:
+                    # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
+                    if not window.widget():
+                        continue
+                    print(
+                        "_gui_save() window_{}_title".format(i), window.widget().title
+                    )
+                    i += 1
+                    self.settings.setValue(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i),
+                        window.widget().title,
+                    )
+                    self.settings.setValue(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i),
+                        window.widget().func_key,
+                    )
+                    self.settings.setValue(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
+                        window.saveGeometry(),
+                    )
+                    # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
 
-    #         self.settings.sync()  # save to disk
-    #         print("_gui_save() DONE")
-    #     except:
-    #         type_, value_, traceback_ = sys.exc_info()
-    #         exstr = str(traceback.format_exception(type_, value_, traceback_))
-    #         print("WARNING: _gui_save() - exception: {}".format(exstr))
+            self.settings.sync()  # save to disk
+            print("_gui_save() DONE")
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: _gui_save() - exception: {}".format(exstr))
 
-    # def _gui_restore(self):
-    #     """
-    #     restore "ui" controls with values stored in registry "settings"
-    #     :return:
-    #     """
-    #     try:
-    #         print("_gui_restore() START")
-    #         self.settings.sync()  # load from disk
-    #         window_geom = self.settings.value(GUI_SETTING_NAME_PREFIX + "geom")
-    #         if window_geom:
-    #             print("_gui_restore() geom")
-    #             self.restoreGeometry(window_geom)
-    #         """
-    #         state_value = self.settings.value(GUI_SETTING_NAME_PREFIX + "state")
-    #         if state_value:
-    #             print("_gui_restore() state")
-    #             self.restoreState(state_value)
-    #         """
-    #         n_windows = self.settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
-    #         if n_windows:
-    #             n_windows = int(n_windows)
-    #             for i in range(n_windows):
-    #                 title = self.settings.value(
-    #                     GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i)
-    #                 )
-    #                 geom = self.settings.value(
-    #                     GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i)
-    #                 )
-    #                 print("_gui_restore() window i {} title {}".format(i, title))
-    #                 if title and "_" in title:
-    #                     print("tttttttt")
-    #                     parts = title.split("_", 1)
-    #                     if len(parts) == 2:
-    #                         print("")
-    #                         print(
-    #                             "_gui_restore() window i {} title {} openwindow".format(
-    #                                 i, title
-    #                             )
-    #                         )
-    #                         self.classifySelectedItems(parts[0], parts[1])
-    #                 if geom:
-    #                     print("aaaaaaaaaaaa")
-    #                     for window in self.mdi.subWindowList():
-    #                         if not window.widget():
-    #                             continue
-    #                         if window.widget().title == title:
-    #                             print(
-    #                                 "_gui_restore() window i {} title {} setgeom".format(
-    #                                     i, title
-    #                                 )
-    #                             )
-    #                             window.restoreGeometry(geom)
-    #                             break
+    def _gui_restore(self):
+        """
+        restore "ui" controls with values stored in registry "settings"
+        :return:
+        """
+        try:
+            print("_gui_restore() START")
+            self.settings.sync()  # load from disk
+            window_geom = self.settings.value(GUI_SETTING_NAME_PREFIX + "geom")
+            if window_geom:
+                print("_gui_restore() geom")
+                self.restoreGeometry(window_geom)
+            """
+            state_value = self.settings.value(GUI_SETTING_NAME_PREFIX + "state")
+            if state_value:
+                print("_gui_restore() state")
+                self.restoreState(state_value)
+            """
+            n_windows = self.settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
+            if n_windows:
+                n_windows = int(n_windows)
+                for i in range(n_windows):
+                    title = self.settings.value(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i)
+                    )
+                    geom = self.settings.value(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i)
+                    )
+                    func = self.settings.value(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
+                    )
+                    print("_gui_restore() window i {} title {}".format(i, title))
+                    func_key = "self."+func+"()"
+                    print(func_key)
+                    eval(func_key)
+                    if geom:
+                        for window in self.mdi.subWindowList():
+                            if not window.widget():
+                                continue
+                            if window.widget().title == title:
+                                print(
+                                    "_gui_restore() window i {} title {} setgeom".format(
+                                        i, title
+                                    )
+                                )
+                                window.restoreGeometry(geom)
+                                break
 
-    #         print("_gui_restore() DONE")
-    #     except:
-    #         type_, value_, traceback_ = sys.exc_info()
-    #         exstr = str(traceback.format_exception(type_, value_, traceback_))
-    #         print("WARNING: _gui_restore() - exception: {}".format(exstr))
-    #         try:
-    #             print("doing qsettings clear()")
-    #             self.settings.clear()
-    #         except:
-    #             type_, value_, traceback_ = sys.exc_info()
-    #             exstr = str(traceback.format_exception(type_, value_, traceback_))
-    #             print("WARNING: qsettings clear() - exception: {}".format(exstr))
+            print("_gui_restore() DONE")
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: _gui_restore() - exception: {}".format(exstr))
+            try:
+                print("doing qsettings clear()")
+                self.settings.clear()
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
 
 class SubWindowArea(QMdiSubWindow):

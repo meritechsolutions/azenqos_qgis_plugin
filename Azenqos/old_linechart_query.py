@@ -1,7 +1,6 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import numpy as np
-import pandas as pd
-import params_disp_df
+
 
 class LineChartQueryNew:
     def __init__(self, azenqosDatabase):
@@ -322,80 +321,3 @@ class LineChartQueryNew:
         if len(maxList) > 0:
             yRange[1] = max(maxList)
         return yRange
-
-
-def get_lte_df(dbcon):
-    SQL = "SELECT log_hash, time, lte_sinr_rx0_1, lte_sinr_rx1_1, lte_inst_rsrp_1, lte_inst_rsrq_1, lte_inst_rssi_1 FROM lte_cell_meas order by time"    
-    df = pd.read_sql(
-        SQL,
-        dbcon,
-        parse_dates=["time"]
-    )
-    df["log_hash"] = df["log_hash"].astype(np.int64)
-    return df
-
-def get_lte_df_by_time(dbcon):
-    parameter_to_columns_list = [
-        (
-            [
-                "Time",
-                "SINR RX0",
-                "SINR RX1",
-                "RSRP",
-                "RSRQ",
-                "SINR",
-            ],
-            [   
-                "time",
-                "lte_sinr_rx0_1",
-                "lte_sinr_rx1_1",
-                "lte_inst_rsrp_1",
-                "lte_inst_rsrq_1",
-                "lte_inst_rssi_1",
-            ],
-        ),
-    ]
-    return params_disp_df.get(
-        dbcon,
-        parameter_to_columns_list,
-        time_before,
-        default_table="lte_cell_meas",
-        not_null_first_col=True,
-        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
-    )
-    
-
-def get_lte_data_df(dbcon, time_before):
-    parameter_to_columns_list = [
-        ("Time", ["time"], ),
-        (
-            [
-                "Data Dowload",
-                "Data Upload",
-            ],
-            [
-                "data_download_overall",
-                "data_upload_overall",
-            ],
-            "data_app_throughput"
-        ),
-        (
-            [
-                "L1 Throughput",
-                "LTE Bler",
-            ],
-            [
-                "lte_l1_throughput_mbps_1",
-                "lte_bler_1",
-            ],
-            "lte_l1_dl_tp"
-        ),
-    ]
-    return params_disp_df.get(
-        dbcon,
-        parameter_to_columns_list,
-        time_before,
-        default_table="lte_cell_meas",
-        not_null_first_col=True,
-        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
-    )

@@ -15,7 +15,7 @@ class TimeAxisItem(pg.AxisItem):
 
     def tickStrings(self, values, scale, spacing):
         """Function overloading the weak default version to provide timestamp"""
-        return [datetime.datetime.fromtimestamp(value/1000.0).strftime("%m-%d-%Y %H:%M:%S") for value in values]
+        return [datetime.datetime.fromtimestamp(value/1000.0, tz=datetime.timezone.utc).strftime("%m-%d-%Y %H:%M:%S") for value in values]
 
 
 class Linechart(QtWidgets.QDialog):
@@ -26,6 +26,8 @@ class Linechart(QtWidgets.QDialog):
 
     def __init__(self, *args, **kwargs):
         super(Linechart, self).__init__(*args, **kwargs)
+        pg.setConfigOptions(background="w", antialias=True)
+        pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.ui = loadUi(azq_utils.get_local_fp("linechart.ui"), self)
 
     def plot(self, df):
@@ -34,8 +36,15 @@ class Linechart(QtWidgets.QDialog):
         max_y = None
         min_x = df["time"].min()
         max_x = df["time"].max()
-        self.graphWidget = pg.PlotWidget(axisItems={'bottom': TimeAxisItem(orientation='bottom')})
-        self.graphWidget.setLimits(xMin=min_x, xMax=max_x+1000)
+        self.graphWidget = pg.GraphicsWindow()
+        # self.stringaxis = pg.AxisItem(orientation="bottom")
+        self.graphWidget.axes = self.graphWidget.addPlot(axisItems={'bottom': TimeAxisItem(orientation='bottom')})
+        
+        # self.setLayout(vertical_layout)
+        self.graphWidget.axes.hideButtons()
+        # self.graphWidget.axes.showGrid(x=True, y=True)
+        self.graphWidget.axes.setMouseEnabled(x=True, y=False)
+        # self.graphWidget.axes.scene().sigMouseClicked.connect(self.get_table_data)
         
         for col in df.columns:
             print(col)
@@ -49,9 +58,13 @@ class Linechart(QtWidgets.QDialog):
                 max_y = df[col].max()
             elif max_y < df[col].max():
                 max_y = df[col].max()
-            self.graphWidget.plot(x=df["time"].to_list(), y=df[col].to_list(), pen=pg.mkPen('b'))
-        self.graphWidget.setLimits(yMin=min_y-10, yMax=max_y+10)
-        self.graphWidget.setXRange(10*1000,60*1000,padding=0,update=True)
+            self.graphWidget.axes.plot(x=df["time"].to_list(), y=df[col].to_list(), pen=pg.mkPen('b'))
+        self.graphWidget.axes.setLimits(
+            xMin=min_x,
+            xMax=max_x+1000,
+            minXRange=1*1000,
+            maxXRange=1*1000,
+        )
         self.ui.tmp2.addWidget(self.graphWidget)
 
 def main():

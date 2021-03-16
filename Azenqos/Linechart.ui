@@ -18,6 +18,13 @@
     <layout class="QVBoxLayout" name="tmp2"/>
    </item>
    <item>
+    <widget class="QScrollBar" name="horizontalScrollBar">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QTableWidget" name="tableWidget"/>
    </item>
   </layout>

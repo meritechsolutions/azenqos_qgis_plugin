@@ -13,6 +13,7 @@ import linechart_query
 import linechart
 import integration_test_helpers
 import numpy as np
+import datetime
 
 
 def test():
@@ -23,8 +24,8 @@ def test():
         df = linechart_query.get_lte_df(dbcon)
         print("df.head():\n %s" % df.head(20))
         
-        df_by_time = linechart_query.get_lte_df_by_time(dbcon,"2020-08-26 15:42:30.687")
-        print("df.head():\n %s" % df_by_time.head(20))
+        df_by_time = None # linechart_query.get_lte_df_by_time(dbcon,"2020-08-26 15:42:30.687")
+        # print("df.head():\n %s" % df_by_time.head(20))
         # print(type(df["lte_sinr_rx0_1"].astype(float).to_list())
 
         # df_data = linechart_query.get_lte_data_df(dbcon, "2020-08-26 15:55:17.284")
@@ -36,7 +37,7 @@ def test():
         app = QtWidgets.QApplication(sys.argv)
         main = linechart.Linechart()
         main.plot(df)
-        main.update_time(df_by_time, "2020-08-26 15:42:30.687")
+        # main.update_time(df_by_time, datetime.datetime.strptime("2020-08-26 16:42:30.687", '%Y-%m-%d %H:%M:%S.%f'))
         main.show()
         sys.exit(app.exec_())
 

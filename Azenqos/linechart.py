@@ -12,6 +12,10 @@ import dataframe_model
 import azq_utils
 from azq_utils import get_default_color_for_index
 
+def epochToDateString(epoch):
+    return datetime.datetime.fromtimestamp(epoch/1000.0, tz=datetime.timezone.utc).strftime("%m-%d-%Y %H:%M:%S")
+
+
 class TimeAxisItem(pg.AxisItem):
     """Internal timestamp for x-axis"""
     def __init__(self, *args, **kwargs):
@@ -19,7 +23,7 @@ class TimeAxisItem(pg.AxisItem):
 
     def tickStrings(self, values, scale, spacing):
         """Function overloading the weak default version to provide timestamp"""
-        return [datetime.datetime.fromtimestamp(value/1000.0, tz=datetime.timezone.utc).strftime("%m-%d-%Y %H:%M:%S") for value in values]
+        return [epochToDateString(value) for value in values]
 
 class Linechart(QtWidgets.QDialog):
 
@@ -35,6 +39,7 @@ class Linechart(QtWidgets.QDialog):
         self.maxX = None
         self.minY = None
         self.maxY = None
+        self.mousecoordinatesdisplay = None
         self.moveFromChart = False
         self.ui = loadUi(azq_utils.get_local_fp("linechart.ui"), self)
         self.lines = []
@@ -48,6 +53,10 @@ class Linechart(QtWidgets.QDialog):
         self.graphWidget.axes = self.graphWidget.addPlot(axisItems={'bottom': TimeAxisItem(orientation='bottom')})
         self.vLine = pg.InfiniteLine(angle=90, movable=False, pen=pg.mkPen('k', width=4))
         self.graphWidget.axes.addItem(self.vLine, ignoreBounds=True)
+        self.cursorVLine = pg.InfiniteLine(angle=90, movable=False, pen=pg.mkPen('k', width=1))
+        self.cursorHLine = pg.InfiniteLine(angle=0, movable=False, pen=pg.mkPen('k', width=1))
+        self.graphWidget.axes.addItem(self.cursorVLine, ignoreBounds=True)
+        self.graphWidget.axes.addItem(self.cursorHLine, ignoreBounds=True)
         self.graphWidget.axes.hideButtons()
         self.graphWidget.axes.showGrid(x=False, y=True)
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
@@ -73,15 +82,17 @@ class Linechart(QtWidgets.QDialog):
         self.graphWidget.axes.setLimits(
             xMin=self.minX,
             xMax=self.maxX,
-            minXRange=60*1000,
-            maxXRange=60*1000,
+            minXRange=30*1000,
+            maxXRange=30*1000,
         )
         self.ui.tmp2.addWidget(self.graphWidget)
+        self.graphWidget.setMinimumSize(800, 400)
         self.drawCursor(self.minX)
         self.moveChart(self.minX)
         self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX)
         self.ui.horizontalScrollBar.valueChanged.connect(lambda: self.onScrollBarMove()) 
         self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
+        self.graphWidget.scene().sigMouseMoved.connect(self.mouseMoved)
         self.graphWidget.axes.sigXRangeChanged.connect(self.chartXRangeChanged)
 
     
@@ -90,6 +101,12 @@ class Linechart(QtWidgets.QDialog):
         if not self.moveFromChart:
             self.moveFromChart = True
             self.ui.horizontalScrollBar.setValue(x1 - self.minX)
+
+    def mouseMoved(self,pos):
+        mousePoint = self.graphWidget.axes.vb.mapSceneToView(pos)
+        self.graphWidget.axes.setTitle("<span style='font-size: 10pt'>x=%s, <span style='font-size: 10pt'>y=%0.1f</span>" % (epochToDateString(mousePoint.x()), mousePoint.y()))
+        self.cursorVLine.setPos(mousePoint.x())
+        self.cursorHLine.setPos(mousePoint.y())
 
     def getCurrentX(self):
         x1 = self.graphWidget.axes.viewRange()[0][0]

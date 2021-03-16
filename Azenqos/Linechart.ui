@@ -25,7 +25,14 @@
     </widget>
    </item>
    <item>
-    <widget class="QTableWidget" name="tableWidget"/>
+    <widget class="QTableView" name="tableView">
+     <property name="minimumSize">
+      <size>
+       <width>400</width>
+       <height>250</height>
+      </size>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

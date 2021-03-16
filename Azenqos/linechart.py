@@ -48,7 +48,7 @@ class Linechart(QtWidgets.QDialog):
         
         # self.setLayout(vertical_layout)
         self.graphWidget.axes.hideButtons()
-        self.graphWidget.axes.showGrid(x=False, y=True)
+        self.graphWidget.axes.showGrid(x=True, y=False)
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
         # self.graphWidget.axes.scene().sigMouseClicked.connect(self.get_table_data)
         colorindex = 0
@@ -77,10 +77,44 @@ class Linechart(QtWidgets.QDialog):
             minXRange=60*1000,
             maxXRange=60*1000,
         )
-        self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
         self.ui.tmp2.addWidget(self.graphWidget)
         self.draw_cursor(min_x)
         self.move_chart(min_x)
+        self.min_x = min_x
+        self.max_x = max_x
+        self.move_from_chart = False
+        self.ui.horizontalScrollBar.setMaximum(self.max_x - self.min_x)
+        self.ui.horizontalScrollBar.valueChanged.connect(lambda: self.on_scroll_bar_move()) 
+        self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
+        self.graphWidget.axes.sigXRangeChanged.connect(self.chart_x_range_changed)
+
+    
+    def chart_x_range_changed(self):
+        x1 = self.get_current_x()
+        # x_diff = self.max_x - self.min_x
+        # p_pos = (x1 - self.min_x) / x_diff * 100
+        # self.ui.horizontalScrollBar.setValue(p_pos)
+        # print(self.graphWidget.axes.viewRange())
+        if not self.move_from_chart:
+            self.move_from_chart = True
+            self.ui.horizontalScrollBar.setValue(x1 - self.min_x)
+
+
+    def get_current_x(self):
+        x1 = self.graphWidget.axes.viewRange()[0][0]
+        return x1
+
+
+    def on_scroll_bar_move(self):
+        print("on_scroll_bar_move")
+        value = self.ui.horizontalScrollBar.value() 
+        # x_diff = self.max_x - self.min_x
+        # pos = self.min_x + (x_diff * value / 100)
+        # self.move_chart(pos)
+        x = self.min_x + value
+        if not self.move_from_chart :
+            self.move_chart(self.min_x + value)
+        self.move_from_chart = False
 
     def onClick(self, event):
         items = self.graphWidget.scene().items(event.scenePos())

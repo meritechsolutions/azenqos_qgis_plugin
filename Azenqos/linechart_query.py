@@ -325,16 +325,16 @@ class LineChartQueryNew:
 
 
 def get_lte_df(dbcon):
-    SQL = "SELECT log_hash, time, lte_sinr_rx0_1, lte_sinr_rx1_1, lte_inst_rsrp_1, lte_inst_rsrq_1, lte_inst_rssi_1 FROM lte_cell_meas order by time"    
+    SQL = "SELECT log_hash, time as Time, lte_sinr_rx0_1 as 'SINR RX0', lte_sinr_rx1_1 as'SINR RX1', lte_inst_rsrp_1 as RSRP, lte_inst_rsrq_1 as RSRQ, lte_inst_rssi_1 AS RSSI FROM lte_cell_meas order by time"    
     df = pd.read_sql(
         SQL,
         dbcon,
-        parse_dates=["time"]
+        parse_dates=["Time"]
     )
     df["log_hash"] = df["log_hash"].astype(np.int64)
     return df
 
-def get_lte_df_by_time(dbcon):
+def get_lte_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
         (
             [
@@ -343,7 +343,7 @@ def get_lte_df_by_time(dbcon):
                 "SINR RX1",
                 "RSRP",
                 "RSRQ",
-                "SINR",
+                "RSSI",
             ],
             [   
                 "time",

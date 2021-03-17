@@ -377,21 +377,22 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_Linechart_triggered(self):
         print("action lte linechart")
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE Linechart", self.create_chart_window)
-        # self.add_subwindow_with_widget(swa, widget)
-
-    def create_chart_window(self, dbcon, time_before):
         import linechart_query
-        df = linechart_query.get_lte_df(dbcon)
-        linechart_window = linechart.Linechart()
-        linechart_window.plot(df)
+        linechart_window = linechart.Linechart(self.gc)
+        def createChartFunc(dbcon):
+            return linechart_query.get_lte_df(dbcon)
+        def updateFunc(dbcon, time):
+            return linechart_query.get_lte_df_by_time(dbcon, time)
         def updateTime(epoch):
+            print('nnnnnnnnnnnnn')
             print(epoch)
-            sampledate = datetime.datetime.fromtimestamp(epoch,tz=datetime.timezone.utc)
-            print(sampledate)
-            df_by_time = linechart_query.get_lte_df_by_time(dbcon, sampledate)
-            linechart_window.updateTime(df_by_time, sampledate)
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+            # sampledate = datetime.datetime.fromtimestamp(epoch,tz=datetime.timezone.utc)
+            # linechart_window.updateTime(sampledate)
+        linechart_window.createChartFunc = createChartFunc
+        linechart_window.updateFunc = updateFunc
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         # return linechart_window
@@ -706,6 +707,8 @@ Log_hash list: {}""".format(
 
     def setTimeValue(self, value):
         print("%s: setTimeValue %s" % (os.path.basename(__file__), value))
+        print('aaaaaaa')
+        print(value)
         self.gc.timeSlider.setValue(value)
         print("mw self.gc.timeSlider.value()", self.gc.timeSlider.value())
         self.gc.timeSlider.update()
@@ -875,8 +878,10 @@ Log_hash list: {}""".format(
     def timeChangeImpl(self):
         print("%s: timeChange0" % os.path.basename(__file__))
         value = self.gc.timeSlider.value()
+        print(value)
         # print("%s: timeChange1" % os.path.basename(__file__))
         timestampValue = self.gc.minTimeValue + value
+        print(timestampValue)
         # print("%s: timeChange2" % os.path.basename(__file__))
         sampledate = datetime.datetime.fromtimestamp(timestampValue)
         # print("%s: timeChange3" % os.path.basename(__file__))
@@ -903,7 +908,9 @@ Log_hash list: {}""".format(
         if len(self.gc.openedWindows) > 0:
             for window in self.gc.openedWindows:
                 worker = None
-                if not window.title in self.gc.linechartWindowname:
+                if isinstance(window, linechart.Linechart):
+                    window.updateTime(sampledate)
+                elif not window.title in self.gc.linechartWindowname:
                     print(
                         "%s: timeChange7 hilightrow window %s"
                         % (os.path.basename(__file__), window.title)

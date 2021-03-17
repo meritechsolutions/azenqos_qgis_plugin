@@ -70,7 +70,6 @@ class Linechart(QtWidgets.QDialog):
         self.graphWidget.axes.hideButtons()
         self.graphWidget.axes.showGrid(x=False, y=True)
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
-        self.graphWidget.setMinimumSize(800, 400)
         self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
         self.graphWidget.scene().sigMouseMoved.connect(self.mouseMoved)
         self.ui.tmp2.addWidget(self.graphWidget)

@@ -384,20 +384,14 @@ Log_hash list: {}""".format(
         def updateFunc(dbcon, time):
             return linechart_query.get_lte_df_by_time(dbcon, time)
         def updateTime(epoch):
-            print('nnnnnnnnnnnnn')
-            print(epoch)
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
-            # sampledate = datetime.datetime.fromtimestamp(epoch,tz=datetime.timezone.utc)
-            # linechart_window.updateTime(sampledate)
         linechart_window.createChartFunc = createChartFunc
         linechart_window.updateFunc = updateFunc
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
-        # return linechart_window
         self.add_subwindow_with_widget(swa, linechart_window)
-        # main.show()
         
     def add_subwindow_with_widget(self, swa, widget):                
         swa.setWidget(widget)

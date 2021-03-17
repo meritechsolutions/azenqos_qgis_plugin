@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.uic import loadUi
+from PyQt5.QtCore import pyqtSignal
 from pyqtgraph import PlotWidget
 import pyqtgraph as pg
 import sys
@@ -26,9 +27,11 @@ class TimeAxisItem(pg.AxisItem):
         return [epochToDateString(value) for value in values]
 
 class Linechart(QtWidgets.QDialog):
+    timeSelected = pyqtSignal(float)
 
     epoch = datetime.datetime.utcfromtimestamp(0)
     def unixTimeMillis(self, dt):
+        dt = dt.replace(tzinfo=None)
         return (dt - self.epoch).total_seconds() * 1000.0
 
     def __init__(self, *args, **kwargs):
@@ -121,9 +124,8 @@ class Linechart(QtWidgets.QDialog):
 
     def onClick(self, event):
         items = self.graphWidget.scene().items(event.scenePos())
-        x = self.graphWidget.axes.vb.mapSceneToView(event.scenePos()).x()
-        self.drawCursor(x)
-        self.moveChart(x)
+        x = self.graphWidget.axes.vb.mapSceneToView(event.scenePos()).x()/1000.0
+        self.timeSelected.emit(x)
 
     def drawCursor(self, x):
         self.vLine.setPos(x)

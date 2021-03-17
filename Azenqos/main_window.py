@@ -44,6 +44,7 @@ import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 import inspect
 import configparser
+import linechart
 
 
 class main_window(QMainWindow):
@@ -373,7 +374,29 @@ Log_hash list: {}""".format(
         widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
-        
+    @pyqtSlot()
+    def on_actionLTE_Linechart_triggered(self):
+        print("action lte linechart")
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "LTE Linechart", self.create_chart_window)
+        # self.add_subwindow_with_widget(swa, widget)
+
+    def create_chart_window(self, dbcon, time_before):
+        import linechart_query
+        df = linechart_query.get_lte_df(dbcon)
+        linechart_window = linechart.Linechart()
+        linechart_window.plot(df)
+        def updateTime(epoch):
+            print(epoch)
+            sampledate = datetime.datetime.fromtimestamp(epoch,tz=datetime.timezone.utc)
+            print(sampledate)
+            df_by_time = linechart_query.get_lte_df_by_time(dbcon, sampledate)
+            linechart_window.updateTime(df_by_time, sampledate)
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        # return linechart_window
+        self.add_subwindow_with_widget(swa, linechart_window)
+        # main.show()
         
     def add_subwindow_with_widget(self, swa, widget):                
         swa.setWidget(widget)

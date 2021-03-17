@@ -57,7 +57,7 @@ class DataFrameModel(QtCore.QAbstractTableModel):
         val = self._dataframe.iloc[row][col]
         
         if role == QtCore.Qt.DisplayRole:
-            if str(val)[0] == "#":
+            if len(str(val)) > 0 and str(val)[0] == "#":
                 return
             return str(val)
         elif role == DataFrameModel.ValueRole:
@@ -65,11 +65,8 @@ class DataFrameModel(QtCore.QAbstractTableModel):
         if role == DataFrameModel.DtypeRole:
             return dt
         if role == QtCore.Qt.BackgroundRole:
-            # color = self.colors.get((index.row(), index.column()))
-            # if color is not None:
-            if str(val)[0] == "#":
+            if len(str(val)) > 0 and str(val)[0] == "#":
                 return QtGui.QColor(val)
-            # print("ttttt",val)
            
         return QtCore.QVariant()
 

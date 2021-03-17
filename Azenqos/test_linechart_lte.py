@@ -38,6 +38,14 @@ def test():
         main = linechart.Linechart()
         main.plot(df)
         main.updateTime(df_by_time, datetime.datetime.strptime("2020-08-26 16:16:30.687", '%Y-%m-%d %H:%M:%S.%f'))
+        def updateTime(epoch):
+            print(epoch)
+            sampledate = datetime.datetime.fromtimestamp(epoch,tz=datetime.timezone.utc)
+            print(sampledate)
+            df_by_time = linechart_query.get_lte_df_by_time(dbcon, sampledate)
+            main.updateTime(df_by_time, sampledate)
+
+        main.timeSelected.connect(updateTime)
         main.show()
         sys.exit(app.exec_())
 

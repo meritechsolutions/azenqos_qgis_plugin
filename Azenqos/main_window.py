@@ -391,7 +391,7 @@ Log_hash list: {}""".format(
         linechart_window.updateFunc = updateFunc
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
-        self.add_subwindow_with_widget(swa, linechart_window)
+        self.add_subwindow_with_widget(swa, linechart_window).open()
         
     def add_subwindow_with_widget(self, swa, widget):                
         swa.setWidget(widget)
@@ -701,7 +701,6 @@ Log_hash list: {}""".format(
 
     def setTimeValue(self, value):
         print("%s: setTimeValue %s" % (os.path.basename(__file__), value))
-        print('aaaaaaa')
         print(value)
         self.gc.timeSlider.setValue(value)
         print("mw self.gc.timeSlider.value()", self.gc.timeSlider.value())

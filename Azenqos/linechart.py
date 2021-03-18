@@ -9,10 +9,12 @@ import numpy as np
 import datetime
 import math
 import sqlite3
+import pandas as pd
 
 import dataframe_model
 import azq_utils
 from azq_utils import get_default_color_for_index
+from worker import Worker
 
 
 def epochToDateString(epoch):
@@ -32,6 +34,8 @@ class TimeAxisItem(pg.AxisItem):
 
 class Linechart(QtWidgets.QDialog):
     timeSelected = pyqtSignal(float)
+    updateChart = pyqtSignal(pd.DataFrame)
+    updateTable = pyqtSignal(object)
 
     def unixTimeMillis(self, dt):
         return azq_utils.datetimeStringtoTimestamp(dt.strftime(
@@ -76,6 +80,8 @@ class Linechart(QtWidgets.QDialog):
         self.graphWidget.axes.sigXRangeChanged.connect(self.chartXRangeChanged)
         self.ui.horizontalScrollBar.valueChanged.connect(
             lambda: self.onScrollBarMove())
+        self.updateChart.connect(self.onUpdateChart)
+        self.updateTable.connect(self.onUpdateTable)
 
     def plot(self, df):
         df["Time"] = df["Time"].apply(
@@ -150,34 +156,93 @@ class Linechart(QtWidgets.QDialog):
     def drawCursor(self, x):
         self.vLine.setPos(x)
 
-    def updateTime(self, time):
-        x = self.unixTimeMillis(time)
+    def updateInternal(self):
+        print('updateInternal')
+        time = self.newTime
         if self.gc.databasePath is not None and self.updateFunc is not None and self.createChartFunc is not None:
-            try:
-                with sqlite3.connect(self.gc.databasePath) as dbcon:
-                    if self.minX is None:
-                        try:
-                            self.plot(self.createChartFunc(dbcon))
-                        except:
-                            pass
-                    df = self.updateFunc(dbcon, time)
-                    df = df.loc[df["param"] != "Time"]
-                    df["color"] = None
-                    df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
-                    df.columns = ['Element', 'Value', "color"]
-                    df = df.reset_index(drop=True)
-                    dm = df[df.columns].apply(lambda x: x.duplicated())
-                    df[df.columns] = df[df.columns].mask(dm, '')
-                    model = dataframe_model.DataFrameModel(df)
-                    self.ui.tableView.setModel(model)
-            except:
-                pass
-        if self.graphWidget is not None:
+            with sqlite3.connect(self.gc.databasePath) as dbcon:
+                if self.minX is None:
+                    try:
+                        print('query chartDF')
+                        chartDF = self.createChartFunc(dbcon)
+                        print(chartDF.head())
+                        colorindex = 0
+                        for col in chartDF.columns:
+                            print(col)
+                            if col in ["log_hash", "Time"]:
+                                continue
+                            color = get_default_color_for_index(colorindex)
+                            self.colorDict[col] = color
+                            colorindex += 1
+                        self.updateChart.emit(chartDF)
+                    except:
+                        pass
+                df = self.updateFunc(dbcon, time)
+                print(df.head())
+                df = df.loc[df["param"] != "Time"]
+                df["color"] = None
+                df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
+                df.columns = ['Element', 'Value', "color"]
+                df = df.reset_index(drop=True)
+                dm = df[df.columns].apply(lambda x: x.duplicated())
+                df[df.columns] = df[df.columns].mask(dm, '')
+                model = dataframe_model.DataFrameModel(df)
+                self.updateTable.emit(model)
+
+    def onUpdateChart(self, df):
+        print('onUpdateChart')
+        self.plot(df)
+    
+    def onUpdateTable(self, model):
+        print('onUpdateTable')
+        self.ui.tableView.setModel(model)
+        if self.minX is not None:
+            x = self.unixTimeMillis(self.newTime)
             self.moveChart(x)
             self.drawCursor(x)
 
+    
+
+    def updateTime(self, time):
+        # x = self.unixTimeMillis(time)
+        self.newTime = time
+        worker = Worker(self.updateInternal)
+        self.gc.threadpool.start(worker)
+        # if self.gc.databasePath is not None and self.updateFunc is not None and self.createChartFunc is not None:
+        #     try:
+        #         with sqlite3.connect(self.gc.databasePath) as dbcon:
+        #             if self.minX is None:
+        #                 try:
+        #                     self.plot(self.createChartFunc(dbcon))
+        #                 except:
+        #                     pass
+        #             df = self.updateFunc(dbcon, time)
+        #             df = df.loc[df["param"] != "Time"]
+        #             df["color"] = None
+        #             df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
+        #             df.columns = ['Element', 'Value', "color"]
+        #             df = df.reset_index(drop=True)
+        #             dm = df[df.columns].apply(lambda x: x.duplicated())
+        #             df[df.columns] = df[df.columns].mask(dm, '')
+        #             model = dataframe_model.DataFrameModel(df)
+        #             self.ui.tableView.setModel(model)
+        #     except:
+        #         pass
+        # if self.graphWidget is not None:
+        #     self.moveChart(x)
+        #     self.drawCursor(x)
+
     def moveChart(self, x):
         self.graphWidget.axes.setXRange(x, x)
+
+        
+    def closeEvent(self, event):
+        print("tttttttttttt")
+        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
+        for index in indices:
+            self.gc.openedWindows.pop(index)
+        self.close()
+        event.accept()
 
 
 def main():

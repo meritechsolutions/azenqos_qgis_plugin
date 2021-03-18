@@ -391,7 +391,8 @@ Log_hash list: {}""".format(
         linechart_window.updateFunc = updateFunc
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
-        self.add_subwindow_with_widget(swa, linechart_window).open()
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
         
     def add_subwindow_with_widget(self, swa, widget):                
         swa.setWidget(widget)

@@ -374,9 +374,11 @@ Log_hash list: {}""".format(
         widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
+    ############# Line Chart LTE
+
     @pyqtSlot()
-    def on_actionLTE_Linechart_triggered(self):
-        print("action lte linechart")
+    def on_actionLTE_Line_Chart_triggered(self):
+        print("action lte line chart")
         import linechart_query
         linechart_window = linechart.Linechart(self.gc)
         def createChartFunc(dbcon):
@@ -393,7 +395,74 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
+        linechart_window.setWindowTitle("LTE Line Chart")
         
+    @pyqtSlot()
+    def on_actionLTE_DATA_Line_Chart_triggered(self):
+        print("action lte data line chart")
+        import linechart_query
+        linechart_window = linechart.Linechart(self.gc)
+        def createChartFunc(dbcon):
+            return linechart_query.get_lte_data_df(dbcon)
+        def updateFunc(dbcon, time):
+            return linechart_query.get_lte_data_df_by_time(dbcon, time)
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.createChartFunc = createChartFunc
+        linechart_window.updateFunc = updateFunc
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("LTE Data Line Chart")
+
+    ############# Line Chart WCDMA
+
+    @pyqtSlot()
+    def on_actionWCDMA_Line_Chart_triggered(self):
+        print("action wcdma line chart")
+        import linechart_query
+        linechart_window = linechart.Linechart(self.gc)
+        def createChartFunc(dbcon):
+            return linechart_query.get_wcdma_df(dbcon)
+        def updateFunc(dbcon, time):
+            return linechart_query.get_wcdma_df_by_time(dbcon, time)
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.createChartFunc = createChartFunc
+        linechart_window.updateFunc = updateFunc
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("WCDMA Line Chart")
+
+    @pyqtSlot()
+    def on_actionWCDMA_DATA_Line_Chart_triggered(self):
+        print("action wcdma data line chart")
+        import linechart_query
+        linechart_window = linechart.Linechart(self.gc)
+        def createChartFunc(dbcon):
+            return linechart_query.get_wcdma_data_df(dbcon)
+        def updateFunc(dbcon, time):
+            return linechart_query.get_wcdma_data_df_by_time(dbcon, time)
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.createChartFunc = createChartFunc
+        linechart_window.updateFunc = updateFunc
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("WCDMA Data Line Chart")
+
+
     def add_subwindow_with_widget(self, swa, widget):                
         swa.setWidget(widget)
         self.mdi.addSubWindow(swa)

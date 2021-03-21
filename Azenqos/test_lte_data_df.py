@@ -15,7 +15,7 @@ def test():
 
     with sqlite3.connect(dbfp) as dbcon:
         df = linechart_query.get_lte_data_df(dbcon)
-        print("df.head():\n %s" % df.head(20))
+        print("df.head():\n %s" % df[0].head(20))
 
 
 if __name__ == "__main__":

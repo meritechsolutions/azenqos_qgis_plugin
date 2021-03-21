@@ -374,6 +374,28 @@ Log_hash list: {}""".format(
         widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
+    ############# Line Chart NR
+    @pyqtSlot()
+    def on_actionNR_DATA_Line_Chart_triggered(self):
+        print("action nr data line chart")
+        import linechart_query
+        linechart_window = linechart.Linechart(self.gc)
+        def createChartFunc(dbcon):
+            return linechart_query.get_nr_data_df(dbcon)
+        def updateFunc(dbcon, time):
+            return linechart_query.get_nr_data_df_by_time(dbcon, time)
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.createChartFunc = createChartFunc
+        linechart_window.updateFunc = updateFunc
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("NR Data Line Chart")
+
     ############# Line Chart LTE
 
     @pyqtSlot()
@@ -461,6 +483,50 @@ Log_hash list: {}""".format(
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
         linechart_window.setWindowTitle("WCDMA Data Line Chart")
+
+    ############# Line Chart GSM
+
+    @pyqtSlot()
+    def on_actionGSM_Line_Chart_triggered(self):
+        print("action gsm line chart")
+        import linechart_query
+        linechart_window = linechart.Linechart(self.gc)
+        def createChartFunc(dbcon):
+            return linechart_query.get_gsm_df(dbcon)
+        def updateFunc(dbcon, time):
+            return linechart_query.get_gsm_df_by_time(dbcon, time)
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.createChartFunc = createChartFunc
+        linechart_window.updateFunc = updateFunc
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("GSM Line Chart")
+
+    @pyqtSlot()
+    def on_actionGSM_DATA_Line_Chart_triggered(self):
+        print("action gsm data line chart")
+        import linechart_query
+        linechart_window = linechart.Linechart(self.gc)
+        def createChartFunc(dbcon):
+            return linechart_query.get_gsm_data_df(dbcon)
+        def updateFunc(dbcon, time):
+            return linechart_query.get_gsm_data_df_by_time(dbcon, time)
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.createChartFunc = createChartFunc
+        linechart_window.updateFunc = updateFunc
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("GSM Data Line Chart")
 
 
     def add_subwindow_with_widget(self, swa, widget):                

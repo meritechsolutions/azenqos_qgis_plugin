@@ -20,7 +20,6 @@ from worker import Worker
 def epochToDateString(epoch):
     return datetime.datetime.fromtimestamp(epoch).strftime("%m-%d-%Y %H:%M:%S")
 
-
 class TimeAxisItem(pg.AxisItem):
     """Internal timestamp for x-axis"""
 
@@ -30,7 +29,6 @@ class TimeAxisItem(pg.AxisItem):
     def tickStrings(self, values, scale, spacing):
         """Function overloading the weak default version to provide timestamp"""
         return [epochToDateString(value) for value in values]
-
 
 class Linechart(QtWidgets.QDialog):
     timeSelected = pyqtSignal(float)
@@ -87,31 +85,34 @@ class Linechart(QtWidgets.QDialog):
         if not isinstance(dfList, list):
             dfList = [dfList]
         for df in dfList:
+            if len(df) == 0:
+                continue
             df["Time"] = df["Time"].apply(
                 lambda x: self.unixTimeMillis(x.to_pydatetime()))
             self.minX = df["Time"].min()
             self.maxX = df["Time"].max()
             colorindex = 0
             for col in df.columns:
+                
                 print(col)
                 if col in ["log_hash", "Time"]:
                     continue
-                df[col] = df[col].astype(float)
-                if self.minY is None:
-                    self.minY = df[col].min()
-                elif self.minY > df[col].min():
-                    self.minY = df[col].min()
-                if self.maxY is None:
-                    self.maxY = df[col].max()
-                elif self.maxY < df[col].max():
-                    self.maxY = df[col].max()
+                df=df.fillna(np.NaN)
+                dfNotNa=df.loc[df[col].notna()]
+                if len(dfNotNa) > 0:
+                    if self.minY is None:
+                        self.minY = dfNotNa[col].min()
+                    elif self.minY > dfNotNa[col].min():
+                        self.minY = dfNotNa[col].min()
+                    if self.maxY is None:
+                        self.maxY = dfNotNa[col].max()
+                    elif self.maxY < dfNotNa[col].max():
+                        self.maxY = dfNotNa[col].max()
                 color = self.colorDict[col]
                 newline = self.graphWidget.axes.plot(
                     x=df["Time"].to_list(), y=df[col].to_list(), connect="finite", pen=pg.mkPen(color, width=2))
                 self.lines.append(newline)
                 colorindex += 1
-            print("MMMMMMMMMMMMMMMMMMMMMM",self.minX)
-            print("MMMMMMMMMMMMMMMMMMMMMM",self.maxX)
             self.graphWidget.axes.setLimits(
                 xMin=self.minX,
                 xMax=self.maxX,
@@ -171,10 +172,8 @@ class Linechart(QtWidgets.QDialog):
                     if not isinstance(chartDFList, list):
                         chartDFList = [chartDFList]
                     colorindex = 0
-                    print("bbbbbbbbbb",chartDFList)
                     for chartDF in chartDFList:
                         for col in chartDF.columns:
-                            print("aaaaaa",col)
                             if col in ["log_hash", "Time"]:
                                 continue
                             color = get_default_color_for_index(colorindex)
@@ -182,7 +181,6 @@ class Linechart(QtWidgets.QDialog):
                             colorindex += 1
                     self.updateChart.emit(chartDFList)
                 df = self.updateFunc(dbcon, time)
-                print("tttttttt",self.colorDict)
                 df = df.loc[df["param"] != "Time"]
                 df["color"] = None
                 df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
@@ -202,47 +200,19 @@ class Linechart(QtWidgets.QDialog):
         self.ui.tableView.setModel(model)
         if self.minX is not None:
             x = self.unixTimeMillis(self.newTime)
-            print("xxxxxxxxxxxxxx",x)
             self.moveChart(x)
             self.drawCursor(x)
 
-    
-
     def updateTime(self, time):
-        # x = self.unixTimeMillis(time)
         self.newTime = time
         worker = Worker(self.updateInternal)
         self.gc.threadpool.start(worker)
-        # if self.gc.databasePath is not None and self.updateFunc is not None and self.createChartFunc is not None:
-        #     try:
-        #         with sqlite3.connect(self.gc.databasePath) as dbcon:
-        #             if self.minX is None:
-        #                 try:
-        #                     self.plot(self.createChartFunc(dbcon))
-        #                 except:
-        #                     pass
-        #             df = self.updateFunc(dbcon, time)
-        #             df = df.loc[df["param"] != "Time"]
-        #             df["color"] = None
-        #             df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
-        #             df.columns = ['Element', 'Value', "color"]
-        #             df = df.reset_index(drop=True)
-        #             dm = df[df.columns].apply(lambda x: x.duplicated())
-        #             df[df.columns] = df[df.columns].mask(dm, '')
-        #             model = dataframe_model.DataFrameModel(df)
-        #             self.ui.tableView.setModel(model)
-        #     except:
-        #         pass
-        # if self.graphWidget is not None:
-        #     self.moveChart(x)
-        #     self.drawCursor(x)
 
     def moveChart(self, x):
         try:
             self.graphWidget.axes.setXRange(x, x)
         except:
             pass
-
         
     def closeEvent(self, event):
         indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
@@ -250,7 +220,6 @@ class Linechart(QtWidgets.QDialog):
             self.gc.openedWindows.pop(index)
         self.close()
         event.accept()
-
 
 def main():
     app = QtWidgets.QApplication(sys.argv)

@@ -375,6 +375,28 @@ Log_hash list: {}""".format(
         self.add_subwindow_with_widget(swa, widget)
 
     ############# Line Chart NR
+
+    @pyqtSlot()
+    def on_actionNR_Line_Chart_triggered(self):
+        print("action nr line chart")
+        import linechart_query
+        linechart_window = linechart.Linechart(self.gc)
+        def createChartFunc(dbcon):
+            return linechart_query.get_nr_df(dbcon)
+        def updateFunc(dbcon, time):
+            return linechart_query.get_nr_df_by_time(dbcon, time)
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.createChartFunc = createChartFunc
+        linechart_window.updateFunc = updateFunc
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("NR Line Chart")
+
     @pyqtSlot()
     def on_actionNR_DATA_Line_Chart_triggered(self):
         print("action nr data line chart")

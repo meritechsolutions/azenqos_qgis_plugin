@@ -326,6 +326,45 @@ class LineChartQueryNew:
 
 ############# Line Chart NR
 
+def get_nr_df(dbcon):
+    df_list = []
+    sql_list =["SELECT log_hash, time as Time, nr_servingbeam_ss_rsrp_1 as RSRP, nr_servingbeam_ss_rsrq_1 as RSRQ, nr_servingbeam_ss_sinr_1 as SINR FROM nr_cell_meas where RSRP is not null",]
+    for sql in sql_list:
+        df = pd.read_sql(
+            sql,
+            dbcon,
+            parse_dates=["Time"]
+        )
+        df["log_hash"] = df["log_hash"].astype(np.int64)
+        df_list.append(df)
+    
+    return df_list
+
+def get_nr_df_by_time(dbcon, time_before):
+    parameter_to_columns_list = [
+        ("Time", ["time"], ),
+        (
+            [
+                "RSRP",
+                "RSRQ",
+                "SINR"
+            ],
+            [
+                "nr_servingbeam_ss_rsrp_1",
+                "nr_servingbeam_ss_rsrq_1",
+                "nr_servingbeam_ss_sinr_1"
+            ],
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table="nr_cell_meas",
+        not_null_first_col=True,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
 def get_nr_data_df(dbcon):
     df_list = []
     sql_list =["SELECT log_hash, time as Time, data_download_overall/1000 as 'Data Download', data_upload_overall/1000 as'Data Upload' FROM data_app_throughput",
@@ -634,9 +673,8 @@ def get_gsm_df_by_time(dbcon, time_before):
 
 def get_gsm_data_df(dbcon):
     df_list = []
-    sql_list =["SELECT log_hash, time as Time, data_wcdma_rlc_dl_throughput as 'RLC Download Thoughput' FROM data_wcdma_rlc_stats",
-    "SELECT log_hash, time as Time, data_app_dl_throughput_1 as 'App Download Thoughput' FROM data_app_throughput",
-    "SELECT log_hash, time as Time, data_hsdpa_thoughput as 'HSDPA Thoughput' FROM wcdma_hsdpa_stats"]
+    sql_list =["SELECT log_hash, time as Time, data_gsm_rlc_dl_throughput as 'RLC Download Thoughput' FROM data_egprs_stats",
+    "SELECT log_hash, time as Time, data_app_dl_throughput_1 as 'App Download Thoughput' FROM data_app_throughput",]
     for sql in sql_list:
         df = pd.read_sql(
             sql,
@@ -656,9 +694,9 @@ def get_gsm_data_df_by_time(dbcon, time_before):
                 "RLC Download Thoughput"
             ],
             [
-                "data_wcdma_rlc_dl_throughput",
+                "data_gsm_rlc_dl_throughput",
             ],
-            "data_wcdma_rlc_stats"
+            "data_egprs_stats"
         ),
         (
             [
@@ -669,21 +707,12 @@ def get_gsm_data_df_by_time(dbcon, time_before):
             ],
             "data_app_throughput"
         ),
-        (
-            [
-                "HSDPA Thoughput",
-            ],
-            [
-                "data_hsdpa_thoughput",
-            ],
-            "wcdma_hsdpa_stats"
-        ),
     ]
     return params_disp_df.get(
         dbcon,
         parameter_to_columns_list,
         time_before,
-        default_table="data_wcdma_rlc_stats",
+        default_table="data_egprs_stats",
         not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )

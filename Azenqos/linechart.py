@@ -51,7 +51,7 @@ class Linechart(QtWidgets.QDialog):
         self.maxY = None
         self.mousecoordinatesdisplay = None
         self.moveFromChart = False
-        self.ui = loadUi(azq_utils.get_local_fp("linechart.ui"), self)
+        self.ui = loadUi(azq_utils.get_local_fp("linechart2.ui"), self)
         self.lines = []
         self.colorDict = {}
         self.createChartFunc = None
@@ -74,12 +74,14 @@ class Linechart(QtWidgets.QDialog):
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
         self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
         self.graphWidget.scene().sigMouseMoved.connect(self.mouseMoved)
-        self.ui.tmp2.addWidget(self.graphWidget)
+        self.ui.verticalLayout_3.addWidget(self.graphWidget)
         self.graphWidget.axes.sigXRangeChanged.connect(self.chartXRangeChanged)
         self.ui.horizontalScrollBar.valueChanged.connect(
             lambda: self.onScrollBarMove())
         self.updateChart.connect(self.onUpdateChart)
         self.updateTable.connect(self.onUpdateTable)
+        
+        # self.ui.tableView.setMaximumSize(16777215, 16777215)
 
     def plot(self, dfList):
         if not isinstance(dfList, list):

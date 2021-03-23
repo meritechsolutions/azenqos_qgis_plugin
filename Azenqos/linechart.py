@@ -71,7 +71,7 @@ class Linechart(QtWidgets.QDialog):
         self.graphWidget.axes.addItem(self.cursorHLine, ignoreBounds=True)
         self.graphWidget.axes.hideButtons()
         self.graphWidget.axes.showGrid(x=False, y=True)
-        self.graphWidget.axes.setMouseEnabled(x=True, y=False)
+        self.graphWidget.axes.setMouseEnabled(x=True, y=True)
         self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
         self.graphWidget.scene().sigMouseMoved.connect(self.mouseMoved)
         self.ui.verticalLayout_3.addWidget(self.graphWidget)
@@ -118,8 +118,11 @@ class Linechart(QtWidgets.QDialog):
             self.graphWidget.axes.setLimits(
                 xMin=self.minX,
                 xMax=self.maxX,
-                minXRange=30,
-                maxXRange=30,
+                yMin=self.minY-4,
+                yMax=self.maxY,
+                minXRange=1,
+                maxXRange=60,
+                minYRange=1,
             )
             self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 30)
             self.drawCursor(self.minX)

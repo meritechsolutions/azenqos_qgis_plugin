@@ -1,5 +1,7 @@
-from PyQt5 import QtWidgets, uic, QtCore
+from PyQt5 import QtWidgets, uic, QtCore, QtGui
 from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtGui import QDialog
+# from qgis.gui import QgsColorButton
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import pyqtSignal
 from pyqtgraph import PlotWidget
@@ -18,7 +20,10 @@ from worker import Worker
 
 
 def epochToDateString(epoch):
-    return datetime.datetime.fromtimestamp(epoch).strftime("%m-%d-%Y %H:%M:%S")
+    try:
+        return datetime.datetime.fromtimestamp(epoch).strftime("%m-%d-%Y %H:%M:%S")
+    except:
+        return ""
 
 class TimeAxisItem(pg.AxisItem):
     """Internal timestamp for x-axis"""
@@ -80,6 +85,8 @@ class Linechart(QtWidgets.QDialog):
             lambda: self.onScrollBarMove())
         self.updateChart.connect(self.onUpdateChart)
         self.updateTable.connect(self.onUpdateTable)
+        
+        self.ui.tableView.customContextMenuRequested.connect(self.onRightClick)
         
         # self.ui.tableView.setMaximumSize(16777215, 16777215)
 
@@ -225,6 +232,10 @@ class Linechart(QtWidgets.QDialog):
             self.gc.openedWindows.pop(index)
         self.close()
         event.accept()
+
+    def onRightClick(self, QPos=None):       
+        print(QPos)
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)

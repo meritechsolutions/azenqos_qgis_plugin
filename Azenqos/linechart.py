@@ -121,7 +121,7 @@ class Linechart(QtWidgets.QDialog):
                 yMin=self.minY-4,
                 yMax=self.maxY,
                 minXRange=1,
-                maxXRange=60,
+                maxXRange=30,
                 minYRange=1,
             )
             self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 30)

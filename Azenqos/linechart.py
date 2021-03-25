@@ -12,6 +12,7 @@ import datetime
 import math
 import sqlite3
 import pandas as pd
+from functools import partial
 
 import dataframe_model
 import azq_utils
@@ -76,7 +77,7 @@ class Linechart(QtWidgets.QDialog):
         self.graphWidget.axes.addItem(self.cursorHLine, ignoreBounds=True)
         self.graphWidget.axes.hideButtons()
         self.graphWidget.axes.showGrid(x=False, y=True)
-        self.graphWidget.axes.setMouseEnabled(x=True, y=True)
+        self.graphWidget.axes.setMouseEnabled(x=True, y=False)
         self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
         self.graphWidget.scene().sigMouseMoved.connect(self.mouseMoved)
         self.ui.verticalLayout_3.addWidget(self.graphWidget)
@@ -87,6 +88,10 @@ class Linechart(QtWidgets.QDialog):
         self.updateTable.connect(self.onUpdateTable)
         
         self.ui.tableView.customContextMenuRequested.connect(self.onRightClick)
+        enable_slot = partial(self.enable_zoom, self.ui.checkBox_2)
+        disable_slot = partial(self.disable_zoom, self.ui.checkBox_2)
+        self.ui.checkBox_2.stateChanged.connect(lambda x: enable_slot() if x else disable_slot())
+        self.ui.checkBox_2.setChecked(False)
         
         # self.ui.tableView.setMaximumSize(16777215, 16777215)
 
@@ -127,7 +132,7 @@ class Linechart(QtWidgets.QDialog):
                 xMax=self.maxX,
                 yMin=self.minY-4,
                 yMax=self.maxY,
-                minXRange=1,
+                minXRange=30,
                 maxXRange=30,
                 minYRange=1,
             )
@@ -235,6 +240,20 @@ class Linechart(QtWidgets.QDialog):
 
     def onRightClick(self, QPos=None):       
         print(QPos)
+
+    def enable_zoom(self, checkbox):
+        self.graphWidget.axes.setMouseEnabled(x=True, y=True)
+        self.graphWidget.axes.setLimits(
+            minXRange=None,
+            maxXRange=None,
+        )
+
+    def disable_zoom(self, checkbox):
+        self.graphWidget.axes.setMouseEnabled(x=True, y=False)
+        self.graphWidget.axes.setLimits(
+            minXRange=30,
+            maxXRange=30,
+        )
 
 
 def main():

@@ -18,6 +18,7 @@ import dataframe_model
 import azq_utils
 from azq_utils import get_default_color_for_index
 from worker import Worker
+import color_dialog
 
 
 def epochToDateString(epoch):
@@ -48,6 +49,7 @@ class Linechart(QtWidgets.QDialog):
 
     def __init__(self, gc):
         super().__init__(None)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
         pg.setConfigOptions(background="w", antialias=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
@@ -58,7 +60,7 @@ class Linechart(QtWidgets.QDialog):
         self.mousecoordinatesdisplay = None
         self.moveFromChart = False
         self.ui = loadUi(azq_utils.get_local_fp("linechart2.ui"), self)
-        self.lines = []
+        self.lineDict = {}
         self.colorDict = {}
         self.createChartFunc = None
         self.updateFunc = None
@@ -125,7 +127,7 @@ class Linechart(QtWidgets.QDialog):
                 color = self.colorDict[col]
                 newline = self.graphWidget.axes.plot(
                     x=df["Time"].to_list(), y=df[col].to_list(), connect="finite", pen=pg.mkPen(color, width=2))
-                self.lines.append(newline)
+                self.lineDict[col] = newline
                 colorindex += 1
             self.graphWidget.axes.setLimits(
                 xMin=self.minX,
@@ -205,6 +207,7 @@ class Linechart(QtWidgets.QDialog):
                 df = df.reset_index(drop=True)
                 dm = df[df.columns].apply(lambda x: x.duplicated())
                 df[df.columns] = df[df.columns].mask(dm, '')
+                self.tableViewDF = df
                 model = dataframe_model.DataFrameModel(df)
                 self.updateTable.emit(model)
 
@@ -239,7 +242,18 @@ class Linechart(QtWidgets.QDialog):
         event.accept()
 
     def onRightClick(self, QPos=None):       
-        print(QPos)
+        index = self.ui.tableView.indexAt(QPos)
+        if index.isValid():
+            name = self.tableViewDF.iloc[index.row(),0]
+            color = self.tableViewDF.iloc[index.row(),2]
+            dlg = color_dialog.color_dialog(name, color, self.onColorSet)
+            dlg.show()
+
+    def onColorSet(self, name ,color):
+        self.colorDict[name]=color
+        self.updateInternal()
+        self.lineDict[name].setPen(color, width=2)
+
 
     def enable_zoom(self, checkbox):
         self.graphWidget.axes.setMouseEnabled(x=True, y=True)

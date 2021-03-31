@@ -23,7 +23,7 @@ def test():
     gc.databasePath = dbfp
 
     app = QtWidgets.QApplication(sys.argv)
-    main = linechart_custom.LineChart(gc, paramList = ["lte_sinr_1", "lte_inst_rsrp_1", "lte_inst_rsrq_1", "lte_inst_rssi_1"])
+    main = linechart_custom.LineChart(gc, paramList = [{"name":"lte_sinr_1", "null":False, "data":False}, {"name":"lte_inst_rsrp_1", "null":False, "data":False}, {"name":"lte_inst_rsrq_1", "null":False, "data":False}, {"name":"lte_inst_rssi_1", "null":False, "data":False}])
     def updateTime(epoch):
         time = datetime.datetime.fromtimestamp(epoch)
         main.updateTime(time)

@@ -83,7 +83,7 @@
      <addaction name="actionLTE_PUCCH_PDSCH_Params"/>
      <addaction name="actionLTE_RRC_SIB_States"/>
      <addaction name="actionLTE_VoLTE"/>
-     <addaction name="actionLTE_Linechart"/>
+     <addaction name="actionLTE_Line_Chart"/>
     </widget>
     <widget class="QMenu" name="menuNR">
      <property name="title">
@@ -91,6 +91,7 @@
      </property>
      <addaction name="action5GNR_Radio_Parameters"/>
      <addaction name="action5GNR_Serving_Neighbors"/>
+     <addaction name="actionNR_Line_Chart"/>
     </widget>
     <widget class="QMenu" name="menuSignalling">
      <property name="title">
@@ -107,6 +108,7 @@
      <addaction name="actionWCDMA_Active_Monitored_sets"/>
      <addaction name="actionWCDMA_BLER_Summary"/>
      <addaction name="actionWCDMA_Bearers"/>
+     <addaction name="actionWCDMA_Line_Chart"/>
     </widget>
     <widget class="QMenu" name="menuGSM">
      <property name="title">
@@ -116,12 +118,23 @@
      <addaction name="actionGSM_Serving_Neighbors"/>
      <addaction name="actionGSM_Current_Channel"/>
      <addaction name="actionGSM_C_I"/>
+     <addaction name="actionGSM_Line_Chart"/>
+    </widget>
+    <widget class="QMenu" name="menuData">
+     <property name="title">
+      <string>Data</string>
+     </property>
+     <addaction name="actionNR_DATA_Line_Chart"/>
+     <addaction name="actionLTE_DATA_Line_Chart"/>
+     <addaction name="actionWCDMA_DATA_Line_Chart"/>
+     <addaction name="actionGSM_DATA_Line_Chart"/>
     </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
     <addaction name="menuGSM"/>
     <addaction name="menuSignalling"/>
+    <addaction name="menuData"/>
     <addaction name="actionPCAP"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
@@ -214,11 +227,6 @@
     <string>LTE VoLTE</string>
    </property>
   </action>
-  <action name="actionLTE_Line_Chart">
-   <property name="text">
-    <string>LTE Line chart</string>
-   </property>
-  </action>
   <action name="action5GNR_Radio_Parameters">
    <property name="text">
     <string>5GNR Physical Parameters</string>
@@ -274,16 +282,6 @@
     <string>GSM C/I</string>
    </property>
   </action>
-  <action name="actionGSM_Line_chart">
-   <property name="text">
-    <string>GSM Line chart</string>
-   </property>
-  </action>
-  <action name="actionWCDMA_Line_chart">
-   <property name="text">
-    <string>WCDMA Line chart</string>
-   </property>
-  </action>
   <action name="actionLayer_3_Messages">
    <property name="text">
     <string>Layer-3 Messages</string>
@@ -329,9 +327,44 @@
     <string>Session info...</string>
    </property>
   </action>
-  <action name="actionLTE_Linechart">
+  <action name="actionLTE_Line_Chart">
    <property name="text">
-    <string>LTE Linechart</string>
+    <string>LTE Line Chart</string>
+   </property>
+  </action>
+  <action name="actionLTE_DATA_Line_Chart">
+   <property name="text">
+    <string>LTE DATA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Line_Chart">
+   <property name="text">
+    <string>WCDMA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionGSM_Line_Chart">
+   <property name="text">
+    <string>GSM Line Chart</string>
+   </property>
+  </action>
+  <action name="actionNR_Line_Chart">
+   <property name="text">
+    <string>NR Line Chart</string>
+   </property>
+  </action>
+  <action name="actionNR_DATA_Line_Chart">
+   <property name="text">
+    <string>NR DATA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_DATA_Line_Chart">
+   <property name="text">
+    <string>WCDMA DATA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionGSM_DATA_Line_Chart">
+   <property name="text">
+    <string>GSM DATA Line Chart</string>
    </property>
   </action>
  </widget>

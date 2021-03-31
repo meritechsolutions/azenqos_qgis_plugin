@@ -1362,6 +1362,13 @@ def get_elm_info(param_col_with_arg):
 
     return None
 
+def get_number_param():
+    elm_df = get_elm_df_from_csv()
+    matched_rows = elm_df.query("var_type == 'Double' or var_type == 'Integer'")
+    if len(matched_rows) > 0:
+        row = matched_rows
+    return row[["var_name","n_arg_max"]]
+
 
 def is_param_from_azqdata_dat(param_col_no_arg):
     if param_col_no_arg == "positioning_lat" or param_col_no_arg == "positioning_lon":

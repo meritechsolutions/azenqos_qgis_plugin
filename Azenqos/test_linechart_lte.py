@@ -10,7 +10,7 @@ import sys
 import pandas as pd
 import params_disp_df
 import linechart_query
-import linechart
+import linechart_custom
 import integration_test_helpers
 import numpy as np
 import datetime
@@ -23,12 +23,9 @@ def test():
     gc.databasePath = dbfp
 
     app = QtWidgets.QApplication(sys.argv)
-    main = linechart_custom.LineChart(gc, paramList = [{"name":"lte_sinr_1", "null":False, "data":False}, {"name":"lte_inst_rsrp_1", "null":False, "data":False}, {"name":"lte_inst_rsrq_1", "null":False, "data":False}, {"name":"lte_inst_rssi_1", "null":False, "data":False}])
+    main = linechart_custom.LineChart(gc, paramList = ["lte_sinr_1", "lte_inst_rsrp_1", "lte_inst_rsrq_1", "lte_inst_rssi_1"])
     def updateTime(epoch):
-        # print(epoch)
         time = datetime.datetime.fromtimestamp(epoch)
-        # print(sampledate)
-        # df_by_time = linechart_query.get_lte_df_by_time(dbcon, sampledate)
         main.updateTime(time)
     main.timeSelected.connect(updateTime)
     main.updateTime(datetime.datetime.strptime("2020-08-26 16:16:30.687", '%Y-%m-%d %H:%M:%S.%f'))

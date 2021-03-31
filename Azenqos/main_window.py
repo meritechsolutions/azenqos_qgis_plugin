@@ -45,7 +45,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 import inspect
 import configparser
 import linechart
-
+import linechart_custom
 
 class main_window(QMainWindow):
 
@@ -374,25 +374,135 @@ Log_hash list: {}""".format(
         widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
+    ############# Line Chart NR
+
     @pyqtSlot()
-    def on_actionLTE_Linechart_triggered(self):
-        print("action lte linechart")
+    def on_actionNR_Line_Chart_triggered(self):
+        print("action nr line chart")
         import linechart_query
-        linechart_window = linechart.Linechart(self.gc)
-        def createChartFunc(dbcon):
-            return linechart_query.get_lte_df(dbcon)
-        def updateFunc(dbcon, time):
-            return linechart_query.get_lte_df_by_time(dbcon, time)
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["nr_servingbeam_ss_rsrp_1", "nr_servingbeam_ss_rsrq_1", "nr_servingbeam_ss_sinr_1"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
-        linechart_window.createChartFunc = createChartFunc
-        linechart_window.updateFunc = updateFunc
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("NR Line Chart")
+
+    @pyqtSlot()
+    def on_actionNR_DATA_Line_Chart_triggered(self):
+        print("action nr data line chart")
+        import linechart_query
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["data_download_overall/1000", "data_upload_overall/1000", "nr_p_plus_scell_nr_pdsch_tput_mbps", "nr_p_plus_scell_nr_pusch_tput_mbps", "nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "nr_p_plus_scell_lte_ul_pdcp_tput_mbps"])
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("NR Data Line Chart")
+
+    ############# Line Chart LTE
+
+    @pyqtSlot()
+    def on_actionLTE_Line_Chart_triggered(self):
+        print("action lte line chart")
+        import linechart_query
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["lte_sinr_1", "lte_inst_rsrp_1", "lte_inst_rsrq_1", "lte_inst_rssi_1"])
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("LTE Line Chart")
         
+    @pyqtSlot()
+    def on_actionLTE_DATA_Line_Chart_triggered(self):
+        print("action lte data line chart")
+        import linechart_query
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["data_download_overall/1000", "data_upload_overall/1000", "lte_l1_throughput_mbps_1", "lte_bler_1"])
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("LTE Data Line Chart")
+
+    ############# Line Chart WCDMA
+
+    @pyqtSlot()
+    def on_actionWCDMA_Line_Chart_triggered(self):
+        print("action wcdma line chart")
+        import linechart_query
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["wcdma_aset_ecio_avg", "wcdma_aset_rscp_avg", "wcdma_rssi", "wcdma_bler_average_percent_all_channels"])
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("WCDMA Line Chart")
+
+    @pyqtSlot()
+    def on_actionWCDMA_DATA_Line_Chart_triggered(self):
+        print("action wcdma data line chart")
+        import linechart_query
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["data_wcdma_rlc_dl_throughput", "data_app_dl_throughput_1", "data_hsdpa_thoughput"])
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("WCDMA Data Line Chart")
+
+    ############# Line Chart GSM
+
+    @pyqtSlot()
+    def on_actionGSM_Line_Chart_triggered(self):
+        print("action gsm line chart")
+        import linechart_query
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["gsm_rxlev_sub_dbm", "gsm_rxqual_sub"])
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("GSM Line Chart")
+
+    @pyqtSlot()
+    def on_actionGSM_DATA_Line_Chart_triggered(self):
+        print("action gsm data line chart")
+        import linechart_query
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["data_gsm_rlc_dl_throughput", "data_app_dl_throughput_1"])
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle("GSM Data Line Chart")
+
+
     def add_subwindow_with_widget(self, swa, widget):                
         swa.setWidget(widget)
         self.mdi.addSubWindow(swa)
@@ -701,7 +811,6 @@ Log_hash list: {}""".format(
 
     def setTimeValue(self, value):
         print("%s: setTimeValue %s" % (os.path.basename(__file__), value))
-        print('aaaaaaa')
         print(value)
         self.gc.timeSlider.setValue(value)
         print("mw self.gc.timeSlider.value()", self.gc.timeSlider.value())
@@ -902,7 +1011,7 @@ Log_hash list: {}""".format(
         if len(self.gc.openedWindows) > 0:
             for window in self.gc.openedWindows:
                 worker = None
-                if isinstance(window, linechart.Linechart):
+                if isinstance(window, linechart_custom.LineChart):
                     window.updateTime(sampledate)
                 elif not window.title in self.gc.linechartWindowname:
                     print(

@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
 from PyQt5.QtWidgets import QTableWidgetItem
-from PyQt5.QtGui import QDialog
+from PyQt5.QtGui import QDialog, QMenu
 # from qgis.gui import QgsColorButton
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import pyqtSignal
@@ -19,6 +19,7 @@ import azq_utils
 from azq_utils import get_default_color_for_index
 from worker import Worker
 import color_dialog
+import add_param_dialog
 
 
 def epochToDateString(epoch):
@@ -47,36 +48,38 @@ class LineChart(QtWidgets.QDialog):
                 "%Y-%m-%d %H:%M:%S.%f"
             ))
 
-    def __init__(self, gc):
-        super().__init__(None)
+    def __init__(self, gc, paramList=[]):
+        super(LineChart, self).__init__(None)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
         pg.setConfigOptions(background="w", antialias=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
+        self.paramList = paramList
+        self.colorDict = {}
+        self.colorindex = 0
+        for param in paramList:
+            color = get_default_color_for_index(self.colorindex)
+            self.colorDict[param] = color
+            self.colorindex+=1
+        self.lastChartParamList = None
         self.minX = None
         self.maxX = None
         self.minY = None
         self.maxY = None
         self.mousecoordinatesdisplay = None
         self.moveFromChart = False
-        self.ui = loadUi(azq_utils.get_local_fp("linechart2.ui"), self)
+        self.ui = loadUi(azq_utils.get_local_fp("linechart3.ui"), self)
         self.lineDict = {}
-        self.colorDict = {}
-        self.createChartFunc = None
-        self.updateFunc = None
         self.graphWidget = None
         self.graphWidget = pg.GraphicsWindow()
         self.graphWidget.axes = self.graphWidget.addPlot(
             axisItems={'bottom': TimeAxisItem(orientation='bottom')})
         self.vLine = pg.InfiniteLine(
             angle=90, movable=False, pen=pg.mkPen('k', width=4))
-        self.graphWidget.axes.addItem(self.vLine, ignoreBounds=True)
         self.cursorVLine = pg.InfiniteLine(
             angle=90, movable=False, pen=pg.mkPen('k', width=1))
         self.cursorHLine = pg.InfiniteLine(
             angle=0, movable=False, pen=pg.mkPen('k', width=1))
-        self.graphWidget.axes.addItem(self.cursorVLine, ignoreBounds=True)
-        self.graphWidget.axes.addItem(self.cursorHLine, ignoreBounds=True)
         self.graphWidget.axes.hideButtons()
         self.graphWidget.axes.showGrid(x=False, y=True)
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
@@ -89,17 +92,16 @@ class LineChart(QtWidgets.QDialog):
         self.updateChart.connect(self.onUpdateChart)
         self.updateTable.connect(self.onUpdateTable)
         
-        self.ui.tableView.customContextMenuRequested.connect(self.onRightClick)
+        self.ui.tableView.customContextMenuRequested.connect(self.onTableRightClick)
         enable_slot = partial(self.enable_zoom, self.ui.checkBox_2)
         disable_slot = partial(self.disable_zoom, self.ui.checkBox_2)
         self.ui.checkBox_2.stateChanged.connect(lambda x: enable_slot() if x else disable_slot())
         self.ui.checkBox_2.setChecked(False)
-        
-        # self.ui.tableView.setMaximumSize(16777215, 16777215)
+        self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
+        self.ui.multiYCheck.setCheckable(False)
 
     def plot(self, dfList):
-        if not isinstance(dfList, list):
-            dfList = [dfList]
+        self.graphWidget.axes.clear()
         for df in dfList:
             if len(df) == 0:
                 continue
@@ -138,6 +140,9 @@ class LineChart(QtWidgets.QDialog):
                 maxXRange=30,
                 minYRange=1,
             )
+            self.graphWidget.axes.addItem(self.vLine, ignoreBounds=True)
+            self.graphWidget.axes.addItem(self.cursorVLine, ignoreBounds=True)
+            self.graphWidget.axes.addItem(self.cursorHLine, ignoreBounds=True)
             self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 30)
             self.drawCursor(self.minX)
             self.moveChart(self.minX)
@@ -183,33 +188,33 @@ class LineChart(QtWidgets.QDialog):
     def updateInternal(self):
         print('updateInternal')
         time = self.newTime
-        if self.gc.databasePath is not None and self.updateFunc is not None and self.createChartFunc is not None:
+        if self.gc.databasePath is not None:
             with sqlite3.connect(self.gc.databasePath) as dbcon:
-                if self.minX is None:
-                    print('query chartDF')
-                    chartDFList = self.createChartFunc(dbcon)
-                    if not isinstance(chartDFList, list):
-                        chartDFList = [chartDFList]
-                    colorindex = 0
-                    for chartDF in chartDFList:
-                        for col in chartDF.columns:
-                            if col in ["log_hash", "Time"]:
-                                continue
-                            color = get_default_color_for_index(colorindex)
-                            self.colorDict[col] = color
-                            colorindex += 1
-                    self.updateChart.emit(chartDFList)
-                df = self.updateFunc(dbcon, time)
-                df = df.loc[df["param"] != "Time"]
-                df["color"] = None
-                df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
-                df.columns = ['Element', 'Value', "color"]
-                df = df.reset_index(drop=True)
-                dm = df[df.columns].apply(lambda x: x.duplicated())
-                df[df.columns] = df[df.columns].mask(dm, '')
-                self.tableViewDF = df
-                model = dataframe_model.DataFrameModel(df)
-                self.updateTable.emit(model)
+                self.reQueryChartData(dbcon)
+                self.reQueryTableData(dbcon, time)
+               
+    def reQueryChartData(self, dbcon):
+        import linechart_query
+        if self.lastChartParamList == self.paramList:
+            return
+        self.lastChartParamList = []
+        self.lastChartParamList.extend(self.paramList)
+        chartDFList = linechart_query.get_chart_df(dbcon, self.paramList)
+        self.updateChart.emit(chartDFList)
+
+    def reQueryTableData(self, dbcon, time):
+        import linechart_query
+        df = linechart_query.get_table_df_by_time(dbcon, time, self.paramList)
+        df = df.loc[df["param"] != "Time"]
+        df["color"] = None
+        df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
+        df.columns = ['Element', 'Value', "color"]
+        df = df.reset_index(drop=True)
+        dm = df[df.columns].apply(lambda x: x.duplicated())
+        df[df.columns] = df[df.columns].mask(dm, '')
+        self.tableViewDF = df
+        model = dataframe_model.DataFrameModel(df)
+        self.updateTable.emit(model)
 
     def onUpdateChart(self, df):
         print('onUpdateChart')
@@ -241,13 +246,34 @@ class LineChart(QtWidgets.QDialog):
         self.close()
         event.accept()
 
-    def onRightClick(self, QPos=None):       
+    def onTableRightClick(self, QPos=None):
         index = self.ui.tableView.indexAt(QPos)
         if index.isValid():
             name = self.tableViewDF.iloc[index.row(),0]
             color = self.tableViewDF.iloc[index.row(),2]
-            dlg = color_dialog.ColorDialog(name, color, self.onColorSet)
-            dlg.show()
+            menu = QMenu()
+            changeColor = menu.addAction("Change Color")
+            removeParam = menu.addAction("Remove Param")
+            action = menu.exec_(self.ui.tableView.mapToGlobal(QPos))
+            if action == changeColor:
+                dlg = color_dialog.ColorDialog(name, color, self.onColorSet)
+                dlg.show()
+            elif action == removeParam:
+                self.paramList.remove(name)
+                self.updateTime(self.newTime)
+
+    def onAddParameterButtonClick(self):
+        dlg = add_param_dialog.AddParamDialog(self.onParamAdded)
+        dlg.show()
+
+    def onParamAdded(self, paramName):
+        if paramName not in self.paramList:
+            self.paramList.append(paramName)
+            color = get_default_color_for_index(self.colorindex)
+            self.colorDict[paramName] = color
+            self.colorindex+=1
+            self.updateTime(self.newTime)
+        # print( self.paramList)
 
     def onColorSet(self, name ,color):
         self.colorDict[name]=color

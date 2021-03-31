@@ -38,7 +38,7 @@ class TimeAxisItem(pg.AxisItem):
         """Function overloading the weak default version to provide timestamp"""
         return [epochToDateString(value) for value in values]
 
-class Linechart(QtWidgets.QDialog):
+class LineChart(QtWidgets.QDialog):
     timeSelected = pyqtSignal(float)
     updateChart = pyqtSignal(object)
     updateTable = pyqtSignal(object)
@@ -49,7 +49,7 @@ class Linechart(QtWidgets.QDialog):
             ))
 
     def __init__(self, gc, paramList=[]):
-        super().__init__(None)
+        super(LineChart, self).__init__(None)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
         pg.setConfigOptions(background="w", antialias=True)
@@ -256,14 +256,14 @@ class Linechart(QtWidgets.QDialog):
             removeParam = menu.addAction("Remove Param")
             action = menu.exec_(self.ui.tableView.mapToGlobal(QPos))
             if action == changeColor:
-                dlg = color_dialog.color_dialog(name, color, self.onColorSet)
+                dlg = color_dialog.ColorDialog(name, color, self.onColorSet)
                 dlg.show()
             elif action == removeParam:
                 self.paramList.remove(name)
                 self.updateTime(self.newTime)
 
     def onAddParameterButtonClick(self):
-        dlg = add_param_dialog.add_param_dialog(self.onParamAdded)
+        dlg = add_param_dialog.AddParamDialog(self.onParamAdded)
         dlg.show()
 
     def onParamAdded(self, paramName):
@@ -298,7 +298,7 @@ class Linechart(QtWidgets.QDialog):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    main = Linechart()
+    main = LineChart()
     main.show()
     sys.exit(app.exec_())
 

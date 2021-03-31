@@ -37,7 +37,7 @@ class TimeAxisItem(pg.AxisItem):
         """Function overloading the weak default version to provide timestamp"""
         return [epochToDateString(value) for value in values]
 
-class Linechart(QtWidgets.QDialog):
+class LineChart(QtWidgets.QDialog):
     timeSelected = pyqtSignal(float)
     updateChart = pyqtSignal(object)
     updateTable = pyqtSignal(object)
@@ -246,7 +246,7 @@ class Linechart(QtWidgets.QDialog):
         if index.isValid():
             name = self.tableViewDF.iloc[index.row(),0]
             color = self.tableViewDF.iloc[index.row(),2]
-            dlg = color_dialog.color_dialog(name, color, self.onColorSet)
+            dlg = color_dialog.ColorDialog(name, color, self.onColorSet)
             dlg.show()
 
     def onColorSet(self, name ,color):
@@ -272,7 +272,7 @@ class Linechart(QtWidgets.QDialog):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-    main = Linechart()
+    main = LineChart()
     main.show()
     sys.exit(app.exec_())
 

@@ -380,7 +380,7 @@ Log_hash list: {}""".format(
     def on_actionNR_Line_Chart_triggered(self):
         print("action nr line chart")
         import linechart_query
-        linechart_window = linechart_custom.Linechart(self.gc, paramList = ["nr_servingbeam_ss_rsrp_1", "nr_servingbeam_ss_rsrq_1", "nr_servingbeam_ss_sinr_1"])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["nr_servingbeam_ss_rsrp_1", "nr_servingbeam_ss_rsrq_1", "nr_servingbeam_ss_sinr_1"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -395,7 +395,7 @@ Log_hash list: {}""".format(
     def on_actionNR_DATA_Line_Chart_triggered(self):
         print("action nr data line chart")
         import linechart_query
-        linechart_window = linechart_custom.Linechart(self.gc, paramList = ["data_download_overall/1000", "data_upload_overall/1000", "nr_p_plus_scell_nr_pdsch_tput_mbps", "nr_p_plus_scell_nr_pusch_tput_mbps", "nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "nr_p_plus_scell_lte_ul_pdcp_tput_mbps"])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["data_download_overall/1000", "data_upload_overall/1000", "nr_p_plus_scell_nr_pdsch_tput_mbps", "nr_p_plus_scell_nr_pusch_tput_mbps", "nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "nr_p_plus_scell_lte_ul_pdcp_tput_mbps"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -412,7 +412,7 @@ Log_hash list: {}""".format(
     def on_actionLTE_Line_Chart_triggered(self):
         print("action lte line chart")
         import linechart_query
-        linechart_window = linechart_custom.Linechart(self.gc, paramList = ["lte_sinr_1", "lte_inst_rsrp_1", "lte_inst_rsrq_1", "lte_inst_rssi_1"])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["lte_sinr_1", "lte_inst_rsrp_1", "lte_inst_rsrq_1", "lte_inst_rssi_1"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -427,7 +427,7 @@ Log_hash list: {}""".format(
     def on_actionLTE_DATA_Line_Chart_triggered(self):
         print("action lte data line chart")
         import linechart_query
-        linechart_window = linechart_custom.Linechart(self.gc, paramList = ["data_download_overall/1000", "data_upload_overall/1000", "lte_l1_throughput_mbps_1", "lte_bler_1"])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["data_download_overall/1000", "data_upload_overall/1000", "lte_l1_throughput_mbps_1", "lte_bler_1"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -444,7 +444,7 @@ Log_hash list: {}""".format(
     def on_actionWCDMA_Line_Chart_triggered(self):
         print("action wcdma line chart")
         import linechart_query
-        linechart_window = linechart_custom.Linechart(self.gc, paramList = ["wcdma_aset_ecio_avg", "wcdma_aset_rscp_avg", "wcdma_rssi", "wcdma_bler_average_percent_all_channels"])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["wcdma_aset_ecio_avg", "wcdma_aset_rscp_avg", "wcdma_rssi", "wcdma_bler_average_percent_all_channels"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -459,7 +459,7 @@ Log_hash list: {}""".format(
     def on_actionWCDMA_DATA_Line_Chart_triggered(self):
         print("action wcdma data line chart")
         import linechart_query
-        linechart_window = linechart_custom.Linechart(self.gc, paramList = ["data_wcdma_rlc_dl_throughput", "data_app_dl_throughput_1", "data_hsdpa_thoughput"])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["data_wcdma_rlc_dl_throughput", "data_app_dl_throughput_1", "data_hsdpa_thoughput"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -476,7 +476,7 @@ Log_hash list: {}""".format(
     def on_actionGSM_Line_Chart_triggered(self):
         print("action gsm line chart")
         import linechart_query
-        linechart_window = linechart_custom.Linechart(self.gc, paramList = ["gsm_rxlev_sub_dbm", "gsm_rxqual_sub"])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["gsm_rxlev_sub_dbm", "gsm_rxqual_sub"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -491,7 +491,7 @@ Log_hash list: {}""".format(
     def on_actionGSM_DATA_Line_Chart_triggered(self):
         print("action gsm data line chart")
         import linechart_query
-        linechart_window = linechart_custom.Linechart(self.gc, paramList = ["data_gsm_rlc_dl_throughput", "data_app_dl_throughput_1"])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = ["data_gsm_rlc_dl_throughput", "data_app_dl_throughput_1"])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -1011,7 +1011,7 @@ Log_hash list: {}""".format(
         if len(self.gc.openedWindows) > 0:
             for window in self.gc.openedWindows:
                 worker = None
-                if isinstance(window, linechart_custom.Linechart):
+                if isinstance(window, linechart_custom.LineChart):
                     window.updateTime(sampledate)
                 elif not window.title in self.gc.linechartWindowname:
                     print(

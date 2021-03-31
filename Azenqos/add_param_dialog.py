@@ -10,10 +10,10 @@ import numpy as np
 import azq_utils
 import preprocess_azm
 
-class add_param_dialog(QDialog):
+class AddParamDialog(QDialog):
 
     def __init__(self, onParamAdded):
-        super(add_param_dialog, self).__init__(None)
+        super(AddParamDialog, self).__init__(None)
         self.paramDF = preprocess_azm.get_number_param()
         self.paramDF = self.paramDF.reset_index(drop=True)
         self.onParamAdded = onParamAdded

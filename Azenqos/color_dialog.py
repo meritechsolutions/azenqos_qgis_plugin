@@ -10,11 +10,11 @@ import numpy as np
 import azq_utils
 import color_button
 
-class color_dialog(QDialog):
+class ColorDialog(QDialog):
 
 
     def __init__(self, name=None, color=None, onColorSet=None):
-        super(color_dialog, self).__init__(None)
+        super(ColorDialog, self).__init__(None)
         self._color = color
         self._name = name
         self._onColorSet = onColorSet

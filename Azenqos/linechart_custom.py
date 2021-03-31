@@ -199,8 +199,8 @@ class LineChart(QtWidgets.QDialog):
         import linechart_query
         if self.lastChartParamList == self.paramListDict:
             return
-        self.lastChartParamList = []
-        self.lastChartParamList.extend(self.paramListDict)
+        self.lastChartParamList = {}
+        self.lastChartParamList.update(self.paramListDict)
         chartDFList = linechart_query.get_chart_df(dbcon, self.paramListDict)
         self.updateChart.emit(chartDFList)
 

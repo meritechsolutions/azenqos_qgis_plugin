@@ -397,10 +397,12 @@ def get_gsm_data_df_by_time(dbcon, time_before):
 
 ############ New Line Chart Query
 
-def get_chart_df(dbcon, param_list, data=False ):
+def get_chart_df(dbcon, param_list_dict, data=False ):
     df_list = []
-    for param_name in param_list:
-        table_name = preprocess_azm.get_table_for_column(param_name)
+    for key in param_list_dict:
+        param_dict = param_list_dict[key]
+        param_name = param_dict["name"]
+        table_name = preprocess_azm.get_table_for_column(param_name.split("/")[0])
         sql = "SELECT log_hash, time as Time, {} FROM {}".format(param_name, table_name)
         df = pd.read_sql(
             sql,
@@ -409,27 +411,34 @@ def get_chart_df(dbcon, param_list, data=False ):
         )
         df["log_hash"] = df["log_hash"].astype(np.int64)
         data_param_name_list = ["data", "throughput", "mbps", "kbps"]
-        if any(data_param_name in param_name.lower() for data_param_name in data_param_name_list):
+        if param_dict["data"]:
             df = df.fillna(0)
+        elif param_dict["null"]:
+            df = df.dropna()
         df_list.append(df)
 
     return df_list
 
-def get_table_df_by_time(dbcon, time_before, param_list):
+def get_table_df_by_time(dbcon, time_before, param_list_dict):
     first_table = None
+    not_null_first_col = True
     parameter_to_columns_list = [("Time", ["time"], )]
-    for param_name in param_list:
-        table_name = preprocess_azm.get_table_for_column(param_name)
+    for key in param_list_dict:
+        param_dict = param_list_dict[key]
+        param_name = param_dict["name"]
+        table_name = preprocess_azm.get_table_for_column(param_name.split("/")[0])
         if first_table is None:
             first_table = table_name
         parameter_to_columns = (param_name, [param_name], table_name)
         parameter_to_columns_list.append(parameter_to_columns)
-
+    if param_dict["data"]:
+        not_null_first_col = False
+        
     return params_disp_df.get(
         dbcon,
         parameter_to_columns_list,
         time_before,
         default_table=first_table,
-        not_null_first_col=True,
+        not_null_first_col=not_null_first_col,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )

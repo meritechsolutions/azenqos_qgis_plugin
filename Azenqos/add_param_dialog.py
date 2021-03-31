@@ -44,7 +44,7 @@ class AddParamDialog(QDialog):
         self.ui.not_null_checkbox.stateChanged.connect(lambda x: enableNotNullSlot() if x else disableNotNullSlot())
         enableDataSlot = partial(self.checkData, self.ui.data_checkbox)
         disableDataSlot = partial(self.uncheckData, self.ui.data_checkbox)
-        self.ui.not_null_checkbox.stateChanged.connect(lambda x: enableDataSlot() if x else disableDataSlot())
+        self.ui.data_checkbox.stateChanged.connect(lambda x: enableDataSlot() if x else disableDataSlot())
         for index, row in self.paramDF.iterrows():
             self.ui.comboBox.addItem(row.var_name)
         self.ui.comboBox.currentIndexChanged.connect(self.selectParam)

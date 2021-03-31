@@ -19,6 +19,7 @@ class ColorButton(QtWidgets.QPushButton):
         self._default = color
         self.pressed.connect(self.onColorPicker)
         self.setColor(self._default)
+        self.setObjectName("color_button")
 
     def setColor(self, color):
         if color != self._color:
@@ -26,7 +27,8 @@ class ColorButton(QtWidgets.QPushButton):
             self.colorChanged.emit(color)
 
         if self._color:
-            self.setStyleSheet("background-color: %s;" % self._color)
+            self.setStyleSheet("#color_button{background-color: %s;}" % self._color)
+
         else:
             self.setStyleSheet("")
 

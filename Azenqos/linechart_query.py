@@ -395,7 +395,255 @@ def get_lte_data_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        default_table="lte_cell_meas",
+        default_table="data_app_throughput",
+        not_null_first_col=True,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+############# Line Chart WCDMA
+
+def get_wcdma_df(dbcon):
+    df_list = []
+    sql_list =["SELECT log_hash, time as Time, wcdma_aset_ecio_avg as EcIo, wcdma_aset_rscp_avg as RSCP FROM wcdma_cell_meas",
+    "SELECT log_hash, time as Time, wcdma_rssi as RSSI FROM wcdma_rx_power",
+    "SELECT log_hash, time as Time, wcdma_bler_average_percent_all_channels as Bler FROM wcdma_bler"]
+    for sql in sql_list:
+        df = pd.read_sql(
+            sql,
+            dbcon,
+            parse_dates=["Time"]
+        )
+        df["log_hash"] = df["log_hash"].astype(np.int64)
+        df_list.append(df)
+    
+    return df_list
+
+def get_wcdma_df_by_time(dbcon, time_before):
+    parameter_to_columns_list = [
+        ("Time", ["time"], ),
+        (
+            [
+                "EcIo",
+                "RSCP",
+            ],
+            [
+                "wcdma_aset_ecio_avg",
+                "wcdma_aset_rscp_avg",
+            ],
+            "wcdma_cell_meas"
+        ),
+        (
+            [
+                "RSSI",
+            ],
+            [
+                "wcdma_rssi",
+            ],
+            "wcdma_rx_power"
+        ),
+        (
+            [
+                "Bler",
+            ],
+            [
+                "wcdma_bler_average_percent_all_channels",
+            ],
+            "wcdma_bler"
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table="wcdma_cell_meas",
+        not_null_first_col=True,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+def get_wcdma_data_df(dbcon):
+    df_list = []
+    sql_list =["SELECT log_hash, time as Time, data_wcdma_rlc_dl_throughput as 'RLC Download Thoughput' FROM data_wcdma_rlc_stats",
+    "SELECT log_hash, time as Time, data_app_dl_throughput_1 as 'App Download Thoughput' FROM data_app_throughput",
+    "SELECT log_hash, time as Time, data_hsdpa_thoughput as 'HSDPA Thoughput' FROM wcdma_hsdpa_stats"]
+    for sql in sql_list:
+        df = pd.read_sql(
+            sql,
+            dbcon,
+            parse_dates=["Time"]
+        )
+        df["log_hash"] = df["log_hash"].astype(np.int64)
+        df = df.fillna(0)
+        df_list.append(df)
+    return df_list
+
+def get_wcdma_data_df_by_time(dbcon, time_before):
+    parameter_to_columns_list = [
+        ("Time", ["time"], ),
+        (
+            [
+                "RLC Download Thoughput"
+            ],
+            [
+                "data_wcdma_rlc_dl_throughput",
+            ],
+            "data_wcdma_rlc_stats"
+        ),
+        (
+            [
+                "App Download Thoughput",
+            ],
+            [
+                "data_app_dl_throughput_1",
+            ],
+            "data_app_throughput"
+        ),
+        (
+            [
+                "HSDPA Thoughput",
+            ],
+            [
+                "data_hsdpa_thoughput",
+            ],
+            "wcdma_hsdpa_stats"
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table="data_wcdma_rlc_stats",
+        not_null_first_col=True,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+############ Line Chart GSM
+
+def get_gsm_df(dbcon):
+    df_list = []
+    sql_list =["SELECT log_hash, time as Time, gsm_rxlev_sub_dbm as RxLev, gsm_rxqual_sub as RxQual FROM gsm_cell_meas"]
+    for sql in sql_list:
+        df = pd.read_sql(
+            sql,
+            dbcon,
+            parse_dates=["Time"]
+        )
+        df["log_hash"] = df["log_hash"].astype(np.int64)
+        df_list.append(df)
+    
+    return df_list
+
+def get_gsm_df_by_time(dbcon, time_before):
+    parameter_to_columns_list = [
+        (
+            [
+                "Time",
+                "RxLev",
+                "RxQual",
+            ],
+            [
+                "time",
+                "gsm_rxlev_sub_dbm",
+                "gsm_rxqual_sub",
+            ],
+            
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table="gsm_cell_meas",
+        not_null_first_col=True,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+def get_gsm_data_df(dbcon):
+    df_list = []
+    sql_list =["SELECT log_hash, time as Time, data_gsm_rlc_dl_throughput as 'RLC Download Thoughput' FROM data_egprs_stats",
+    "SELECT log_hash, time as Time, data_app_dl_throughput_1 as 'App Download Thoughput' FROM data_app_throughput",]
+    for sql in sql_list:
+        df = pd.read_sql(
+            sql,
+            dbcon,
+            parse_dates=["Time"]
+        )
+        df["log_hash"] = df["log_hash"].astype(np.int64)
+        df = df.fillna(0)
+        df_list.append(df)
+    return df_list
+
+def get_gsm_data_df_by_time(dbcon, time_before):
+    parameter_to_columns_list = [
+        ("Time", ["time"], ),
+        (
+            [
+                "RLC Download Thoughput"
+            ],
+            [
+                "data_gsm_rlc_dl_throughput",
+            ],
+            "data_egprs_stats"
+        ),
+        (
+            [
+                "App Download Thoughput",
+            ],
+            [
+                "data_app_dl_throughput_1",
+            ],
+            "data_app_throughput"
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table="data_egprs_stats",
+        not_null_first_col=True,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+############ New Line Chart Query
+
+def get_chart_df(dbcon, param_list_dict, data=False ):
+    df_list = []
+    for key in param_list_dict:
+        param_dict = param_list_dict[key]
+        param_name = param_dict["name"]
+        table_name = preprocess_azm.get_table_for_column(param_name)
+        sql = "SELECT log_hash, time as Time, {} FROM {}".format(param_name, table_name)
+        df = pd.read_sql(
+            sql,
+            dbcon,
+            parse_dates=["Time"]
+        )
+        df["log_hash"] = df["log_hash"].astype(np.int64)
+        data_param_name_list = ["data", "throughput", "mbps", "kbps"]
+        # if param_dict["data"]:
+        #     df = df.fillna(0)
+        # elif param_dict["null"]:
+        #     df = df.dropna()
+        df_list.append(df)
+
+    return df_list
+
+def get_table_df_by_time(dbcon, time_before, param_list_dict):
+    first_table = None
+    parameter_to_columns_list = [("Time", ["time"], )]
+    for key in param_list_dict:
+        param_dict = param_list_dict[key]
+        param_name = param_dict["name"]
+        table_name = preprocess_azm.get_table_for_column(param_name)
+        if first_table is None:
+            first_table = table_name
+        parameter_to_columns = (param_name, [param_name], table_name)
+        parameter_to_columns_list.append(parameter_to_columns)
+
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table=first_table,
         not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )

@@ -94,4 +94,4 @@ class CustomQCompleter(QCompleter):
     def splitPath(self, path):
         self.local_completion_prefix = path
         self.updateModel()
-        return ""
+        return [""]

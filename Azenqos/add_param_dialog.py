@@ -7,6 +7,7 @@ from PyQt5.uic import loadUi
 import os
 import pandas as pd
 import numpy as np
+from functools import partial
 import azq_utils
 import preprocess_azm
 
@@ -21,6 +22,8 @@ class AddParamDialog(QDialog):
         self.paramName = None
         self.arg = "1"
         self.argCount = "1"
+        self.isNotNull = False
+        self.isData = False
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setupUi()
 
@@ -36,6 +39,12 @@ class AddParamDialog(QDialog):
         completer.setCompletionMode(QCompleter.PopupCompletion)
         completer.setModel(self.ui.comboBox.model())
         self.ui.comboBox.setCompleter(completer)
+        enableNotNullSlot = partial(self.checkNotNull, self.ui.not_null_checkbox)
+        disableNotNullSlot = partial(self.unCheckNotNull, self.ui.not_null_checkbox)
+        self.ui.not_null_checkbox.stateChanged.connect(lambda x: enableNotNullSlot() if x else disableNotNullSlot())
+        enableDataSlot = partial(self.checkData, self.ui.data_checkbox)
+        disableDataSlot = partial(self.uncheckData, self.ui.data_checkbox)
+        self.ui.not_null_checkbox.stateChanged.connect(lambda x: enableDataSlot() if x else disableDataSlot())
         for index, row in self.paramDF.iterrows():
             self.ui.comboBox.addItem(row.var_name)
         self.ui.comboBox.currentIndexChanged.connect(self.selectParam)
@@ -44,6 +53,18 @@ class AddParamDialog(QDialog):
         if int(self.argCount) > 1:
             self.paramName = self.param+"_"+self.arg 
         self.accepted.connect(self.onOkButtonClick)
+
+    def checkNotNull(self, checkbox):
+        self.isNotNull = True
+
+    def unCheckNotNull(self, checkbox):
+        self.isNotNull = False
+
+    def checkData(self, checkbox):
+        self.isData = True
+
+    def uncheckData(self, checkbox):
+        self.isData = False
 
     def selectParam(self):
         self.setParam()
@@ -69,7 +90,7 @@ class AddParamDialog(QDialog):
         self.arg = self.ui.comboBox_2.currentText()
 
     def onOkButtonClick(self):
-        self.onParamAdded(self.paramName)
+        self.onParamAdded({"name":self.paramName, "null":self.isNotNull, "data":self.isData})
 
 class CustomQCompleter(QCompleter):
     def __init__(self, parent=None):

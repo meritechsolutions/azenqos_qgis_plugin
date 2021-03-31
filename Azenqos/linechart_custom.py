@@ -54,12 +54,14 @@ class LineChart(QtWidgets.QDialog):
         self.gc = gc
         pg.setConfigOptions(background="w", antialias=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
-        self.paramList = paramList
+        self.paramListDict = {}
+        for paramDict in paramList:
+            self.paramListDict[paramDict["name"]] = paramDict
         self.colorDict = {}
         self.colorindex = 0
-        for param in paramList:
+        for paramDict in self.paramListDict:
             color = get_default_color_for_index(self.colorindex)
-            self.colorDict[param] = color
+            self.colorDict[self.paramListDict[paramDict]["name"]] = color
             self.colorindex+=1
         self.lastChartParamList = None
         self.minX = None
@@ -195,16 +197,16 @@ class LineChart(QtWidgets.QDialog):
                
     def reQueryChartData(self, dbcon):
         import linechart_query
-        if self.lastChartParamList == self.paramList:
+        if self.lastChartParamList == self.paramListDict:
             return
         self.lastChartParamList = []
-        self.lastChartParamList.extend(self.paramList)
-        chartDFList = linechart_query.get_chart_df(dbcon, self.paramList)
+        self.lastChartParamList.extend(self.paramListDict)
+        chartDFList = linechart_query.get_chart_df(dbcon, self.paramListDict)
         self.updateChart.emit(chartDFList)
 
     def reQueryTableData(self, dbcon, time):
         import linechart_query
-        df = linechart_query.get_table_df_by_time(dbcon, time, self.paramList)
+        df = linechart_query.get_table_df_by_time(dbcon, time, self.paramListDict)
         df = df.loc[df["param"] != "Time"]
         df["color"] = None
         df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
@@ -259,18 +261,18 @@ class LineChart(QtWidgets.QDialog):
                 dlg = color_dialog.ColorDialog(name, color, self.onColorSet)
                 dlg.show()
             elif action == removeParam:
-                self.paramList.remove(name)
+                del self.paramListDict[name]
                 self.updateTime(self.newTime)
 
     def onAddParameterButtonClick(self):
         dlg = add_param_dialog.AddParamDialog(self.onParamAdded)
         dlg.show()
 
-    def onParamAdded(self, paramName):
-        if paramName not in self.paramList:
-            self.paramList.append(paramName)
+    def onParamAdded(self, paramDict):
+        if paramDict["name"] not in self.paramListDict:
+            self.paramListDict[paramDict["name"]] = paramDict
             color = get_default_color_for_index(self.colorindex)
-            self.colorDict[paramName] = color
+            self.colorDict[paramDict["name"]] = color
             self.colorindex+=1
             self.updateTime(self.newTime)
         # print( self.paramList)

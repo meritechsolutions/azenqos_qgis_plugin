@@ -6,4 +6,4 @@ install:
 script: 
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/Azenqos
   - cd Azenqos
-  - pytest
+  - make

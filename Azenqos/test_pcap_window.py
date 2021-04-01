@@ -19,17 +19,24 @@ def test():
     )
 
     tmpdir = azq_utils.tmp_gen_path()
-    if os.path.isdir(tmpdir):
-        shutil.rmtree(tmpdir)
-    os.mkdir(tmpdir)
+    try:
+        if os.path.exists(tmpdir) and os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
+            
+        os.mkdir(tmpdir)
+    except:
+        pass
     with zipfile.ZipFile(azmfp, "r") as zip_file:
         zip_file.extractall(tmpdir)
         
     pcap_df = pcap_window.new_get_all_pcap_content(tmpdir)(None,None)
     print(pcap_df)
     
-    if os.path.isdir(tmpdir):
-        shutil.rmtree(tmpdir)
+    try:
+        if os.path.exists(tmpdir) and os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
+    except:
+        pass
 
 
 

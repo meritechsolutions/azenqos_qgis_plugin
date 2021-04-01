@@ -5,3 +5,4 @@ setuptools
 psutil
 requests==2.22.0
 pyarrow
+PyQt5

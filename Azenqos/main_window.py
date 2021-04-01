@@ -395,7 +395,7 @@ Log_hash list: {}""".format(
     def on_actionNR_DATA_Line_Chart_triggered(self):
         print("action nr data line chart")
         import linechart_query
-        linechart_window = linechart_custom.LineChart(self.gc, paramList = [{"name":"data_download_overall/1000", "null":True, "data":True}, {"name":"data_upload_overall/1000", "null":True, "data":True}, {"name":"nr_p_plus_scell_nr_pdsch_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_nr_pusch_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_lte_ul_pdcp_tput_mbps", "null":True, "data":True}])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = [{"name":"data_trafficstat_dl/1000", "null":True, "data":True}, {"name":"data_trafficstat_ul/1000", "null":True, "data":True}, {"name":"nr_p_plus_scell_nr_pdsch_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_nr_pusch_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_lte_ul_pdcp_tput_mbps", "null":True, "data":True}])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -427,7 +427,7 @@ Log_hash list: {}""".format(
     def on_actionLTE_DATA_Line_Chart_triggered(self):
         print("action lte data line chart")
         import linechart_query
-        linechart_window = linechart_custom.LineChart(self.gc, paramList = [{"name":"data_download_overall/1000", "null":False, "data":True}, {"name":"data_upload_overall/1000", "null":False, "data":True}, {"name":"lte_l1_throughput_mbps_1", "null":False, "data":True}, {"name":"lte_bler_1", "null":False, "data":True}])
+        linechart_window = linechart_custom.LineChart(self.gc, paramList = [{"name":"data_trafficstat_dl/1000", "null":False, "data":True}, {"name":"data_trafficstat_ul/1000", "null":False, "data":True}, {"name":"lte_l1_throughput_mbps_1", "null":False, "data":True}, {"name":"lte_bler_1", "null":False, "data":True}])
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)

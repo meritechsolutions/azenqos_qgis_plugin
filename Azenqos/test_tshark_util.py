@@ -1,4 +1,5 @@
 import tshark_util
+import os
 
 
 def test():

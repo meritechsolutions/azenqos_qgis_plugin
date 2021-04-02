@@ -57,6 +57,7 @@ class LineChart(QtWidgets.QDialog):
         self.paramListDict = {}
         for paramDict in paramList:
             self.paramListDict[paramDict["name"]] = paramDict
+        self.viewBoxList = []
         self.colorDict = {}
         self.colorindex = 0
         for paramDict in self.paramListDict:
@@ -66,8 +67,6 @@ class LineChart(QtWidgets.QDialog):
         self.lastChartParamList = None
         self.minX = None
         self.maxX = None
-        self.minY = None
-        self.maxY = None
         self.mousecoordinatesdisplay = None
         self.moveFromChart = False
         self.ui = loadUi(azq_utils.get_local_fp("linechart3.ui"), self)
@@ -78,15 +77,10 @@ class LineChart(QtWidgets.QDialog):
             axisItems={'bottom': TimeAxisItem(orientation='bottom')})
         self.vLine = pg.InfiniteLine(
             angle=90, movable=False, pen=pg.mkPen('k', width=4))
-        self.cursorVLine = pg.InfiniteLine(
-            angle=90, movable=False, pen=pg.mkPen('k', width=1))
-        self.cursorHLine = pg.InfiniteLine(
-            angle=0, movable=False, pen=pg.mkPen('k', width=1))
         self.graphWidget.axes.hideButtons()
         self.graphWidget.axes.showGrid(x=False, y=True)
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
         self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
-        self.graphWidget.scene().sigMouseMoved.connect(self.mouseMoved)
         self.ui.verticalLayout_3.addWidget(self.graphWidget)
         self.graphWidget.axes.sigXRangeChanged.connect(self.chartXRangeChanged)
         self.ui.horizontalScrollBar.valueChanged.connect(
@@ -103,50 +97,85 @@ class LineChart(QtWidgets.QDialog):
 
     def plot(self, dfList):
         self.graphWidget.axes.clear()
+        layout = pg.GraphicsLayout()
+        self.graphWidget.setCentralWidget(layout)
+        plotItem = layout.addPlot(axisItems={'bottom': TimeAxisItem(orientation='bottom')})
+        plotItem.hideAxis("left")
+        plotItem.showGrid(x=False, y=True)
+        viewBox1 = None
+        prevViewBox = None
+        colIndex = len(dfList)+1
+        layout.addItem(plotItem, row = 2, col = colIndex,  rowspan=1, colspan=1)
+        colIndex -= 1
         for df in dfList:
             if len(df) == 0:
                 continue
+            axis = pg.AxisItem("left")
+            viewBox = None
+            if viewBox1 == None:
+                viewBox1 = plotItem.vb
+                viewBox = viewBox1
+            else:
+                viewBox = pg.ViewBox()
+            self.viewBoxList.append(viewBox)
+            b = layout.addItem(axis, row = 2, col = colIndex,  rowspan=1, colspan=1)
+            viewBox.setMouseEnabled(x=True, y=False)
+            colIndex -= 1
+            layout.scene().addItem(viewBox)
+            axis.linkToView(viewBox)
+            if prevViewBox != None:
+                viewBox.setXLink(prevViewBox)
+            prevViewBox = viewBox
             df["Time"] = df["Time"].apply(
                 lambda x: self.unixTimeMillis(x.to_pydatetime()))
             self.minX = df["Time"].min()
             self.maxX = df["Time"].max()
+            minY = None
+            maxY = None
             colorindex = 0
             for col in df.columns:
-                
                 print(col)
                 if col in ["log_hash", "Time"]:
                     continue
+                color = self.colorDict[col]
+                axis.setLabel(col, color=color)
                 df=df.fillna(np.NaN)
                 dfNotNa=df.loc[df[col].notna()]
                 if len(dfNotNa) > 0:
-                    if self.minY is None:
-                        self.minY = dfNotNa[col].min()
-                    elif self.minY > dfNotNa[col].min():
-                        self.minY = dfNotNa[col].min()
-                    if self.maxY is None:
-                        self.maxY = dfNotNa[col].max()
-                    elif self.maxY < dfNotNa[col].max():
-                        self.maxY = dfNotNa[col].max()
-                color = self.colorDict[col]
-                newline = self.graphWidget.axes.plot(
+                    if minY is None:
+                        minY = dfNotNa[col].min()
+                    elif minY > dfNotNa[col].min():
+                        minY = dfNotNa[col].min()
+                    if maxY is None:
+                        maxY = dfNotNa[col].max()
+                    elif maxY < dfNotNa[col].max():
+                        maxY = dfNotNa[col].max()
+                newline = pg.PlotCurveItem(
                     x=df["Time"].to_list(), y=df[col].to_list(), connect="finite", pen=pg.mkPen(color, width=2))
                 self.lineDict[col] = newline
+                viewBox.addItem(newline)
                 colorindex += 1
-            self.graphWidget.axes.setLimits(
+            viewBox.enableAutoRange(axis= pg.ViewBox.XYAxes, enable=True)
+            viewBox.setLimits(
                 xMin=self.minX,
                 xMax=self.maxX,
-                yMin=self.minY-4,
-                yMax=self.maxY,
-                minXRange=30,
-                maxXRange=30,
+                yMin=minY-4,
+                yMax=maxY+10,
+                minXRange=20,
+                maxXRange=20,
                 minYRange=1,
             )
-            self.graphWidget.axes.addItem(self.vLine, ignoreBounds=True)
-            self.graphWidget.axes.addItem(self.cursorVLine, ignoreBounds=True)
-            self.graphWidget.axes.addItem(self.cursorHLine, ignoreBounds=True)
             self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 30)
             self.drawCursor(self.minX)
             self.moveChart(self.minX)
+        def updateViews():
+            for viewBox in self.viewBoxList:
+                if viewBox != viewBox1:
+                    viewBox.setGeometry(viewBox1.sceneBoundingRect())
+        viewBox1.sigResized.connect(updateViews)
+        viewBox1.addItem(self.vLine, ignoreBounds=True)
+        updateViews()
+        
 
     def chartXRangeChanged(self):
         x1 = self.getCurrentX()
@@ -158,13 +187,6 @@ class LineChart(QtWidgets.QDialog):
             if newScrollVal >= 0 or newScrollVal <= self.ui.horizontalScrollBar.maximum():
                 self.ui.horizontalScrollBar.setValue(x1 - self.minX)
             self.moveFromChart = False
-
-    def mouseMoved(self, pos):
-        mousePoint = self.graphWidget.axes.vb.mapSceneToView(pos)
-        self.graphWidget.axes.setTitle("<span style='font-size: 10pt'>x=%s, <span style='font-size: 10pt'>y=%0.1f</span>" %
-                                       (epochToDateString(mousePoint.x()), mousePoint.y()))
-        self.cursorVLine.setPos(mousePoint.x())
-        self.cursorHLine.setPos(mousePoint.y())
 
     def getCurrentX(self):
         x1 = self.graphWidget.axes.viewRange()[0][0]
@@ -283,18 +305,20 @@ class LineChart(QtWidgets.QDialog):
 
 
     def enable_zoom(self, checkbox):
-        self.graphWidget.axes.setMouseEnabled(x=True, y=True)
-        self.graphWidget.axes.setLimits(
-            minXRange=None,
-            maxXRange=None,
-        )
+        for viewBox in self.viewBoxList:
+            viewBox.setMouseEnabled(x=True, y=True)
+            viewBox.setLimits(
+                minXRange=None,
+                maxXRange=None,
+            )
 
     def disable_zoom(self, checkbox):
-        self.graphWidget.axes.setMouseEnabled(x=True, y=False)
-        self.graphWidget.axes.setLimits(
-            minXRange=30,
-            maxXRange=30,
-        )
+        for viewBox in self.viewBoxList:
+            viewBox.setMouseEnabled(x=True, y=False)
+            viewBox.setLimits(
+                minXRange=20,
+                maxXRange=20,
+            )
 
 
 def main():

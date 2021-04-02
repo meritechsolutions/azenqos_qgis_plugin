@@ -55,13 +55,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="multiYCheck">
-           <property name="text">
-            <string>multiple y axis</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QPushButton" name="addParam">
            <property name="text">
             <string>add parameter</string>

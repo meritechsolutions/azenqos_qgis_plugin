@@ -70,6 +70,7 @@ class LineChart(QtWidgets.QDialog):
         self.mousecoordinatesdisplay = None
         self.moveFromChart = False
         self.ui = loadUi(azq_utils.get_local_fp("linechart3.ui"), self)
+        self.axisDict = {}
         self.lineDict = {}
         self.graphWidget = None
         self.graphWidget = pg.GraphicsWindow()
@@ -97,15 +98,16 @@ class LineChart(QtWidgets.QDialog):
 
     def plot(self, dfList):
         self.graphWidget.axes.clear()
-        layout = pg.GraphicsLayout()
-        self.graphWidget.setCentralWidget(layout)
-        plotItem = layout.addPlot(axisItems={'bottom': TimeAxisItem(orientation='bottom')})
-        plotItem.hideAxis("left")
-        plotItem.showGrid(x=False, y=True)
+        self.graphWidget.clear()
+        for viewBox in self.viewBoxList:
+            viewBox.clear()
+        self.viewBoxList.clear()
+        self.graphWidget.axes.hideAxis("left")
+        self.graphWidget.axes.showGrid(x=False, y=True)
         viewBox1 = None
         prevViewBox = None
         colIndex = len(dfList)+1
-        layout.addItem(plotItem, row = 2, col = colIndex,  rowspan=1, colspan=1)
+        self.graphWidget.addItem(self.graphWidget.axes, row = 2, col = colIndex,  rowspan=1, colspan=1)
         colIndex -= 1
         for df in dfList:
             if len(df) == 0:
@@ -113,15 +115,15 @@ class LineChart(QtWidgets.QDialog):
             axis = pg.AxisItem("left")
             viewBox = None
             if viewBox1 == None:
-                viewBox1 = plotItem.vb
+                viewBox1 = self.graphWidget.axes.vb
                 viewBox = viewBox1
             else:
                 viewBox = pg.ViewBox()
             self.viewBoxList.append(viewBox)
-            b = layout.addItem(axis, row = 2, col = colIndex,  rowspan=1, colspan=1)
+            self.graphWidget.addItem(axis, row = 2, col = colIndex,  rowspan=1, colspan=1)
             viewBox.setMouseEnabled(x=True, y=False)
             colIndex -= 1
-            layout.scene().addItem(viewBox)
+            self.graphWidget.scene().addItem(viewBox)
             axis.linkToView(viewBox)
             if prevViewBox != None:
                 viewBox.setXLink(prevViewBox)
@@ -138,7 +140,9 @@ class LineChart(QtWidgets.QDialog):
                 if col in ["log_hash", "Time"]:
                     continue
                 color = self.colorDict[col]
-                axis.setLabel(col, color=color)
+                axis.setLabel(col)
+                axis.setPen(color, width=2)
+                self.axisDict[col] = axis
                 df=df.fillna(np.NaN)
                 dfNotNa=df.loc[df[col].notna()]
                 if len(dfNotNa) > 0:
@@ -302,6 +306,8 @@ class LineChart(QtWidgets.QDialog):
         self.colorDict[name]=color
         self.updateInternal()
         self.lineDict[name].setPen(color, width=2)
+        self.axisDict[name].setPen(color, width=2)
+        
 
 
     def enable_zoom(self, checkbox):
@@ -310,6 +316,9 @@ class LineChart(QtWidgets.QDialog):
             viewBox.setLimits(
                 minXRange=None,
                 maxXRange=None,
+                maxYRange=None,
+                yMin=None,
+                yMax=None,
             )
 
     def disable_zoom(self, checkbox):
@@ -318,6 +327,7 @@ class LineChart(QtWidgets.QDialog):
             viewBox.setLimits(
                 minXRange=20,
                 maxXRange=20,
+                minYRange=1,
             )
 
 

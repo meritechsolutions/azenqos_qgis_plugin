@@ -129,12 +129,19 @@
      <addaction name="actionWCDMA_DATA_Line_Chart"/>
      <addaction name="actionGSM_DATA_Line_Chart"/>
     </widget>
+    <widget class="QMenu" name="menuSystem">
+     <property name="title">
+      <string>System</string>
+     </property>
+     <addaction name="actionTechnology"/>
+    </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
     <addaction name="menuGSM"/>
     <addaction name="menuSignalling"/>
     <addaction name="menuData"/>
+    <addaction name="menuSystem"/>
     <addaction name="actionPCAP"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
@@ -365,6 +372,11 @@
   <action name="actionGSM_DATA_Line_Chart">
    <property name="text">
     <string>GSM DATA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionTechnology">
+   <property name="text">
+    <string>Technology</string>
    </property>
   </action>
  </widget>

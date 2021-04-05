@@ -207,7 +207,15 @@ Log_hash list: {}""".format(
         return self.gc.login_dialog and self.gc.login_dialog.token
     
     
-    
+    ############# signalling menu slots
+    @pyqtSlot()
+    def on_actionTechnology_triggered(self):
+        print("technology")
+        import system_query
+        headers = ["log_hash", "time", "main_param", "rat"]
+        swa = SubWindowArea(self.mdi, self.gc)        
+        widget = TableWindow(swa, "Technology", system_query.get_technology_df, tableHeader=headers, time_list_mode=True, l3_alt_wireshark_decode=True, func_key = inspect.currentframe().f_code.co_name)
+        self.add_subwindow_with_widget(swa, widget)
         
     ############# signalling menu slots
     @pyqtSlot()

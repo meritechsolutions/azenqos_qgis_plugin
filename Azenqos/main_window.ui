@@ -82,6 +82,7 @@
      <addaction name="actionLTE_Data_Params"/>
      <addaction name="actionLTE_PUCCH_PDSCH_Params"/>
      <addaction name="actionLTE_RRC_SIB_States"/>
+     <addaction name="actionLTE_RLC"/>
      <addaction name="actionLTE_VoLTE"/>
      <addaction name="actionLTE_Line_Chart"/>
     </widget>
@@ -377,6 +378,11 @@
   <action name="actionTechnology">
    <property name="text">
     <string>Technology</string>
+   </property>
+  </action>
+  <action name="actionLTE_RLC">
+   <property name="text">
+    <string>LTE RLC</string>
    </property>
   </action>
  </widget>

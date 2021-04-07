@@ -296,6 +296,14 @@ Log_hash list: {}""".format(
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
+    def on_actionLTE_RLC_triggered(self):
+        print("action lte rlc")
+        import lte_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "LTE RLC", lte_query.get_lte_rlc_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
     def on_actionLTE_VoLTE_triggered(self):
         print("action lte volte")
         import lte_query

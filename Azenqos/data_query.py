@@ -1,4 +1,9 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+import numpy as np
+import pandas as pd
+import params_disp_df
+import preprocess_azm
+
 
 
 class DataQuery:
@@ -526,3 +531,55 @@ class DataQuery:
                 value = ""
                 dataList.append([columnName, value, "", ""])
             return dataList
+
+def get_Wifi_active_df(dbcon, time_before):
+    parameter_to_columns_list = [
+        ("Time", ["time"], "wifi_active"),
+        (
+            [
+                "BSSID",
+                "SSID",
+                "RSSI",
+                "IP Addr",
+                "Link Speed (Mbps.)",
+                "MAC Addr",
+                "Encryption",
+                "Ch.",
+                "Freq",
+                "ISP",
+            ],
+            [
+                "wifi_active_bssid",
+                "wifi_active_ssid",
+                "wifi_active_rssi",
+                "wifi_active_ipaddr",
+                "wifi_active_linkspeed",
+                "wifi_active_macaddr",
+                "wifi_active_encryption",
+                "wifi_active_channel",
+                "wifi_active_freq",
+                "wifi_active_isp",
+            ],
+            "wifi_active",
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        not_null_first_col=False,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+def get_wifi_scan_df(dbcon, time_before):
+    custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS
+    dt_before = pd.to_datetime(time_before)
+    dt_after = dt_before - pd.Timedelta(custom_lookback_dur_millis, "ms")
+    time_after_and = "and time >= '{}'".format(dt_after)
+    sql = "select wifi_scanned_info_time, wifi_scanned_info_record_number, wifi_scanned_info_bssid, wifi_scanned_info_ssid, wifi_scanned_info_freq, wifi_scanned_info_encryption, wifi_scanned_info_level, wifi_scanned_info_channel, wifi_scanned_info_standard, wifi_scanned_info_channel_width from wifi_scanned_info where time <= '{}' {}".format(time_before, time_after_and)
+    df = pd.DataFrame()
+    df = pd.read_sql(sql, dbcon)
+    if len(df) == 0:
+        for i in range(300):
+            df = df.append(pd.Series(), ignore_index=True)
+    return df

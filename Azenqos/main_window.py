@@ -207,7 +207,7 @@ Log_hash list: {}""".format(
         return self.gc.login_dialog and self.gc.login_dialog.token
     
     
-    ############# signalling menu slots
+    ############# system menu slots
     @pyqtSlot()
     def on_actionTechnology_triggered(self):
         print("technology")
@@ -389,6 +389,24 @@ Log_hash list: {}""".format(
         headers = ["log_hash", "time", "source", "destination", "protocol", "tcp.srcport", "tcp.dstport", "udp.srcport", "udp0.dstport", "packet.size", "info", "file_name"]
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True, func_key = inspect.currentframe().f_code.co_name)
+        self.add_subwindow_with_widget(swa, widget)
+
+    ############# Data menu slots
+
+    @pyqtSlot()
+    def on_actionWiFi_Active_triggered(self):
+        print("action wifi active")
+        import data_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "WiFi Active", data_query.get_Wifi_active_df, func_key = inspect.currentframe().f_code.co_name)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionWiFi_Scan_triggered(self):
+        print("action wifi scan")
+        import data_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "WiFi Scan", data_query.get_wifi_scan_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
 

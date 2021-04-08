@@ -129,6 +129,8 @@
      <addaction name="actionLTE_DATA_Line_Chart"/>
      <addaction name="actionWCDMA_DATA_Line_Chart"/>
      <addaction name="actionGSM_DATA_Line_Chart"/>
+     <addaction name="actionWiFi_Active"/>
+     <addaction name="actionWiFi_Scan"/>
     </widget>
     <widget class="QMenu" name="menuSystem">
      <property name="title">
@@ -383,6 +385,16 @@
   <action name="actionLTE_RLC">
    <property name="text">
     <string>LTE RLC</string>
+   </property>
+  </action>
+  <action name="actionWiFi_Active">
+   <property name="text">
+    <string>WiFi Active</string>
+   </property>
+  </action>
+  <action name="actionWiFi_Scan">
+   <property name="text">
+    <string>WiFi Scan</string>
    </property>
   </action>
  </widget>

@@ -131,6 +131,9 @@
      <addaction name="actionGSM_DATA_Line_Chart"/>
      <addaction name="actionWiFi_Active"/>
      <addaction name="actionWiFi_Scan"/>
+     <addaction name="actionGPRS_EDGE_Information"/>
+     <addaction name="actionHSDPA_Statistics"/>
+     <addaction name="actionHSUPA_Statistics"/>
     </widget>
     <widget class="QMenu" name="menuSystem">
      <property name="title">
@@ -395,6 +398,21 @@
   <action name="actionWiFi_Scan">
    <property name="text">
     <string>WiFi Scan</string>
+   </property>
+  </action>
+  <action name="actionGPRS_EDGE_Information">
+   <property name="text">
+    <string>GPRS/EDGE Information</string>
+   </property>
+  </action>
+  <action name="actionHSDPA_Statistics">
+   <property name="text">
+    <string>HSDPA Statistics</string>
+   </property>
+  </action>
+  <action name="actionHSUPA_Statistics">
+   <property name="text">
+    <string>HSUPA Statistics</string>
    </property>
   </action>
  </widget>

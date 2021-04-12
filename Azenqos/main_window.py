@@ -409,6 +409,30 @@ Log_hash list: {}""".format(
         widget = TableWindow(swa, "WiFi Scan", data_query.get_wifi_scan_df, func_key = inspect.currentframe().f_code.co_name)
         self.add_subwindow_with_widget(swa, widget)
 
+    @pyqtSlot()
+    def on_actionGPRS_EDGE_Information_triggered(self):
+        print("action gprs edge info")
+        import data_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "GPRS/EDGE Information", data_query.get_gprs_edge_info, func_key = inspect.currentframe().f_code.co_name)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionHSDPA_Statistics_triggered(self):
+        print("action hadpa statistics")
+        import data_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "HSDPA Statistics", data_query.get_hsdpa_statistics, func_key = inspect.currentframe().f_code.co_name)
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_actionHSUPA_Statistics_triggered(self):
+        print("action haupa statistics")
+        import data_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(swa, "HSUPA Statistics", data_query.get_hsupa_statistics, func_key = inspect.currentframe().f_code.co_name)
+        self.add_subwindow_with_widget(swa, widget)
+
 
     def show_line_chart_dialog(self):
         msgBox = QtWidgets.QMessageBox()

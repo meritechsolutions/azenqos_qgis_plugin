@@ -77,9 +77,13 @@ def prepare_spatialite_views(dbcon):
             table = preprocess_azm.get_table_for_column(param)
             assert table
             view = param
-            sqlstr = "create table {col} as select log_hash, time, modem_time, posid, geom, {col} from {table} ;".format(
-                col=view, table=table
-            )
+            if view == "polqa_mos":
+                view = "polqa_mos_1"
+                sqlstr = "create table polqa_mos_1 as select pm.log_hash, pm.time, l.modem_time, l.posid, l.geom, pm.polqa_mos from(select strftime('%Y-%m-%d %H:%M:%S', pm.time) as t, pm.log_hash, pm.time, pm.polqa_mos from polqa_mos as pm group by t) as pm left join (select strftime('%Y-%m-%d %H:%M:%S', l.time) as t, l.modem_time, l.posid, l.geom from  location l  group by t) as l on pm.t = l.t;"
+            else:
+                sqlstr = "create table {col} as select log_hash, time, modem_time, posid, geom, {col} from {table} ;".format(
+                    col=view, table=table
+                )
             print("create view sqlstr: %s" % sqlstr)
             dbcon.execute(sqlstr)
             tables_to_rm_stray_neg1_rows.append(view)

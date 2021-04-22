@@ -7,7 +7,7 @@ Install this plugin into QGIS to analyze AZENQOS '.azm' test logs: analyze Layer
 Installation instructions for Windows
 -------------------------------------
 
-- Install *QGIS Standalone Installer Version 3.10 (64 bit)* from: <https://qgis.org/en/site/forusers/download.html> > Long Term Release > QGIS Standalone Installer Version 3.10
+- Install *QGIS Standalone Installer Version 3.10 or 3.16 (64 bit)* from: <https://qgis.org/en/site/forusers/download.html> > Long Term Release > QGIS Standalone Installer Version 3.16
 - If first install, open QGIS, complete first time setup then exit (we just want it to create required folders).
 - Close QGIS if it is open.
 - Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder.

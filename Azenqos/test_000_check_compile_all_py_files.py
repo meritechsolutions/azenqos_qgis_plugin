@@ -24,7 +24,7 @@ def test_compile(f):
 def test_pyflakes(f):    
     print(("TEST pyflakes:", f, 'start'))
     try:
-        cmd = '''pyflakes '%s' ''' % (f)
+        cmd = '''python3 -m pyflakes '%s' ''' % (f)
         print("cmd:", cmd)
         outstr = None
         ex = None

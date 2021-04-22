@@ -78,6 +78,7 @@ def test_pyflakes(f):
 
 def test():
 
+    assert 0 == os.system("python3 -m pyflakes version.py")
     files = os.listdir('.')    
     p_list = []
     files = [f for f in files if f.endswith('.py') and not f.startswith(".#")]

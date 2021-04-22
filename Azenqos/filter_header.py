@@ -1,8 +1,11 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtGui import *
-from qgis.core import *
-from qgis.gui import *
+try:
+    from qgis.core import *
+    from qgis.gui import *
+except:
+    pass
 
 
 class SortFilterProxyModel(QSortFilterProxyModel):
@@ -12,10 +15,17 @@ class SortFilterProxyModel(QSortFilterProxyModel):
         self.filterFromMenu = {}
 
     def setFilterByColumn(self, regex, column):
+        print("SortFilterProxyModel: setFilterByColumn regex: {} column: {}".format(regex, column))
         self.filters[column] = regex
-        self.invalidateFilter()
+        print("type(self.sourceModel())",type(self.sourceModel()))
+        self.sourceModel().setStrColFilters(self.filters)
+        #self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
+        if True:  # now we using pdtablemodel.setStrColFilters above already
+            return True
+    
+        print("SortFilterProxyModel: filterAcceptsRow source_row: {} source_parent: {}".format(source_row, source_parent))        
         for key, regex in self.filters.items():
             ix = self.sourceModel().index(source_row, key, source_parent)
             if ix.isValid():

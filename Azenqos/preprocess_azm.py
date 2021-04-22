@@ -1334,7 +1334,7 @@ def get_table_for_column(param_col_with_arg):
     row = get_elm_info(param_col_with_arg)
     if row is None:
         return None
-    return row.db_table.strip()
+    return str(row.db_table).strip()
 
 
 def get_elm_info(param_col_with_arg):
@@ -1361,6 +1361,13 @@ def get_elm_info(param_col_with_arg):
             return row
 
     return None
+
+def get_number_param():
+    elm_df = get_elm_df_from_csv()
+    matched_rows = elm_df.query("var_type == 'Double' or var_type == 'Integer'")
+    if len(matched_rows) > 0:
+        row = matched_rows
+    return row[["var_name","n_arg_max"]]
 
 
 def is_param_from_azqdata_dat(param_col_no_arg):
@@ -1666,6 +1673,16 @@ def extract_entry_from_zip(zip_fp, entry_name, target_folder, try_7za_first=Fals
     # below is py unzip code - would raise exception on failure
     with zipfile.ZipFile(zip_fp, "r") as zf:
         zf.extract(entry_name, target_folder)
+        ret_fp = os.path.join(target_folder, entry_name)
+        assert os.path.isfile(ret_fp)
+        return ret_fp
+    return None
+
+def extract_all_from_zip(zip_fp, target_folder):
+    extensions = ('.csv','.pcap', ".wav", ".txt")
+    with zipfile.ZipFile(zip_fp, "r") as zip_file:
+        [zip_file.extract(file, target_folder) for file in zip_file.namelist() if file.endswith(extensions)]
+        
 
 
 def apk_verstr_to_ver_int(ver):
@@ -1818,11 +1835,6 @@ def merge_lat_lon_into_df(
         df.to_csv("tmp/merge_lat_lon_into_df_df.csv", quoting=csv.QUOTE_ALL)
 
     location_df = get_dbcon_location_df(dbcon, is_indoor=is_indoor)
-    location_df = location_df[
-        ["log_hash", "time", "positioning_lat", "positioning_lon"]
-    ]
-    location_df["time"] = pd.to_datetime(location_df["time"])
-    location_df["log_hash"] = location_df["log_hash"].astype(np.int64)
     location_df = location_df.sort_values("time")
     if debug_file_flag:
         location_df.to_csv(
@@ -1848,6 +1860,22 @@ def merge_lat_lon_into_df(
         df["log_hash"] = df["log_hash_x"]
 
     return df
+
+
+g_location_df_cache = {}
+def get_dbcon_location_df(dbcon, is_indoor):
+    global g_location_df_cache
+    if dbcon in g_location_df_cache:
+        return g_location_df_cache[dbcon]    
+    sqlstr = "select log_hash, time, posid, positioning_lat, positioning_lon from location"
+    location_df = pd.read_sql(sqlstr, dbcon, parse_dates=["time"])
+    location_df["log_hash"] = location_df["log_hash"].astype(np.int64)
+
+    location_df.sort_values("time", inplace=True)
+    location_df["positioning_lat"] = pd.to_numeric(location_df["positioning_lat"])
+    location_df["positioning_lon"] = pd.to_numeric(location_df["positioning_lon"])
+    g_location_df_cache[dbcon] = location_df
+    return location_df
 
 
 def get_azqdata_dat_first_azqml_flow_ts():

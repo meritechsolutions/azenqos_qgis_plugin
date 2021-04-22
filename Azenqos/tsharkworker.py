@@ -5,25 +5,26 @@ from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QTh
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QColor
-from .worker import WorkerSignals
+from worker import WorkerSignals
 import subprocess
 import tempfile
 import os
-import global_config as gc
 import uuid
 import re
 import tshark_util
+import azq_utils
 
 
 class TsharkDecodeWorker(QRunnable):
     ret = None
 
-    def __init__(self, name, side, protocol, detail):
+    def __init__(self, gc, name, side, protocol, detail):
         assert name is not None
         assert side is not None
         assert protocol is not None
         assert detail is not None
         super(TsharkDecodeWorker, self).__init__()
+        self.gc = gc
         self.name = name
         self.side = side
         self.protocol = protocol
@@ -36,14 +37,14 @@ class TsharkDecodeWorker(QRunnable):
         try:
             env = tshark_util.prepare_env_and_libs()
             tsharkPath = os.path.join(
-                gc.CURRENT_PATH,
+                self.gc.CURRENT_PATH,
                 os.path.join(
                     "wireshark_" + os.name,
                     "tshark" + ("" if os.name == "posix" else ".exe"),
                 ),
             )
             text2pcapPath = os.path.join(
-                gc.CURRENT_PATH,
+                self.gc.CURRENT_PATH,
                 os.path.join(
                     "wireshark_" + os.name,
                     "text2pcap" + ("" if os.name == "posix" else ".exe"),
@@ -62,8 +63,8 @@ class TsharkDecodeWorker(QRunnable):
             print("text2pcap input content:", hexStr)
 
             tempName = uuid.uuid4().hex
-            tempHexPath = os.path.join(gc.FILE_PATH, tempName + ".txt")
-            tempPcapPath = os.path.join(gc.FILE_PATH, tempName + ".pcap")
+            tempHexPath = os.path.join(azq_utils.tmp_gen_path(), tempName + ".txt")
+            tempPcapPath = os.path.join(azq_utils.tmp_gen_path(), tempName + ".pcap")
             print("tempHexPath", tempHexPath)
             print("tempPcapPath", tempPcapPath)
 
@@ -80,6 +81,7 @@ class TsharkDecodeWorker(QRunnable):
                 print("text2pcap failed - abort")
             else:
                 channelType = None
+                print("self.name %s type %s" % (self.name, type(self.name)))
                 match = re.search(r"\((.*)\)", self.name)
                 if match is not None:
                     channelType = match.group(1)

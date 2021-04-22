@@ -4,27 +4,29 @@ import os
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
-import global_config as gc
-
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import *
-from qgis.core import *
-from qgis.utils import *
-from qgis.gui import *
+try:
+    from qgis.core import *
+    from qgis.utils import *
+    from qgis.gui import *
+except:
+    pass
 from globalutils import Utils
 
 
 class LayerTask(QgsTask):
-    def __init__(self, desc, databasePath):
+    def __init__(self, desc, databasePath, gc):
         QgsTask.__init__(self, desc)
         self.dbPath = databasePath
         self.start_time = None
         self.desc = desc
         self.exception = None
         self.vLayers = []
+        self.gc = gc
 
     def addMapToQgis(self):
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
@@ -69,20 +71,22 @@ class LayerTask(QgsTask):
                         if child.layer().type() == 0:
                             extent.combineExtentWith(child.layer().extent())
 
-            iface.mapCanvas().setExtent(extent)
-            iface.mapCanvas().refresh()
+            self.gc.qgis_iface.mapCanvas().setExtent(extent)
+            self.gc.qgis_iface.mapCanvas().refresh()
 
     def run(self):
+        if not self.gc.qgis_iface:
+            return
         QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         return True
 
     def finished(self, result):
         if result:
-            gc.mostFeaturesLayer = None
+            #gc.mostFeaturesLayer = None
             self.addMapToQgis()
             geom_column = "geom"
-            vlayer = iface.addVectorLayer(self.dbPath, None, "ogr")
+            vlayer = self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
 
             # Setting CRS
             my_crs = QgsCoordinateReferenceSystem(4326)
@@ -136,8 +140,10 @@ class QuitTask(QgsTask):
             QgsMessageLog.logMessage(
                 "[-- End Removing Dependencies --]", tag="Processing"
             )
+            '''
             if self.azqMain.newImport is False:
                 self.azqMain.databaseUi.removeMainMenu()
+            '''
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(
@@ -155,15 +161,3 @@ class QuitTask(QgsTask):
                 raise self.exception
 
 
-def close_db():
-    if gc.dbcon:
-        gc.dbcon.close()
-        gc.dbcon = None
-    if gc.azenqosDatabase:
-        gc.azenqosDatabase.close()
-        QSqlDatabase.removeDatabase(gc.azenqosDatabase.connectionName())
-        names = QSqlDatabase.connectionNames()
-        for name in names:
-            QSqlDatabase.database(name).close()
-            QSqlDatabase.removeDatabase(name)
-        gc.azenqosDatabase = None

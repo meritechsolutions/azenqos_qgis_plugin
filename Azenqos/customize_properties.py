@@ -8,7 +8,6 @@ import os
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
-import global_config as gc
 from cell_content_header import HeaderContent
 from customize_window_editor import CellSetting
 from worker import Worker

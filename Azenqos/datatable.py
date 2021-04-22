@@ -6,56 +6,85 @@ import traceback
 import os
 import pandas as pd
 import sqlite3
+import azq_server_api
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
 import pyqtgraph as pg
 import numpy as np
-import global_config as gc
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import *
-from qgis.core import *
-from qgis.utils import *
-from qgis.gui import *
-from .globalutils import Utils
-from .filter_header import *
-from .gsm_query import GsmDataQuery
-from .cdma_evdo_query import CdmaEvdoQuery
-from .lte_query import LteDataQuery
-from .nr_query import NrDataQuery
-from .signalling_query import SignalingDataQuery
-from .wcdma_query import WcdmaDataQuery
-from .worker import Worker
-from .customize_properties import *
+try:
+    from qgis.core import *
+    from qgis.utils import *
+    from qgis.gui import *
+except:
+    pass
+from globalutils import Utils
+try:
+    from filter_header import *
+except:
+    pass
+from worker import Worker
+from customize_properties import *
 import lte_query
 import wcdma_query
 import gsm_query
-from .tsharkworker import TsharkDecodeWorker
+from tsharkworker import TsharkDecodeWorker
 import polqa_query
+import pcap_window
+import azq_utils
+import qt_utils
+import qgis_layers_gen
+import module_dialog
 
 
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
+    signal_ui_thread_setup_ui = pyqtSignal()  # use with skip_setup_ui in ctor
 
-    def __init__(self, parent, windowName):
+    progress_update_signal = pyqtSignal(int)
+    status_update_signal = pyqtSignal(str)   
+
+    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, list_module=False, gc=None, skip_setup_ui=False, mdi=None, func_key=None ):
         super().__init__(parent)
-        self.title = windowName
+        self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
+        self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
+        self.event_mos_score = event_mos_score
+        self.list_module = list_module
+        self.tableModel = None
+        self.skip_setup_ui = skip_setup_ui
+        self.mdi = mdi
+        self.func_key = func_key
+        # self.settings.setValue("func_key",self.func_key)
+
+        try:
+            self.gc = parent.gc
+        except:
+            self.gc = gc
+        assert self.gc is not None
+
+        
+        self.title = title
+        self.refresh_data_from_dbcon_and_time_func = refresh_data_from_dbcon_and_time_func
+        self.custom_df = custom_df
+        self.tableHeader = tableHeader
         self.rows = 0
         self.columns = 0
         self.fetchRows = 0
         self.fetchColumns = 0
-        self.tablename = ""
-        self.tableHeader = None
         self.left = 10
         self.top = 10
         self.width = 640
         self.height = 480
         self.dataList = []
+        self.df = None  # if pandas mode this will be set
+        self.df_str = None  # if pandas mode this will be set - for easy string filter/search
         self.customData = []
         self.customHeader = []
         self.currentRow = 0
@@ -65,16 +94,33 @@ class TableWindow(QWidget):
         self.filterList = None
         self.filterMenu = None
         self.signal_ui_thread_emit_model_datachanged.connect(
-            self.ui_thread_emit_model_datachanged
+            self.ui_thread_model_datachanged
         )
-        self.setupUi()
+        self.signal_ui_thread_setup_ui.connect(
+            self.ui_thread_sutup_ui
+        )
+        self.prev_layout = None
+        if not skip_setup_ui:
+            self.setupUi()
+        else:
+            self.setupUiDry()
         # self.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.customContextMenuRequested.connect(self.generateMenu)
         # self.properties_window = PropertiesWindow(
-        #     self, gc.azenqosDatabase, self.dataList, self.tableHeader
+        #     self, self.gc.azenqosDatabase, self.dataList, self.tableHeader
         # )
 
+    def setupUiDry(self):
+        print("tablewindow setupuidry()")
+        self.setObjectName(self.title)
+        self.setWindowTitle(self.title)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setMinimumSize(self.width, self.height)
+        self.resize(self.width, self.height)
+
+
     def setupUi(self):
+        print("tablewindow setupui()")
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -87,9 +133,13 @@ class TableWindow(QWidget):
         # Init filter header
 
         self.filterHeader = FilterHeader(self.tableView)
+        """
         if self.title in ["Signaling_Events", "Signaling_Layer 3 Messages"]:
             self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
+        """
+        self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
 
             # self.filterHeader.section.connect(self.horizontalHeader_sectionClicked)
 
@@ -117,11 +167,11 @@ class TableWindow(QWidget):
             self.tableView.verticalHeader().sizeHint().width()
         )"""
         if self.tableHeader and len(self.tableHeader) > 0:
-            self.filterHeader.setFilterBoxes(gc.maxColumns, self)
+            self.filterHeader.setFilterBoxes(self.gc.maxColumns, self)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
-        layout.setMargin(0)
+        # layout.setMargin(0)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.tableView)
 
@@ -147,6 +197,33 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
+        
+    def contextMenuEvent(self, event):
+        if not self.time_list_mode:
+            return
+        menu = QMenu(self)
+        create_qgis_layer_action = menu.addAction("Create QGIS Map layer...")
+        action = menu.exec_(self.mapToGlobal(event.pos()))
+        if action == create_qgis_layer_action:
+            if self.gc.qgis_iface is None:
+                qt_utils.msgbox("Not running in QGIS-plugin mode...")
+                return
+            if self.tableModel is None:
+                qt_utils.msgbox("No data/log loaded yet...")
+                return
+            if not len(self.tableModel.df):
+                qt_utils.msgbox("This table is empty - no rows to use...")
+                return
+            if self.tableModel.df is None or (not ("log_hash" in self.tableModel.df.columns and "time" in self.tableModel.df.columns)):
+                qt_utils.msgbox("This table doesn't contain required columns to add lat/lon: log_hash, time")
+            else:
+                layer_name = qt_utils.ask_text(self, "New layer", "Please specify layer name:")
+                if layer_name:
+                    with sqlite3.connect(self.gc.databasePath) as dbcon:
+                        # load it into qgis as new layer
+                        qgis_layers_gen.create_qgis_layer_df(self.tableModel.df, dbcon, layer_name=layer_name)
+
+    
     def headerMenu(self, pos):
         globalPos = self.mapToGlobal(pos)
         menu = QMenu()
@@ -165,11 +242,13 @@ class TableWindow(QWidget):
         # self.menu.exec_(QtCore.QPoint(posX, posY))
 
     def setFilterListModel(self, columnIndex, checkedRegexList):
+        print("setFilterListModel: columnIndex {}, checkedRegexList {}".format())
         self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
         self.proxyModel.invalidateFilter()
 
-    def ui_thread_emit_model_datachanged(self):
-        print("ui_thread_emit_model_datachanged")
+        
+    def ui_thread_model_datachanged(self):
+        print("ui_thread_model_datachanged")
         # this func is supposed to be called as a slot by ui thread - triggered by signal from non-ui thread
         index_topleft = self.tableModel.index(0, 0)
         index_bottomright = self.tableModel.index(100, 100)
@@ -178,14 +257,32 @@ class TableWindow(QWidget):
             index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
         )
 
+
+    def setup_ui_with_custom_df(self, custom_df):
+        self.custom_df = custom_df
+        if self.time_list_mode:
+            self.tableHeader = custom_df.columns.values.tolist()
+        self.signal_ui_thread_setup_ui.emit()
+
+        
+    """
+    for trigger like window.signal_ui_thread_setup_ui.emit() when skip_setup_ui flagged in ctor
+    """
+    def ui_thread_sutup_ui(self):
+        print("ui_thread_sutup_ui")
+        self.setupUi()
+        
+
     def updateTableModelData(self, data):
-        # self.setTableModel(self.dataList)
+        if self.tableModel is None:            
+             self.setTableModel(data)
         if self.tableModel is not None:
             print("updateTableModelData()")
             self.tableModel.setData(None, data)
             self.signal_ui_thread_emit_model_datachanged.emit()  # this func is called from the sync thread which is non-ui so setdata() above's emit of dataChanged signal wont have effect, emit this signal to trigger dataChanged emit from ui thread...
 
     def setTableModel(self, dataList):
+        print("setTableModel() dataList len: {}".format(len(dataList)))
         if isinstance(dataList, list):
             if self.rows and self.columns:
 
@@ -226,6 +323,7 @@ class TableWindow(QWidget):
 
         self.dataList = dataList
         if isinstance(dataList, pd.DataFrame):
+            self.set_pd_df(dataList)
             self.tableModel = PdTableModel(dataList, self)
         else:
             self.tableModel = TableModel(dataList, self.tableHeader, self)
@@ -248,6 +346,16 @@ class TableWindow(QWidget):
             # print("resizeColumnsToContents()")
             # self.tableView.resizeColumnsToContents()
 
+    
+    def set_pd_df(self, dataList):
+        self.dataList = dataList
+        if isinstance(dataList, pd.DataFrame):
+            self.df = dataList
+            self.df_str = self.df.astype(str)
+        else:
+            self.df = None
+            self.df_str = None
+        
     def setDataSet(self, data_set: list):
         self.dataList = data_set
 
@@ -256,202 +364,36 @@ class TableWindow(QWidget):
             self.rowCount = sizelist[0]
             self.columnCount = sizelist[1]
 
+
     def refreshTableContents(self, create_table_model=False):
-        with sqlite3.connect(gc.databasePath) as dbcon:
-            if self.title is not None:
-                # GSM
-                if self.title == "GSM_Radio Parameters":
-                    self.dataList = gsm_query.get_gsm_radio_params_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "GSM_Serving + Neighbors":
-                    self.dataList = gsm_query.get_gsm_serv_and_neigh__df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "GSM_Current Channel":
-                    self.tableHeader = ["Element", "Value"]
-                    self.dataList = gsm_query.get_gsm_current_channel_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "GSM_C/I":
-                    self.dataList = gsm_query.get_coi_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                # TODO: find the way to find event counter
-                # elif self.title == "GSM_Events Counter":
-                #     self.tableHeader = ["Event", "MS1", "MS2", "MS3", "MS4"]
+        print("datatable refreshTableContents()")
+        self.setMinimumSize(0, 0)
+        if self.custom_df is not None:
+            print("datatable refreshTableContents() custom_df")
+            self.set_pd_df(self.custom_df)
+        elif self.gc.databasePath is not None and self.refresh_data_from_dbcon_and_time_func is not None:
+            try:
+                with sqlite3.connect(self.gc.databasePath) as dbcon:
+                    print("datatable refreshTableContents() refresh_data_from_dbcon_and_time_func")
+                    self.set_pd_df(self.refresh_data_from_dbcon_and_time_func(dbcon, self.gc.currentDateTimeString))
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: datatable title {} refreshTableContents() failed exception: {}".format(self.title, exstr))
+                self.set_pd_df(pd.DataFrame({"status", exstr}))
+            
+        if self.dataList is not None:
+            if create_table_model:
+                print("datatable refreshTableContents() settablemodel")
+                self.setTableModel(self.dataList)
+            else:
+                print("datatable refreshTableContents() updatetablemodeldata")
+                self.updateTableModelData(
+                    self.dataList
+                )  # applies new self.dataList
+            self.tableViewCount = self.tableView.model().rowCount()
 
-                # WCDMA
-                if self.title == "WCDMA_Active + Monitored Sets":
-                    self.dataList = wcdma_query.get_wcdma_acive_monitored_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "WCDMA_Radio Parameters":
-                    self.dataList = wcdma_query.get_wcdma_radio_params_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "WCDMA_BLER Summary":
-                    self.dataList = wcdma_query.get_bler_sum_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "WCDMA_Line Chart":
-                    self.tableHeader = ["Element", "Value", "MS", "Color"]
-                elif self.title == "WCDMA_Bearers":
-                    self.dataList = wcdma_query.get_wcdma_bearers_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "WCDMA_Pilot Poluting Cells":
-                    self.tableHeader = ["Time", "N Cells", "SC", "RSCP", "Ec/Io"]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getPilotPolutingCells()
-                elif self.title == "WCDMA_Active + Monitored Bar":
-                    self.tableHeader = ["Cell Type", "Ec/Io", "RSCP"]
-                    self.dataList = WcdmaDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getActiveMonitoredBar()
-                elif self.title == "WCDMA_Pilot Analyzer":
-                    self.tableHeader = ["Element", "Value", "Cell Type", "Color"]
 
-                # LTE
-                elif self.title == "LTE_Radio Parameters":
-                    self.dataList = lte_query.get_lte_radio_params_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "LTE_Serving + Neighbors":
-                    self.dataList = lte_query.get_lte_serv_and_neigh_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "LTE_PUCCH/PDSCH Parameters":
-                    self.dataList = lte_query.get_lte_pucch_pdsch_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "LTE_Data":
-                    self.dataList = lte_query.get_lte_data_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "LTE_LTE Line Chart":
-                    self.tableHeader = ["Element", "Value", "MS", "Color"]
-                elif self.title == "LTE_LTE RLC":
-                    self.dataList = lte_query.get_lte_rlc_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "LTE_LTE VoLTE":
-                    self.dataList = lte_query.get_volte_disp_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "LTE_LTE RRC/SIB States":
-                    print("LTE_LTE RRC/SIB States gen datalist")
-                    self.dataList = lte_query.get_lte_rrc_sib_states_df(
-                        dbcon, gc.currentDateTimeString
-                    )
-                elif self.title == "5G NR_Radio Parameters":
-                    self.dataList = NrDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getRadioParameters()
-                elif self.title == "5G NR_Serving + Neighbors":
-                    self.dataList = NrDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getServingAndNeighbors()
-
-                # CDMA/EVDO
-                elif self.title == "CDMA/EVDO_Radio Parameters":
-                    self.tableHeader = ["Element", "Value"]
-                    self.dataList = CdmaEvdoQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getRadioParameters()
-                elif self.title == "CDMA/EVDO_Serving + Neighbors":
-                    self.tableHeader = ["Time", "PN", "Ec/Io", "Type"]
-                    self.dataList = CdmaEvdoQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getServingAndNeighbors()
-                elif self.title == "CDMA/EVDO_EVDO Parameters":
-                    self.tableHeader = ["Element", "Value"]
-                    self.dataList = CdmaEvdoQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getEvdoParameters()
-
-                # Data
-                elif self.title == "Data_GSM Data Line Chart":
-                    self.tableHeader = ["Element", "Value", "MS", "Color"]
-                elif self.title == "Data_WCDMA Data Line Chart":
-                    self.tableHeader = ["Element", "Value", "MS", "Color"]
-                elif self.title == "Data_GPRS/EDGE Information":
-                    self.tableHeader = ["Element", "Value"]
-                elif self.title == "Data_Web Browser":
-                    self.tableHeader = ["Type", "Object"]
-                    self.windowHeader = ["ID", "URL", "Type", "State", "Size(%)"]
-                elif self.title == "Data_HSDPA/HSPA + Statistics":
-                    self.tableHeader = ["Element", "Value"]
-                elif self.title == "Data_HSUPA Statistics":
-                    self.tableHeader = ["Element", "Value"]
-                elif self.title == "Data_LTE Data Statistics":
-                    self.tableHeader = ["Element", "Value", "", ""]
-                elif self.title == "Data_LTE Data Line Chart":
-                    self.tableHeader = ["Element", "Value", "MS", "Color"]
-                elif self.title == "Data_Wifi Connected AP":
-                    self.tableHeader = ["Element", "Value"]
-                elif self.title == "Data_Wifi Scanned APs":
-                    self.tableHeader = [
-                        "Time",
-                        "BSSID",
-                        "SSID",
-                        "Freq",
-                        "Ch.",
-                        "Level",
-                        "Encryption",
-                    ]
-                elif self.title == "Data_Wifi Graph":
-                    return False
-                elif self.title == "Data_5G NR Data Line Chart":
-                    self.tableHeader = ["Element", "Value", "MS", "Color"]
-
-                # Signaling
-                elif self.title == "Signaling_Events":
-                    self.tableHeader = ["Time", "", "Eq.", "Name", "Info."]
-                    self.tablename = "events"
-                    self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getEvents()
-                elif self.title == "Signaling_Layer 3 Messages":
-                    self.tableHeader = ["Time", "", "Eq.", "Protocol", "Name", "Detail"]
-                    self.tablename = "signalling"
-                    self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getLayerThreeMessages()
-                elif self.title == "Signaling_Benchmark":
-                    self.tableHeader = ["", "MS1", "MS2", "MS3", "MS4"]
-                    # self.tablename = 'signalling'
-                    self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getBenchmark()
-                elif self.title == "Signaling_MM Reg States":
-                    self.tableHeader = ["Element", "Value"]
-                    self.tablename = "mm_state"
-                    self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getMmRegStates()
-                elif self.title == "Signaling_Serving System Info":
-                    self.tableHeader = ["Element", "Value"]
-                    self.tablename = "serving_system"
-                    self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getServingSystemInfo()
-                elif self.title == "Signaling_Debug Android/Event":
-                    self.tableHeader = ["Element", "Value"]
-                    # self.tablename = 'serving_system'
-                    self.dataList = SignalingDataQuery(
-                        gc.azenqosDatabase, gc.currentDateTimeString
-                    ).getDebugAndroidEvent()
-
-                if self.dataList is not None:
-                    if create_table_model:
-                        self.setTableModel(self.dataList)
-                    else:
-                        self.updateTableModelData(
-                            self.dataList
-                        )  # applies new self.dataList
-                    self.tableViewCount = self.tableView.model().rowCount()
 
     def setHeader(self, headers):
         # self.tableHeader = headers
@@ -471,28 +413,22 @@ class TableWindow(QWidget):
             self.properties_window.setupUi()
             self.properties_window.setupComboBox()
             self.properties_window.show()
+            
 
     def hilightRow(self, sampledate, threading=False):
-
+        print("hilightRow: sampledate: %s" % sampledate)
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
         self.dateString = str(sampledate)
-        # self.findCurrentRow()
-        if (self.dataList is None) or self.title not in [
-            "Signaling_Events",
-            "Signaling_Layer 3 Messages",
-        ]:
-            print(
-                "datatable: threading: {} self.title: {} hilightRow: refreshTableContents()".format(
-                    threading, self.title
-                )
-            )
+        if not self.time_list_mode:
+            # table data mode like measurements of that time needs refresh
             if threading:
                 worker = Worker(self.refreshTableContents)
             else:
                 self.refreshTableContents()
         else:
+            # time_list_mode needs findCurrentRow()
             print(
                 "datatable: threading: {} self.title: {} hilightRow: findCurrentRow()".format(
                     threading, self.title
@@ -504,31 +440,57 @@ class TableWindow(QWidget):
                 self.findCurrentRow()
 
         if threading and worker:
-            gc.threadpool.start(worker)
-        # elapse_time = time.time() - start_time
-        # del worker
-        # QgsMessageLog.logMessage('Hilight rows elapse time: {0} s.'.format(str(elapse_time)), tag="Processing")
-        # QgsMessageLog.logMessage('[-- End hilight row --]', tag="Processing")
+            self.gc.threadpool.start(worker)
+            
 
     def showDetail(self, item):
-        parentWindow = self.parentWindow.parentWidget()
-        cellContent = str(item.data())
+        row_index = item.row()        
+        print("showDetail row_index: %d" % row_index)
+        row_sr = self.tableModel.df.iloc[row_index]
+        #cellContent = str(item.data())
+        cellContent = ""
+        for index, val in row_sr.items():
+            cellContent += "[{}]: {}\n".format(index, val)
+        parentWindow = None
+        if self.parentWindow:
+            self.parentWindow.parentWidget()
+        else:
+            parentWindow = self
+        if self.l3_alt_wireshark_decode:
+            name = row_sr["name"]
+            side = row_sr["dir"]
+            protocol = row_sr["protocol"]
+            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side, protocol)
+        elif self.event_mos_score and row_sr["name"].find("MOS Score") != -1:
+            name = row_sr["name"]
+            side = {}
+            side["wav_file"] = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"])
+            side["text_file"] = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"].replace(".wav", "_polqa.txt"))
+            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side)
+        elif self.list_module:
+            dlg = module_dialog.module_dialog(self, row_sr, self.gc, self.mdi)
+            dlg.show()
+        else:
+            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
+        """
+        print("showdetail self.tablename {}".format(self.tablename))
         if self.tablename == "signalling":
-            name = item.sibling(item.row(), 1).data()
-            side = item.sibling(item.row(), 2).data()
-            protocol = item.sibling(item.row(), 3).data()
-            cellContent = item.sibling(item.row(), 4).data()
+            name = item.sibling(item.row(), 2).data()
+            side = item.sibling(item.row(), 3).data()
+            protocol = item.sibling(item.row(), 4).data()
+            cellContent = item.sibling(item.row(), 5).data()
             self.detailWidget = DetailWidget(
-                parentWindow, cellContent, name, side, protocol
+                self.gc, parentWindow, cellContent, name, side, protocol
             )
         else:
             if self.tablename == "events":
-                time = item.sibling(item.row(), 0).data()
-                name = item.sibling(item.row(), 1).data()
-                info = item.sibling(item.row(), 2).data()
-                self.detailWidget = DetailWidget(parentWindow, info, name, time)
+                time = item.sibling(item.row(), 1).data()
+                name = item.sibling(item.row(), 2).data()
+                info = item.sibling(item.row(), 3).data()
+                self.detailWidget = DetailWidget(self.gc, parentWindow, info, name, time)
             else:
-                self.detailWidget = DetailWidget(parentWindow, cellContent)
+                self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
+        """
 
     def updateSlider(self, item):
 
@@ -576,63 +538,32 @@ class TableWindow(QWidget):
         finally:
             if timeCell is not None:
                 try:
-                    sliderValue = timeCell - gc.minTimeValue
+                    sliderValue = timeCell - self.gc.minTimeValue
                     sliderValue = round(sliderValue, 3)
-                    gc.timeSlider.setValue(sliderValue)
+                    self.gc.timeSlider.setValue(sliderValue)
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: updateSlider timecell exception:", exstr)
 
     def findCurrentRow(self):
-
         if isinstance(self.dataList, pd.DataFrame):
             if self.dateString:
-                df = self.dataList
+                df = self.tableModel.df  #self.dataList
                 ts_query = """time <= '{}'""".format(self.dateString)
                 print("ts_query:", ts_query)
-                df = df.query(ts_query)
-                # print('findcurrentrow filt df.index:', df.index)
+                df = df.query(ts_query).reset_index()
+                print('findcurrentrow after query df len: %d', len(df))
                 if len(df):
-                    self.tableView.selectRow(df.index[-1])
+                    self.currentRow = df.index[-1]
+                    self.tableView.selectRow(self.currentRow)
                 return
-
-        startRange = 0
-        indexList = []
-        timeDiffList = []
-
-        if self.currentRow and gc.isSliderPlay == True:
-            startRange = self.currentRow
-
-        for row in range(0, self.tableViewCount):
-            index = self.tableView.model().index(row, 0)
-            value = self.tableView.model().data(index)
-            if Utils().datetimeStringtoTimestamp(value):
-                gc.currentTimestamp = datetime.datetime.strptime(
-                    self.dateString, "%Y-%m-%d %H:%M:%S.%f"
-                ).timestamp()
-                timestamp = datetime.datetime.strptime(
-                    value, "%Y-%m-%d %H:%M:%S.%f"
-                ).timestamp()
-                if timestamp <= gc.currentTimestamp:
-                    indexList.append(row)
-                    timeDiffList.append(abs(gc.currentTimestamp - timestamp))
-
-        if not len(timeDiffList) == 0:
-            if indexList[timeDiffList.index(min(timeDiffList))] < self.tableViewCount:
-                currentTimeindex = indexList[timeDiffList.index(min(timeDiffList))]
-                self.tableView.selectRow(currentTimeindex)
-        else:
-            currentTimeindex = 0
-            self.tableView.selectRow(currentTimeindex)
-        self.currentRow = currentTimeindex
+            
 
     def closeEvent(self, QCloseEvent):
-        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
-            gc.openedWindows.pop(index)
-        # if self.tablename and self.tablename in gc.tableList:
-        #     gc.tableList.remove(self.tablename)
+            self.gc.openedWindows.pop(index)
         self.close()
         del self
 
@@ -716,6 +647,7 @@ class FilterMenuWidget(QWidget):
         self.treeView.sortByColumn(0, Qt.AscendingOrder)
 
     def selectAll(self, state):
+        print("filtermenuwidget: selectAll")
         rowCount = self.model.rowCount()
         for x in range(rowCount):
             if state == 2:
@@ -725,9 +657,10 @@ class FilterMenuWidget(QWidget):
 
     def search(self, text):
         # self.proxyModel.setFilterRegExp(text)
-        print(text)
+        print("filtermenuwidget: search: text:",text)
 
     def setFilter(self):
+        print("filtermenuwidget: setFilter")
         checkedRegexList = []
         self.model.sort(0, Qt.AscendingOrder)
         for i in range(self.model.rowCount()):
@@ -739,9 +672,10 @@ class FilterMenuWidget(QWidget):
         self.close()
 
     def closeEvent(self, QCloseEvent):
-        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        print("filtermenuwidget: closeEvent")
+        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
-            gc.openedWindows.pop(index)
+            self.gc.openedWindows.pop(index)
         self.close()
         del self
 
@@ -749,9 +683,10 @@ class FilterMenuWidget(QWidget):
 class DetailWidget(QDialog):
     closed = False
 
-    def __init__(self, parent, detailText, messageName=None, side=None, protocol=None):
+    def __init__(self, gc, parent, detailText, messageName=None, side=None, protocol=None):
         super().__init__(None)
         self.title = "Details"
+        self.gc = gc
         self.detailText = detailText
         self.messageName = messageName
         self.side = side
@@ -763,7 +698,7 @@ class DetailWidget(QDialog):
         self.height = 480
         self.setWindowFlags(QtCore.Qt.Window)
         self.polqaWavFile = None
-        if messageName == "MOS Score":
+        if self.messageName is not None and self.messageName.find("MOS Score") != -1:
             self.setUpPolqaMosScore()
         else:
             self.setupUi()
@@ -777,8 +712,7 @@ class DetailWidget(QDialog):
         self.textEdit.setReadOnly(True)
         layout = QVBoxLayout(self)
         layout.addWidget(self.textEdit)
-        self.setLayout(layout)
-        self.resize(self.width, self.height)
+        self.setLayout(layout)        
         self.show()
         self.raise_()
         self.activateWindow()
@@ -788,16 +722,16 @@ class DetailWidget(QDialog):
         ):
             print("Need to decode")
             worker = TsharkDecodeWorker(
-                self.messageName, self.side, self.protocol, self.detailText
+                self.gc, self.messageName, self.side, self.protocol, self.detailText
             )
             worker.signals.result.connect(self.setDecodedDetail)
-            gc.threadpool.start(worker)
+            self.gc.threadpool.start(worker)
         # messageName is not None and side is not None and protocol is not None :
 
     def closeEvent(self, QCloseEvent):
-        indices = [i for i, x in enumerate(gc.openedWindows) if x == self]
+        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
-            gc.openedWindows.pop(index)
+            self.gc.openedWindows.pop(index)
         self.close()
         if self.polqaWavFile:
             self.polqaWavFile.stop()
@@ -841,7 +775,11 @@ class DetailWidget(QDialog):
         self.saveBtn.clicked.connect(self.saveWaveFile)
 
         self.setLayout(gridlayout)
-        self.getPolqa()
+        f = open(self.side["text_file"], "r")
+        self.textEdit.setPlainText(self.detailText+'\n'+f.read())
+        f.close()
+        from PyQt5 import QtMultimedia
+        self.polqaWavFile = QtMultimedia.QSound(self.side["wav_file"])
         self.resize(self.width, self.height)
         self.show()
         self.raise_()
@@ -865,19 +803,6 @@ class DetailWidget(QDialog):
         print("play wav file")
         if self.polqaWavFile:
             self.polqaWavFile.play()
-
-    def getPolqa(self):
-        print("get polqa data")
-        if self.messageName:
-            polqaDict = polqa_query.PolqaQuery(
-                gc.azenqosDatabase, self.side, self.detailText
-            ).getPolqa()
-            if polqaDict:
-                self.textEdit.setPlainText(polqaDict["output_text"])
-                from PyQt5 import QtMultimedia
-                self.polqaWavFile = QtMultimedia.QSound(
-                    gc.logPath + "/" + polqaDict["wave_file"]
-                )
 
 
 class TableModel(QAbstractTableModel):
@@ -934,8 +859,12 @@ class PdTableModel(QAbstractTableModel):
     def __init__(self, df, parent=None, *args):
         assert df is not None
         assert isinstance(df, pd.DataFrame)
+        if "time" in df.columns:
+            df["time"] = pd.to_datetime(df["time"])
         QAbstractTableModel.__init__(self, parent, *args)
-        self.df = df
+        self.df_full = df
+        self.df = df  # filtered data for display
+        self.parent = parent
 
     def rowCount(self, parent):
         return len(self.df)
@@ -943,15 +872,45 @@ class PdTableModel(QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.df.columns)
 
+
+    def setStrColFilters(self, filters):
+        print("pdtablemodel setStrColFilters filteres START")
+        self.df = self.df_full
+        changed = True
+        for col_index in filters.keys():
+            col = self.df.columns[col_index]
+            regex = filters[col_index].pattern()  # QRegExp
+            if col and regex:
+                print("setStrColFilters col: {} regex: {}".format(col, regex))
+                self.df = self.df[self.df[col].astype(str).str.contains(regex, case=False)]
+        if changed:
+            """
+            index_topleft = self.index(0, 0)
+            index_bottomright = self.index(len(self.df), len(self.df.columns))
+            self.dataChanged.emit(
+                index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
+            )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
+            """
+            self.parent.signal_ui_thread_emit_model_datachanged.emit()
+            print("pdtablemodel setStrColFilters emit done")
+        else:
+            print("pdtablemodel setStrColFilters not changed")
+            
+        print("pdtablemodel setStrColFilters filteres DONE len(self.df_full) {} len(self.df) {}".format(len(self.df_full), len(self.df)))
+
     # override
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
         if isinstance(data, pd.DataFrame):
+            self.df_full = data
             self.df = data
+            """
             index_topleft = self.index(0, 0)
             index_bottomright = self.index(100, 100)
             self.dataChanged.emit(
                 index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
             )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
+            """
+            self.parent.signal_ui_thread_emit_model_datachanged.emit()
             print("pdtablemodel setdata emit done")
             return True
         return False
@@ -998,3 +957,39 @@ class PdTableModel(QAbstractTableModel):
             # print("headerdata section: {} ret: {}".format(section, ret))
             return ret
         return QAbstractTableModel.headerData(self, section, orientation, role)
+
+
+
+def create_table_window_from_api_expression_ret(parent, title, gc, server, token, lhl, azq_report_gen_expression, mdi=None, list_module=False):
+    window = TableWindow(parent, title, None, gc=gc, time_list_mode=True, skip_setup_ui=True, mdi=mdi, list_module=list_module)
+    gen_thread = threading.Thread(
+        target=run_api_expression_and_set_results_to_table_window,
+                    args=(
+                        window,
+                        server, token, lhl, azq_report_gen_expression
+                    )
+    )
+    gen_thread.start()
+    return window
+
+
+def run_api_expression_and_set_results_to_table_window(window, server, token, lhl, azq_report_gen_expression):
+    try:
+        ret_dict = azq_server_api.api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expression, progress_update_signal=window.progress_update_signal, status_update_signal=window.status_update_signal, done_signal=None)
+        #time.sleep(1)
+        print("api call ret_dict: {}".format(ret_dict))
+        df = azq_server_api.parse_py_eval_ret_dict_for_df(server, token, ret_dict)
+        if df is None:
+            df = pd.DataFrame(
+                {
+                    "result": [ret_dict["ret"]],
+                }
+            )
+        window.setup_ui_with_custom_df(df)
+    except Exception as ex:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: api_py_eval_and_wait_completion exception: {}", exstr)
+        df = pd.DataFrame({'FAILED':[exstr]})
+        window.setup_ui_with_custom_df(df)
+

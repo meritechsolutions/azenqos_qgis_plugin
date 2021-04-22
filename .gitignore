@@ -292,3 +292,5 @@ pluginbuilder3/plugin_templates/toolbutton_with_dockwidget/template/resources.tm
 pluginbuilder3/plugin_templates/toolbutton_with_dockwidget/template/results.tmpl
 pluginbuilder3/plugin_templates/toolbutton_with_dockwidget/template/test/test_module_name_dockwidget.templ
 pluginbuilder3/plugin_templates/toolbutton_with_dockwidget/template/test/test_resources.templ
+
+.DS_Store

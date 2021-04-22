@@ -1,110 +1,18 @@
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import pandas as pd
-import global_config as gc
 import params_disp_df
+import sys
+import traceback
+import numpy as np
 
 
 class SignalingDataQuery:
-    def __init__(self, database, currentDateTimeString):
+    def __init__(self, gc, database, currentDateTimeString):
+        self.gc = gc
         self.timeFilter = ""
         self.azenqosDatabase = database
         if currentDateTimeString:
             self.timeFilter = currentDateTimeString
-
-    def getEvents(self, pd_mode=True):
-        if pd_mode:
-            df = pd.read_sql(
-                "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, CAST(pm.polqa_mos AS CHAR) FROM polqa_mos pm WHERE pm.polqa_mos IS NOT NULL ORDER BY time",
-                gc.dbcon,
-                # parse_dates=["time"], after comment millisecond of time is 3 decimals
-            )
-            return df
-
-        self.openConnection()
-        queryString = "SELECT ev.time, ev.name, ev.info FROM events ev UNION ALL SELECT pm.time, 'MOS Score' as name, CAST(pm.polqa_mos AS CHAR) FROM polqa_mos pm WHERE pm.polqa_mos IS NOT NULL ORDER BY time"
-        query = QSqlQuery()
-        query.exec_(queryString)
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, "", "MS1", nameValue, detailStrValue])
-        self.closeConnection()
-        return dataList
-
-    """
-    def getLayerOneMessages(self, pd_mode=True):  ##ต้องแก้ query
-        if pd_mode:
-            df = pd.read_sql(
-                "SELECT time, name, info FROM events", gc.dbcon, parse_dates=["time"]
-            )
-            return df
-
-        self.openConnection()
-        query = QSqlQuery()
-        query.exec_("SELECT * FROM events")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        detailField = query.record().indexOf("info")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            detailStrValue = query.value(detailField)
-            dataList.append([timeValue, "", "MS1", nameValue, detailStrValue])
-        self.closeConnection()
-        return dataList
-        """
-
-    def getLayerThreeMessages(self, pd_mode=True):
-        if pd_mode:
-            df = pd.read_sql(
-                "SELECT time, name, symbol, protocol, detail_str FROM signalling",
-                gc.dbcon,
-                # parse_dates=["time"], after comment millisecond of time is 3 decimals
-            )
-            return df
-
-        self.openConnection()
-        query = QSqlQuery()
-        query.exec_("SELECT time, name, symbol, protocol, detail_str FROM signalling")
-        timeField = query.record().indexOf("time")
-        nameField = query.record().indexOf("name")
-        symbolField = query.record().indexOf("symbol")
-        detailField = query.record().indexOf("detail_str")
-        protocolField = query.record().indexOf("protocol")
-        dataList = []
-        while query.next():
-            timeValue = query.value(timeField)
-            nameValue = query.value(nameField)
-            symbolValue = query.value(symbolField)
-            detailStrValue = query.value(detailField)
-            protocolValue = query.value(protocolField)
-            # detailStrValue = query.value(detailField).split(",")
-            # if detailStrValue[0].startswith("LTE") == True:
-            #     detailStrValue = "LTE RRC"
-            # else:
-            #     detailStrValue = ""
-            # if detailStrValue != "":
-            #     dataList.append(
-            #         [timeValue, symbolValue, "MS1", detailStrValue, nameValue, ""]
-            #     )
-            dataList.append(
-                [
-                    timeValue,
-                    symbolValue,
-                    "MS1",
-                    protocolValue,
-                    nameValue,
-                    detailStrValue,
-                ]
-            )
-        self.closeConnection()
-        return dataList
 
     def getBenchmark(self):
         self.openConnection()
@@ -427,3 +335,39 @@ class SignalingDataQuery:
                 value = ""
                 dataList.append([columnName, value, "", ""])
             return dataList
+
+
+def get_signalling(dbcon, time_before):
+    L3_SQL = "SELECT log_hash, time, name, symbol as dir, protocol, detail_str FROM signalling order by time"    
+    df = pd.read_sql(
+        L3_SQL,
+        dbcon,
+        parse_dates=["time"]
+    )
+    df["log_hash"] = df["log_hash"].astype(np.int64)
+    return df
+
+
+def get_events(dbcon, time_before):
+    sqls = [
+        "select log_hash, time, name, info, '' as wave_file from events",
+        "select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos"
+    ]
+    df_list = []
+    for sql in sqls:
+        try:            
+            df = pd.read_sql(sql, dbcon, parse_dates=["time"])
+            df_list.append(df)
+        except Exception as e:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            if "no such table" in exstr or "no such column" in exstr:  # some dbs dont have polqa_mos table, some dont have polqa_output_text col...
+                continue
+            else:
+                print("ERROR: get_events exception: %s", exstr)
+                raise e
+    df = pd.concat(df_list, ignore_index=True)
+    df["log_hash"] = df["log_hash"].astype(np.int64)
+    df = df.sort_values(by="time")
+    return df
+

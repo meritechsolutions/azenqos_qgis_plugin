@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>258</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>800</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::LeftToRight</enum>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>1</number>
+    </property>
+    <property name="leftMargin">
+     <number>1</number>
+    </property>
+    <property name="topMargin">
+     <number>1</number>
+    </property>
+    <property name="rightMargin">
+     <number>1</number>
+    </property>
+    <property name="bottomMargin">
+     <number>1</number>
+    </property>
+    <item>
+     <widget class="QMdiArea" name="mdi"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpen_log"/>
+    <addaction name="actionOpen_workspace"/>
+    <addaction name="actionSave_workspace"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuPresentation">
+    <property name="title">
+     <string>Presentation</string>
+    </property>
+    <widget class="QMenu" name="menuLTE">
+     <property name="title">
+      <string>LTE</string>
+     </property>
+     <addaction name="actionLTE_Radio_Parameters"/>
+     <addaction name="actionLTE_Serving_Neighbors"/>
+     <addaction name="actionLTE_Data_Params"/>
+     <addaction name="actionLTE_PUCCH_PDSCH_Params"/>
+     <addaction name="actionLTE_RRC_SIB_States"/>
+     <addaction name="actionLTE_RLC"/>
+     <addaction name="actionLTE_VoLTE"/>
+     <addaction name="actionLTE_Line_Chart"/>
+    </widget>
+    <widget class="QMenu" name="menuNR">
+     <property name="title">
+      <string>NR</string>
+     </property>
+     <addaction name="action5GNR_Radio_Parameters"/>
+     <addaction name="action5GNR_Serving_Neighbors"/>
+     <addaction name="actionNR_Line_Chart"/>
+    </widget>
+    <widget class="QMenu" name="menuSignalling">
+     <property name="title">
+      <string>Signalling</string>
+     </property>
+     <addaction name="actionLayer_3_Messages"/>
+     <addaction name="actionEvents"/>
+    </widget>
+    <widget class="QMenu" name="menuWCDMA">
+     <property name="title">
+      <string>WCDMA</string>
+     </property>
+     <addaction name="actionWCDMA_Radio_Parameters"/>
+     <addaction name="actionWCDMA_Active_Monitored_sets"/>
+     <addaction name="actionWCDMA_BLER_Summary"/>
+     <addaction name="actionWCDMA_Bearers"/>
+     <addaction name="actionWCDMA_Line_Chart"/>
+    </widget>
+    <widget class="QMenu" name="menuGSM">
+     <property name="title">
+      <string>GSM</string>
+     </property>
+     <addaction name="actionGSM_Physical_Parameters"/>
+     <addaction name="actionGSM_Serving_Neighbors"/>
+     <addaction name="actionGSM_Current_Channel"/>
+     <addaction name="actionGSM_C_I"/>
+     <addaction name="actionGSM_Line_Chart"/>
+    </widget>
+    <widget class="QMenu" name="menuData">
+     <property name="title">
+      <string>Data</string>
+     </property>
+     <addaction name="actionNR_DATA_Line_Chart"/>
+     <addaction name="actionLTE_DATA_Line_Chart"/>
+     <addaction name="actionWCDMA_DATA_Line_Chart"/>
+     <addaction name="actionGSM_DATA_Line_Chart"/>
+     <addaction name="actionWiFi_Active"/>
+     <addaction name="actionWiFi_Scan"/>
+     <addaction name="actionGPRS_EDGE_Information"/>
+     <addaction name="actionHSDPA_Statistics"/>
+     <addaction name="actionHSUPA_Statistics"/>
+    </widget>
+    <widget class="QMenu" name="menuSystem">
+     <property name="title">
+      <string>System</string>
+     </property>
+     <addaction name="actionTechnology"/>
+    </widget>
+    <addaction name="menuNR"/>
+    <addaction name="menuLTE"/>
+    <addaction name="menuWCDMA"/>
+    <addaction name="menuGSM"/>
+    <addaction name="menuSignalling"/>
+    <addaction name="menuData"/>
+    <addaction name="menuSystem"/>
+    <addaction name="actionPCAP"/>
+   </widget>
+   <widget class="QMenu" name="menuWindows">
+    <property name="title">
+     <string>Windows</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuServer_modules">
+    <property name="title">
+     <string>Server modules</string>
+    </property>
+    <addaction name="actionRun_server_modules"/>
+    <addaction name="actionRun_PY_EVAL_code"/>
+    <addaction name="actionRun_SQL_code"/>
+    <addaction name="separator"/>
+    <addaction name="actionSession_info"/>
+    <addaction name="actionLogin"/>
+    <addaction name="actionLogout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuPresentation"/>
+   <addaction name="menuServer_modules"/>
+   <addaction name="menuWindows"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <action name="actionOpen_log">
+   <property name="text">
+    <string>Open log file...</string>
+   </property>
+  </action>
+  <action name="actionOpen_workspace">
+   <property name="text">
+    <string>Open workspace...</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Close / Exit</string>
+   </property>
+  </action>
+  <action name="actionSave_workspace">
+   <property name="text">
+    <string>Save workspace...</string>
+   </property>
+  </action>
+  <action name="actionLTE_Radio_Parameters">
+   <property name="text">
+    <string>LTE Physical Parameters</string>
+   </property>
+  </action>
+  <action name="actionLTE_Serving_Neighbors">
+   <property name="text">
+    <string>LTE Serving + Neighbors</string>
+   </property>
+  </action>
+  <action name="actionLTE_Data_Params">
+   <property name="text">
+    <string>LTE Data Params</string>
+   </property>
+  </action>
+  <action name="actionLTE_PUCCH_PDSCH_Params">
+   <property name="text">
+    <string>LTE PUCCH/PDSCH Params</string>
+   </property>
+  </action>
+  <action name="actionLTE_RRC_SIB_States">
+   <property name="text">
+    <string>LTE RRC/SIB States</string>
+   </property>
+  </action>
+  <action name="actionLTE_VoLTE">
+   <property name="text">
+    <string>LTE VoLTE</string>
+   </property>
+  </action>
+  <action name="action5GNR_Radio_Parameters">
+   <property name="text">
+    <string>5GNR Physical Parameters</string>
+   </property>
+  </action>
+  <action name="action5GNR_Serving_Neighbors">
+   <property name="text">
+    <string>5GNR Serving + Neighbors</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Active_Monitored_sets">
+   <property name="text">
+    <string>WCDMA Active + Monitored sets</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Radio_Parameters">
+   <property name="text">
+    <string>WCDMA Physical Parameters</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_BLER_Summary">
+   <property name="text">
+    <string>WCDMA BLER Summary</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Bearers">
+   <property name="text">
+    <string>WCDMA Bearers</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Pilot_Polluting_Cells">
+   <property name="text">
+    <string>WCDMA Pilot Polluting Cells</string>
+   </property>
+  </action>
+  <action name="actionGSM_Physical_Parameters">
+   <property name="text">
+    <string>GSM Physical Parameters</string>
+   </property>
+  </action>
+  <action name="actionGSM_Serving_Neighbors">
+   <property name="text">
+    <string>GSM Serving + Neighbors</string>
+   </property>
+  </action>
+  <action name="actionGSM_Current_Channel">
+   <property name="text">
+    <string>GSM Current Channel</string>
+   </property>
+  </action>
+  <action name="actionGSM_C_I">
+   <property name="text">
+    <string>GSM C/I</string>
+   </property>
+  </action>
+  <action name="actionLayer_3_Messages">
+   <property name="text">
+    <string>Layer-3 Messages</string>
+   </property>
+  </action>
+  <action name="actionEvents">
+   <property name="text">
+    <string>Events</string>
+   </property>
+  </action>
+  <action name="actionPCAP">
+   <property name="text">
+    <string>PCAP</string>
+   </property>
+  </action>
+  <action name="actionRun_server_modules">
+   <property name="text">
+    <string>Run server calculation modules...</string>
+   </property>
+  </action>
+  <action name="actionRun_PY_EVAL_code">
+   <property name="text">
+    <string>Run PY_EVAL module code...</string>
+   </property>
+  </action>
+  <action name="actionRun_SQL_code">
+   <property name="text">
+    <string>Run SQL code...</string>
+   </property>
+  </action>
+  <action name="actionLogin">
+   <property name="text">
+    <string>Login</string>
+   </property>
+  </action>
+  <action name="actionLogout">
+   <property name="text">
+    <string>Logout</string>
+   </property>
+  </action>
+  <action name="actionSession_info">
+   <property name="text">
+    <string>Session info...</string>
+   </property>
+  </action>
+  <action name="actionLTE_Line_Chart">
+   <property name="text">
+    <string>LTE Line Chart</string>
+   </property>
+  </action>
+  <action name="actionLTE_DATA_Line_Chart">
+   <property name="text">
+    <string>LTE DATA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Line_Chart">
+   <property name="text">
+    <string>WCDMA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionGSM_Line_Chart">
+   <property name="text">
+    <string>GSM Line Chart</string>
+   </property>
+  </action>
+  <action name="actionNR_Line_Chart">
+   <property name="text">
+    <string>NR Line Chart</string>
+   </property>
+  </action>
+  <action name="actionNR_DATA_Line_Chart">
+   <property name="text">
+    <string>NR DATA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_DATA_Line_Chart">
+   <property name="text">
+    <string>WCDMA DATA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionGSM_DATA_Line_Chart">
+   <property name="text">
+    <string>GSM DATA Line Chart</string>
+   </property>
+  </action>
+  <action name="actionTechnology">
+   <property name="text">
+    <string>Technology</string>
+   </property>
+  </action>
+  <action name="actionLTE_RLC">
+   <property name="text">
+    <string>LTE RLC</string>
+   </property>
+  </action>
+  <action name="actionWiFi_Active">
+   <property name="text">
+    <string>WiFi Active</string>
+   </property>
+  </action>
+  <action name="actionWiFi_Scan">
+   <property name="text">
+    <string>WiFi Scan</string>
+   </property>
+  </action>
+  <action name="actionGPRS_EDGE_Information">
+   <property name="text">
+    <string>GPRS/EDGE Information</string>
+   </property>
+  </action>
+  <action name="actionHSDPA_Statistics">
+   <property name="text">
+    <string>HSDPA Statistics</string>
+   </property>
+  </action>
+  <action name="actionHSUPA_Statistics">
+   <property name="text">
+    <string>HSUPA Statistics</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

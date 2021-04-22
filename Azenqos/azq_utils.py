@@ -3,6 +3,13 @@ import sys
 import traceback
 import os
 import dprint
+import shutil
+import hashlib
+import requests
+import azq_utils
+import datetime
+
+TMP_FOLDER_NAME = "tmp_gen"
 
 
 def debug(s):
@@ -1353,3 +1360,91 @@ def get_default_color_for_index(i):
         return "#" + color_list[i]
     else:
         return "#%02x%02x%02x" % (r(), r(), r())
+
+
+def tmp_gen_path_parent():
+    dp = os.path.join(get_module_path(), TMP_FOLDER_NAME)
+    if not os.path.isdir(dp):
+        os.makedirs(dp)
+    return dp
+
+
+def tmp_gen_path():
+    dp = os.path.join(tmp_gen_path_parent(), str(os.getpid()))
+    if not os.path.isdir(dp):
+        os.makedirs(dp)
+    return dp
+
+
+def cleanup_died_processes_tmp_folders():
+    import psutil
+    print("cleanup_died_processes_tmp_folders() START")    
+    tgp = tmp_gen_path_parent()
+    dirlist = os.listdir(tgp)
+    print("dirlist:", dirlist)
+    dirlist_no_pid = []
+    for folder_name in dirlist:
+        int_folder_name = None
+        try:
+            int_folder_name = int(folder_name)
+        except:
+            continue
+        if psutil.pid_exists(int_folder_name):
+            continue
+        else:
+            dirlist_no_pid.append(str(int_folder_name))
+    print("dirlist_no_pid:", dirlist_no_pid)
+    dp_list = [os.path.join(tgp, x) for x in dirlist_no_pid]
+    dp_list_dirs = [x for x in dp_list if os.path.isdir(x)]
+    print("dp_list_dirs:", dp_list)
+    for dp in dp_list_dirs:
+        try:
+            print("rmtree dir:", dp)
+            shutil.rmtree(dp)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: cleanup_died_processes_tmp_folders rmtree - exception: {}".format(exstr))
+    print("cleanup_died_processes_tmp_folders() DONE")    
+
+
+def calc_sha(src):
+    if src is None:
+        return None
+    if isinstance(src, str):
+        src = src.encode('ascii')
+    hasho = hashlib.sha1()
+    hasho.update(src)            
+    return hasho.hexdigest()
+
+
+def download_file(url, local_fp):
+    # NOTE the stream=True parameter below
+    with requests.get(url, stream=True, verify=False) as r:
+        r.raise_for_status()
+        with open(local_fp, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=2048*1000): 
+                # If you have chunk encoded response uncomment if
+                # and set chunk_size parameter to None.
+                #if chunk: 
+                f.write(chunk)
+    return local_fp
+
+
+# helper func that wont emit if signal is None
+def signal_emit(signal_obj, emit_obj):
+    print("signal_emit: {}: {}".format(signal_obj, emit_obj))
+    if signal_obj is not None:
+        signal_obj.emit(emit_obj)
+
+        
+def datetimeStringtoTimestamp(datetimeString: str):
+    try:
+        element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+        timestamp = datetime.datetime.timestamp(element)
+        return timestamp
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("datetimestringtotimestamp exception: %s" % exstr)
+    return None

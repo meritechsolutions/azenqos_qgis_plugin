@@ -223,9 +223,11 @@ def get_matching_col_names_list_from_theme_rgs_elm():
             except:
                 pass
             col_name = eid + "_" + str(arg_id)
-            # print "col_name:", col_name
+            print("col_name:", col_name)
             try:
                 matched_rows = elm_ref_df.query("var_name == '{}'".format(eid))
+                print("matched_rows:", matched_rows)
+                print("matched_rows.iloc[0].n_arg_max", matched_rows.iloc[0].n_arg_max)
                 dprint(
                     "search elm_ref_df for [{}] match got len: {}".format(
                         eid, len(matched_rows)
@@ -398,7 +400,7 @@ def get_theme_df_for_column(
         tree = xet.parse(theme_xml_file)
         root = tree.getroot()
         print("xml parse elements setting")
-        foud_elm = False
+        found_elm = False
         for elm in root.iter("ReportGeneratorSetting"):
             eid = elm.find("elementID")
             # print "eid.text", eid.text
@@ -413,9 +415,12 @@ def get_theme_df_for_column(
                 except Exception as e:
                     print("is_reverse_cum check exception:", str(e))
                 all_records = []
-                headers = []
+                headers = ['ColorXml', 'Lower', 'Upper', 'PointSize']
                 rl = elm.find("rangeList")
                 dprint("found rangeList - extract ranges:")
+                ct = rl.findall("ColorTheme.Bin")
+                if len(rl.findall("ColorTheme.Bin")) == 0:
+                    all_records.append(['#808080', str(-(sys.maxsize-1)), str(sys.maxsize), '1'])
                 for ctb in rl.findall("ColorTheme.Bin"):
                     # print "ctb: ",ctb
                     record = []
@@ -426,6 +431,7 @@ def get_theme_df_for_column(
                             headers.append(ctb_child.tag)
 
                     all_records.append(record)
+                print("all_records", all_records)
                 if is_reverse_cum:
                     all_records.reverse()
                 print("total records: ", len(all_records))
@@ -483,7 +489,7 @@ def get_theme_df_for_column(
                 print("return now")
                 return retdf
 
-        if foud_elm == False and theme_xml_file != g_ori_default_theme_file:
+        if found_elm == False and theme_xml_file != g_ori_default_theme_file:
             print("case found_elm false try get from g_ori_default_theme_file")
             retdf = get_theme_df_for_column(
                 param_col,

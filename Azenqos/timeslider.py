@@ -2,36 +2,48 @@ import datetime
 import threading
 import sys
 import os
+import time
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
 import pyqtgraph as pg
 import numpy as np
-import global_config as gc
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import *
-from qgis.core import *
-from qgis.utils import *
-from qgis.gui import *
+
+try:
+    from qgis.core import *
+    from qgis.utils import *
+    from qgis.gui import *
+except:
+    pass
+
 
 
 class timeSlider(QSlider):
-    def __init__(self, parent=None):
+    def __init__(self, parent, gc):
         super().__init__(parent)
+        self.gc = parent.gc
+        self.update()
 
+    def update(self):        
         # Set integer max and min on parent. These stay constant.
-        # self._min_int = gc.minTimeValue
+        # self._min_int = self.gc.minTimeValue
         super().setMinimum(0)
-        self._max_int = int(gc.sliderLength * 1000)
+        self._max_int = int(self.gc.sliderLength * 1000)
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0
-        self._max_value = gc.maxTimeValue - gc.minTimeValue
+        try:
+            self._max_value = self.gc.maxTimeValue - self.gc.minTimeValue
+        except:
+            self._max_value = 99
+
 
     @property
     def _value_range(self):
@@ -39,10 +51,14 @@ class timeSlider(QSlider):
 
     def value(self):
         thisValue = float(super().value())
-        value = thisValue / self._max_int * self._value_range
+        try:
+            value = thisValue / self._max_int * self._value_range
+        except:
+            return 0
         return value
 
     def setValue(self, value):
+        print("ts setValue:", value, "self._value_range", self._value_range, "self._max_int", self._max_int)
         resultValue = value / self._value_range * self._max_int
         resultValue = round(resultValue)
         super().setValue(resultValue)
@@ -59,6 +75,7 @@ class timeSlider(QSlider):
         self._min_value = minimum
         self._max_value = maximum
         self.setValue(old_value)  # Put slider in correct position
+        self.update()
 
     def proportion(self):
         return (self.value() - self._min_value) / self._value_range
@@ -67,8 +84,9 @@ class timeSlider(QSlider):
 class timeSliderThread(QThread):
     changeValue = pyqtSignal(float)
 
-    def __init__(self):
+    def __init__(self, gc):
         QThread.__init__(self)
+        self.gc = gc
         self.currentSliderValue = None
 
     def __del__(self):
@@ -84,49 +102,54 @@ class timeSliderThread(QThread):
             return 0
 
     def playTime(self):
-        gc.timeSlider.setDisabled(True)
+        self.gc.timeSlider.setDisabled(True)
         timeskip = 0
-        if float(1 / gc.fastForwardValue) >= 0.25:
-            sleeptime = 1 / gc.fastForwardValue
+        if float(1 / self.gc.fastForwardValue) >= 0.25:
+            sleeptime = 1 / self.gc.fastForwardValue
         else:
             sleeptime = 0.25
-            timeskip = (gc.fastForwardValue - (1 / sleeptime)) * sleeptime
+            timeskip = (self.gc.fastForwardValue - (1 / sleeptime)) * sleeptime
 
-        # gc.isSliderPlay = True
-        if gc.isSliderPlay:
+        # self.gc.isSliderPlay = True
+        if self.gc.isSliderPlay:
+            print("timeslider self.currentSliderValue: {}".format(self.currentSliderValue))
             if self.currentSliderValue:
                 for x in np.arange(
                     self.currentSliderValue,
-                    gc.sliderLength,
-                    ((1 * gc.slowDownValue) + timeskip),
+                    self.gc.sliderLength,
+                    ((1 * self.gc.slowDownValue) + timeskip),
                 ):
-                    if not gc.isSliderPlay:
+                    if not self.gc.isSliderPlay:
                         break
                     else:
                         time.sleep(sleeptime)
-                        value = gc.timeSlider.value() + (
-                            (1 * gc.slowDownValue) + timeskip
+                        print("valupper timeskip", timeskip, "gc.timeSlider.value()", self.gc.timeSlider.value(), "gc.slowDownValue", self.gc.slowDownValue)
+                        value = self.gc.timeSlider.value() + (
+                            (1 * self.gc.slowDownValue) + timeskip
                         )
+                        print("timeslider upper emit: {}".format(value))
                         self.changeValue.emit(value)
 
-                    if x >= gc.sliderLength:
-                        gc.isSliderPlay = False
+                    if x >= self.gc.sliderLength:
+                        self.gc.isSliderPlay = False
                         break
             else:
                 for x in np.arange(
-                    0, gc.sliderLength, ((1 * gc.slowDownValue) + timeskip)
+                    0, self.gc.sliderLength, ((1 * self.gc.slowDownValue) + timeskip)
                 ):
-                    if not gc.isSliderPlay:
+                    if not self.gc.isSliderPlay:
                         break
                     else:
                         time.sleep(sleeptime)
-                        value = gc.timeSlider.value() + (
-                            (1 * gc.slowDownValue) + timeskip
+                        print("vallower timeskip", timeskip, "gc.timeSlider.value()", self.gc.timeSlider.value(), "gc.slowDownValue", self.gc.slowDownValue)
+                        value = self.gc.timeSlider.value() + (
+                            (1 * self.gc.slowDownValue) + timeskip
                         )
+                        print("timeslider lower emit: {}".format(value))
                         self.changeValue.emit(value)
 
-                    if x >= gc.sliderLength:
-                        gc.isSliderPlay = False
+                    if x >= self.gc.sliderLength:
+                        self.gc.isSliderPlay = False
                         break
         else:
             self.quit()

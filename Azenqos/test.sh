@@ -1,1 +1,1 @@
-python3 -m pytest
+make clean && make -j`nproc`

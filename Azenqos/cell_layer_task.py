@@ -6,8 +6,8 @@ from qgis.gui import *
 from qgis.PyQt.QtCore import QVariant
 from PyQt5.QtGui import *
 import pandas as pd
-from .azq_cell_file import read_cell_file, g_main_cell_col
-from .azq_utils import get_default_color_for_index
+from azq_cell_file import read_cell_file, g_main_cell_col
+from azq_utils import get_default_color_for_index
 import azq_utils
 
 MESSAGE_CATEGORY = "RandomIntegerSumTask"
@@ -56,10 +56,11 @@ def cell_to_polygon(cell):
 
 
 class CellLayerTask(QgsTask):
-    def __init__(self, description, files):
+    def __init__(self, description, files, gc):
         super().__init__(description)
         self.files = files
         self.cells_layers = []
+        self.gc = gc
 
     def create_cell_layer(self, df, system, name, color):
         features = (
@@ -78,6 +79,8 @@ class CellLayerTask(QgsTask):
         return layer
 
     def run(self):
+        if not self.gc.qgis_iface:
+            return
         frames = []
         print("before load cell files")
         for path in self.files:
@@ -89,6 +92,8 @@ class CellLayerTask(QgsTask):
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: read cell file - exception: {}".format(exstr))
         print("after load cell files")
+        if not len(frames):
+            return
         df = pd.concat(frames)
         try:
             nr_cells_layer = self.create_cell_layer(

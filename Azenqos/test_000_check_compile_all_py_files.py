@@ -20,7 +20,7 @@ def test_compile(f):
 
 def test_pyflakes(f):    
     print(("TEST pyflakes:", f, 'start'))
-    cmd = '''python3 -m pyflakes '%s' ''' % (f)
+    cmd = '''python3 -m pyflakes %s ''' % (f)
     print("cmd:", cmd)
     outstr = None
     ex = None
@@ -31,7 +31,7 @@ def test_pyflakes(f):
         outstr = e.output.decode()
         outstr = outstr.strip()
         error_lines = outstr.split("\n")
-        #print "error_lines:", error_lines
+        # print("error_lines:", error_lines)
         allowed_endswith_cases = [
             "is assigned to but never used",
             "imported but unused",

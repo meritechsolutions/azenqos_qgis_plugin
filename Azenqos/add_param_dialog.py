@@ -1,12 +1,7 @@
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *
-from PyQt5.QtSql import *
-from PyQt5.QtGui import *
+from PyQt5.QtWidgets import QDialog, QCompleter, QIcon, QPixmap, QComboBox, QSortFilterProxyModel
+from PyQt5 import QtCore
 from PyQt5.uic import loadUi
 import os
-import pandas as pd
-import numpy as np
 from functools import partial
 import azq_utils
 import preprocess_azm

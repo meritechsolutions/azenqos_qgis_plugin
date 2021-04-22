@@ -1,11 +1,9 @@
-from PyQt5.QtWidgets import *
-from datatable import *
+from PyQt5.QtWidgets import QApplication
 import analyzer_vars
-import pandas as pd
 import login_dialog
 import azq_server_api
-import time
-import threading
+import datatable
+import sys
 
 
 def test(server, user, passwd, lhl):
@@ -24,7 +22,7 @@ def test(server, user, passwd, lhl):
     gc.login_dialog.lhl = lhl
 
     azq_report_gen_expression = "list_modules_with_process_cell_func.run()"
-    window = create_table_window_from_api_expression_ret(None, "title", gc, server, token, lhl, azq_report_gen_expression, list_module=True)    
+    window = datatable.create_table_window_from_api_expression_ret(None, "title", gc, server, token, lhl, azq_report_gen_expression, list_module=True)    
     window.show()
     app.exec_()
 

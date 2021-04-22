@@ -203,7 +203,10 @@ def prepare_spatialite_views(dbcon):
     for view in tables_to_rm_stray_neg1_rows:
         for index, row in df_posids_indoor_start.iterrows():
             for posid in [row.posid, row.posid+1]:  # del with same posid and next posid as found in log case: 354985102910027 20_1_2021 7.57.38.azm
-                sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
+                # sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
+                #     view, row.log_hash, posid
+                # )
+                sqlstr = "update {} set posid = null where log_hash = {} and posid = {};".format(
                     view, row.log_hash, posid
                 )
                 print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)

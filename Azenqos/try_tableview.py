@@ -1,9 +1,9 @@
 import sys
 import time
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import Qt, QThreadPool, pyqtSignal
 from worker import Worker
-from PyQt5.QtCore import *
+
 
 threadpool = QThreadPool()
 

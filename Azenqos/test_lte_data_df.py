@@ -1,4 +1,3 @@
-import zipfile
 import os
 import shutil
 import sqlite3

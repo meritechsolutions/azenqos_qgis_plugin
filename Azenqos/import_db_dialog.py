@@ -21,9 +21,9 @@ from PyQt5.QtWidgets import (
     QFileDialog,
 )
 
-from Azenqos import azq_utils
-from Azenqos.cell_layer_task import CellLayerTask
-from Azenqos.tasks import LayerTask
+import azq_utils
+from cell_layer_task import CellLayerTask
+from tasks import LayerTask
 
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 

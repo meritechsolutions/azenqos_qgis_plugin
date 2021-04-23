@@ -13,8 +13,11 @@ Installation instructions for Windows
 - Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder.
 - In the extracted folder, double-click on <pre>install_azenqos_plugin.bat</pre> - it must show 'SUCCESS', otherwise fix as per error message shown.
 - If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
-- Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.
-- Repeat the same when you want to upgrade the plugin
+- Press on the AZENQOS icon button in toolbar (or in 'Plugins') - the analyzer window will launch.
+- In the analyzer window, go to File > Open log file... to choose a .azm log file to analyze.
+- After a log has been opened. Go to Presentation to open each required analyzer window - like Signalling > Layer-3 Messages.
+
+- Repeat the same steps above when you want to upgrade the plugin to a new version (version is shown at top-right of analyzer window).
 
 
 Installation instructions for Ubuntu GNU/Linux
@@ -26,6 +29,21 @@ Installation instructions for Ubuntu GNU/Linux
 - If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.
 - Repeat the same when you want to upgrade the plugin
+
+Using Standlone mode to launch without QGIS (Developer mode)
+------------------------------------------------------------
+
+- Run:
+`pip3 install -r requirements-dev.txt`
+
+- Install pyqt5
+  - If you are on Windows run:
+  `pip3 install -r requirements-dev-windows.txt`
+  - If you are on Ubuntu run:
+  `sudo apt install python3-pyqt5`
+  
+- Launch analyzer in standalone mode:
+`python3 ui_test_main_window.py`
 
 Running tests
 -------------
@@ -61,3 +79,4 @@ Special thanks and notices
 --------------------------
 
 - This project (which is licensed under the GNU GPLv2 - same as Wireshark) uses `tshark` and `text2pcap` utilities from the Wireshark project. Full credit and thanks to the Wireshark developers for their great work. Please see [wireshark_LICENSE](wireshark_LICENSE) file for its license and [wireshark_SOURCE](wireshark_SOURCE) for its source.
+

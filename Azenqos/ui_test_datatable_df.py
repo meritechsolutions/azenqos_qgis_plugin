@@ -3,7 +3,7 @@ import sys
 import analyzer_vars
 import azq_server_api
 import login_dialog
-from Azenqos.datatable import create_table_window_from_api_expression_ret
+from datatable import create_table_window_from_api_expression_ret
 
 
 def test(server, user, passwd, lhl):

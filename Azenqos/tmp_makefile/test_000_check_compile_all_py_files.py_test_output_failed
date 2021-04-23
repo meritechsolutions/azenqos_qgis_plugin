@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "test_000_check_compile_all_py_files.py", line 2, in <module>
-    import pyflakes.api
-ModuleNotFoundError: No module named 'pyflakes'

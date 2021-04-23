@@ -21,20 +21,19 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
-from PyQt5 import *
-from PyQt5.QtWidgets import *
+# Import the code for the dialog
+import os.path
 import sys
 import traceback
 
-# Initialize Qt resources from file resources.py
-from resources import *
+from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction, QMessageBox, QPushButton
 
-# Import the code for the dialog
-import os.path
 import azq_utils
+
+
+# Initialize Qt resources from file resources.py
 
 
 class azenqos_qgis_plugin:

@@ -44,7 +44,6 @@ from tsharkworker import TsharkDecodeWorker
 import azq_utils
 import qt_utils
 import qgis_layers_gen
-import module_dialog
 
 
 class TableWindow(QWidget):
@@ -510,6 +509,7 @@ class TableWindow(QWidget):
                 self.gc, parentWindow, cellContent, name, side
             )
         elif self.list_module:
+            import module_dialog
             dlg = module_dialog.module_dialog(self, row_sr, self.gc, self.mdi)
             dlg.show()
         else:

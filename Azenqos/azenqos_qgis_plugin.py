@@ -28,7 +28,7 @@ import traceback
 
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QMessageBox, QPushButton
+from PyQt5.QtWidgets import QAction
 
 import azq_utils
 

@@ -1,6 +1,6 @@
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QSortFilterProxyModel, QRegExp, Qt
-from PyQt5.QtWidgets import QHeaderView
+from PyQt5.QtWidgets import QHeaderView, QLineEdit
 
 
 class SortFilterProxyModel(QSortFilterProxyModel):
@@ -55,7 +55,10 @@ class FilterHeader(QHeaderView):
         self.setStretchLastSection(True)
         self.setSectionsClickable(True)
         self.setHighlightSections(True)
-        self.setResizeMode(QHeaderView.Interactive)
+        try:
+            self.setResizeMode(QHeaderView.Interactive)
+        except:
+            pass
         # self.setResizeMode(QtGui.QHeaderView.Stretch)
         # self.setDefaultAlignment(
         #     QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
@@ -68,7 +71,7 @@ class FilterHeader(QHeaderView):
             editor = self._editors.pop()
             editor.deleteLater()
         for index in range(count):
-            editor = QtGui.QLineEdit(self.parent())
+            editor = QLineEdit(self.parent())
             editor.setPlaceholderText("Filter")
             editor.textChanged.connect(
                 lambda text, col=index: parent.proxyModel.setFilterByColumn(

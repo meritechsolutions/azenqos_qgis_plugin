@@ -1362,7 +1362,7 @@ Log_hash list: {}""".format(
             msgBox.exec_()
             return
 
-        dlg = import_db_dialog.import_db_dialog(self.gc)
+        dlg = import_db_dialog.import_db_dialog(self, self.gc)
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))

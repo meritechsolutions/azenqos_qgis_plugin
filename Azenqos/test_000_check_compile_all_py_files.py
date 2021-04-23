@@ -14,7 +14,6 @@ def test_formatting(fp):
     needs_change = False
     try:
         ret = black.format_file_contents(file_contents, fast=fast, mode=mode)
-        print("black ret:", ret)
         needs_change = True
     except black.NothingChanged:
         needs_change = False

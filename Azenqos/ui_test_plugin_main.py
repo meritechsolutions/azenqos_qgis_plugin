@@ -1,5 +1,6 @@
+from PyQt5.QtWidgets import QApplication
+
 import azenqos_qgis_plugin
-from PyQt5.QtWidgets import *
 
 
 def test():

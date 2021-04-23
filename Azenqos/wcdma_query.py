@@ -156,7 +156,10 @@ class WcdmaDataQuery:
             joinString = ""
             if not len(dic["join"]) == 0:
                 for join in dic["join"]:
-                    onString = """ON %s.row_num = %s.row_num""" % (name, join["name"],)
+                    onString = """ON %s.row_num = %s.row_num""" % (
+                        name,
+                        join["name"],
+                    )
                     joinString += """LEFT JOIN ( SELECT %s,1 as row_num 
                                             FROM %s 
                                             %s 
@@ -317,7 +320,10 @@ class WcdmaDataQuery:
             )
             queryString = (
                 """SELECT %s FROM wcdma_nset_full_list %s ORDER BY time DESC LIMIT 1"""
-                % (selectedColumns, condition,)
+                % (
+                    selectedColumns,
+                    condition,
+                )
             )
             query = QSqlQuery()
             query.exec_(queryString)
@@ -712,7 +718,10 @@ def get_wcdma_radio_params_disp_df(dbcon, time_before):
     parameter_to_columns_list = [
         (
             ["Time", "Tx Power", "Max Tx Power"],
-            ["time," "wcdma_txagc", "wcdma_maxtxpwr",],
+            [
+                "time," "wcdma_txagc",
+                "wcdma_maxtxpwr",
+            ],
             "wcdma_tx_power",
         ),
         ("RSSI", ["wcdma_rssi"], "wcdma_rx_power"),

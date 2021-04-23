@@ -1052,7 +1052,11 @@ def run_api_expression_and_set_results_to_table_window(
         print("api call ret_dict: {}".format(ret_dict))
         df = azq_server_api.parse_py_eval_ret_dict_for_df(server, token, ret_dict)
         if df is None:
-            df = pd.DataFrame({"result": [ret_dict["ret"]],})
+            df = pd.DataFrame(
+                {
+                    "result": [ret_dict["ret"]],
+                }
+            )
         window.setup_ui_with_custom_df(df)
     except Exception:
         type_, value_, traceback_ = sys.exc_info()

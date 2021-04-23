@@ -549,8 +549,14 @@ def get_gprs_edge_info(dbcon, time_before):
     parameter_to_columns_list = [
         ("Time", ["time"], "umts_data_activation_stats"),
         (
-            ["GPRS Attach Duration", "PDP Context Activation Duration",],
-            ["data_gprs_attach_duration", "data_pdp_context_activation_duration",],
+            [
+                "GPRS Attach Duration",
+                "PDP Context Activation Duration",
+            ],
+            [
+                "data_gprs_attach_duration",
+                "data_pdp_context_activation_duration",
+            ],
             "umts_data_activation_stats",
         ),
         (
@@ -652,8 +658,12 @@ def get_hsdpa_statistics(dbcon, time_before):
             "wcdma_hsdpa_cqi",
         ),
         (
-            ["WCDMA RLC DL Throughput",],
-            ["data_wcdma_rlc_dl_throughput",],
+            [
+                "WCDMA RLC DL Throughput",
+            ],
+            [
+                "data_wcdma_rlc_dl_throughput",
+            ],
             "data_wcdma_rlc_stats",
         ),
     ]
@@ -723,8 +733,12 @@ def get_hsupa_statistics(dbcon, time_before):
             "wcdma_hsupa_stats",
         ),
         (
-            ["WCDMA RLC UL Throughput",],
-            ["data_wcdma_rlc_ul_throughput",],
+            [
+                "WCDMA RLC UL Throughput",
+            ],
+            [
+                "data_wcdma_rlc_ul_throughput",
+            ],
             "data_wcdma_rlc_stats",
         ),
     ]

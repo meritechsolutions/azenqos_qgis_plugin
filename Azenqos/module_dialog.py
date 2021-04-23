@@ -1,14 +1,12 @@
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *
-from PyQt5.QtSql import *
-from PyQt5.QtGui import *
-from PyQt5.uic import loadUi
 import os
-import pandas as pd
-import numpy as np
-import azq_utils
 from functools import partial
+
+from PyQt5 import QtCore
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import QDialog
+from PyQt5.uic import loadUi
+
+import azq_utils
 import datatable
 import main_window
 

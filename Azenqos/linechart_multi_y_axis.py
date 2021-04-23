@@ -325,14 +325,20 @@ class LineChart(QtWidgets.QDialog):
         for viewBox in self.viewBoxList:
             viewBox.setMouseEnabled(x=True, y=True)
             viewBox.setLimits(
-                minXRange=None, maxXRange=None, maxYRange=None, yMin=None, yMax=None,
+                minXRange=None,
+                maxXRange=None,
+                maxYRange=None,
+                yMin=None,
+                yMax=None,
             )
 
     def disable_zoom(self, checkbox):
         for viewBox in self.viewBoxList:
             viewBox.setMouseEnabled(x=True, y=False)
             viewBox.setLimits(
-                minXRange=20, maxXRange=20, minYRange=1,
+                minXRange=20,
+                maxXRange=20,
+                minYRange=1,
             )
 
 

@@ -299,13 +299,15 @@ class LineChart(QtWidgets.QDialog):
     def enable_zoom(self, checkbox):
         self.graphWidget.axes.setMouseEnabled(x=True, y=True)
         self.graphWidget.axes.setLimits(
-            minXRange=None, maxXRange=None,
+            minXRange=None,
+            maxXRange=None,
         )
 
     def disable_zoom(self, checkbox):
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
         self.graphWidget.axes.setLimits(
-            minXRange=30, maxXRange=30,
+            minXRange=30,
+            maxXRange=30,
         )
 
 

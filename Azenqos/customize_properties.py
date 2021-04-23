@@ -1,17 +1,30 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtSql import QSqlQuery
-import sys
+import gc
 import os
+import sys
 
 # Adding folder path
-sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
+from PyQt5 import Qt
+from PyQt5.QtCore import QRect, QCoreApplication, QMetaObject
+from PyQt5.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QTabWidget,
+    QSizePolicy,
+    QApplication,
+    QTreeWidgetItem,
+    QPushButton,
+    QComboBox,
+    QLabel,
+    QHeaderView,
+    QTreeWidget,
+    QFormLayout,
+    QLineEdit,
+    QDialogButtonBox,
+)
 
+sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 from cell_content_header import HeaderContent
 from customize_window_editor import CellSetting
-from worker import Worker
-import globalutils
 
 
 class PropertiesWindow(QWidget):
@@ -300,13 +313,11 @@ class PropertiesWindow(QWidget):
                     header_name = '""'
             except:
                 header_name = '""'
-            headerItem = QTreeWidgetItem(self.header, [header_name])
             headers.append(header_name)
 
         rows = []
         for row in range(self.currentRowLength):
             columnlist = []
-            rowItem = QTreeWidgetItem(self.treeWidget, [str("Row %i") % (row + 1)])
             for column in range(self.currentColumnLength):
                 try:
                     column_name = str(self.data_set[row][column])
@@ -314,7 +325,6 @@ class PropertiesWindow(QWidget):
                         column_name = '""'
                 except:
                     column_name = '""'
-                item = QTreeWidgetItem(rowItem, [column_name])
                 columnlist.append(column_name)
             rows.append(columnlist)
 
@@ -334,12 +344,10 @@ class PropertiesWindow(QWidget):
         data = []
         toplevel_count = self.treeWidget.topLevelItemCount()
         for toplevel_index in range(1, toplevel_count):
-            row = toplevel_index
             row_item = self.treeWidget.topLevelItem(toplevel_index)
             children_count = row_item.childCount()
             sub_data = []
             for child_index in range(0, children_count):
-                column = child_index + 1
                 text = row_item.child(child_index).text(0)
                 if text == '""':
                     sub_data += [""]
@@ -363,7 +371,7 @@ class PropertiesWindow(QWidget):
         if headers:
             for x in headers:
                 if x == '""':
-                    x = ""
+                    pass
             self.main_window.setHeader(headers)
 
         data_set = self.getDataSet()

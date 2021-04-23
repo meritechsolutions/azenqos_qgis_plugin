@@ -1,12 +1,5 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QIcon
-import numpy as np
 import pandas as pd
-import glob
-import os
-import csv
-from itertools import combinations
-from PyQt5.QtWidgets import QDialog, QApplication
+from PyQt5 import QtCore, QtGui
 
 
 class DataFrameModel(QtCore.QAbstractTableModel):

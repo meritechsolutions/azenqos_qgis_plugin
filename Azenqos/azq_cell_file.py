@@ -678,12 +678,12 @@ def apply_cell_file(
 
             # only supported in LTE now
             if rat == "lte":
-                """ not related to qgis plugin
+                """not related to qgis plugin
                 # if custom cellfile was added inside phone log
                 (
                     is_use_dynamic_cell_df,
                     dynamic_lte_cell_df,
-                ) = get_dynamic_cell_info_flag(dbcon, rat)                
+                ) = get_dynamic_cell_info_flag(dbcon, rat)
                 if is_use_dynamic_cell_df:
                     dprint("plotting is_use_dynamic_cell_df mode for rat:", rat)
                     df = dynamic_lte_cell_df

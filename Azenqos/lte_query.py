@@ -31,10 +31,20 @@ def get_lte_rrc_sib_states_df(dbcon, time_before):
         ),
         (
             ["Time", "Transmission Mode (RRC-tm)"],
-            ["time", "lte_transmission_mode_l3",],
+            [
+                "time",
+                "lte_transmission_mode_l3",
+            ],
             "lte_rrc_transmode_info",
         ),
-        (["Time", "RRC State"], ["time", "lte_rrc_state",], "lte_rrc_state"),
+        (
+            ["Time", "RRC State"],
+            [
+                "time",
+                "lte_rrc_state",
+            ],
+            "lte_rrc_state",
+        ),
     ]
     return params_disp_df.get(
         dbcon,
@@ -67,10 +77,36 @@ def get_lte_radio_params_disp_df(dbcon, time_before):
             ),
             "lte_cell_meas",
         ),
-        (["TxPower",], ["lte_tx_power",], "lte_tx_power"),
-        (["PUSCH TxPower"], ["lte_pusch_tx_power",], "lte_pusch_tx_info"),
-        (["PUCCH TxPower"], ["lte_pucch_tx_power",], "lte_pucch_tx_info"),
-        (["TA"], ["lte_ta",], "lte_frame_timing"),
+        (
+            [
+                "TxPower",
+            ],
+            [
+                "lte_tx_power",
+            ],
+            "lte_tx_power",
+        ),
+        (
+            ["PUSCH TxPower"],
+            [
+                "lte_pusch_tx_power",
+            ],
+            "lte_pusch_tx_info",
+        ),
+        (
+            ["PUCCH TxPower"],
+            [
+                "lte_pucch_tx_power",
+            ],
+            "lte_pucch_tx_info",
+        ),
+        (
+            ["TA"],
+            [
+                "lte_ta",
+            ],
+            "lte_frame_timing",
+        ),
     ]
     return params_disp_df.get(
         dbcon,
@@ -176,7 +212,13 @@ def get_lte_rlc_disp_df(dbcon, time_before):
             "lte_rlc_stats",
         ),
         (  # these params below come together so query them all in one query
-            ["Mode", "Type", "RB-ID", "Index", "TP Mbps",],
+            [
+                "Mode",
+                "Type",
+                "RB-ID",
+                "Index",
+                "TP Mbps",
+            ],
             list(
                 map(
                     lambda x: "lte_rlc_per_rb_dl_rb_mode_{}".format(x + 1),
@@ -440,7 +482,15 @@ def get_lte_data_disp_df(dbcon, time_before):
     n_param_args = 4
     df_list = []
     parameter_to_columns_list = [
-        (["RRC State",], ["lte_rrc_state",], "lte_rrc_state"),
+        (
+            [
+                "RRC State",
+            ],
+            [
+                "lte_rrc_state",
+            ],
+            "lte_rrc_state",
+        ),
     ]
     df_rrc = params_disp_df.get(
         dbcon,
@@ -454,7 +504,10 @@ def get_lte_data_disp_df(dbcon, time_before):
 
     parameter_to_columns_list = [
         (
-            ["L1 Combined (Mbps)", "L1 Combined (Kbps)",],
+            [
+                "L1 Combined (Mbps)",
+                "L1 Combined (Kbps)",
+            ],
             [
                 "lte_l1_dl_throughput_all_carriers_mbps",
                 "lte_l1_dl_throughput_all_carriers",
@@ -462,7 +515,10 @@ def get_lte_data_disp_df(dbcon, time_before):
             "lte_l1_dl_tp",
         ),
         (
-            ["L1 Combined (Mbps)", "L1 Combined (Kbps)",],
+            [
+                "L1 Combined (Mbps)",
+                "L1 Combined (Kbps)",
+            ],
             [
                 "lte_l1_ul_throughput_all_carriers_mbps_1",
                 "lte_l1_ul_throughput_all_carriers_1",
@@ -486,7 +542,10 @@ def get_lte_data_disp_df(dbcon, time_before):
 
     parameter_to_columns_list = [
         (
-            ["PDCP (Mbps)", "PDCP (kbps)",],
+            [
+                "PDCP (Mbps)",
+                "PDCP (kbps)",
+            ],
             [
                 "lte_pdcp_dl_throughput_mbps",
                 "lte_pdcp_ul_throughput_mbps",
@@ -496,7 +555,10 @@ def get_lte_data_disp_df(dbcon, time_before):
             "lte_pdcp_stats",
         ),
         (
-            ["RLC (Mbps)", "RLC (kbps)",],
+            [
+                "RLC (Mbps)",
+                "RLC (kbps)",
+            ],
             [
                 "lte_rlc_dl_tp_mbps",
                 "lte_rlc_ul_tp_mbps",
@@ -505,7 +567,16 @@ def get_lte_data_disp_df(dbcon, time_before):
             ],
             "lte_rlc_stats",
         ),
-        (["MAC (Kbps)",], ["lte_mac_dl_tp", "lte_mac_ul_tp",], "lte_mac_ul_tx_stat"),
+        (
+            [
+                "MAC (Kbps)",
+            ],
+            [
+                "lte_mac_dl_tp",
+                "lte_mac_ul_tp",
+            ],
+            "lte_mac_ul_tx_stat",
+        ),
     ]
     df_pdcp = params_disp_df.get(
         dbcon,
@@ -518,8 +589,12 @@ def get_lte_data_disp_df(dbcon, time_before):
 
     parameter_to_columns_list = [
         (
-            ["TransMode RRC tm",],
-            ["lte_transmission_mode_l3",],
+            [
+                "TransMode RRC tm",
+            ],
+            [
+                "lte_transmission_mode_l3",
+            ],
             "lte_rrc_transmode_info",
         ),
     ]
@@ -538,7 +613,9 @@ def get_lte_data_disp_df(dbcon, time_before):
 
     parameter_to_columns_list = [
         (
-            ["L1 DL TP (Mbps)",],
+            [
+                "L1 DL TP (Mbps)",
+            ],
             list(
                 map(
                     lambda x: "lte_l1_throughput_mbps_{}".format(x + 1),
@@ -548,7 +625,9 @@ def get_lte_data_disp_df(dbcon, time_before):
             "lte_l1_dl_tp",
         ),
         (
-            ["L1 UL TP (Mbps)",],
+            [
+                "L1 UL TP (Mbps)",
+            ],
             list(
                 map(
                     lambda x: "lte_l1_ul_throughput_mbps_{}".format(x + 1),
@@ -558,7 +637,9 @@ def get_lte_data_disp_df(dbcon, time_before):
             "lte_l1_ul_tp",
         ),
         (
-            ["TransMode Cur",],
+            [
+                "TransMode Cur",
+            ],
             list(
                 map(
                     lambda x: "lte_pdsch_transmission_mode_current_{}".format(x + 1),
@@ -568,12 +649,16 @@ def get_lte_data_disp_df(dbcon, time_before):
             "lte_pdsch_meas",
         ),
         (
-            ["EARFCN",],
+            [
+                "EARFCN",
+            ],
             list(map(lambda x: "lte_earfcn_{}".format(x + 1), range(n_param_args))),
             "lte_cell_meas",
         ),
         (
-            ["PCI",],
+            [
+                "PCI",
+            ],
             list(
                 map(
                     lambda x: "lte_pdsch_serving_cell_id_{}".format(x + 1),
@@ -609,12 +694,17 @@ def get_lte_data_disp_df(dbcon, time_before):
             "lte_l1_ul_tp",
         ),
         (
-            ["DCI",],
+            [
+                "DCI",
+            ],
             list(map(lambda x: "lte_pdcch_dci_{}".format(x + 1), range(n_param_args))),
             "lte_pdcch_dec_result",
         ),
         (
-            ["PDSCH Stats:", "BLER",],
+            [
+                "PDSCH Stats:",
+                "BLER",
+            ],
             list(map(lambda x: '"" as unused_{}'.format(x + 1), range(n_param_args)))
             + list(map(lambda x: "lte_bler_{}".format(x + 1), range(n_param_args))),
             "lte_l1_dl_tp",

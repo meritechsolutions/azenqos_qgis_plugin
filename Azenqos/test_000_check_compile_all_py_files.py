@@ -13,7 +13,7 @@ def test_formatting(fp):
         file_contents = f.read().decode()
     needs_change = False
     try:
-        ret = black.format_file_contents(file_contents, fast=fast, mode=mode)
+        black.format_file_contents(file_contents, fast=fast, mode=mode)
         needs_change = True
     except black.NothingChanged:
         needs_change = False

@@ -1,1 +1,6 @@
-pyqt5==5.11.3
+pyqt5==5.15.4
+black==19.10b0
+pandas==1.2.2
+pyarrow==3.0.0
+pyflakes
+matplotlib

@@ -26,6 +26,8 @@ from PyQt5.uic import loadUi
 
 import qt_utils, azq_utils
 from timeslider import timeSliderThread, timeSlider
+
+from datatable import TableWindow
 from worker import Worker
 
 try:
@@ -212,6 +214,7 @@ Log_hash list: {}""".format(
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
             return
+        from datatable import create_table_window_from_api_expression_ret, TableWindow
         py_eval_code = qt_utils.ask_text(
             self, "PY_EVAL code", "Please enter PY_EVAL code to run:"
         )
@@ -241,6 +244,7 @@ Log_hash list: {}""".format(
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
             return
+        from datatable import create_table_window_from_api_expression_ret, TableWindow
         py_eval_code = qt_utils.ask_text(
             self, "SQL code", "Please enter SQL code to run:"
         )

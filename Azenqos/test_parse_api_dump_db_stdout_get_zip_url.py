@@ -40,15 +40,16 @@ pg_engine dispose() successful
 successfully closed all pg dbcons
 SUCCESS == please visit us again soon
 """
-    
+
     server = "https://localhost/"
     ret_dict = azq_server_api.parse_py_eval_ret_dict_from_stdout_log(proc_stdout_str)
-    url = azq_server_api.api_relative_path_to_url(server, ret_dict['ret_dump'])
+    url = azq_server_api.api_relative_path_to_url(server, ret_dict["ret_dump"])
     print("url:", url)
-    assert url == "https://localhost/tmp_gen/tmp_dump_db_66f22df0-30ba-4520-84a2-c79b914dd22f.db.zip"
-    
-    
+    assert (
+        url
+        == "https://localhost/tmp_gen/tmp_dump_db_66f22df0-30ba-4520-84a2-c79b914dd22f.db.zip"
+    )
+
+
 if __name__ == "__main__":
     test()
-
-

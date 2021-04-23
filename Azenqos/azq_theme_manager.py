@@ -199,9 +199,7 @@ def get_matching_col_names_list_from_theme_rgs_elm():
     for rgs in rgs_list:
         print("rgs type:", type(rgs))
         # check if this rgs exists and is not empty in the log/db
-        eid = None
-        arg_id = None
-        col_name = None
+
         try:
             try:
                 eid = rgs.find("elementID").text.lower()
@@ -246,11 +244,11 @@ def get_matching_col_names_list_from_theme_rgs_elm():
                 if not col_name in ret:
                     ret.append(col_name)
                 dprint("col_name for this rgs: [", col_name, "]")
-            except Exception as qe:
+            except Exception:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("elm_ref_df query for matching var_name exception: " + exstr)
-        except Exception as e:
+        except Exception:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("rgs parse/check exception: " + exstr)
@@ -292,7 +290,7 @@ def get_theme_report_generator_setting_list():
         return theme_df.element.unique()
 
     print("theme_xml_file :" + theme_xml_file)
-    root = None
+
     ret = []
     try:
         tree = xet.parse(theme_xml_file)
@@ -319,6 +317,7 @@ def get_theme_df_for_column(
 
     # check custom theme by cosmetic_option
     try:
+        '''
         custom_theme_dict = eval(
             azq_cosmetic_map_option_setting.get_cosmetic_option("custom_theme")
         )
@@ -326,6 +325,7 @@ def get_theme_df_for_column(
         if param_col_with_arg in custom_theme_element_list:
             retdf = pd.read_json(custom_theme_dict[param_col_with_arg])
             return retdf
+        '''
     except:
         print("Warning!! custom theme json invalid, try normal step")
 
@@ -336,7 +336,7 @@ def get_theme_df_for_column(
     print("theme_xml_file :" + theme_xml_file)
 
     if theme_xml_file.endswith(".csv"):  # not support reverse_cum
-        theme_for_param_col = None
+
 
         try:
             theme_df = get_csv_theme_df_for_csv_file(theme_xml_file)
@@ -381,7 +381,7 @@ def get_theme_df_for_column(
                 )
             )
 
-    root = None
+
     try:
 
         if theme_xml_file.endswith(".csv"):
@@ -405,7 +405,7 @@ def get_theme_df_for_column(
             eid = elm.find("elementID")
             # print "eid.text", eid.text
             if eid.text == param_col:
-                found_elm = True
+
                 print(("got matching eid for param_col ", param_col))
                 is_reverse_cum = False
                 try:
@@ -415,12 +415,14 @@ def get_theme_df_for_column(
                 except Exception as e:
                     print("is_reverse_cum check exception:", str(e))
                 all_records = []
-                headers = ['ColorXml', 'Lower', 'Upper', 'PointSize']
+                headers = ["ColorXml", "Lower", "Upper", "PointSize"]
                 rl = elm.find("rangeList")
                 dprint("found rangeList - extract ranges:")
-                ct = rl.findall("ColorTheme.Bin")
+                rl.findall("ColorTheme.Bin")
                 if len(rl.findall("ColorTheme.Bin")) == 0:
-                    all_records.append(['#808080', str(-(sys.maxsize-1)), str(sys.maxsize), '1'])
+                    all_records.append(
+                        ["#808080", str(-(sys.maxsize - 1)), str(sys.maxsize), "1"]
+                    )
                 for ctb in rl.findall("ColorTheme.Bin"):
                     # print "ctb: ",ctb
                     record = []
@@ -566,7 +568,7 @@ def get_theme_df_for_column(
 
         datadfsql = "select {} from {}".format(col_to_select, table_name)
         print("col_to_select:", col_to_select, "start sql:", datadfsql)
-        data_df = sql_helpers.query(dbcon, datadfsql)
+        data_df = pd.read_sql(datadfsql, dbcon)
         if data_df is not None:
             print("col_to_select:", col_to_select, "done - data_df len:", len(data_df))
         else:
@@ -2157,9 +2159,9 @@ def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
         color_header = ["ColorXml", "Lower", "Upper", "PointSize"]
 
         retdf = pd.DataFrame(columns=color_header)
-        retlen = 0
 
-        r = lambda: random.randint(0, 255)
+
+
 
         for i in range(int(n_buckets)):
             retdf.loc[i] = None

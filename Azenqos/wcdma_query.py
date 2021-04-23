@@ -1,5 +1,6 @@
-from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import pandas as pd
+from PyQt5.QtSql import QSqlQuery
+
 import params_disp_df
 
 
@@ -20,7 +21,6 @@ class WcdmaDataQuery:
         dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         for unit in range(maxUnits):
             temp = []
-            queryString = None
             unitNo = unit + 1
             elementDictList = [
                 {
@@ -43,7 +43,6 @@ class WcdmaDataQuery:
                 mainColumn = dic["column"]
                 subColumn = dic["column"]
                 table = dic["table"]
-                join = None
                 joinString = ""
                 onString = ""
                 if dic["join"]:
@@ -154,9 +153,7 @@ class WcdmaDataQuery:
             mainColumn = dic["column"]
             subColumn = dic["column"]
             table = dic["table"]
-            join = None
             joinString = ""
-            onString = ""
             if not len(dic["join"]) == 0:
                 for join in dic["join"]:
                     onString = """ON %s.row_num = %s.row_num""" % (name, join["name"],)
@@ -223,7 +220,6 @@ class WcdmaDataQuery:
         dataList.append([self.timeFilter, "", "", "", "", "", "", ""])
         for unit in range(maxUnits):
             temp = []
-            queryString = None
             unitNo = unit + 1
             # selectedColumns = (
             #     "wcc.wcdma_cellfile_matched_cellname_%d, wcc.wcdma_celltype_%d, wcc.wcdma_sc_%d, wcc.wcdma_ecio_%d, wcc.wcdma_rscp_%d, wcc.wcdma_cellfreq_%d, wcc.wcdma_cellfreq_%d"
@@ -248,7 +244,6 @@ class WcdmaDataQuery:
                 mainColumn = dic["column"]
                 subColumn = dic["column"]
                 table = dic["table"]
-                join = None
                 joinString = ""
                 onString = ""
                 if dic["join"]:
@@ -372,9 +367,6 @@ class WcdmaDataQuery:
         query.exec_(queryString)
         if query.first():
             dataList.append(["Time", self.timeFilter])
-            blerAvg = query.value(1)
-            blerCalWindowSize = query.value(2)
-            blerNTransportChannels = query.value(3)
             for field in range(1, len(fieldsList)):
                 dataList.append(
                     [

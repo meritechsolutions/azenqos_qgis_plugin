@@ -1,10 +1,8 @@
-import pandas as pd
-import numpy as np
-import os
 import sys
 import traceback
-import collections
-from datetime import datetime
+
+import numpy as np
+import pandas as pd
 
 DEFAULT_LOOKBACK_DUR_MILLIS = 2000
 

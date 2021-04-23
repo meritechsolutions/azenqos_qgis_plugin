@@ -23,11 +23,15 @@
  This script initializes the plugin, making it known to QGIS.
 """
 
-def add_src_folder_to_import_path():    
+
+def add_src_folder_to_import_path():
     import os
     import sys
     import inspect
-    currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
+    currentdir = os.path.dirname(
+        os.path.abspath(inspect.getfile(inspect.currentframe()))
+    )
     sys.path.insert(0, currentdir)
 
 
@@ -38,6 +42,7 @@ def classFactory(qgis_iface):  # pylint: disable=invalid-name
     :param qgis_iface: A QGIS interface instance.
     :type qgis_iface: QgsInterface
     """
-    add_src_folder_to_import_path()    
+    add_src_folder_to_import_path()
     from azenqos_qgis_plugin import azenqos_qgis_plugin
+
     return azenqos_qgis_plugin(qgis_iface)

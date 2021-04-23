@@ -1,17 +1,17 @@
-from PyQt5.QtWidgets import *
-import main_window
+from PyQt5.QtWidgets import QApplication
+
 import analyzer_vars
 import login_dialog
 
 
 def test():
     gc = analyzer_vars.analyzer_vars()
-    app = QApplication([])
+    QApplication([])
     dlg = login_dialog.login_dialog(None, gc)
-    dlg.show()    
+    dlg.show()
     ret = dlg.exec()
     print("ret:", ret)
-    
+
 
 if __name__ == "__main__":
     test()

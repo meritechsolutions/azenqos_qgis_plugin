@@ -1,11 +1,7 @@
-import zipfile
-import os
-import shutil
-import params_disp_df
 import sqlite3
-import pandas as pd
-import wcdma_query
+
 import integration_test_helpers
+import wcdma_query
 
 
 def test():

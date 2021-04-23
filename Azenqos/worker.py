@@ -1,10 +1,7 @@
-import traceback, sys
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QColor
+import sys
+import traceback
+
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject, QRunnable
 
 
 class WorkerSignals(QObject):

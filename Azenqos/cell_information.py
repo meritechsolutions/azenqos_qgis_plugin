@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
+from PyQt5 import QtGui, Qt
+from PyQt5.QtCore import QRect, QSize, QCoreApplication, QMetaObject, QDir
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget, QGroupBox, QSizePolicy, QCheckBox, QComboBox, QLabel, \
+    QLineEdit, QToolButton, QFileDialog, QDialogButtonBox
 
 
 class CellInformation(QDialog):
@@ -187,7 +188,7 @@ class CellInformation(QDialog):
                 self, "Single File", QDir.rootPath(), "*.cel"
             )
             if fileName != "":
-                baseFileName = os.path.basename(str(fileName))
+
                 self.FilePath1.setText(fileName)
             return False
         elif buttonNo == "2":
@@ -195,7 +196,7 @@ class CellInformation(QDialog):
                 self, "Single File", QDir.rootPath(), "*.cel"
             )
             if fileName != "":
-                baseFileName = os.path.basename(str(fileName))
+
                 self.FilePath2.setText(fileName)
             return False
         elif buttonNo == "3":
@@ -203,7 +204,7 @@ class CellInformation(QDialog):
                 self, "Single File", QDir.rootPath(), "*.cel"
             )
             if fileName != "":
-                baseFileName = os.path.basename(str(fileName))
+
                 self.FilePath3.setText(fileName)
             return False
         elif buttonNo == "4":
@@ -211,7 +212,7 @@ class CellInformation(QDialog):
                 self, "Single File", QDir.rootPath(), "*.cel"
             )
             if fileName != "":
-                baseFileName = os.path.basename(str(fileName))
+
                 self.FilePath4.setText(fileName)
             return False
         return False

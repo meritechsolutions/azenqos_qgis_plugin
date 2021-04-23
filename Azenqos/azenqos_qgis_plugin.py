@@ -28,6 +28,7 @@ from PyQt5 import *
 from PyQt5.QtWidgets import *
 import sys
 import traceback
+
 # Initialize Qt resources from file resources.py
 from resources import *
 
@@ -47,9 +48,12 @@ class azenqos_qgis_plugin:
             application at run time.
         :type qgis_iface: QgsInterface
         """
-        
-        from PyQt5.QtCore import QT_VERSION_STR    
-        print("azenqos_qgis_plugin start - detected qt_version: {}".format(QT_VERSION_STR))
+
+        from PyQt5.QtCore import QT_VERSION_STR
+
+        print(
+            "azenqos_qgis_plugin start - detected qt_version: {}".format(QT_VERSION_STR)
+        )
 
         # Save reference to the QGIS interface
         self.qgis_iface = qgis_iface
@@ -204,10 +208,9 @@ class azenqos_qgis_plugin:
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: unload()1 itr exception:", exstr)
         except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: unload() remove plugin icons exception:", exstr)
-
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: unload() remove plugin icons exception:", exstr)
 
     def run(self):
         """Run method that performs all the real work"""
@@ -218,10 +221,14 @@ class azenqos_qgis_plugin:
         debug_exec_str = azq_utils.read_local_file("debug_qgis_pyexec")
         if debug_exec_str is None or debug_exec_str.strip() == "":
             pass
-        else:                            
+        else:
             print("debug_qgis_pyexec flagged - running...")
             try:
-                lines = debug_exec_str.split("\n") if "\n" in debug_exec_str else [debug_exec_str]
+                lines = (
+                    debug_exec_str.split("\n")
+                    if "\n" in debug_exec_str
+                    else [debug_exec_str]
+                )
                 for line in lines:
                     print("exec line: {}".format(line))
                     exec(line.strip())
@@ -232,21 +239,24 @@ class azenqos_qgis_plugin:
 
             print("debug_qgis_pyexec flagged - running... DONE")
             return
-        
+
         if self.dlg is None or self.dlg.closed:
             self.first_start = False
-            import main_window            
+            import main_window
+
             self.dlg = main_window.main_window(self.qgis_iface)
-            
+
         if self.dlg is not None:
             self.dlg.show()
 
 
 def ask_operation_mode():
     msgBox = QMessageBox()
-    msgBox.setWindowTitle('Operation mode')
-    msgBox.setText('Please choose operation mode:')
-    msgBox.addButton(QPushButton('ONLINE - AZENQOS Cloud Analytics'), QMessageBox.YesRole)
-    msgBox.addButton(QPushButton('OFFLINE - AZENQOS .AZM logfile'), QMessageBox.NoRole)
+    msgBox.setWindowTitle("Operation mode")
+    msgBox.setText("Please choose operation mode:")
+    msgBox.addButton(
+        QPushButton("ONLINE - AZENQOS Cloud Analytics"), QMessageBox.YesRole
+    )
+    msgBox.addButton(QPushButton("OFFLINE - AZENQOS .AZM logfile"), QMessageBox.NoRole)
     reply = msgBox.exec_()
     return reply

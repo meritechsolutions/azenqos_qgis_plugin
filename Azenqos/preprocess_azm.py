@@ -1,21 +1,18 @@
-import pandas as pd
-import sys
-import sqlite3
-
-import numpy as np
+import csv
 import os
+import re
+import shutil
 import subprocess
+import sys
+import traceback
 import zipfile
 from datetime import datetime
-import traceback
-import shutil
-import re
 
-import db_id_events
-from dprint import dprint
+import numpy as np
+import pandas as pd
+
 from dprint import debug_file_flag
-import csv
-import io
+from dprint import dprint
 
 # pd.set_option('display.max_colwidth', -1)
 
@@ -140,33 +137,12 @@ def preprocess(
         print("is_merge_azqml_mode False so doing azm preprocess tasks")
         # do required re-calculations or fixes here
         if not args is None:
-            if (
-                "recover_lost_azqml_azm_to_folder" in args
-                and not args["recover_lost_azqml_azm_to_folder"] is None
-            ):
-                print("recover_lost_azqml_azm_to_folder mode")
-                # legacy ais case
-                check_and_recover_no_azqml_case(
-                    tmp_process_dir, args["recover_lost_azqml_azm_to_folder"], args
-                )
-                print(
-                    "preprocess_azm: recover_lost_azqml_azm_to_folder mode so return now after check_and_recover_no_azqml_case()"
-                )
-                return True
-
             # split and re-insert splitted wav files to azm if not already present
             if os.name == "nt":
                 # for quick fixing check_and_put_splitted_wav_for_cont_mos
                 # azm_precheck_add_file_list would have the azqml if the sinr and friends id shift apk ver detected and azqml fixed
                 azm_precheck_add_file_list = []
-                azm_precheck_add_file_list += fix_azqml_id_shift.fix_azqml_id_shift()
-                import mos_wav_split
 
-                mos_wav_split.check_and_put_splitted_wav_for_cont_mos(
-                    tmp_process_dir,
-                    args,
-                    windows_prev_add_to_proc_azm_list=azm_precheck_add_file_list,
-                )
             else:
                 if args["target_processed_azm"] is None:
                     print(
@@ -175,15 +151,8 @@ def preprocess(
                     )
                 else:
 
-                    if gen_derived_tables.is_this_azm_a_processed_azm(tmp_process_dir):
-                        raise Exception(
-                            "ABORT: WARNING: NOTE: specified src azm is already a processed_azm - must specify original azm for preprocess stage"
-                        )
 
                     azm_precheck_add_file_list = []
-                    azm_precheck_add_file_list += (
-                        fix_azqml_id_shift.fix_azqml_id_shift()
-                    )
 
                     print("azm_precheck_add_file_list:", azm_precheck_add_file_list)
                     processed_azm_mod_list = {
@@ -194,13 +163,6 @@ def preprocess(
                     # this would detect malformed sqlite db and fix it before gen_derived_tables uses the db
                     # always_do = True to adjust for QGIS auto detect type 'float' as 'real' easier, if 'double' sometimes it gets detected as QString
                     # now this mostly wont happen so disabling to reduce cpu usage - azq_report_gen.check_and_fix_malformed_sqlite_db(g_dbfile, args, connect_and_ret_dbcon=False, always_do=False)
-
-                    #### calc derived tables - it also calls recover_azqdata_db_missing_data.check_and_recover_azqdata_db_missing_data first
-                    ret = gen_derived_tables.gen_sqlite_derived_tables(
-                        tmp_process_dir, args
-                    )
-                    processed_azm_mod_list["add_file_list"] += ret["add_file_list"]
-                    processed_azm_mod_list["omit_file_list"] += ret["omit_file_list"]
 
                     #### save to processed_azm file
                     orifn = args["azm_file"]
@@ -702,7 +664,6 @@ def get_azqdata_dat_script_log_info_df(drop_ts_dup=False):
         (dat_df.type == "1") & (dat_df.id == "205")
     ].copy()  # fix pandas modify slice setting with copy warning
     if len(s_df):
-        s_df.iloc[0].info
         # drop unused cols
         s_df = s_df[["ts", "info"]].copy()
         s_df.columns = ["ts", "script"]
@@ -1362,12 +1323,14 @@ def get_elm_info(param_col_with_arg):
 
     return None
 
+
 def get_number_param():
     elm_df = get_elm_df_from_csv()
     matched_rows = elm_df.query("var_type == 'Double' or var_type == 'Integer'")
     if len(matched_rows) > 0:
         row = matched_rows
-    return row[["var_name","n_arg_max"]]
+        return row[["var_name", "n_arg_max"]]
+    return pd.DataFrame()
 
 
 def is_param_from_azqdata_dat(param_col_no_arg):
@@ -1382,7 +1345,7 @@ def get_elm_name_from_param_col_with_arg(param_col_with_arg, return_arg_too=Fals
     arg = 1
     try:
         splitted = param_col_with_arg.rsplit("_", 1)
-        arg_int = int(
+        int(
             splitted[1]
         )  # should fail here if last part of _ is not an argument like: wcdma_n_aset_cells
         # print("note: detected int after last _ in elm_name, resetting elm_name to parts before last _ as:", splitted[0])
@@ -1678,11 +1641,15 @@ def extract_entry_from_zip(zip_fp, entry_name, target_folder, try_7za_first=Fals
         return ret_fp
     return None
 
+
 def extract_all_from_zip(zip_fp, target_folder):
-    extensions = ('.csv','.pcap', ".wav", ".txt")
+    extensions = (".csv", ".pcap", ".wav", ".txt")
     with zipfile.ZipFile(zip_fp, "r") as zip_file:
-        [zip_file.extract(file, target_folder) for file in zip_file.namelist() if file.endswith(extensions)]
-        
+        [
+            zip_file.extract(file, target_folder)
+            for file in zip_file.namelist()
+            if file.endswith(extensions)
+        ]
 
 
 def apk_verstr_to_ver_int(ver):
@@ -1692,32 +1659,6 @@ def apk_verstr_to_ver_int(ver):
     ver = int(ver)
     ret = ver
     return ret
-
-
-def get_azqdata_dat_apk_ver(ret_ori_str=False):
-    global g_datfile
-
-    try:
-        first_line = get_azqdata_dat_first_line()
-        # example: 1488181012233,2,AndroidLogStart,v3.0.602,2.0.7:15,28800000
-        verstr = first_line.split(",")[3].strip()
-        if ret_ori_str:
-            return verstr
-        ret = apk_verstr_to_ver_int(verstr)
-        return ret
-    except Exception as ve:
-        print(
-            "WARNING: get_azqdata_dat_apk_ver failed probably no azqdata.dat: try get from db if exists next - exception:",
-            ve,
-        )
-        db_path = os.path.join(get_tmp_process_dir(), "azqdata.db")
-        if not os.path.isfile(db_path):
-            raise ve
-        else:
-            with sqlite3.connect(db_path) as dbcon:
-                return get_sqlite_apk_ver(dbcon)
-
-    raise Exception("invalid state")
 
 
 def get_azqdata_dat_first_line(contains=",2,AndroidLogStart,"):
@@ -1863,11 +1804,15 @@ def merge_lat_lon_into_df(
 
 
 g_location_df_cache = {}
+
+
 def get_dbcon_location_df(dbcon, is_indoor):
     global g_location_df_cache
     if dbcon in g_location_df_cache:
-        return g_location_df_cache[dbcon]    
-    sqlstr = "select log_hash, time, posid, positioning_lat, positioning_lon from location"
+        return g_location_df_cache[dbcon]
+    sqlstr = (
+        "select log_hash, time, posid, positioning_lat, positioning_lon from location"
+    )
     location_df = pd.read_sql(sqlstr, dbcon, parse_dates=["time"])
     location_df["log_hash"] = location_df["log_hash"].astype(np.int64)
 

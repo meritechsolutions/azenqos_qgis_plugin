@@ -1,13 +1,14 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets
 from PyQt5.QtCore import Qt, pyqtSignal
 
+
 class ColorButton(QtWidgets.QPushButton):
-    '''
+    """
     Custom Qt Widget to show a chosen color.
 
     Left-clicking the button shows the color-chooser, while
     right-clicking resets the color to None (no-color).
-    '''
+    """
 
     colorChanged = pyqtSignal(object)
 
@@ -36,13 +37,13 @@ class ColorButton(QtWidgets.QPushButton):
         return self._color
 
     def onColorPicker(self):
-        '''
+        """
         Show color-picker dialog to select color.
 
 
         Qt will use the native dialog by default.
 
-        '''
+        """
         dlg = QtWidgets.QColorDialog(self)
         if self._color:
             dlg.setCurrentColor(QtGui.QColor(self._color))
@@ -56,4 +57,3 @@ class ColorButton(QtWidgets.QPushButton):
             self.setColor(self._default)
 
         return super(ColorButton, self).mousePressEvent(e)
-

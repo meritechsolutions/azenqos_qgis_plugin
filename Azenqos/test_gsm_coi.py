@@ -1,11 +1,7 @@
-import zipfile
-import os
-import shutil
 import sqlite3
-import pandas as pd
+
 import gsm_query
 import integration_test_helpers
-import numpy as np
 
 
 def test():

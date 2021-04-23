@@ -8,13 +8,12 @@ def msgbox(msg, title="Message", parent=None):
     msgBox = QMessageBox(parent)
     msgBox.setWindowTitle(title)
     msgBox.setText(msg)
-    msgBox.addButton(QPushButton('OK'), QMessageBox.YesRole)
+    msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
     reply = msgBox.exec_()
 
-    
+
 def ask_text(parent, title, msg):
     text, okPressed = QInputDialog.getText(parent, title, msg, QLineEdit.Normal, "")
     if okPressed:
         return text
     return None
-        

@@ -1,28 +1,14 @@
-import datetime
-import threading
-import sys
 import os
+import sys
 import time
 
 # Adding folder path
+from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QSlider
+
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
-import pyqtgraph as pg
 import numpy as np
-
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtGui import *
-
-try:
-    from qgis.core import *
-    from qgis.utils import *
-    from qgis.gui import *
-except:
-    pass
-
 
 
 class timeSlider(QSlider):
@@ -31,7 +17,7 @@ class timeSlider(QSlider):
         self.gc = parent.gc
         self.update()
 
-    def update(self):        
+    def update(self):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = self.gc.minTimeValue
         super().setMinimum(0)
@@ -43,7 +29,6 @@ class timeSlider(QSlider):
             self._max_value = self.gc.maxTimeValue - self.gc.minTimeValue
         except:
             self._max_value = 99
-
 
     @property
     def _value_range(self):
@@ -58,7 +43,14 @@ class timeSlider(QSlider):
         return value
 
     def setValue(self, value):
-        print("ts setValue:", value, "self._value_range", self._value_range, "self._max_int", self._max_int)
+        print(
+            "ts setValue:",
+            value,
+            "self._value_range",
+            self._value_range,
+            "self._max_int",
+            self._max_int,
+        )
         resultValue = value / self._value_range * self._max_int
         resultValue = round(resultValue)
         super().setValue(resultValue)
@@ -112,7 +104,9 @@ class timeSliderThread(QThread):
 
         # self.gc.isSliderPlay = True
         if self.gc.isSliderPlay:
-            print("timeslider self.currentSliderValue: {}".format(self.currentSliderValue))
+            print(
+                "timeslider self.currentSliderValue: {}".format(self.currentSliderValue)
+            )
             if self.currentSliderValue:
                 for x in np.arange(
                     self.currentSliderValue,
@@ -123,7 +117,14 @@ class timeSliderThread(QThread):
                         break
                     else:
                         time.sleep(sleeptime)
-                        print("valupper timeskip", timeskip, "gc.timeSlider.value()", self.gc.timeSlider.value(), "gc.slowDownValue", self.gc.slowDownValue)
+                        print(
+                            "valupper timeskip",
+                            timeskip,
+                            "gc.timeSlider.value()",
+                            self.gc.timeSlider.value(),
+                            "gc.slowDownValue",
+                            self.gc.slowDownValue,
+                        )
                         value = self.gc.timeSlider.value() + (
                             (1 * self.gc.slowDownValue) + timeskip
                         )
@@ -141,7 +142,14 @@ class timeSliderThread(QThread):
                         break
                     else:
                         time.sleep(sleeptime)
-                        print("vallower timeskip", timeskip, "gc.timeSlider.value()", self.gc.timeSlider.value(), "gc.slowDownValue", self.gc.slowDownValue)
+                        print(
+                            "vallower timeskip",
+                            timeskip,
+                            "gc.timeSlider.value()",
+                            self.gc.timeSlider.value(),
+                            "gc.slowDownValue",
+                            self.gc.slowDownValue,
+                        )
                         value = self.gc.timeSlider.value() + (
                             (1 * self.gc.slowDownValue) + timeskip
                         )

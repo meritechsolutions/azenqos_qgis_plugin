@@ -1,9 +1,7 @@
-from PyQt5.QtSql import QSqlQuery, QSqlDatabase
-import numpy as np
 import pandas as pd
-import params_disp_df
-import preprocess_azm
+from PyQt5.QtSql import QSqlQuery
 
+import params_disp_df
 
 
 class DataQuery:
@@ -29,6 +27,7 @@ class DataQuery:
             "GPRS C/I",
         ]
 
+        condition = ""
         if self.timeFilter:
             condition = "WHERE time <= '%s'" % (self.timeFilter)
 
@@ -152,7 +151,7 @@ class DataQuery:
             "HSUPA Total E DPDCH Throughput",
             "WCDMA RLC UL Throughput",
         ]
-
+        condition = ""
         if self.timeFilter:
             condition = "WHERE whs.time <= '%s'" % (self.timeFilter)
 
@@ -389,47 +388,6 @@ class DataQuery:
         self.closeConnection()
         return dataList
 
-    def getGprsEdgeInformation(self):
-        self.openConnection()
-        dataList = []
-        elementList = [
-            "Time",
-            "GPRS Attach Duration",
-            "PDP Context Activation Duration",
-            "RLC DL Throughput (kbit/s)",
-            "RLC UL Throughput (kbit/s)",
-            "DL Coding Scheme",
-            "UL Coding Scheme",
-            "DL Timeslot Used",
-            "Ul Timeslot Used",
-            "GPRS C/I",
-        ]
-
-        if self.timeFilter:
-            condition = "WHERE time <= '%s'" % (self.timeFilter)
-
-        query = QSqlQuery()
-        queryString = """SELECT udas.time, udas.data_gprs_attach_duration, udas.data_pdp_context_activation_duration, 
-                        des.data_gsm_rlc_ul_throughput, des.data_gsm_rlc_dl_throughput,
-                        des.data_egprs_dl_coding_scheme_index, des.data_egprs_ul_coding_scheme_index,
-                        des.data_gprs_timeslot_used_dl, des.data_gprs_timeslot_used_ul,
-                        des.data_gprs_ci
-                        FROM umts_data_activation_stats udas
-                        LEFT JOIN data_egprs_stats des ON udas.time = des.time
-                        %s
-                        ORDER BY time DESC
-                        LIMIT 1""" % (
-            condition
-        )
-        query.exec_(queryString)
-        while query.next():
-            for field in range(len(elementList)):
-                if query.value(field):
-                    dataList.append([elementList[field], query.value(field)])
-                else:
-                    dataList.append([elementList[field], ""])
-        self.closeConnection()
-        return dataList
 
     def getWifiActive(self):
         self.openConnection()
@@ -532,6 +490,7 @@ class DataQuery:
                 dataList.append([columnName, value, "", ""])
             return dataList
 
+
 def get_Wifi_active_df(dbcon, time_before):
     parameter_to_columns_list = [
         ("Time", ["time"], "wifi_active"),
@@ -571,31 +530,28 @@ def get_Wifi_active_df(dbcon, time_before):
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
+
 def get_wifi_scan_df(dbcon, time_before):
-    custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS
+    custom_lookback_dur_millis = params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS
     dt_before = pd.to_datetime(time_before)
     dt_after = dt_before - pd.Timedelta(custom_lookback_dur_millis, "ms")
     time_after_and = "and time >= '{}'".format(dt_after)
-    sql = "select wifi_scanned_info_time, wifi_scanned_info_record_number, wifi_scanned_info_bssid, wifi_scanned_info_ssid, wifi_scanned_info_freq, wifi_scanned_info_encryption, wifi_scanned_info_level, wifi_scanned_info_channel, wifi_scanned_info_standard, wifi_scanned_info_channel_width from wifi_scanned_info where time <= '{}' {}".format(time_before, time_after_and)
-    df = pd.DataFrame()
+    sql = "select wifi_scanned_info_time, wifi_scanned_info_record_number, wifi_scanned_info_bssid, wifi_scanned_info_ssid, wifi_scanned_info_freq, wifi_scanned_info_encryption, wifi_scanned_info_level, wifi_scanned_info_channel, wifi_scanned_info_standard, wifi_scanned_info_channel_width from wifi_scanned_info where time <= '{}' {}".format(
+        time_before, time_after_and
+    )
     df = pd.read_sql(sql, dbcon)
     if len(df) == 0:
         for i in range(300):
             df = df.append(pd.Series(), ignore_index=True)
     return df
 
+
 def get_gprs_edge_info(dbcon, time_before):
     parameter_to_columns_list = [
         ("Time", ["time"], "umts_data_activation_stats"),
         (
-            [
-                "GPRS Attach Duration",
-                "PDP Context Activation Duration",
-            ],
-            [
-                "data_gprs_attach_duration",
-                "data_pdp_context_activation_duration",
-            ],
+            ["GPRS Attach Duration", "PDP Context Activation Duration",],
+            ["data_gprs_attach_duration", "data_pdp_context_activation_duration",],
             "umts_data_activation_stats",
         ),
         (
@@ -627,6 +583,7 @@ def get_gprs_edge_info(dbcon, time_before):
         not_null_first_col=False,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
+
 
 def get_hsdpa_statistics(dbcon, time_before):
     parameter_to_columns_list = [
@@ -696,12 +653,8 @@ def get_hsdpa_statistics(dbcon, time_before):
             "wcdma_hsdpa_cqi",
         ),
         (
-            [
-                "WCDMA RLC DL Throughput",
-            ],
-            [
-                "data_wcdma_rlc_dl_throughput",
-            ],
+            ["WCDMA RLC DL Throughput",],
+            ["data_wcdma_rlc_dl_throughput",],
             "data_wcdma_rlc_stats",
         ),
     ]
@@ -712,6 +665,7 @@ def get_hsdpa_statistics(dbcon, time_before):
         not_null_first_col=False,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
+
 
 def get_hsupa_statistics(dbcon, time_before):
     parameter_to_columns_list = [
@@ -770,12 +724,8 @@ def get_hsupa_statistics(dbcon, time_before):
             "wcdma_hsupa_stats",
         ),
         (
-            [
-                "WCDMA RLC UL Throughput",
-            ],
-            [
-                "data_wcdma_rlc_ul_throughput",
-            ],
+            ["WCDMA RLC UL Throughput",],
+            ["data_wcdma_rlc_ul_throughput",],
             "data_wcdma_rlc_stats",
         ),
     ]

@@ -1,7 +1,7 @@
 import os
-from PyQt5.QtCore import *
-from PyQt5 import QtCore
-from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+
+from PyQt5.QtCore import QThreadPool
+from PyQt5.QtSql import QSqlDatabase
 
 
 class analyzer_vars:

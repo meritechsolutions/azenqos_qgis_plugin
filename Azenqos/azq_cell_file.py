@@ -1,19 +1,16 @@
-from matplotlib.path import Path
-import matplotlib.patches as patches
-
-from dprint import dprint
 import math
-import pandas as pd
-import json
-import numpy as np
-from pandas.io.json import json_normalize
+import os
 import sys
 import traceback
-import os
+
+import matplotlib.patches as patches
+import numpy as np
+import pandas as pd
+from matplotlib.path import Path
 
 import azq_utils as utils
 import plot_param_zorders
-
+from dprint import dprint
 
 CELL_FILE_RATS = ["nr", "lte", "wcdma", "gsm"]
 
@@ -681,11 +678,12 @@ def apply_cell_file(
 
             # only supported in LTE now
             if rat == "lte":
+                ''' not related to qgis plugin
                 # if custom cellfile was added inside phone log
                 (
                     is_use_dynamic_cell_df,
                     dynamic_lte_cell_df,
-                ) = get_dynamic_cell_info_flag(dbcon, rat)
+                ) = get_dynamic_cell_info_flag(dbcon, rat)                
                 if is_use_dynamic_cell_df:
                     dprint("plotting is_use_dynamic_cell_df mode for rat:", rat)
                     df = dynamic_lte_cell_df
@@ -706,6 +704,7 @@ def apply_cell_file(
                         site_font_size=site_font_size,
                         cell_font_size=cell_font_size,
                     )
+                '''
 
     dprint("apply_cell_file done")
 

@@ -1,43 +1,25 @@
 import datetime
-import shutil
-import threading
-import sys
-import traceback
 import os
-import pandas as pd
+import shutil
 import sqlite3
+import sys
+import threading
+import traceback
+import pandas as pd
+from PyQt5.QtCore import pyqtSignal, Qt, QItemSelection, QSortFilterProxyModel, QAbstractTableModel
+from PyQt5.QtGui import QStandardItemModel, QIcon, QPixmap, QStandardItem
+from PyQt5.QtWidgets import QWidget, QTableView, QAbstractItemView, QVBoxLayout, QHeaderView, QMenu, QLineEdit, \
+    QTreeView, QCheckBox, QDialogButtonBox, QDialog, QTextEdit, QGridLayout, QPushButton, QFileDialog
+
 import azq_server_api
 
 # Adding folder path
-sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
-
-import pyqtgraph as pg
-import numpy as np
-
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtGui import *
-try:
-    from qgis.core import *
-    from qgis.utils import *
-    from qgis.gui import *
-except:
-    pass
-from globalutils import Utils
-try:
-    from filter_header import *
-except:
-    pass
+from filter_header import FilterHeader, SortFilterProxyModel
 from worker import Worker
-from customize_properties import *
-import lte_query
-import wcdma_query
-import gsm_query
+
+sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
+from PyQt5 import QtCore
 from tsharkworker import TsharkDecodeWorker
-import polqa_query
-import pcap_window
 import azq_utils
 import qt_utils
 import qgis_layers_gen
@@ -49,9 +31,24 @@ class TableWindow(QWidget):
     signal_ui_thread_setup_ui = pyqtSignal()  # use with skip_setup_ui in ctor
 
     progress_update_signal = pyqtSignal(int)
-    status_update_signal = pyqtSignal(str)   
+    status_update_signal = pyqtSignal(str)
 
-    def __init__(self, parent, title, refresh_data_from_dbcon_and_time_func=None, tableHeader=None, custom_df=None, time_list_mode=False, l3_alt_wireshark_decode=False, event_mos_score=False, list_module=False, gc=None, skip_setup_ui=False, mdi=None, func_key=None ):
+    def __init__(
+        self,
+        parent,
+        title,
+        refresh_data_from_dbcon_and_time_func=None,
+        tableHeader=None,
+        custom_df=None,
+        time_list_mode=False,
+        l3_alt_wireshark_decode=False,
+        event_mos_score=False,
+        list_module=False,
+        gc=None,
+        skip_setup_ui=False,
+        mdi=None,
+        func_key=None,
+    ):
         super().__init__(parent)
         self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
         self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
@@ -69,9 +66,10 @@ class TableWindow(QWidget):
             self.gc = gc
         assert self.gc is not None
 
-        
         self.title = title
-        self.refresh_data_from_dbcon_and_time_func = refresh_data_from_dbcon_and_time_func
+        self.refresh_data_from_dbcon_and_time_func = (
+            refresh_data_from_dbcon_and_time_func
+        )
         self.custom_df = custom_df
         self.tableHeader = tableHeader
         self.rows = 0
@@ -84,7 +82,9 @@ class TableWindow(QWidget):
         self.height = 480
         self.dataList = []
         self.df = None  # if pandas mode this will be set
-        self.df_str = None  # if pandas mode this will be set - for easy string filter/search
+        self.df_str = (
+            None  # if pandas mode this will be set - for easy string filter/search
+        )
         self.customData = []
         self.customHeader = []
         self.currentRow = 0
@@ -96,9 +96,7 @@ class TableWindow(QWidget):
         self.signal_ui_thread_emit_model_datachanged.connect(
             self.ui_thread_model_datachanged
         )
-        self.signal_ui_thread_setup_ui.connect(
-            self.ui_thread_sutup_ui
-        )
+        self.signal_ui_thread_setup_ui.connect(self.ui_thread_sutup_ui)
         self.prev_layout = None
         if not skip_setup_ui:
             self.setupUi()
@@ -117,7 +115,6 @@ class TableWindow(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setMinimumSize(self.width, self.height)
         self.resize(self.width, self.height)
-
 
     def setupUi(self):
         print("tablewindow setupui()")
@@ -141,7 +138,7 @@ class TableWindow(QWidget):
         self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
 
-            # self.filterHeader.section.connect(self.horizontalHeader_sectionClicked)
+        # self.filterHeader.section.connect(self.horizontalHeader_sectionClicked)
 
         self.filterHeader.setSortIndicator(-1, Qt.AscendingOrder)
 
@@ -197,7 +194,6 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
-        
     def contextMenuEvent(self, event):
         if not self.time_list_mode:
             return
@@ -214,16 +210,26 @@ class TableWindow(QWidget):
             if not len(self.tableModel.df):
                 qt_utils.msgbox("This table is empty - no rows to use...")
                 return
-            if self.tableModel.df is None or (not ("log_hash" in self.tableModel.df.columns and "time" in self.tableModel.df.columns)):
-                qt_utils.msgbox("This table doesn't contain required columns to add lat/lon: log_hash, time")
+            if self.tableModel.df is None or (
+                not (
+                    "log_hash" in self.tableModel.df.columns
+                    and "time" in self.tableModel.df.columns
+                )
+            ):
+                qt_utils.msgbox(
+                    "This table doesn't contain required columns to add lat/lon: log_hash, time"
+                )
             else:
-                layer_name = qt_utils.ask_text(self, "New layer", "Please specify layer name:")
+                layer_name = qt_utils.ask_text(
+                    self, "New layer", "Please specify layer name:"
+                )
                 if layer_name:
                     with sqlite3.connect(self.gc.databasePath) as dbcon:
                         # load it into qgis as new layer
-                        qgis_layers_gen.create_qgis_layer_df(self.tableModel.df, dbcon, layer_name=layer_name)
+                        qgis_layers_gen.create_qgis_layer_df(
+                            self.tableModel.df, dbcon, layer_name=layer_name
+                        )
 
-    
     def headerMenu(self, pos):
         globalPos = self.mapToGlobal(pos)
         menu = QMenu()
@@ -242,11 +248,10 @@ class TableWindow(QWidget):
         # self.menu.exec_(QtCore.QPoint(posX, posY))
 
     def setFilterListModel(self, columnIndex, checkedRegexList):
-        print("setFilterListModel: columnIndex {}, checkedRegexList {}".format())
+        print("setFilterListModel: columnIndex {}, checkedRegexList {}".format(columnIndex, checkedRegexList))
         self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
         self.proxyModel.invalidateFilter()
 
-        
     def ui_thread_model_datachanged(self):
         print("ui_thread_model_datachanged")
         # this func is supposed to be called as a slot by ui thread - triggered by signal from non-ui thread
@@ -257,25 +262,23 @@ class TableWindow(QWidget):
             index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
         )
 
-
     def setup_ui_with_custom_df(self, custom_df):
         self.custom_df = custom_df
         if self.time_list_mode:
             self.tableHeader = custom_df.columns.values.tolist()
         self.signal_ui_thread_setup_ui.emit()
 
-        
     """
     for trigger like window.signal_ui_thread_setup_ui.emit() when skip_setup_ui flagged in ctor
     """
+
     def ui_thread_sutup_ui(self):
         print("ui_thread_sutup_ui")
         self.setupUi()
-        
 
     def updateTableModelData(self, data):
-        if self.tableModel is None:            
-             self.setTableModel(data)
+        if self.tableModel is None:
+            self.setTableModel(data)
         if self.tableModel is not None:
             print("updateTableModelData()")
             self.tableModel.setData(None, data)
@@ -346,7 +349,6 @@ class TableWindow(QWidget):
             # print("resizeColumnsToContents()")
             # self.tableView.resizeColumnsToContents()
 
-    
     def set_pd_df(self, dataList):
         self.dataList = dataList
         if isinstance(dataList, pd.DataFrame):
@@ -355,7 +357,7 @@ class TableWindow(QWidget):
         else:
             self.df = None
             self.df_str = None
-        
+
     def setDataSet(self, data_set: list):
         self.dataList = data_set
 
@@ -364,36 +366,44 @@ class TableWindow(QWidget):
             self.rowCount = sizelist[0]
             self.columnCount = sizelist[1]
 
-
     def refreshTableContents(self, create_table_model=False):
         print("datatable refreshTableContents()")
         self.setMinimumSize(0, 0)
         if self.custom_df is not None:
             print("datatable refreshTableContents() custom_df")
             self.set_pd_df(self.custom_df)
-        elif self.gc.databasePath is not None and self.refresh_data_from_dbcon_and_time_func is not None:
+        elif (
+            self.gc.databasePath is not None
+            and self.refresh_data_from_dbcon_and_time_func is not None
+        ):
             try:
                 with sqlite3.connect(self.gc.databasePath) as dbcon:
-                    print("datatable refreshTableContents() refresh_data_from_dbcon_and_time_func")
-                    self.set_pd_df(self.refresh_data_from_dbcon_and_time_func(dbcon, self.gc.currentDateTimeString))
+                    print(
+                        "datatable refreshTableContents() refresh_data_from_dbcon_and_time_func"
+                    )
+                    self.set_pd_df(
+                        self.refresh_data_from_dbcon_and_time_func(
+                            dbcon, self.gc.currentDateTimeString
+                        )
+                    )
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: datatable title {} refreshTableContents() failed exception: {}".format(self.title, exstr))
+                print(
+                    "WARNING: datatable title {} refreshTableContents() failed exception: {}".format(
+                        self.title, exstr
+                    )
+                )
                 self.set_pd_df(pd.DataFrame({"status", exstr}))
-            
+
         if self.dataList is not None:
             if create_table_model:
                 print("datatable refreshTableContents() settablemodel")
                 self.setTableModel(self.dataList)
             else:
                 print("datatable refreshTableContents() updatetablemodeldata")
-                self.updateTableModelData(
-                    self.dataList
-                )  # applies new self.dataList
+                self.updateTableModelData(self.dataList)  # applies new self.dataList
             self.tableViewCount = self.tableView.model().rowCount()
-
-
 
     def setHeader(self, headers):
         # self.tableHeader = headers
@@ -413,7 +423,6 @@ class TableWindow(QWidget):
             self.properties_window.setupUi()
             self.properties_window.setupComboBox()
             self.properties_window.show()
-            
 
     def hilightRow(self, sampledate, threading=False):
         print("hilightRow: sampledate: %s" % sampledate)
@@ -441,13 +450,12 @@ class TableWindow(QWidget):
 
         if threading and worker:
             self.gc.threadpool.start(worker)
-            
 
     def showDetail(self, item):
-        row_index = item.row()        
+        row_index = item.row()
         print("showDetail row_index: %d" % row_index)
         row_sr = self.tableModel.df.iloc[row_index]
-        #cellContent = str(item.data())
+        # cellContent = str(item.data())
         cellContent = ""
         for index, val in row_sr.items():
             cellContent += "[{}]: {}\n".format(index, val)
@@ -460,13 +468,22 @@ class TableWindow(QWidget):
             name = row_sr["name"]
             side = row_sr["dir"]
             protocol = row_sr["protocol"]
-            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side, protocol)
+            self.detailWidget = DetailWidget(
+                self.gc, parentWindow, cellContent, name, side, protocol
+            )
         elif self.event_mos_score and row_sr["name"].find("MOS Score") != -1:
             name = row_sr["name"]
             side = {}
-            side["wav_file"] = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"])
-            side["text_file"] = os.path.join(azq_utils.tmp_gen_path(),row_sr["wave_file"].replace(".wav", "_polqa.txt"))
-            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent, name, side)
+            side["wav_file"] = os.path.join(
+                azq_utils.tmp_gen_path(), row_sr["wave_file"]
+            )
+            side["text_file"] = os.path.join(
+                azq_utils.tmp_gen_path(),
+                row_sr["wave_file"].replace(".wav", "_polqa.txt"),
+            )
+            self.detailWidget = DetailWidget(
+                self.gc, parentWindow, cellContent, name, side
+            )
         elif self.list_module:
             dlg = module_dialog.module_dialog(self, row_sr, self.gc, self.mdi)
             dlg.show()
@@ -516,12 +533,12 @@ class TableWindow(QWidget):
                 timeCell = datetime.datetime.strptime(
                     str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
                 ).timestamp()
-            except Exception as e:
+            except Exception:
                 # if current cell is not Time cell
                 headers = [item.lower() for item in self.tableHeader]
                 try:
                     columnIndex = headers.index("time")
-                except Exception as e2:
+                except Exception:
                     columnIndex = -1
                 if not columnIndex == -1:
                     timeItem = item.sibling(item.row(), columnIndex)
@@ -549,16 +566,15 @@ class TableWindow(QWidget):
     def findCurrentRow(self):
         if isinstance(self.dataList, pd.DataFrame):
             if self.dateString:
-                df = self.tableModel.df  #self.dataList
+                df = self.tableModel.df  # self.dataList
                 ts_query = """time <= '{}'""".format(self.dateString)
                 print("ts_query:", ts_query)
                 df = df.query(ts_query).reset_index()
-                print('findcurrentrow after query df len: %d', len(df))
+                print("findcurrentrow after query df len: %d", len(df))
                 if len(df):
                     self.currentRow = df.index[-1]
                     self.tableView.selectRow(self.currentRow)
                 return
-            
 
     def closeEvent(self, QCloseEvent):
         indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
@@ -580,7 +596,7 @@ class FilterMenuWidget(QWidget):
     def setupUi(self, FilterMenuWidget):
         self.setObjectName("FilterMenuWidget")
         self.resize(400, 300)
-        self.verticalLayout = QtWidgets.QVBoxLayout(FilterMenuWidget)
+        self.verticalLayout = QVBoxLayout(FilterMenuWidget)
         self.verticalLayout.setObjectName("verticalLayout")
 
         self.searchBox = QLineEdit(FilterMenuWidget)
@@ -597,9 +613,9 @@ class FilterMenuWidget(QWidget):
         self.verticalLayout.addWidget(self.selectAllCb)
         self.selectAllCb.stateChanged.connect(self.selectAll)
 
-        self.buttonBox = QtWidgets.QDialogButtonBox(FilterMenuWidget)
+        self.buttonBox = QDialogButtonBox(FilterMenuWidget)
         self.buttonBox.setStandardButtons(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+            QDialogButtonBox.Cancel | QDialogButtonBox.Ok
         )
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout.addWidget(self.buttonBox)
@@ -657,7 +673,7 @@ class FilterMenuWidget(QWidget):
 
     def search(self, text):
         # self.proxyModel.setFilterRegExp(text)
-        print("filtermenuwidget: search: text:",text)
+        print("filtermenuwidget: search: text:", text)
 
     def setFilter(self):
         print("filtermenuwidget: setFilter")
@@ -683,7 +699,9 @@ class FilterMenuWidget(QWidget):
 class DetailWidget(QDialog):
     closed = False
 
-    def __init__(self, gc, parent, detailText, messageName=None, side=None, protocol=None):
+    def __init__(
+        self, gc, parent, detailText, messageName=None, side=None, protocol=None
+    ):
         super().__init__(None)
         self.title = "Details"
         self.gc = gc
@@ -712,7 +730,7 @@ class DetailWidget(QDialog):
         self.textEdit.setReadOnly(True)
         layout = QVBoxLayout(self)
         layout.addWidget(self.textEdit)
-        self.setLayout(layout)        
+        self.setLayout(layout)
         self.show()
         self.raise_()
         self.activateWindow()
@@ -776,9 +794,10 @@ class DetailWidget(QDialog):
 
         self.setLayout(gridlayout)
         f = open(self.side["text_file"], "r")
-        self.textEdit.setPlainText(self.detailText+'\n'+f.read())
+        self.textEdit.setPlainText(self.detailText + "\n" + f.read())
         f.close()
         from PyQt5 import QtMultimedia
+
         self.polqaWavFile = QtMultimedia.QSound(self.side["wav_file"])
         self.resize(self.width, self.height)
         self.show()
@@ -872,7 +891,6 @@ class PdTableModel(QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.df.columns)
 
-
     def setStrColFilters(self, filters):
         print("pdtablemodel setStrColFilters filteres START")
         self.df = self.df_full
@@ -882,7 +900,9 @@ class PdTableModel(QAbstractTableModel):
             regex = filters[col_index].pattern()  # QRegExp
             if col and regex:
                 print("setStrColFilters col: {} regex: {}".format(col, regex))
-                self.df = self.df[self.df[col].astype(str).str.contains(regex, case=False)]
+                self.df = self.df[
+                    self.df[col].astype(str).str.contains(regex, case=False)
+                ]
         if changed:
             """
             index_topleft = self.index(0, 0)
@@ -895,8 +915,12 @@ class PdTableModel(QAbstractTableModel):
             print("pdtablemodel setStrColFilters emit done")
         else:
             print("pdtablemodel setStrColFilters not changed")
-            
-        print("pdtablemodel setStrColFilters filteres DONE len(self.df_full) {} len(self.df) {}".format(len(self.df_full), len(self.df)))
+
+        print(
+            "pdtablemodel setStrColFilters filteres DONE len(self.df_full) {} len(self.df) {}".format(
+                len(self.df_full), len(self.df)
+            )
+        )
 
     # override
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
@@ -959,37 +983,57 @@ class PdTableModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
 
-
-def create_table_window_from_api_expression_ret(parent, title, gc, server, token, lhl, azq_report_gen_expression, mdi=None, list_module=False):
-    window = TableWindow(parent, title, None, gc=gc, time_list_mode=True, skip_setup_ui=True, mdi=mdi, list_module=list_module)
+def create_table_window_from_api_expression_ret(
+    parent,
+    title,
+    gc,
+    server,
+    token,
+    lhl,
+    azq_report_gen_expression,
+    mdi=None,
+    list_module=False,
+):
+    window = TableWindow(
+        parent,
+        title,
+        None,
+        gc=gc,
+        time_list_mode=True,
+        skip_setup_ui=True,
+        mdi=mdi,
+        list_module=list_module,
+    )
     gen_thread = threading.Thread(
         target=run_api_expression_and_set_results_to_table_window,
-                    args=(
-                        window,
-                        server, token, lhl, azq_report_gen_expression
-                    )
+        args=(window, server, token, lhl, azq_report_gen_expression),
     )
     gen_thread.start()
     return window
 
 
-def run_api_expression_and_set_results_to_table_window(window, server, token, lhl, azq_report_gen_expression):
+def run_api_expression_and_set_results_to_table_window(
+    window, server, token, lhl, azq_report_gen_expression
+):
     try:
-        ret_dict = azq_server_api.api_py_eval_get_parsed_ret_dict(server, token, lhl, azq_report_gen_expression, progress_update_signal=window.progress_update_signal, status_update_signal=window.status_update_signal, done_signal=None)
-        #time.sleep(1)
+        ret_dict = azq_server_api.api_py_eval_get_parsed_ret_dict(
+            server,
+            token,
+            lhl,
+            azq_report_gen_expression,
+            progress_update_signal=window.progress_update_signal,
+            status_update_signal=window.status_update_signal,
+            done_signal=None,
+        )
+        # time.sleep(1)
         print("api call ret_dict: {}".format(ret_dict))
         df = azq_server_api.parse_py_eval_ret_dict_for_df(server, token, ret_dict)
         if df is None:
-            df = pd.DataFrame(
-                {
-                    "result": [ret_dict["ret"]],
-                }
-            )
+            df = pd.DataFrame({"result": [ret_dict["ret"]],})
         window.setup_ui_with_custom_df(df)
-    except Exception as ex:
+    except Exception:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: api_py_eval_and_wait_completion exception: {}", exstr)
-        df = pd.DataFrame({'FAILED':[exstr]})
+        df = pd.DataFrame({"FAILED": [exstr]})
         window.setup_ui_with_custom_df(df)
-

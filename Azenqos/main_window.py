@@ -1,52 +1,55 @@
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtGui import *
-from PyQt5.uic import loadUi
-try:
-    from qgis.core import *
-    from qgis.utils import *
-    from qgis.gui import *
-except:
-    pass
 import datetime
+import shutil
 import threading
-import sys
 import traceback
+
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import QSettings, pyqtSlot, pyqtSignal
+from PyQt5.QtGui import QDoubleValidator, QPixmap, QIcon
+from PyQt5.QtWidgets import QLabel, QLineEdit, QDateTimeEdit, QToolButton, QHBoxLayout, QFileDialog, QMdiSubWindow, \
+    QApplication, QMainWindow, QSizePolicy, QWidget, QStyle, QMessageBox, QPushButton
+from PyQt5.uic import loadUi
+
+import qt_utils, azq_utils
+from datatable import create_table_window_from_api_expression_ret, TableWindow
+from timeslider import timeSliderThread, timeSlider
+from worker import Worker
+
+try:
+    # noinspection PyUnresolvedReferences
+    from qgis.core import QgsProject, QgsLayerTreeGroup, QgsCoordinateReferenceSystem, QgsPointXY, QgsRectangle, QgsGeometry, QgsMessageLog, QgsFeatureRequest, QgsApplication
+    #from qgis.utils import
+    from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
+    print("mainwindow working in qgis mode")
+except:
+    print("mainwindow working in standalone mode")
+    pass
 import os
-import csv
+import sys
+
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
-import pyqtgraph as pg
-import numpy as np
-import time
 
 import analyzer_vars
+
 try:
     import tasks
 except:
     pass
-import azq_utils
-import shutil
-from cdma_evdo_query import CdmaEvdoQuery
-from globalutils import Utils
-from linechart import *
-from worker import Worker
-from timeslider import *
-from datatable import *
 from atomic_int import atomic_int
 import import_db_dialog
 import params_disp_df
 from version import VERSION
+
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 import inspect
-import configparser
-import linechart
 import linechart_custom
 import linechart_multi_y_axis
+import time
+import pandas as pd
 
 class main_window(QMainWindow):
 
@@ -58,7 +61,7 @@ class main_window(QMainWindow):
         azq_utils.cleanup_died_processes_tmp_folders()
 
         ######## instance vars
-        self.closed = False        
+        self.closed = False
         self.gc = analyzer_vars.analyzer_vars()
         self.gc.qgis_iface = qgis_iface
         self.timechange_service_thread = None
@@ -68,16 +71,16 @@ class main_window(QMainWindow):
         )
         self.dbfp = None
         self.qgis_iface = qgis_iface
-        self.timeSliderThread = timeSliderThread(self.gc)        
+        self.timeSliderThread = timeSliderThread(self.gc)
         self.settings = QSettings(
             azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat
         )
         ########################
-        
+
         self.setupUi()
 
         if self.qgis_iface is None:
-            print("analyzer_window: standalone mode")            
+            print("analyzer_window: standalone mode")
         else:
             print("analyzer_window: qgis mode")
             self.canvas = qgis_iface.mapCanvas()
@@ -89,7 +92,6 @@ class main_window(QMainWindow):
             root = QgsProject.instance().layerTreeRoot()
             root.addedChildren.connect(self.mergeLayerGroup)
             QgsProject.instance().layerWillBeRemoved.connect(self.removingTreeLayer)
-
 
         self.timechange_service_thread = Worker(self.timeChangedWorkerFunc)
         self.gc.threadpool.start(self.timechange_service_thread)
@@ -110,13 +112,12 @@ class main_window(QMainWindow):
     def on_actionOpen_workspace_triggered(self):
         print("open workspace")
         self.loadWorkspaceFile()
-        
+
     @pyqtSlot()
     def on_actionSave_workspace_triggered(self):
         print("save workspace")
         self.saveWorkspaceFile()
 
-    
     ############# server_modules menu slots
     @pyqtSlot()
     def on_actionSession_info_triggered(self):
@@ -129,17 +130,20 @@ User: {}
 Log_hash list: {}""".format(
                 "Yes" if self.gc.login_dialog.token else "No",
                 self.gc.login_dialog.server,
-                self.gc.login_dialog.user,    
-                self.gc.login_dialog.lhl
+                self.gc.login_dialog.user,
+                self.gc.login_dialog.lhl,
             )
         qt_utils.msgbox(msg, parent=self)
 
-        
     @pyqtSlot()
     def on_actionLogin_triggered(self):
         if self.is_logged_in():
-            qt_utils.msgbox("WARNING: You are already logged in - close login dialog to cancel re-login...", parent=self)
+            qt_utils.msgbox(
+                "WARNING: You are already logged in - close login dialog to cancel re-login...",
+                parent=self,
+            )
         import login_dialog
+
         dlg = login_dialog.login_dialog(self, self.gc, download_db_zip=False)
         dlg.show()
         ret = dlg.exec()
@@ -147,7 +151,6 @@ Log_hash list: {}""".format(
             return
         self.gc.login_dialog = dlg
 
-        
     @pyqtSlot()
     def on_actionLogout_triggered(self):
         msg = "Logged out..."
@@ -157,7 +160,6 @@ Log_hash list: {}""".format(
             self.gc.login_dialog.token = None
         qt_utils.msgbox(msg, parent=self)
 
-        
     @pyqtSlot()
     def on_actionRun_server_modules_triggered(self):
         if not self.is_logged_in():
@@ -165,7 +167,17 @@ Log_hash list: {}""".format(
             return
         azq_report_gen_expression = "list_modules_with_process_cell_func.run()"
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = create_table_window_from_api_expression_ret(swa, "Server processing modules", self.gc, self.gc.login_dialog.server, self.gc.login_dialog.token, self.gc.login_dialog.lhl, azq_report_gen_expression, mdi = self.mdi, list_module=True)
+        widget = create_table_window_from_api_expression_ret(
+            swa,
+            "Server processing modules",
+            self.gc,
+            self.gc.login_dialog.server,
+            self.gc.login_dialog.token,
+            self.gc.login_dialog.lhl,
+            azq_report_gen_expression,
+            mdi=self.mdi,
+            list_module=True,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
@@ -173,67 +185,109 @@ Log_hash list: {}""".format(
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
             return
-        py_eval_code = qt_utils.ask_text(self, "PY_EVAL code", "Please enter PY_EVAL code to run:")
+        py_eval_code = qt_utils.ask_text(
+            self, "PY_EVAL code", "Please enter PY_EVAL code to run:"
+        )
         if py_eval_code:
             swa = SubWindowArea(self.mdi, self.gc)
-            widget = create_table_window_from_api_expression_ret(swa, "PY_EVAL server run", self.gc, self.gc.login_dialog.server, self.gc.login_dialog.token, self.gc.login_dialog.lhl, py_eval_code)
+            widget = create_table_window_from_api_expression_ret(
+                swa,
+                "PY_EVAL server run",
+                self.gc,
+                self.gc.login_dialog.server,
+                self.gc.login_dialog.token,
+                self.gc.login_dialog.lhl,
+                py_eval_code,
+            )
             self.add_subwindow_with_widget(swa, widget)
-            
-            
 
     def run_py_eval_code_code_and_emit_to_window_once_done(self, py_eval_code, window):
-        time.sleep(1)
-        df = pd.DataFrame({'status':["done"],'status2':["done2"]})
-        window.df = df
-        window.tableHeader=df.columns.values.tolist()
-        window.signal_ui_thread_emit_new_df.emit()
-        
 
+        time.sleep(1)
+        df = pd.DataFrame({"status": ["done"], "status2": ["done2"]})
+        window.df = df
+        window.tableHeader = df.columns.values.tolist()
+        window.signal_ui_thread_emit_new_df.emit()
 
     @pyqtSlot()
     def on_actionRun_SQL_code_triggered(self):
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
             return
-        py_eval_code = qt_utils.ask_text(self, "SQL code", "Please enter SQL code to run:")        
+        py_eval_code = qt_utils.ask_text(
+            self, "SQL code", "Please enter SQL code to run:"
+        )
         if py_eval_code:
             py_eval_code = "sql_helpers.read_sql('''{}''', dbcon)".format(py_eval_code)
             swa = SubWindowArea(self.mdi, self.gc)
-            widget = create_table_window_from_api_expression_ret(swa, "SQL run from server", self.gc, self.gc.login_dialog.server, self.gc.login_dialog.token, self.gc.login_dialog.lhl, py_eval_code)
+            widget = create_table_window_from_api_expression_ret(
+                swa,
+                "SQL run from server",
+                self.gc,
+                self.gc.login_dialog.server,
+                self.gc.login_dialog.token,
+                self.gc.login_dialog.lhl,
+                py_eval_code,
+            )
             self.add_subwindow_with_widget(swa, widget)
-
 
     def is_logged_in(self):
         return self.gc.login_dialog and self.gc.login_dialog.token
-    
-    
+
     ############# system menu slots
     @pyqtSlot()
     def on_actionTechnology_triggered(self):
         print("technology")
         import system_query
+
         headers = ["log_hash", "time", "main_param", "rat"]
-        swa = SubWindowArea(self.mdi, self.gc)        
-        widget = TableWindow(swa, "Technology", system_query.get_technology_df, tableHeader=headers, time_list_mode=True, l3_alt_wireshark_decode=True, func_key = inspect.currentframe().f_code.co_name)
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Technology",
+            system_query.get_technology_df,
+            tableHeader=headers,
+            time_list_mode=True,
+            l3_alt_wireshark_decode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
-        
+
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):
         print("action l3")
         import signalling_query
+
         headers = ["log_hash", "time", "name", "dir", "protocol", "detail"]
-        swa = SubWindowArea(self.mdi, self.gc)        
-        widget = TableWindow(swa, "Layer-3 Messages", signalling_query.get_signalling, tableHeader=headers, time_list_mode=True, l3_alt_wireshark_decode=True, func_key = inspect.currentframe().f_code.co_name)
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Layer-3 Messages",
+            signalling_query.get_signalling,
+            tableHeader=headers,
+            time_list_mode=True,
+            l3_alt_wireshark_decode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
-        
+
     @pyqtSlot()
     def on_actionEvents_triggered(self):
         print("action events")
         import signalling_query
+
         headers = ["log_hash", "time", "name", "info"]
-        swa = SubWindowArea(self.mdi, self.gc)        
-        widget = TableWindow(swa, "Events", signalling_query.get_events, tableHeader=headers, time_list_mode=True, event_mos_score=True, func_key = inspect.currentframe().f_code.co_name)
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Events",
+            signalling_query.get_events,
+            tableHeader=headers,
+            time_list_mode=True,
+            event_mos_score=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     ############# NR menu slots
@@ -242,142 +296,243 @@ Log_hash list: {}""".format(
     def on_action5GNR_Radio_Parameters_triggered(self):
         print("action nr radio params")
         import nr_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "5GNR Radio Parameters", nr_query.get_nr_radio_params_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "5GNR Radio Parameters",
+            nr_query.get_nr_radio_params_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
         print("action nr serving neigh")
         import nr_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "5GNR Serving + Neighbors", nr_query.get_nr_serv_and_neigh_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "5GNR Serving + Neighbors",
+            nr_query.get_nr_serv_and_neigh_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
-    
+
     ############# LTE menu slots
     @pyqtSlot()
     def on_actionLTE_Radio_Parameters_triggered(self):
         print("action lte radio params")
         import lte_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE Radio Parameters", lte_query.get_lte_radio_params_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "LTE Radio Parameters",
+            lte_query.get_lte_radio_params_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionLTE_Serving_Neighbors_triggered(self):
         print("action lte serving neigh")
         import lte_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE Serving + Neighbors", lte_query.get_lte_serv_and_neigh_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "LTE Serving + Neighbors",
+            lte_query.get_lte_serv_and_neigh_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionLTE_Data_Params_triggered(self):
         print("action lte data param")
         import lte_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE Data Params", lte_query.get_lte_data_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "LTE Data Params",
+            lte_query.get_lte_data_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionLTE_PUCCH_PDSCH_Params_triggered(self):
         print("action lte pucch pdsch param")
         import lte_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE PUCCH/PDSCH Params", lte_query.get_lte_pucch_pdsch_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "LTE PUCCH/PDSCH Params",
+            lte_query.get_lte_pucch_pdsch_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionLTE_RRC_SIB_States_triggered(self):
         print("action lte rrc sib states")
         import lte_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE RRC/SIB States", lte_query.get_lte_rrc_sib_states_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "LTE RRC/SIB States",
+            lte_query.get_lte_rrc_sib_states_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionLTE_RLC_triggered(self):
         print("action lte rlc")
         import lte_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE RLC", lte_query.get_lte_rlc_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "LTE RLC",
+            lte_query.get_lte_rlc_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionLTE_VoLTE_triggered(self):
         print("action lte volte")
         import lte_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "LTE VoLTE", lte_query.get_volte_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "LTE VoLTE",
+            lte_query.get_volte_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
-        
     ############# WCDMA menu slots
 
     @pyqtSlot()
     def on_actionWCDMA_Radio_Parameters_triggered(self):
         print("action wcdma radio params")
         import wcdma_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WCDMA Radio Parameters", wcdma_query.get_wcdma_radio_params_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "WCDMA Radio Parameters",
+            wcdma_query.get_wcdma_radio_params_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionWCDMA_Active_Monitored_sets_triggered(self):
         print("action wcdma active monitored")
         import wcdma_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WCDMA Active + Monitored sets", wcdma_query.get_wcdma_acive_monitored_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "WCDMA Active + Monitored sets",
+            wcdma_query.get_wcdma_acive_monitored_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionWCDMA_BLER_Summary_triggered(self):
         print("action wcdma bler summary")
         import wcdma_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WCDMA BLER Summary", wcdma_query.get_bler_sum_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "WCDMA BLER Summary",
+            wcdma_query.get_bler_sum_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionWCDMA_Bearers_triggered(self):
         print("action wcdma bearers")
         import wcdma_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WCDMA Bearers", wcdma_query.get_wcdma_bearers_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "WCDMA Bearers",
+            wcdma_query.get_wcdma_bearers_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
-        
+
     ############# GSM menu slots
 
     @pyqtSlot()
     def on_actionGSM_Physical_Parameters_triggered(self):
         print("action gsm radio params")
         import gsm_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM Radio Parameters", gsm_query.get_gsm_radio_params_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "GSM Radio Parameters",
+            gsm_query.get_gsm_radio_params_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionGSM_Serving_Neighbors_triggered(self):
         print("action gsm serving neigh")
         import gsm_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM Serving + Neighbors", gsm_query.get_gsm_serv_and_neigh__df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "GSM Serving + Neighbors",
+            gsm_query.get_gsm_serv_and_neigh__df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionGSM_Current_Channel_triggered(self):
         print("action gsm current channel")
         import gsm_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM Current Channel", gsm_query.get_gsm_current_channel_disp_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "GSM Current Channel",
+            gsm_query.get_gsm_current_channel_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionGSM_C_I_triggered(self):
         print("action gsm coi")
         import gsm_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GSM C/I", gsm_query.get_coi_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "GSM C/I",
+            gsm_query.get_coi_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     ############# PCAP menu slots
@@ -386,9 +541,30 @@ Log_hash list: {}""".format(
     def on_actionPCAP_triggered(self):
         print("action pcap")
         import pcap_window
-        headers = ["log_hash", "time", "source", "destination", "protocol", "tcp.srcport", "tcp.dstport", "udp.srcport", "udp0.dstport", "packet.size", "info", "file_name"]
+
+        headers = [
+            "log_hash",
+            "time",
+            "source",
+            "destination",
+            "protocol",
+            "tcp.srcport",
+            "tcp.dstport",
+            "udp.srcport",
+            "udp0.dstport",
+            "packet.size",
+            "info",
+            "file_name",
+        ]
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "PCAP", pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()), tableHeader=headers, time_list_mode=True, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "PCAP",
+            pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()),
+            tableHeader=headers,
+            time_list_mode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     ############# Data menu slots
@@ -397,49 +573,80 @@ Log_hash list: {}""".format(
     def on_actionWiFi_Active_triggered(self):
         print("action wifi active")
         import data_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WiFi Active", data_query.get_Wifi_active_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "WiFi Active",
+            data_query.get_Wifi_active_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionWiFi_Scan_triggered(self):
         print("action wifi scan")
         import data_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "WiFi Scan", data_query.get_wifi_scan_df, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "WiFi Scan",
+            data_query.get_wifi_scan_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionGPRS_EDGE_Information_triggered(self):
         print("action gprs edge info")
         import data_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "GPRS/EDGE Information", data_query.get_gprs_edge_info, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "GPRS/EDGE Information",
+            data_query.get_gprs_edge_info,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionHSDPA_Statistics_triggered(self):
         print("action hadpa statistics")
         import data_query
+
         swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "HSDPA Statistics", data_query.get_hsdpa_statistics, func_key = inspect.currentframe().f_code.co_name)
+        widget = TableWindow(
+            swa,
+            "HSDPA Statistics",
+            data_query.get_hsdpa_statistics,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
     def on_actionHSUPA_Statistics_triggered(self):
         print("action haupa statistics")
         import data_query
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(swa, "HSUPA Statistics", data_query.get_hsupa_statistics, func_key = inspect.currentframe().f_code.co_name)
-        self.add_subwindow_with_widget(swa, widget)
 
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "HSUPA Statistics",
+            data_query.get_hsupa_statistics,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
 
     def show_line_chart_dialog(self):
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Question)
         msgBox.setText("Use Multiple Y-Axis")
         msgBox.setWindowTitle("Line Chart")
-        msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        msgBox.setStandardButtons(
+            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
+        )
 
         returnValue = msgBox.exec()
         return returnValue == QtWidgets.QMessageBox.Ok
@@ -453,11 +660,20 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(self.gc, paramList = [{"name":"nr_servingbeam_ss_rsrp_1", "null":True, "data":False}, {"name":"nr_servingbeam_ss_rsrq_1", "null":True, "data":False}, {"name":"nr_servingbeam_ss_sinr_1", "null":True, "data":False}])
+        linechart_window = linechart_file_name.LineChart(
+            self.gc,
+            paramList=[
+                {"name": "nr_servingbeam_ss_rsrp_1", "null": True, "data": False},
+                {"name": "nr_servingbeam_ss_rsrq_1", "null": True, "data": False},
+                {"name": "nr_servingbeam_ss_sinr_1", "null": True, "data": False},
+            ],
+        )
+
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
+
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
@@ -471,11 +687,39 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(self.gc, paramList = [{"name":"data_trafficstat_dl/1000", "null":True, "data":True}, {"name":"data_trafficstat_ul/1000", "null":True, "data":True}, {"name":"nr_p_plus_scell_nr_pdsch_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_nr_pusch_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "null":True, "data":True}, {"name":"nr_p_plus_scell_lte_ul_pdcp_tput_mbps", "null":True, "data":True}])
+        linechart_window = linechart_file_name.LineChart(
+            self.gc,
+            paramList=[
+                {"name": "data_trafficstat_dl/1000", "null": True, "data": True},
+                {"name": "data_trafficstat_ul/1000", "null": True, "data": True},
+                {
+                    "name": "nr_p_plus_scell_nr_pdsch_tput_mbps",
+                    "null": True,
+                    "data": True,
+                },
+                {
+                    "name": "nr_p_plus_scell_nr_pusch_tput_mbps",
+                    "null": True,
+                    "data": True,
+                },
+                {
+                    "name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps",
+                    "null": True,
+                    "data": True,
+                },
+                {
+                    "name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps",
+                    "null": True,
+                    "data": True,
+                },
+            ],
+        )
+
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
+
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
@@ -491,17 +735,27 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(self.gc, paramList = [{"name":"lte_sinr_1", "null":False, "data":False}, {"name":"lte_inst_rsrp_1", "null":False, "data":False}, {"name":"lte_inst_rsrq_1", "null":False, "data":False}, {"name":"lte_inst_rssi_1", "null":False, "data":False}])
+        linechart_window = linechart_file_name.LineChart(
+            self.gc,
+            paramList=[
+                {"name": "lte_sinr_1", "null": False, "data": False},
+                {"name": "lte_inst_rsrp_1", "null": False, "data": False},
+                {"name": "lte_inst_rsrq_1", "null": False, "data": False},
+                {"name": "lte_inst_rssi_1", "null": False, "data": False},
+            ],
+        )
+
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
+
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
         linechart_window.setWindowTitle("LTE Line Chart")
-        
+
     @pyqtSlot()
     def on_actionLTE_DATA_Line_Chart_triggered(self):
         print("action lte data line chart")
@@ -509,11 +763,21 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(self.gc, paramList = [{"name":"data_trafficstat_dl/1000", "null":False, "data":True}, {"name":"data_trafficstat_ul/1000", "null":False, "data":True}, {"name":"lte_l1_throughput_mbps_1", "null":False, "data":True}, {"name":"lte_bler_1", "null":False, "data":True}])
+        linechart_window = linechart_file_name.LineChart(
+            self.gc,
+            paramList=[
+                {"name": "data_trafficstat_dl/1000", "null": False, "data": True},
+                {"name": "data_trafficstat_ul/1000", "null": False, "data": True},
+                {"name": "lte_l1_throughput_mbps_1", "null": False, "data": True},
+                {"name": "lte_bler_1", "null": False, "data": True},
+            ],
+        )
+
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
+
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
@@ -529,11 +793,25 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(self.gc, paramList = [{"name":"wcdma_aset_ecio_avg", "null":False, "data":False}, {"name":"wcdma_aset_rscp_avg", "null":False, "data":False}, {"name":"wcdma_rssi", "null":False, "data":False}, {"name":"wcdma_bler_average_percent_all_channels", "null":False, "data":False}])
+        linechart_window = linechart_file_name.LineChart(
+            self.gc,
+            paramList=[
+                {"name": "wcdma_aset_ecio_avg", "null": False, "data": False},
+                {"name": "wcdma_aset_rscp_avg", "null": False, "data": False},
+                {"name": "wcdma_rssi", "null": False, "data": False},
+                {
+                    "name": "wcdma_bler_average_percent_all_channels",
+                    "null": False,
+                    "data": False,
+                },
+            ],
+        )
+
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
+
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
@@ -547,11 +825,20 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(self.gc, paramList = [{"name":"data_wcdma_rlc_dl_throughput", "null":False, "data":True}, {"name":"data_app_dl_throughput_1", "null":False, "data":True}, {"name":"data_hsdpa_thoughput", "null":False, "data":True}])
+        linechart_window = linechart_file_name.LineChart(
+            self.gc,
+            paramList=[
+                {"name": "data_wcdma_rlc_dl_throughput", "null": False, "data": True},
+                {"name": "data_app_dl_throughput_1", "null": False, "data": True},
+                {"name": "data_hsdpa_thoughput", "null": False, "data": True},
+            ],
+        )
+
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
+
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
@@ -567,11 +854,19 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(self.gc, paramList = [{"name":"gsm_rxlev_sub_dbm", "null":False, "data":False}, {"name":"gsm_rxqual_sub", "null":False, "data":False}])
+        linechart_window = linechart_file_name.LineChart(
+            self.gc,
+            paramList=[
+                {"name": "gsm_rxlev_sub_dbm", "null": False, "data": False},
+                {"name": "gsm_rxqual_sub", "null": False, "data": False},
+            ],
+        )
+
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
+
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
@@ -585,23 +880,30 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(self.gc, paramList = [{"name":"data_gsm_rlc_dl_throughput", "null":False, "data":True}, {"name":"data_app_dl_throughput_1", "null":False, "data":True}])
+        linechart_window = linechart_file_name.LineChart(
+            self.gc,
+            paramList=[
+                {"name": "data_gsm_rlc_dl_throughput", "null": False, "data": True},
+                {"name": "data_app_dl_throughput_1", "null": False, "data": True},
+            ],
+        )
+
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
             self.setTimeValue(timestampValue)
+
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
         linechart_window.setWindowTitle("GSM Data Line Chart")
 
-
-    def add_subwindow_with_widget(self, swa, widget):                
+    def add_subwindow_with_widget(self, swa, widget):
         swa.setWidget(widget)
         self.mdi.addSubWindow(swa)
         swa.show()
-        self.gc.openedWindows.append(widget)    
+        self.gc.openedWindows.append(widget)
 
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_local_fp("main_window.ui"), self)
@@ -612,7 +914,7 @@ Log_hash list: {}""".format(
             self.gc.mdi = self.mdi
             dirname = os.path.dirname(__file__)
             self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
-            
+
             # Time Slider
             self.gc.timeSlider = timeSlider(self, self.gc)
             self.gc.timeSlider.setToolTip(
@@ -623,8 +925,11 @@ Log_hash list: {}""".format(
             sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             sizePolicy.setHorizontalStretch(0)
             sizePolicy.setVerticalStretch(0)
-            sizePolicy.setHeightForWidth(self.gc.timeSlider.sizePolicy().hasHeightForWidth())
+            sizePolicy.setHeightForWidth(
+                self.gc.timeSlider.sizePolicy().hasHeightForWidth()
+            )
             self.gc.timeSlider.setSizePolicy(sizePolicy)
+            from PyQt5 import QtCore
             self.gc.timeSlider.setBaseSize(QtCore.QSize(500, 0))
             self.gc.timeSlider.setPageStep(1)
             self.gc.timeSlider.setSliderPosition(0)
@@ -643,7 +948,7 @@ Log_hash list: {}""".format(
             self.playSpeed.setValidator(self.onlyDouble)
             self.playSpeed.setMaximumWidth(50)
             self.playSpeed.setFixedWidth(60)
-            
+
             self.playSpeed.textChanged.connect(self.setPlaySpeed)
 
             # Datetime Textbox
@@ -671,7 +976,9 @@ Log_hash list: {}""".format(
             )
             # Load Button
             self.loadBtn = QToolButton()
-            self.loadBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "folder.png"))))
+            self.loadBtn.setIcon(
+                QIcon(QPixmap(os.path.join(dirname, "res", "folder.png")))
+            )
             self.loadBtn.setObjectName("loadBtn")
             self.loadBtn.setToolTip(
                 "<b>Load workspace</b><br>Change the workspace windows from a saved setting"
@@ -679,7 +986,9 @@ Log_hash list: {}""".format(
 
             # Save Button
             self.saveBtn = QToolButton()
-            self.saveBtn.setIcon(QIcon(QPixmap(os.path.join(dirname, "res", "save.png"))))
+            self.saveBtn.setIcon(
+                QIcon(QPixmap(os.path.join(dirname, "res", "save.png")))
+            )
             self.saveBtn.setObjectName("saveBtn")
             self.saveBtn.setToolTip(
                 "<b>Save workspace</b><br>Save current workspace windows to a workspace setting file."
@@ -701,7 +1010,7 @@ Log_hash list: {}""".format(
             )
             self.layerSelect.setObjectName("layerBtn")
 
-            #caused duplicated calls to pyqtslots funcs above so not using: QtCore.QMetaObject.connectSlotsByName(self)
+            # caused duplicated calls to pyqtslots funcs above so not using: QtCore.QMetaObject.connectSlotsByName(self)
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.loadBtn.clicked.connect(self.loadWorkspaceFile)
@@ -712,20 +1021,21 @@ Log_hash list: {}""".format(
             self.setupToolBar()
 
             # self._gui_restore()
-            
-            self.setWindowTitle("AZENQOS Log Replay & Analyzer tool      v.%.03f" % VERSION)
+
+            self.setWindowTitle(
+                "AZENQOS Log Replay & Analyzer tool      v.%.03f" % VERSION
+            )
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: setupUi failed - exception: {}".format(exstr))
 
-        
     def setupToolBar(self):
         self.toolbar.setFloatable(False)
         self.toolbar.setMovable(False)
         self.toolbar.addWidget(self.importDatabaseBtn)
         self.toolbar.addWidget(self.loadBtn)
-        self.toolbar.addWidget(self.saveBtn)        
+        self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.maptool)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.layerSelect)
@@ -739,15 +1049,12 @@ Log_hash list: {}""".format(
         self.toolbar.addWidget(self.speedLabel)
         self.toolbar.addWidget(self.playSpeed)
 
-
     def renamingLayers(self, layers):
 
         # Configure layers data source + rename layers
         # uri = QgsDataSourceUri()
         # uri.setDatabase(self.databaseUi.databasePath)
-        root = QgsProject.instance().layerTreeRoot()
-        treeGroups = root.findGroups()
-        geom_column = "geom"
+        # root = QgsProject.instance().layerTreeRoot()
         for layer in layers:
             print("renamingLayers: ", layer.name())
             name = layer.name().split(" ")
@@ -804,16 +1111,17 @@ Log_hash list: {}""".format(
             for hi in self.gc.h_list:
                 hi.hide()
         self.gc.h_list = []
-        layer = iface.activeLayer()
+        layer = self.qgis_iface.activeLayer()
 
         # layer = QgsProject.instance().mapLayersByName(layerName)[0]
         if not layer:
             return False
         if layer.type() == layer.VectorLayer:
             for i in layer.selectedFeatures():
-                h = QgsHighlight(iface.mapCanvas(), i.geometry(), layer)
+                h = QgsHighlight(self.qgis_iface.mapCanvas(), i.geometry(), layer)
 
                 # set highlight symbol properties
+                from PyQt5.QtGui import QColor
                 h.setColor(QColor(255, 0, 0, 255))
                 h.setWidth(2)
                 h.setFillColor(QColor(255, 255, 255, 0))
@@ -821,10 +1129,9 @@ Log_hash list: {}""".format(
                 # write the object to the list
                 self.gc.h_list.append(h)
 
-        iface.mapCanvas().refresh()
+        self.qgis_iface.mapCanvas().refresh()
 
-
-    def updateUi(self):        
+    def updateUi(self):
         if not self.gc.slowDownValue == 1:
             self.playSpeed.setText("{:.2f}".format(self.gc.slowDownValue))
         elif not self.gc.fastForwardValue == 1:
@@ -833,9 +1140,10 @@ Log_hash list: {}""".format(
             self.playSpeed.setText("{:.2f}".format(1))
         print("updateui self.gc.currentTimestamp", self.gc.currentTimestamp)
         if self.gc.currentTimestamp:
-            self.timeEdit.setDateTime(datetime.datetime.fromtimestamp(self.gc.currentTimestamp))
+            self.timeEdit.setDateTime(
+                datetime.datetime.fromtimestamp(self.gc.currentTimestamp)
+            )
 
-        
     def setPlaySpeed(self, value):
         value = float(1) if value == "" else float(value)
         if value >= float(1):
@@ -858,9 +1166,7 @@ Log_hash list: {}""".format(
         )
         self.pauseButton = QToolButton()
         self.pauseButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
-        self.pauseButton.setToolTip(
-            "<b>Pause</b><br> <i>Pause</i> log replay"
-        )
+        self.pauseButton.setToolTip("<b>Pause</b><br> <i>Pause</i> log replay")
         layout = QHBoxLayout(self.horizontalLayout)
         layout.addStretch(1)
         layout.addWidget(self.playButton)
@@ -873,7 +1179,10 @@ Log_hash list: {}""".format(
         print("self.gc.sliderLength {}".format(self.gc.sliderLength))
         print("self.gc.minTimeValue {}".format(self.gc.minTimeValue))
         print("self.gc.maxTimeValue {}".format(self.gc.maxTimeValue))
-        print("self.timeSliderThread.getCurrentValue()", self.timeSliderThread.getCurrentValue())
+        print(
+            "self.timeSliderThread.getCurrentValue()",
+            self.timeSliderThread.getCurrentValue(),
+        )
         print("self.gc.sliderLength", self.gc.sliderLength)
         if self.timeSliderThread.getCurrentValue() < self.gc.sliderLength:
             self.gc.isSliderPlay = True
@@ -890,7 +1199,7 @@ Log_hash list: {}""".format(
     def selectLayer(self):
         if self.qgis_iface:
             print("%s: selectLayer" % os.path.basename(__file__))
-            vlayer = self.qgis_iface.addVectorLayer(self.dbfp, None, "ogr")
+            self.qgis_iface.addVectorLayer(self.dbfp, None, "ogr")
             # Setting CRS
             my_crs = QgsCoordinateReferenceSystem(4326)
             QgsProject.instance().setCrs(my_crs)
@@ -914,10 +1223,10 @@ Log_hash list: {}""".format(
 
     def ui_thread_emit_time_slider_updated(self, timestamp):
         print("ui_thread_emit_time_slider_updated")
+        import datetime
         sampledate = datetime.datetime.fromtimestamp(timestamp)
         self.timeEdit.setDateTime(sampledate)
 
-            
     def clickCanvas(self, point, button):
         layerData = []
         selectedTime = None
@@ -987,7 +1296,9 @@ Log_hash list: {}""".format(
         except:
             selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selectedTime)
         if selectedTimestamp:
-            timeSliderValue = self.gc.sliderLength - (self.gc.maxTimeValue - selectedTimestamp)
+            timeSliderValue = self.gc.sliderLength - (
+                self.gc.maxTimeValue - selectedTimestamp
+            )
             self.gc.timeSlider.setValue(timeSliderValue)
             self.gc.timeSlider.update()
 
@@ -1015,12 +1326,12 @@ Log_hash list: {}""".format(
     def open_logs(self):
         if self.gc.databasePath:
             msgBox = QMessageBox()
-            msgBox.setWindowTitle('Log already open')
-            msgBox.setText('To open a new log, please close/exit first...')
-            msgBox.addButton(QPushButton('OK'), QMessageBox.YesRole)
-            reply = msgBox.exec_()
+            msgBox.setWindowTitle("Log already open")
+            msgBox.setText("To open a new log, please close/exit first...")
+            msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
+            msgBox.exec_()
             return
-        
+
         dlg = import_db_dialog.import_db_dialog(self.gc)
         dlg.show()
         ret = dlg.exec()
@@ -1028,7 +1339,9 @@ Log_hash list: {}""".format(
         if self.gc.sliderLength:
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
         if self.gc.databasePath:
-            self.ui.statusbar.showMessage("Opened log db: {}".format(self.gc.databasePath))
+            self.ui.statusbar.showMessage(
+                "Opened log db: {}".format(self.gc.databasePath)
+            )
         else:
             self.ui.statusbar.showMessage("Log not opened...")
         self.updateUi()
@@ -1047,7 +1360,7 @@ Log_hash list: {}""".format(
                 if self.closed:
                     break
                 ret = self.timechange_to_service_counter.get()
-                #print(print("timeChangedWorkerFunc : {}", ret))
+                # print(print("timeChangedWorkerFunc : {}", ret))
                 if ret > 1:
                     self.timechange_to_service_counter.dec_and_get()
                     continue  # skip until we remain 1 then do work
@@ -1104,7 +1417,6 @@ Log_hash list: {}""".format(
 
         if len(self.gc.openedWindows) > 0:
             for window in self.gc.openedWindows:
-                worker = None
                 if isinstance(window, linechart_custom.LineChart):
                     window.updateTime(sampledate)
                 elif isinstance(window, linechart_multi_y_axis.LineChart):
@@ -1143,7 +1455,6 @@ Log_hash list: {}""".format(
         else:
             print("%s: hilightFeature" % os.path.basename(__file__))
             QgsMessageLog.logMessage("[-- Start hilight features --]")
-            start_time = time.time()
             self.getPosIdsByTable()
             if len(self.posIds) > 0 and len(self.posObjs) > 0:
                 self.usePosIdsSelectedFeatures()
@@ -1229,6 +1540,7 @@ Log_hash list: {}""".format(
             self.settings.sync()
 
     def saveWorkspaceFile(self):
+        from PyQt5 import QtCore
         fp, _ = QFileDialog.getSaveFileName(
             self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
         )
@@ -1270,7 +1582,7 @@ Log_hash list: {}""".format(
                 self.qgis_iface.actionPan().trigger()
             self.pauseTime()
             self.timeSliderThread.exit()
-            #self.removeToolBarActions()
+            # self.removeToolBarActions()
             if self.qgis_iface:
                 self.quitTask = tasks.QuitTask(u"Quiting Plugin", self)
                 QgsApplication.taskManager().addTask(self.quitTask)
@@ -1291,7 +1603,6 @@ Log_hash list: {}""".format(
                 self.gc.activeLayers = []
                 QgsProject.removeAllMapLayers(QgsProject.instance())
 
-
             if len(self.gc.openedWindows) > 0:
                 for window in self.gc.openedWindows:
                     window.close()
@@ -1304,9 +1615,9 @@ Log_hash list: {}""".format(
                 mdiwindow.close()
             self.mdi.close()
             self.settings.clear()
-            print("Close App")            
+            print("Close App")
             try:
-                self.gc.close_db()                
+                self.gc.close_db()
                 shutil.rmtree(azq_utils.tmp_gen_path())
             except:
                 type_, value_, traceback_ = sys.exc_info()
@@ -1319,16 +1630,13 @@ Log_hash list: {}""".format(
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: cleanup() exception:", exstr)
 
-
-
     def removeToolBarActions(self):
         actions = self.toolbar.actions()
         for action in actions:
             self.toolbar.removeAction(action)
 
-        
     def clearAllSelectedFeatures(self):
-        if (self.qgis_iface):
+        if self.qgis_iface:
             mc = self.qgis_iface.mapCanvas()
             for layer in mc.layers():
                 if layer.type() == layer.VectorLayer:
@@ -1336,15 +1644,12 @@ Log_hash list: {}""".format(
             mc.refresh()
             print("[-- Clear selected features --]")
 
-
-        
     def removeAzenqosGroup(self):
         if self.qgis_iface:
             root = QgsProject.instance().layerTreeRoot()
             azqGroup = root.findGroup("Azenqos")
             if azqGroup:
                 root.removeChildNode(azqGroup)
-
 
     def _gui_save(self):
         # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
@@ -1434,7 +1739,7 @@ Log_hash list: {}""".format(
                         GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
                     )
                     print("_gui_restore() window i {} title {}".format(i, title))
-                    func_key = "self."+func+"()"
+                    func_key = "self." + func + "()"
                     print(func_key)
                     eval(func_key)
                     if geom:
@@ -1473,7 +1778,6 @@ class SubWindowArea(QMdiSubWindow):
 
     def closeEvent(self, QCloseEvent):
         self.gc.mdi.removeSubWindow(self)
-
 
 
 def main():

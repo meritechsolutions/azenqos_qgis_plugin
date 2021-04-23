@@ -1,47 +1,42 @@
-from PyQt5.QtSql import QSqlQuery, QSqlDatabase
-import re
-import sqlite3
 import pandas as pd
+
 import params_disp_df
 
 
-class NrDataQuery:
-    def __init__(self, database, currentDateTimeString):
-        self.timeFilter = ""
-        self.azenqosDatabase = database
-        if currentDateTimeString:
-            self.timeFilter = currentDateTimeString
-
-    def getRadioParameters(self):
-        with sqlite3.connect(gc.databasePath) as dbcon:
-            return get_nr_radio_params_disp_df(dbcon, self.timeFilter)
-
-    def getServingAndNeighbors(self):
-        with sqlite3.connect(gc.databasePath) as dbcon:
-            return get_nr_serv_and_neigh_disp_df(dbcon, self.timeFilter)
-
-    def defaultData(self, fieldsList, dataList):
-        fieldCount = len(fieldsList)
-        if fieldCount > 0:
-            for index in range(fieldCount):
-                columnName = fieldsList[index]
-                dataList.append([columnName, "", "", ""])
-            return dataList
-
-
 ################################## df get functions
+
 
 def get_nr_radio_params_disp_df(dbcon, time_before):
     n_param_args = 8
     parameter_to_columns_list = [
         ("Time", ["time"]),
         (  # these params below come together so query them all in one query
-            ["Beam ID", "Band", "Band Type", "ARFCN", "Frequency", "PCI", "RSRP", "RSRQ", "SINR", "Bandwidth", "SSB SCS", "Numerology SCS"],
-            list(map(lambda x: "nr_servingbeam_ssb_index_{}".format(x + 1), range(n_param_args)))
-            +list(map(lambda x: "nr_band_{}".format(x + 1), range(n_param_args)))
-            +list(map(lambda x: "nr_band_type_{}".format(x + 1), range(n_param_args)))
+            [
+                "Beam ID",
+                "Band",
+                "Band Type",
+                "ARFCN",
+                "Frequency",
+                "PCI",
+                "RSRP",
+                "RSRQ",
+                "SINR",
+                "Bandwidth",
+                "SSB SCS",
+                "Numerology SCS",
+            ],
+            list(
+                map(
+                    lambda x: "nr_servingbeam_ssb_index_{}".format(x + 1),
+                    range(n_param_args),
+                )
+            )
+            + list(map(lambda x: "nr_band_{}".format(x + 1), range(n_param_args)))
+            + list(map(lambda x: "nr_band_type_{}".format(x + 1), range(n_param_args)))
             + list(map(lambda x: "nr_dl_arfcn_{}".format(x + 1), range(n_param_args)))
-            + list(map(lambda x: "nr_dl_frequency_{}".format(x + 1), range(n_param_args)))
+            + list(
+                map(lambda x: "nr_dl_frequency_{}".format(x + 1), range(n_param_args))
+            )
             + list(
                 map(
                     lambda x: "nr_servingbeam_pci_{}".format(x + 1), range(n_param_args)
@@ -65,12 +60,8 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
                     range(n_param_args),
                 )
             )
-            +list(
-                map(lambda x: "nr_bw_{}".format(x + 1), range(n_param_args))
-            )
-            + list(
-                map(lambda x: "nr_ssb_scs_{}".format(x + 1), range(n_param_args))
-            )
+            + list(map(lambda x: "nr_bw_{}".format(x + 1), range(n_param_args)))
+            + list(map(lambda x: "nr_ssb_scs_{}".format(x + 1), range(n_param_args)))
             + list(
                 map(lambda x: "nr_numerology_scs_{}".format(x + 1), range(n_param_args))
             ),

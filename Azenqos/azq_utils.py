@@ -1378,7 +1378,8 @@ def tmp_gen_path():
 
 def cleanup_died_processes_tmp_folders():
     import psutil
-    print("cleanup_died_processes_tmp_folders() START")    
+
+    print("cleanup_died_processes_tmp_folders() START")
     tgp = tmp_gen_path_parent()
     dirlist = os.listdir(tgp)
     print("dirlist:", dirlist)
@@ -1404,17 +1405,21 @@ def cleanup_died_processes_tmp_folders():
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: cleanup_died_processes_tmp_folders rmtree - exception: {}".format(exstr))
-    print("cleanup_died_processes_tmp_folders() DONE")    
+            print(
+                "WARNING: cleanup_died_processes_tmp_folders rmtree - exception: {}".format(
+                    exstr
+                )
+            )
+    print("cleanup_died_processes_tmp_folders() DONE")
 
 
 def calc_sha(src):
     if src is None:
         return None
     if isinstance(src, str):
-        src = src.encode('ascii')
+        src = src.encode("ascii")
     hasho = hashlib.sha1()
-    hasho.update(src)            
+    hasho.update(src)
     return hasho.hexdigest()
 
 
@@ -1422,11 +1427,11 @@ def download_file(url, local_fp):
     # NOTE the stream=True parameter below
     with requests.get(url, stream=True, verify=False) as r:
         r.raise_for_status()
-        with open(local_fp, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=2048*1000): 
+        with open(local_fp, "wb") as f:
+            for chunk in r.iter_content(chunk_size=2048 * 1000):
                 # If you have chunk encoded response uncomment if
                 # and set chunk_size parameter to None.
-                #if chunk: 
+                # if chunk:
                 f.write(chunk)
     return local_fp
 
@@ -1437,7 +1442,7 @@ def signal_emit(signal_obj, emit_obj):
     if signal_obj is not None:
         signal_obj.emit(emit_obj)
 
-        
+
 def datetimeStringtoTimestamp(datetimeString: str):
     try:
         element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")

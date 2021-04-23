@@ -1,37 +1,31 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtGui import *
-try:
-    from qgis.core import *
-    from qgis.utils import *
-    from qgis.gui import *
-except:
-    pass
 import datetime
-import sys
-import traceback
 import os
 import sqlite3
-import threading
-import time
+import sys
 
 # Adding folder path
+import threading
+import traceback
+
+import pandas as pd
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtSql import QSqlDatabase
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QGridLayout, QRadioButton, QFileDialog
+
+from Azenqos import azq_utils
+from Azenqos.cell_layer_task import CellLayerTask
+from Azenqos.tasks import LayerTask
+
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
-from globalutils import Utils
-try:
-    from tasks import *
-except:
-    pass
-from datatable import *
-from version import VERSION
 import db_preprocess
-import azq_utils
 import azq_theme_manager
 import login_dialog
+
 try:
-    from cell_layer_task import *
+    from qgis.core import QgsApplication
 except:
     pass
 
@@ -39,15 +33,14 @@ except:
 class import_db_dialog(QDialog):
 
     import_done_signal = pyqtSignal(str)
-    
-    def __init__(self, gc):
+
+    def __init__(self, parent_window, gc):
         super(import_db_dialog, self).__init__()
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
+        self.parent_window = parent_window
         self.import_thread = None
-        self.import_done_signal.connect(
-            self.ui_handler_import_done
-        )
+        self.import_done_signal.connect(self.ui_handler_import_done)
         self.setupUi(self)
 
 
@@ -61,12 +54,10 @@ class import_db_dialog(QDialog):
         DatabaseDialog.setLayout(vbox)
         vbox.addStretch()
 
-        mode_gb = QGroupBox(
-            "Logs access mode"
-        )
+        mode_gb = QGroupBox("Logs access mode")
         vbox.addWidget(mode_gb)
         vbox.addStretch()
-        
+
         ########
         layout = QGridLayout()
         radiobutton = QRadioButton("AZENQOS Server login")
@@ -98,7 +89,9 @@ class import_db_dialog(QDialog):
         vbox.addWidget(theme_gb)
         vbox.addStretch()
 
-        cell_gb = QGroupBox("Cell files - select one for each RAT (2G,3G,4G,5G) to appear as QGIS layers")
+        cell_gb = QGroupBox(
+            "Cell files - select one for each RAT (2G,3G,4G,5G) to appear as QGIS layers"
+        )
         vbox.addWidget(cell_gb)
         vbox.addStretch()
 
@@ -164,13 +157,11 @@ class import_db_dialog(QDialog):
         )
         #################################
 
-
     def onRadioClicked(self):
         radioButton = self.sender()
         if radioButton.isChecked():
             print("log access mode is %s" % (radioButton.mode))
             self.azm_gb.setEnabled(radioButton.mode == "local")
-
 
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
@@ -194,19 +185,26 @@ class import_db_dialog(QDialog):
         )
 
     def clearCurrentProject(self):
-        for hi in self.gc.h_list:
-            hi.hide()
-        self.gc.h_list = []
-        clearAllSelectedFeatures()
+        try:
+            from qgis.core import QgsProject
+            for hi in self.gc.h_list:
+                hi.hide()
+            self.gc.h_list = []
 
-        project = QgsProject.instance()
-        for (id_l, layer) in project.mapLayers().items():
-            to_be_deleted = project.mapLayersByName(layer.name())[0]
-            project.removeMapLayer(to_be_deleted.id())
-            layer = None
+            import main_window
+            if isinstance(self.parent_window, main_window):
+                self.parent_window.clearAllSelectedFeatures()
 
-        QgsProject.instance().reloadAllLayers()
-        QgsProject.instance().clear()
+            project = QgsProject.instance()
+            for (id_l, layer) in project.mapLayers().items():
+                to_be_deleted = project.mapLayersByName(layer.name())[0]
+                project.removeMapLayer(to_be_deleted.id())
+                layer = None
+
+            QgsProject.instance().reloadAllLayers()
+            QgsProject.instance().clear()
+        except:
+            pass
         self.gc.tableList = []
 
     def choose_azm(self):
@@ -231,7 +229,6 @@ class import_db_dialog(QDialog):
             ",".join(fileNames)
         ) if fileNames else self.cellPathLineEdit.setText("")
 
-        
     def check_and_start_import(self):
         if self.radioButtonServer.isChecked() == False:
             if not self.dbPathLineEdit.text():
@@ -281,7 +278,10 @@ class import_db_dialog(QDialog):
                 self.clearCurrentProject()
             """
 
-            print("self.radioButtonServer.isChecked() %s", self.radioButtonServer.isChecked())
+            print(
+                "self.radioButtonServer.isChecked() %s",
+                self.radioButtonServer.isChecked(),
+            )
             zip_fp = self.dbPathLineEdit.text()
             self.gc.login_ret_dict = None
             if self.radioButtonServer.isChecked():
@@ -292,16 +292,20 @@ class import_db_dialog(QDialog):
                 if ret == 0:  # dismissed
                     return
                 # ok we have a successful login and downloaded the db zip
-                zip_fp = dlg.downloaded_zip_fp                
+                zip_fp = dlg.downloaded_zip_fp
                 if (not zip_fp) or (not os.path.isfile(zip_fp)):
-                    raise Exception("Failed to get downloaded data from server login process...")
-                self.gc.login_dialog = dlg  # so others can access server/token when needed for other api calls                
-            
+                    raise Exception(
+                        "Failed to get downloaded data from server login process..."
+                    )
+                self.gc.login_dialog = dlg  # so others can access server/token when needed for other api calls
+
             if self.import_thread is None or (self.import_thread.is_alive() == False):
                 self.zip_fp = zip_fp
                 self.buttonBox.setEnabled(False)
                 print("start import db zip thread...")
-                self.import_thread = threading.Thread(target=self.import_selection, args=())
+                self.import_thread = threading.Thread(
+                    target=self.import_selection, args=()
+                )
                 self.import_thread.start()
             else:
                 print("already importing - please wait...")
@@ -332,25 +336,19 @@ class import_db_dialog(QDialog):
 
         raise Exception("invalid state")
 
-
     def ui_handler_import_done(self, error):
         if error:
-            print("ui_handler_import_done() error: %s" % error)        
+            print("ui_handler_import_done() error: %s" % error)
             QtWidgets.QMessageBox.critical(
-                None,
-                "Failed",
-                error,
-                QtWidgets.QMessageBox.Cancel,
+                None, "Failed", error, QtWidgets.QMessageBox.Cancel,
             )
             self.buttonBox.setEnabled(True)
-            return False        
+            return False
         else:
             print("ui_handler_import_done() success")
             import azq_utils
 
-            azq_utils.write_local_file(
-                "config_prev_azm", self.dbPathLineEdit.text()
-            )
+            azq_utils.write_local_file("config_prev_azm", self.dbPathLineEdit.text())
             self.getTimeForSlider()
             print("getTimeForSlider() done")
 
@@ -359,8 +357,7 @@ class import_db_dialog(QDialog):
                 self.layerTask = LayerTask(u"Add layers", self.databasePath, self.gc)
                 QgsApplication.taskManager().addTask(self.layerTask)
                 self.longTask = CellLayerTask(
-                    "Load cell file", self.cellPathLineEdit.text().split(","),
-                    self.gc
+                    "Load cell file", self.cellPathLineEdit.text().split(","), self.gc
                 )
                 QgsApplication.taskManager().addTask(self.longTask)
             else:
@@ -368,39 +365,46 @@ class import_db_dialog(QDialog):
 
             self.close()
 
-    
     def import_selection(self):
         zip_fp = self.zip_fp
         try:
             import preprocess_azm
-            
+
             assert os.path.isfile(zip_fp)
             azq_utils.cleanup_died_processes_tmp_folders()
             assert os.path.isfile(zip_fp)
-            self.databasePath = preprocess_azm.extract_entry_from_zip(zip_fp, "azqdata.db", azq_utils.tmp_gen_path())
+            self.databasePath = preprocess_azm.extract_entry_from_zip(
+                zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
+            )
             preprocess_azm.extract_all_from_zip(zip_fp, azq_utils.tmp_gen_path())
             assert os.path.isfile(self.databasePath)
-            dbcon = self.addDatabase() # this will create views/tables per param as per specified theme so must check theme before here        
+            dbcon = (
+                self.addDatabase()
+            )  # this will create views/tables per param as per specified theme so must check theme before here
             if not dbcon:
-                raise Exception("Failed to open azqdata.db file inside the unzipped supplied azm file")
+                raise Exception(
+                    "Failed to open azqdata.db file inside the unzipped supplied azm file"
+                )
             else:
-                self.import_done_signal.emit("")                
+                self.import_done_signal.emit("")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: import_selection() failed exception:", exstr)
             self.import_done_signal.emit(exstr)
 
-    
     def getTimeForSlider(self):
         startTime = None
         endTime = None
         with sqlite3.connect(self.databasePath) as dbcon:
-            df = pd.read_sql("select min(log_start_time) as startTime, max(log_end_time) as endTime from logs", dbcon)
+            df = pd.read_sql(
+                "select min(log_start_time) as startTime, max(log_end_time) as endTime from logs",
+                dbcon,
+            )
             assert len(df) == 1
             startTime = df.iloc[0].startTime
             endTime = df.iloc[0].endTime
-        
+
         assert startTime
         assert endTime
         self.gc.minTimeValue = datetime.datetime.strptime(
@@ -411,7 +415,7 @@ class import_db_dialog(QDialog):
         ).timestamp()
         self.gc.currentDateTimeString = "%s" % (
             datetime.datetime.fromtimestamp(self.gc.minTimeValue)
-        )        
+        )
         self.gc.currentTimestamp = self.gc.minTimeValue
         print("gettimeforslider self.gc.currentTimestamp", self.gc.currentTimestamp)
         self.setIncrementValue()
@@ -449,7 +453,7 @@ class import_db_dialog(QDialog):
         db_preprocess.prepare_spatialite_views(dbcon)
         dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
         assert self.databasePath
-        dbcon = sqlite3.connect(self.databasePath)        
+        dbcon = sqlite3.connect(self.databasePath)
         self.gc.databasePath = self.databasePath
         self.gc.db_fp = self.gc.databasePath
         self.gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")

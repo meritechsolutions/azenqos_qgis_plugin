@@ -1,21 +1,9 @@
-import sys
-import os
+import time
 
-# Adding folder path
-sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
-
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtGui import *
 try:
-    from qgis.core import *
-    from qgis.utils import *
-    from qgis.gui import *
+    from qgis.core import QgsProject, QgsTask, QgsMessageLog, QgsRasterLayer, QgsRectangle, QgsLayerTreeLayer, QgsMapLayerType, QgsCoordinateReferenceSystem
 except:
     pass
-from globalutils import Utils
 
 
 class LayerTask(QgsTask):
@@ -83,10 +71,10 @@ class LayerTask(QgsTask):
 
     def finished(self, result):
         if result:
-            #gc.mostFeaturesLayer = None
+            # gc.mostFeaturesLayer = None
             self.addMapToQgis()
-            geom_column = "geom"
-            vlayer = self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
+            #geom_column = "geom"
+            self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
 
             # Setting CRS
             my_crs = QgsCoordinateReferenceSystem(4326)
@@ -109,9 +97,11 @@ class LayerTask(QgsTask):
                 )
             else:
                 QgsMessageLog.logMessage(
-                    'Task "{name}" Exception: {exception}'.format(name=self.desc),
-                    exception=self.exception,
-                    tag="Exception",
+                    'Task "{name}" Exception: {exception}'.format(
+                        name=self.desc,
+                        exception=self.exception
+                    ),
+                    tag="Exception"
                 )
                 raise self.exception
 
@@ -140,10 +130,10 @@ class QuitTask(QgsTask):
             QgsMessageLog.logMessage(
                 "[-- End Removing Dependencies --]", tag="Processing"
             )
-            '''
+            """
             if self.azqMain.newImport is False:
                 self.azqMain.databaseUi.removeMainMenu()
-            '''
+            """
         else:
             if self.exception is None:
                 QgsMessageLog.logMessage(
@@ -154,10 +144,10 @@ class QuitTask(QgsTask):
                 )
             else:
                 QgsMessageLog.logMessage(
-                    'Task "{name}" Exception: {exception}'.format(name=self.desc),
-                    exception=self.exception,
-                    tag="Exception",
+                    'Task "{name}" Exception: {exception}'.format(
+                        name=self.desc,
+                        exception=self.exception
+                    ),
+                    tag="Exception"
                 )
                 raise self.exception
-
-

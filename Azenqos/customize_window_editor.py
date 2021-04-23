@@ -1,13 +1,12 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtSql import *
-import json
-import globalutils
+from PyQt5.QtCore import QCoreApplication, QMetaObject, QRect, QSize
+from PyQt5.QtGui import QFont
+from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+from PyQt5.QtWidgets import QWidget, QDialogButtonBox, QLineEdit, QRadioButton, QFontComboBox, QLabel, QComboBox, \
+    QTabWidget
+from PyQt5.QtCore import Qt
 
 
 class CellSetting(QWidget):
-    # databasePath = '/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db'
     system_types = [
         "WCDMA",
         "General",
@@ -257,8 +256,8 @@ class CellSetting(QWidget):
         queryString = ""
         if value:
             queryString = (
-                'select name from pragma_table_info("%s") where name NOT IN (%s)'
-                % (value, self.unused_columns)
+                    'select name from pragma_table_info("%s") where name NOT IN (%s)'
+                    % (value, self.unused_columns)
             )
 
         if queryString:

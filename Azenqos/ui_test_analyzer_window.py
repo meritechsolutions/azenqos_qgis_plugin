@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QApplication
 import analyzer_window
 
 
@@ -7,7 +7,7 @@ def test():
     mw = analyzer_window.analyzer_window()
     mw.show()
     app.exec()
-    
+
 
 if __name__ == "__main__":
     test()

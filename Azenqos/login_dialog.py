@@ -1,26 +1,22 @@
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *
-from PyQt5.QtSql import *
-from PyQt5.QtGui import *
-from PyQt5.uic import loadUi
-import threading
-import sys
-import traceback
 import os
-import csv
-import re
-import pandas as pd
-import numpy as np
+import threading
 from urllib.parse import urlparse
-import requests
+
+import numpy as np
+import pandas as pd
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import QDialog, QLineEdit
+from PyQt5.uic import loadUi
+
 import azq_server_api
 import azq_utils
-import analyzer_vars
+
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
-import time
 import qt_utils
 
 
@@ -30,11 +26,10 @@ class login_dialog(QDialog):
     status_update_signal = pyqtSignal(str)
     login_done_signal = pyqtSignal(str)
 
-    
     def __init__(self, parent, gc, download_db_zip=True):
         super(login_dialog, self).__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.gc = gc                
+        self.gc = gc
         self.setupUi()
         self.valid = False
         self.downloaded_zip_fp = None
@@ -46,17 +41,9 @@ class login_dialog(QDialog):
         self.token = None
 
         self.login_thread = None
-        self.login_done_signal.connect(
-            self.on_login_done
-        )
-        self.status_update_signal.connect(
-            self.on_status_update
-        )
-        self.progress_update_signal.connect(
-            self.on_progress_update
-        )
-
-        
+        self.login_done_signal.connect(self.on_login_done)
+        self.status_update_signal.connect(self.on_status_update)
+        self.progress_update_signal.connect(self.on_progress_update)
 
     def setupUi(self):
         dirname = os.path.dirname(__file__)
@@ -65,10 +52,11 @@ class login_dialog(QDialog):
         self.ui.pass_le.setEchoMode(QLineEdit.Password)
         self.ui.progressbar.setVisible(False)
         self.setWindowTitle("AZENQOS Server login")
-        self.ui.server_url_le.setText(azq_utils.read_local_file("prev_login_dialog_server"))
+        self.ui.server_url_le.setText(
+            azq_utils.read_local_file("prev_login_dialog_server")
+        )
         self.ui.login_le.setText(azq_utils.read_local_file("prev_login_dialog_user"))
         self.ui.lhl_le.setText(azq_utils.read_local_file("prev_login_dialog_lhl"))
-        
 
     def read_ui_input_to_vars(self):
         self.server = self.ui.server_url_le.text().strip()
@@ -96,10 +84,10 @@ class login_dialog(QDialog):
         self.on_progress_update(0)
         self.on_status_update("Operation failed...")
         self.ui.progressbar.setVisible(False)
-    
+
     def accept(self):
-        print("login_dialog: accept()")        
-        if self.validate():            
+        print("login_dialog: accept()")
+        if self.validate():
             if self.login_thread is None or (self.login_thread.is_alive() == False):
                 self.ui_login_thread_start()
                 self.login_thread = threading.Thread(
@@ -114,7 +102,7 @@ class login_dialog(QDialog):
                         self.login_done_signal,
                         self.on_zip_downloaded,
                         self.download_db_zip,
-                    )
+                    ),
                 )
                 self.login_thread.start()
             else:
@@ -125,11 +113,10 @@ class login_dialog(QDialog):
                     QtWidgets.QMessageBox.Ok,
                 )
 
-            
     def validate(self):
         vars = self.read_ui_input_to_vars()
         for val in vars:
-            if not val:        
+            if not val:
                 QtWidgets.QMessageBox.critical(
                     None,
                     "Missing data",
@@ -138,16 +125,10 @@ class login_dialog(QDialog):
                 )
                 return False
 
-        azq_utils.write_local_file(
-            "prev_login_dialog_server", self.server
-        )
+        azq_utils.write_local_file("prev_login_dialog_server", self.server)
         print("self.user", self.user)
-        azq_utils.write_local_file(
-            "prev_login_dialog_user", self.user
-        )
-        azq_utils.write_local_file(
-            "prev_login_dialog_lhl", self.lhl
-        )
+        azq_utils.write_local_file("prev_login_dialog_user", self.user)
+        azq_utils.write_local_file("prev_login_dialog_lhl", self.lhl)
 
         ###### check lhl
         lhl = self.lhl
@@ -159,11 +140,11 @@ class login_dialog(QDialog):
             lhl = pd.Series(lhl, dtype=np.int64)
         except:
             QtWidgets.QMessageBox.critical(
-                    None,
-                    "Invalid log_hash list",
-                    "Provided log_hash list must be numbers and commas only",
-                    QtWidgets.QMessageBox.Ok,
-                )
+                None,
+                "Invalid log_hash list",
+                "Provided log_hash list must be numbers and commas only",
+                QtWidgets.QMessageBox.Ok,
+            )
             return False
 
         try:
@@ -177,15 +158,12 @@ class login_dialog(QDialog):
             )
             return False
 
-        
         self.valid = True
         return True
 
-    
     def on_zip_downloaded(self, zip_fp):
         print("on_zip_downloaded: self %s zip_fp %s" % (self, zip_fp))
         self.downloaded_zip_fp = zip_fp
-
 
     def on_login_done(self, error):
         print("on_login_done: error: {}".format(error))
@@ -195,14 +173,10 @@ class login_dialog(QDialog):
             success = True
         if not success:
             QtWidgets.QMessageBox.critical(
-                self,
-                "Operation failed...",
-                error,
-                QtWidgets.QMessageBox.Ok,
+                self, "Operation failed...", error, QtWidgets.QMessageBox.Ok,
             )
             self.ui_login_thread_failed()
         else:
             qt_utils.msgbox("Login successful", parent=self)
             print("on_login_done self.downloaded_zip_fp: %s" % self.downloaded_zip_fp)
             self.done(QtWidgets.QDialog.Accepted)
-

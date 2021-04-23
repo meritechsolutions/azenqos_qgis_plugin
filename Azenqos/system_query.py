@@ -1,7 +1,4 @@
-from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 import pandas as pd
-import numpy as np
-import azq_utils
 
 
 def get_technology_df(dbcon, time_before):
@@ -21,10 +18,11 @@ def get_technology_df(dbcon, time_before):
     for rat in rat_to_table_and_primary_where_dict:
         try:
             sql = "select log_hash, time, {} as main_param from {}".format(
-                rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat])
+                rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat]
+            )
             df = pd.read_sql(sql, dbcon, parse_dates=["Time"])
             df["rat"] = rat
-            if rat == 'NR':
+            if rat == "NR":
                 df = df.ffill(limit=5)
             per_rat_df_list.append(df)
         except Exception as e:

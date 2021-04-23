@@ -1,11 +1,11 @@
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from customize_properties import PropertiesWindow
 import sys
+
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import QAbstractTableModel, QVariant, Qt
+from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QMenu, QTableView
+
+from customize_properties import PropertiesWindow
 
 
 class CustomizedWindowWidget(QWidget):

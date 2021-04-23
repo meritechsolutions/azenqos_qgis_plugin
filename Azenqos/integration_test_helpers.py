@@ -1,7 +1,7 @@
 import os
 import zipfile
+
 import azq_utils
-import shutil
 
 
 def unzip_azm_to_tmp_get_dbfp(azmfp):

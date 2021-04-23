@@ -1,7 +1,9 @@
-from PyQt5.QtSql import QSql, QSqlDatabase, QSqlQuery
-import csv, inspect, os, sys, datetime, json, io
-from zipfile import ZipFile
-import shutil
+import csv
+import inspect
+import os
+import sys
+
+from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 # Adding folder path
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -84,7 +86,7 @@ class Query(object):
         self.table_name = table_name
 
     def query(self):
-        condition = ""
+        #condition = ""
         result = []
         # inputdata = ['table','value','row',column']
         # if self.globalTime:
@@ -106,9 +108,9 @@ class Query(object):
 
 class Utils:
     gc = None
+
     def __init__(self, gc):
         self.gc = gc
-
 
     def openConnection(self, db: QSqlDatabase):
         print("%s: openConnection" % os.path.basename(__file__))
@@ -121,4 +123,3 @@ class Utils:
         if db:
             if db.isOpen():
                 db.close()
-

@@ -31,4 +31,3 @@ class PolqaQuery:
 
     def closeConnection(self):
         self.azenqosDatabase.close()
-

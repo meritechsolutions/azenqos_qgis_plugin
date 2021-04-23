@@ -18,6 +18,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
 from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
 from PyQt5.QtGui import *
+
 try:
     from qgis.core import *
     from qgis.utils import *
@@ -25,6 +26,7 @@ try:
 except:
     pass
 from globalutils import Utils
+
 try:
     from filter_header import *
 except:
@@ -182,8 +184,8 @@ class TableWindow(QWidget):
         )
 
     def updateTableModelData(self, data):
-        if self.tableModel is None:            
-             self.setTableModel(data)
+        if self.tableModel is None:
+            self.setTableModel(data)
         if self.tableModel is not None:
             print("updateTableModelData()")
             self.tableModel.setData(None, data)
@@ -377,7 +379,7 @@ class TableWindow(QWidget):
                     self.dataList = CdmaEvdoQuery(
                         self.gc.azenqosDatabase, self.gc.currentDateTimeString
                     ).getEvdoParameters()
-            
+
                 # PCAP
                 elif self.title == "PCAP_PCAP List":
                     # self.dataList = lte_query.get_volte_disp_df(
@@ -888,6 +890,7 @@ class DetailWidget(QDialog):
             if polqaDict:
                 self.textEdit.setPlainText(polqaDict["output_text"])
                 from PyQt5 import QtMultimedia
+
                 self.polqaWavFile = QtMultimedia.QSound(
                     self.gc.logPath + "/" + polqaDict["wave_file"]
                 )

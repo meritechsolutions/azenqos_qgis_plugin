@@ -1,12 +1,13 @@
-import azq_theme_manager
+import os
 import sys
 import traceback
-import preprocess_azm
-import azq_utils
-import os
 import xml.etree.ElementTree as xet
-import io
+
 import pandas as pd
+
+import azq_theme_manager
+import azq_utils
+import preprocess_azm
 
 
 def prepare_spatialite_views(dbcon):
@@ -15,9 +16,9 @@ def prepare_spatialite_views(dbcon):
     dbcon.execute(
         """
         CREATE TABLE IF NOT EXISTS spatial_ref_sys (srid INTEGER NOT NULL PRIMARY KEY,auth_name VARCHAR(256) NOT NULL,auth_srid INTEGER NOT NULL,ref_sys_name VARCHAR(256),proj4text VARCHAR(2048) NOT NULL);
-        """        
+        """
     )
-    
+
     try:
         dbcon.execute(
             """
@@ -27,12 +28,12 @@ def prepare_spatialite_views(dbcon):
     except Exception as ex:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
-        if 'UNIQUE constraint failed' in exstr:
+        if "UNIQUE constraint failed" in exstr:
             pass
         else:
             print("ERROR: insert failed with exception: %s", exstr)
             raise ex
-        
+
     dbcon.execute(
         """
         CREATE TABLE IF NOT EXISTS geometry_columns (f_table_name VARCHAR(256) NOT NULL,f_geometry_column VARCHAR(256) NOT NULL,type VARCHAR(30) NOT NULL,coord_dimension INTEGER NOT NULL,srid INTEGER,spatial_index_enabled INTEGER NOT NULL);
@@ -50,7 +51,7 @@ def prepare_spatialite_views(dbcon):
     default_qml_param = "lte_inst_rsrp_1"
 
     ### we will make views one per param so drop all existing tables from geom_columns
-    try:    
+    try:
         dbcon.execute(
             """ delete from geometry_columns where f_table_name not in ('events','signalling'); """
         )
@@ -60,7 +61,10 @@ def prepare_spatialite_views(dbcon):
         print("WARNING: del from geom cols exception: ", exstr)
 
     ### get list of log_hash, posids where location table's positioning_lat is -1.0 and positioning_lon is -1.0 caused by pressing load indoor logs
-    df_posids_indoor_start = pd.read_sql("select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0", dbcon)
+    df_posids_indoor_start = pd.read_sql(
+        "select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0",
+        dbcon,
+    )
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
@@ -92,7 +96,7 @@ def prepare_spatialite_views(dbcon):
                 view
             )
             dbcon.execute(sqlstr)
-            
+
             # get theme df for this param
             theme_df = azq_theme_manager.get_theme_df_for_column(param)
             if theme_df is None:
@@ -191,18 +195,20 @@ def prepare_spatialite_views(dbcon):
 
             dbcon.commit()
             print("create view success")
-        except:            
+        except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             if "no such table" in exstr:
                 continue
             print("WARNING: prepare_spatialte_views exception:", exstr)
 
-            
     # remove stray -1 -1 rows
     for view in tables_to_rm_stray_neg1_rows:
         for index, row in df_posids_indoor_start.iterrows():
-            for posid in [row.posid, row.posid+1]:  # del with same posid and next posid as found in log case: 354985102910027 20_1_2021 7.57.38.azm
+            for posid in [
+                row.posid,
+                row.posid + 1,
+            ]:  # del with same posid and next posid as found in log case: 354985102910027 20_1_2021 7.57.38.azm
                 # sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
                 #     view, row.log_hash, posid
                 # )
@@ -212,7 +218,6 @@ def prepare_spatialite_views(dbcon):
                 print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)
                 dbcon.execute(sqlstr)
                 dbcon.commit()
-
 
     ## for each param
     # create view for param

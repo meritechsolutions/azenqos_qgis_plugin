@@ -1,7 +1,6 @@
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-import sys
+from PyQt5.QtCore import QCoreApplication, QRect, QMetaObject
+from PyQt5.QtGui import QWidget
+from PyQt5.QtWidgets import QTabWidget, QFormLayout, QLabel, QLineEdit, QSizePolicy, QDialogButtonBox
 
 
 class HeaderContent(QWidget):

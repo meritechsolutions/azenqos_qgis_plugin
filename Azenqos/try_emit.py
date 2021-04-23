@@ -1,7 +1,7 @@
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from PyQt5 import *
 import sys
+
+from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QWidget, QApplication
 
 
 class Main(QWidget):
@@ -33,7 +33,7 @@ class ExecuteThread(QThread):
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = Main()
     window.show()
     app.exec_()

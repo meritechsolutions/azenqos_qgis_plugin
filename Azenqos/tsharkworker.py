@@ -1,18 +1,15 @@
-import traceback, sys
-from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *  # QAbstractTableModel, QVariant, Qt, pyqtSignal, QThread
-from PyQt5.QtSql import *  # QSqlQuery, QSqlDatabase
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QColor
-from worker import WorkerSignals
-import subprocess
-import tempfile
 import os
-import uuid
 import re
-import tshark_util
+import subprocess
+import sys
+import traceback
+import uuid
+
+from PyQt5.QtCore import pyqtSlot, QRunnable
+
 import azq_utils
+import tshark_util
+from worker import WorkerSignals
 
 
 class TsharkDecodeWorker(QRunnable):

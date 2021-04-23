@@ -12,8 +12,9 @@ echo "Please make sure QGIS is closed first."
 echo "Any existing Azenqos plugins would get deleted and replaced"
 echo "== Finding local QGIS installation folder..."
 
+echo "note: pyqt5 pip must not be installed as it should be installed by qgis already - do not install in pip again as it will conflict and qgis launch python would fail"
 echo "== Installing required python packages into local python3 env..."
-sudo python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 exit_if_failed
 
 mkdir -p ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/

@@ -37,7 +37,7 @@ def test():
         if fn.endswith(".py") and not fn.startswith(".#") and not fn == "__init__.py"
     ]
 
-    for test_func in [test_pyflakes] + ([test_formatting] if os.name == "posix" else []):
+    for test_func in [test_pyflakes]:
         for fp in files:
             test_func(fp)
 

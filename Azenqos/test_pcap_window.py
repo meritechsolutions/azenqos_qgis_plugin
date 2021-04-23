@@ -24,7 +24,7 @@ def test():
     with zipfile.ZipFile(azmfp, "r") as zip_file:
         zip_file.extractall(tmpdir)
 
-    pcap_df = pcap_window.new_get_all_pcap_content(tmpdir)(None, None)
+    pcap_df = pcap_window.new_get_all_pcap_content(tmpdir)
     print(pcap_df)
 
     try:

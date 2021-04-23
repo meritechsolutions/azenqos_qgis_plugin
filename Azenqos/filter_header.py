@@ -1,4 +1,4 @@
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtCore
 from PyQt5.QtCore import QSortFilterProxyModel, QRegExp, Qt
 from PyQt5.QtWidgets import QHeaderView, QLineEdit
 

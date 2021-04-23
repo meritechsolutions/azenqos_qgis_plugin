@@ -39,7 +39,7 @@ Installation instructions for Ubuntu GNU/Linux
 Using Standlone mode to replay/analyze logs without QGIS (Developer mode)
 ------------------------------------------------------------
 
-- Run:
+- Install common requirements, run:
 `pip3 install -r requirements-dev.txt`
 
 - Install pyqt5

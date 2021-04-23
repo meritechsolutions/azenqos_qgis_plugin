@@ -6,10 +6,31 @@ import sys
 import threading
 import traceback
 import pandas as pd
-from PyQt5.QtCore import pyqtSignal, Qt, QItemSelection, QSortFilterProxyModel, QAbstractTableModel
+from PyQt5.QtCore import (
+    pyqtSignal,
+    Qt,
+    QItemSelection,
+    QSortFilterProxyModel,
+    QAbstractTableModel,
+)
 from PyQt5.QtGui import QStandardItemModel, QIcon, QPixmap, QStandardItem
-from PyQt5.QtWidgets import QWidget, QTableView, QAbstractItemView, QVBoxLayout, QHeaderView, QMenu, QLineEdit, \
-    QTreeView, QCheckBox, QDialogButtonBox, QDialog, QTextEdit, QGridLayout, QPushButton, QFileDialog
+from PyQt5.QtWidgets import (
+    QWidget,
+    QTableView,
+    QAbstractItemView,
+    QVBoxLayout,
+    QHeaderView,
+    QMenu,
+    QLineEdit,
+    QTreeView,
+    QCheckBox,
+    QDialogButtonBox,
+    QDialog,
+    QTextEdit,
+    QGridLayout,
+    QPushButton,
+    QFileDialog,
+)
 
 import azq_server_api
 
@@ -248,7 +269,11 @@ class TableWindow(QWidget):
         # self.menu.exec_(QtCore.QPoint(posX, posY))
 
     def setFilterListModel(self, columnIndex, checkedRegexList):
-        print("setFilterListModel: columnIndex {}, checkedRegexList {}".format(columnIndex, checkedRegexList))
+        print(
+            "setFilterListModel: columnIndex {}, checkedRegexList {}".format(
+                columnIndex, checkedRegexList
+            )
+        )
         self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
         self.proxyModel.invalidateFilter()
 
@@ -614,9 +639,7 @@ class FilterMenuWidget(QWidget):
         self.selectAllCb.stateChanged.connect(self.selectAll)
 
         self.buttonBox = QDialogButtonBox(FilterMenuWidget)
-        self.buttonBox.setStandardButtons(
-            QDialogButtonBox.Cancel | QDialogButtonBox.Ok
-        )
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout.addWidget(self.buttonBox)
 

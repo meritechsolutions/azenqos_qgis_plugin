@@ -1,7 +1,19 @@
 from PyQt5 import QtGui, Qt
 from PyQt5.QtCore import QRect, QSize, QCoreApplication, QMetaObject, QDir
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget, QGroupBox, QSizePolicy, QCheckBox, QComboBox, QLabel, \
-    QLineEdit, QToolButton, QFileDialog, QDialogButtonBox
+from PyQt5.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QWidget,
+    QGroupBox,
+    QSizePolicy,
+    QCheckBox,
+    QComboBox,
+    QLabel,
+    QLineEdit,
+    QToolButton,
+    QFileDialog,
+    QDialogButtonBox,
+)
 
 
 class CellInformation(QDialog):

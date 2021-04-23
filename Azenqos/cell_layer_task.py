@@ -3,7 +3,16 @@ import traceback
 import pandas as pd
 from PyQt5.QtGui import QColor
 from qgis.PyQt.QtCore import QVariant
-from qgis.core import QgsProject, QgsFeature, QgsField, QgsFields, QgsPointXY, QgsGeometry, QgsTask, QgsVectorLayer
+from qgis.core import (
+    QgsProject,
+    QgsFeature,
+    QgsField,
+    QgsFields,
+    QgsPointXY,
+    QgsGeometry,
+    QgsTask,
+    QgsVectorLayer,
+)
 
 import azq_utils
 from azq_cell_file import read_cell_file, g_main_cell_col

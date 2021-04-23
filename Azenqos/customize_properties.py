@@ -47,7 +47,6 @@ class PropertiesWindow(QWidget):
         self.verticalLayout.setContentsMargins(10, 20, 10, 10)
         self.verticalLayout.setObjectName("verticalLayout")
 
-
         self.tabWidget = QTabWidget(self.verticalLayoutWidget)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)

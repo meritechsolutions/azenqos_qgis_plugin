@@ -1,7 +1,16 @@
 import time
 
 try:
-    from qgis.core import QgsProject, QgsTask, QgsMessageLog, QgsRasterLayer, QgsRectangle, QgsLayerTreeLayer, QgsMapLayerType, QgsCoordinateReferenceSystem
+    from qgis.core import (
+        QgsProject,
+        QgsTask,
+        QgsMessageLog,
+        QgsRasterLayer,
+        QgsRectangle,
+        QgsLayerTreeLayer,
+        QgsMapLayerType,
+        QgsCoordinateReferenceSystem,
+    )
 except:
     pass
 
@@ -73,7 +82,7 @@ class LayerTask(QgsTask):
         if result:
             # gc.mostFeaturesLayer = None
             self.addMapToQgis()
-            #geom_column = "geom"
+            # geom_column = "geom"
             self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
 
             # Setting CRS
@@ -98,10 +107,9 @@ class LayerTask(QgsTask):
             else:
                 QgsMessageLog.logMessage(
                     'Task "{name}" Exception: {exception}'.format(
-                        name=self.desc,
-                        exception=self.exception
+                        name=self.desc, exception=self.exception
                     ),
-                    tag="Exception"
+                    tag="Exception",
                 )
                 raise self.exception
 
@@ -145,9 +153,8 @@ class QuitTask(QgsTask):
             else:
                 QgsMessageLog.logMessage(
                     'Task "{name}" Exception: {exception}'.format(
-                        name=self.desc,
-                        exception=self.exception
+                        name=self.desc, exception=self.exception
                     ),
-                    tag="Exception"
+                    tag="Exception",
                 )
                 raise self.exception

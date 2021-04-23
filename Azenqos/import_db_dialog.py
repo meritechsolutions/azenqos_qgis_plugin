@@ -12,7 +12,14 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtSql import QSqlDatabase
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QGridLayout, QRadioButton, QFileDialog
+from PyQt5.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QGroupBox,
+    QGridLayout,
+    QRadioButton,
+    QFileDialog,
+)
 
 from Azenqos import azq_utils
 from Azenqos.cell_layer_task import CellLayerTask
@@ -42,7 +49,6 @@ class import_db_dialog(QDialog):
         self.import_thread = None
         self.import_done_signal.connect(self.ui_handler_import_done)
         self.setupUi(self)
-
 
     def setupUi(self, DatabaseDialog):
         dirname = os.path.dirname(__file__)
@@ -187,11 +193,13 @@ class import_db_dialog(QDialog):
     def clearCurrentProject(self):
         try:
             from qgis.core import QgsProject
+
             for hi in self.gc.h_list:
                 hi.hide()
             self.gc.h_list = []
 
             import main_window
+
             if isinstance(self.parent_window, main_window):
                 self.parent_window.clearAllSelectedFeatures()
 

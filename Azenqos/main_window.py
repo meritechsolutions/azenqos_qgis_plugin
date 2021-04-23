@@ -6,8 +6,22 @@ import traceback
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QSettings, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator, QPixmap, QIcon
-from PyQt5.QtWidgets import QLabel, QLineEdit, QDateTimeEdit, QToolButton, QHBoxLayout, QFileDialog, QMdiSubWindow, \
-    QApplication, QMainWindow, QSizePolicy, QWidget, QStyle, QMessageBox, QPushButton
+from PyQt5.QtWidgets import (
+    QLabel,
+    QLineEdit,
+    QDateTimeEdit,
+    QToolButton,
+    QHBoxLayout,
+    QFileDialog,
+    QMdiSubWindow,
+    QApplication,
+    QMainWindow,
+    QSizePolicy,
+    QWidget,
+    QStyle,
+    QMessageBox,
+    QPushButton,
+)
 from PyQt5.uic import loadUi
 
 import qt_utils, azq_utils
@@ -17,9 +31,21 @@ from worker import Worker
 
 try:
     # noinspection PyUnresolvedReferences
-    from qgis.core import QgsProject, QgsLayerTreeGroup, QgsCoordinateReferenceSystem, QgsPointXY, QgsRectangle, QgsGeometry, QgsMessageLog, QgsFeatureRequest, QgsApplication
-    #from qgis.utils import
+    from qgis.core import (
+        QgsProject,
+        QgsLayerTreeGroup,
+        QgsCoordinateReferenceSystem,
+        QgsPointXY,
+        QgsRectangle,
+        QgsGeometry,
+        QgsMessageLog,
+        QgsFeatureRequest,
+        QgsApplication,
+    )
+
+    # from qgis.utils import
     from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
+
     print("mainwindow working in qgis mode")
 except:
     print("mainwindow working in standalone mode")
@@ -50,6 +76,7 @@ import linechart_custom
 import linechart_multi_y_axis
 import time
 import pandas as pd
+
 
 class main_window(QMainWindow):
 
@@ -930,6 +957,7 @@ Log_hash list: {}""".format(
             )
             self.gc.timeSlider.setSizePolicy(sizePolicy)
             from PyQt5 import QtCore
+
             self.gc.timeSlider.setBaseSize(QtCore.QSize(500, 0))
             self.gc.timeSlider.setPageStep(1)
             self.gc.timeSlider.setSliderPosition(0)
@@ -1122,6 +1150,7 @@ Log_hash list: {}""".format(
 
                 # set highlight symbol properties
                 from PyQt5.QtGui import QColor
+
                 h.setColor(QColor(255, 0, 0, 255))
                 h.setWidth(2)
                 h.setFillColor(QColor(255, 255, 255, 0))
@@ -1224,6 +1253,7 @@ Log_hash list: {}""".format(
     def ui_thread_emit_time_slider_updated(self, timestamp):
         print("ui_thread_emit_time_slider_updated")
         import datetime
+
         sampledate = datetime.datetime.fromtimestamp(timestamp)
         self.timeEdit.setDateTime(sampledate)
 
@@ -1541,6 +1571,7 @@ Log_hash list: {}""".format(
 
     def saveWorkspaceFile(self):
         from PyQt5 import QtCore
+
         fp, _ = QFileDialog.getSaveFileName(
             self, "Save workspace file", QtCore.QDir.rootPath(), "*.ini"
         )

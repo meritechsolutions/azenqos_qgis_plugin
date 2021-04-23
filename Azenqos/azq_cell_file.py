@@ -678,7 +678,7 @@ def apply_cell_file(
 
             # only supported in LTE now
             if rat == "lte":
-                ''' not related to qgis plugin
+                """ not related to qgis plugin
                 # if custom cellfile was added inside phone log
                 (
                     is_use_dynamic_cell_df,
@@ -704,7 +704,7 @@ def apply_cell_file(
                         site_font_size=site_font_size,
                         cell_font_size=cell_font_size,
                     )
-                '''
+                """
 
     dprint("apply_cell_file done")
 

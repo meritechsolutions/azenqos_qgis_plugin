@@ -3,7 +3,15 @@ import os
 from PyQt5.QtCore import QVariant
 
 try:
-    from qgis.core import QgsProject, QgsFeature, QgsField, QgsFields, QgsPointXY, QgsGeometry, QgsVectorLayer
+    from qgis.core import (
+        QgsProject,
+        QgsFeature,
+        QgsField,
+        QgsFields,
+        QgsPointXY,
+        QgsGeometry,
+        QgsVectorLayer,
+    )
 except:
     pass
 import preprocess_azm

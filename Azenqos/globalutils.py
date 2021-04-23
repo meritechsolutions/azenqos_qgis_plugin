@@ -86,7 +86,7 @@ class Query(object):
         self.table_name = table_name
 
     def query(self):
-        #condition = ""
+        # condition = ""
         result = []
         # inputdata = ['table','value','row',column']
         # if self.globalTime:

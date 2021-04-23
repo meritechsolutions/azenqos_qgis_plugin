@@ -317,7 +317,7 @@ def get_theme_df_for_column(
 
     # check custom theme by cosmetic_option
     try:
-        '''
+        """
         custom_theme_dict = eval(
             azq_cosmetic_map_option_setting.get_cosmetic_option("custom_theme")
         )
@@ -325,7 +325,7 @@ def get_theme_df_for_column(
         if param_col_with_arg in custom_theme_element_list:
             retdf = pd.read_json(custom_theme_dict[param_col_with_arg])
             return retdf
-        '''
+        """
     except:
         print("Warning!! custom theme json invalid, try normal step")
 
@@ -336,7 +336,6 @@ def get_theme_df_for_column(
     print("theme_xml_file :" + theme_xml_file)
 
     if theme_xml_file.endswith(".csv"):  # not support reverse_cum
-
 
         try:
             theme_df = get_csv_theme_df_for_csv_file(theme_xml_file)
@@ -380,7 +379,6 @@ def get_theme_df_for_column(
                     param_col, str(cte)
                 )
             )
-
 
     try:
 
@@ -2159,9 +2157,6 @@ def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
         color_header = ["ColorXml", "Lower", "Upper", "PointSize"]
 
         retdf = pd.DataFrame(columns=color_header)
-
-
-
 
         for i in range(int(n_buckets)):
             retdf.loc[i] = None

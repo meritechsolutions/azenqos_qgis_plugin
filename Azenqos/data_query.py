@@ -388,7 +388,6 @@ class DataQuery:
         self.closeConnection()
         return dataList
 
-
     def getWifiActive(self):
         self.openConnection()
         dataList = []

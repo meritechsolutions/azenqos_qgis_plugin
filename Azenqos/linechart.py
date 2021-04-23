@@ -7,6 +7,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
+
 # from qgis.gui import QgsColorButton
 from PyQt5.QtWidgets import QMenu
 from PyQt5.uic import loadUi
@@ -185,7 +186,7 @@ class LineChart(QtWidgets.QDialog):
 
     def onScrollBarMove(self):
         value = self.ui.horizontalScrollBar.value()
-        #x = self.minX + value
+        # x = self.minX + value
         if not self.moveFromChart:
             self.moveChart(self.minX + value)
         self.moveFromChart = False

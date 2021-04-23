@@ -151,7 +151,6 @@ def preprocess(
                     )
                 else:
 
-
                     azm_precheck_add_file_list = []
 
                     print("azm_precheck_add_file_list:", azm_precheck_add_file_list)

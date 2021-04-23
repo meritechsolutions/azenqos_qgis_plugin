@@ -348,7 +348,10 @@ class import_db_dialog(QDialog):
         if error:
             print("ui_handler_import_done() error: %s" % error)
             QtWidgets.QMessageBox.critical(
-                None, "Failed", error, QtWidgets.QMessageBox.Cancel,
+                None,
+                "Failed",
+                error,
+                QtWidgets.QMessageBox.Cancel,
             )
             self.buttonBox.setEnabled(True)
             return False

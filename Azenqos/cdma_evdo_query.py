@@ -1,4 +1,4 @@
-from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+from PyQt5.QtSql import QSqlQuery
 
 
 class CdmaEvdoQuery:
@@ -31,9 +31,7 @@ class CdmaEvdoQuery:
             mainColumn = dic["column"]
             subColumn = dic["column"]
             table = dic["table"]
-            join = None
             joinString = ""
-            onString = ""
 
             if element and mainColumn and table:
                 queryString = """SELECT %s

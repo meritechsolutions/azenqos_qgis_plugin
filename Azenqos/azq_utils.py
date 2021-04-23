@@ -1,13 +1,14 @@
+import datetime
+import hashlib
+import os
 import random
+import shutil
 import sys
 import traceback
-import os
-import dprint
-import shutil
-import hashlib
+
 import requests
-import azq_utils
-import datetime
+
+import dprint
 
 TMP_FOLDER_NAME = "tmp_gen"
 

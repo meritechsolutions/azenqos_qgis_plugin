@@ -20,7 +20,10 @@ def get_nr_df(dbcon):
 
 def get_nr_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
-        ("Time", ["time"],),
+        (
+            "Time",
+            ["time"],
+        ),
         (
             ["RSRP", "RSRQ", "SINR"],
             [
@@ -56,10 +59,19 @@ def get_nr_data_df(dbcon):
 
 def get_nr_data_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
-        ("Time", ["time"],),
         (
-            ["Data Download", "Data Upload",],
-            ["data_download_overall/1000", "data_upload_overall/1000",],
+            "Time",
+            ["time"],
+        ),
+        (
+            [
+                "Data Download",
+                "Data Upload",
+            ],
+            [
+                "data_download_overall/1000",
+                "data_upload_overall/1000",
+            ],
             "data_app_throughput",
         ),
         (
@@ -98,7 +110,13 @@ def get_lte_df(dbcon):
 def get_lte_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
         (
-            ["Time", "SINR", "RSRP", "RSRQ", "RSSI",],
+            [
+                "Time",
+                "SINR",
+                "RSRP",
+                "RSRQ",
+                "RSSI",
+            ],
             [
                 "time",
                 "lte_sinr_1 ",
@@ -134,15 +152,30 @@ def get_lte_data_df(dbcon):
 
 def get_lte_data_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
-        ("Time", ["time"],),
         (
-            ["Data Download", "Data Upload",],
-            ["data_download_overall/1000", "data_upload_overall/1000",],
+            "Time",
+            ["time"],
+        ),
+        (
+            [
+                "Data Download",
+                "Data Upload",
+            ],
+            [
+                "data_download_overall/1000",
+                "data_upload_overall/1000",
+            ],
             "data_app_throughput",
         ),
         (
-            ["L1 Throughput", "LTE Bler",],
-            ["lte_l1_throughput_mbps_1", "lte_bler_1",],
+            [
+                "L1 Throughput",
+                "LTE Bler",
+            ],
+            [
+                "lte_l1_throughput_mbps_1",
+                "lte_bler_1",
+            ],
             "lte_l1_dl_tp",
         ),
     ]
@@ -176,14 +209,39 @@ def get_wcdma_df(dbcon):
 
 def get_wcdma_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
-        ("Time", ["time"],),
         (
-            ["EcIo", "RSCP",],
-            ["wcdma_aset_ecio_avg", "wcdma_aset_rscp_avg",],
+            "Time",
+            ["time"],
+        ),
+        (
+            [
+                "EcIo",
+                "RSCP",
+            ],
+            [
+                "wcdma_aset_ecio_avg",
+                "wcdma_aset_rscp_avg",
+            ],
             "wcdma_cell_meas",
         ),
-        (["RSSI",], ["wcdma_rssi",], "wcdma_rx_power"),
-        (["Bler",], ["wcdma_bler_average_percent_all_channels",], "wcdma_bler"),
+        (
+            [
+                "RSSI",
+            ],
+            [
+                "wcdma_rssi",
+            ],
+            "wcdma_rx_power",
+        ),
+        (
+            [
+                "Bler",
+            ],
+            [
+                "wcdma_bler_average_percent_all_channels",
+            ],
+            "wcdma_bler",
+        ),
     ]
     return params_disp_df.get(
         dbcon,
@@ -212,18 +270,35 @@ def get_wcdma_data_df(dbcon):
 
 def get_wcdma_data_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
-        ("Time", ["time"],),
+        (
+            "Time",
+            ["time"],
+        ),
         (
             ["RLC Download Thoughput"],
-            ["data_wcdma_rlc_dl_throughput",],
+            [
+                "data_wcdma_rlc_dl_throughput",
+            ],
             "data_wcdma_rlc_stats",
         ),
         (
-            ["App Download Thoughput",],
-            ["data_app_dl_throughput_1",],
+            [
+                "App Download Thoughput",
+            ],
+            [
+                "data_app_dl_throughput_1",
+            ],
             "data_app_throughput",
         ),
-        (["HSDPA Thoughput",], ["data_hsdpa_thoughput",], "wcdma_hsdpa_stats"),
+        (
+            [
+                "HSDPA Thoughput",
+            ],
+            [
+                "data_hsdpa_thoughput",
+            ],
+            "wcdma_hsdpa_stats",
+        ),
     ]
     return params_disp_df.get(
         dbcon,
@@ -254,8 +329,16 @@ def get_gsm_df(dbcon):
 def get_gsm_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
         (
-            ["Time", "RxLev", "RxQual",],
-            ["time", "gsm_rxlev_sub_dbm", "gsm_rxqual_sub",],
+            [
+                "Time",
+                "RxLev",
+                "RxQual",
+            ],
+            [
+                "time",
+                "gsm_rxlev_sub_dbm",
+                "gsm_rxqual_sub",
+            ],
         ),
     ]
     return params_disp_df.get(
@@ -284,15 +367,24 @@ def get_gsm_data_df(dbcon):
 
 def get_gsm_data_df_by_time(dbcon, time_before):
     parameter_to_columns_list = [
-        ("Time", ["time"],),
+        (
+            "Time",
+            ["time"],
+        ),
         (
             ["RLC Download Thoughput"],
-            ["data_gsm_rlc_dl_throughput",],
+            [
+                "data_gsm_rlc_dl_throughput",
+            ],
             "data_egprs_stats",
         ),
         (
-            ["App Download Thoughput",],
-            ["data_app_dl_throughput_1",],
+            [
+                "App Download Thoughput",
+            ],
+            [
+                "data_app_dl_throughput_1",
+            ],
             "data_app_throughput",
         ),
     ]
@@ -330,7 +422,12 @@ def get_chart_df(dbcon, param_list_dict):
 def get_table_df_by_time(dbcon, time_before, param_list_dict):
     first_table = None
     not_null_first_col = True
-    parameter_to_columns_list = [("Time", ["time"],)]
+    parameter_to_columns_list = [
+        (
+            "Time",
+            ["time"],
+        )
+    ]
     for key in param_list_dict:
         param_dict = param_list_dict[key]
         param_name = param_dict["name"]

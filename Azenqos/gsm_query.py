@@ -9,7 +9,13 @@ def get_gsm_radio_params_disp_df(dbcon, time_before):
     df_list = []
     parameter_to_columns_list = [
         (
-            ["Time", "RxLev Full", "RxLev Sub", "RxQual Full", "RxQual Sub",],
+            [
+                "Time",
+                "RxLev Full",
+                "RxLev Sub",
+                "RxQual Full",
+                "RxQual Sub",
+            ],
             [
                 "time," "gsm_rxlev_full_dbm",
                 "gsm_rxlev_sub_dbm",
@@ -65,7 +71,10 @@ def get_gsm_serv_and_neigh__df(dbcon, time_before):
         ]
     )
     parameter_to_columns_list = [
-        ("serv", list(serv_col_prefix_sr),),
+        (
+            "serv",
+            list(serv_col_prefix_sr),
+        ),
     ]
     df = params_disp_df.get(
         dbcon,
@@ -78,9 +87,16 @@ def get_gsm_serv_and_neigh__df(dbcon, time_before):
     df.columns = ["CellGroup"] + cell_col_prefix_renamed
     df_list.append(df)
 
-    lac_col_prefix_sr = pd.Series(["gsm_lac",])
+    lac_col_prefix_sr = pd.Series(
+        [
+            "gsm_lac",
+        ]
+    )
     parameter_to_columns_list = [
-        ("serv", list(lac_col_prefix_sr),),
+        (
+            "serv",
+            list(lac_col_prefix_sr),
+        ),
     ]
     df2 = params_disp_df.get(
         dbcon,
@@ -124,7 +140,10 @@ def get_gsm_serv_and_neigh__df(dbcon, time_before):
         [],
     )
     parameter_to_columns_list = [
-        (list(map(lambda x: "neigh{}".format(x + 1), range(neigh_n_param))), neigh,),
+        (
+            list(map(lambda x: "neigh{}".format(x + 1), range(neigh_n_param))),
+            neigh,
+        ),
     ]
     df = params_disp_df.get(
         dbcon,
@@ -156,8 +175,15 @@ def get_gsm_current_channel_disp_df(dbcon, time_before):
     df_list = []
     parameter_to_columns_list = [
         (
-            ["Time", "Cellname", "CGI",],
-            ["time," "gsm_cellfile_matched_cellname", "gsm_cgi",],
+            [
+                "Time",
+                "Cellname",
+                "CGI",
+            ],
+            [
+                "time," "gsm_cellfile_matched_cellname",
+                "gsm_cgi",
+            ],
             "gsm_cell_meas",
         ),
         ("Channel Type", ["gsm_channeltype"], "gsm_rr_chan_desc"),
@@ -201,7 +227,10 @@ def get_coi_df(dbcon, time_before):
     worst_col_prefix_sr = pd.Series(["gsm_coi_worst_arfcn_1", "gsm_coi_worst"])
     parameter_to_columns_list = [
         ("Time", ["time"]),
-        ("Worst", list(worst_col_prefix_sr),),
+        (
+            "Worst",
+            list(worst_col_prefix_sr),
+        ),
     ]
     df = params_disp_df.get(
         dbcon,
@@ -226,7 +255,10 @@ def get_coi_df(dbcon, time_before):
     )
     parameter_to_columns_list = [
         ("Avg", ['""']),
-        (list(map(lambda x: "", range(avg_n_param))), avg,),
+        (
+            list(map(lambda x: "", range(avg_n_param))),
+            avg,
+        ),
     ]
     df = params_disp_df.get(
         dbcon,

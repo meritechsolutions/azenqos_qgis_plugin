@@ -25,7 +25,6 @@ from PyQt5.QtWidgets import (
 from PyQt5.uic import loadUi
 
 import qt_utils, azq_utils
-from datatable import create_table_window_from_api_expression_ret, TableWindow
 from timeslider import timeSliderThread, timeSlider
 from worker import Worker
 
@@ -192,6 +191,7 @@ Log_hash list: {}""".format(
         if not self.is_logged_in():
             qt_utils.msgbox("Please login to server first...", parent=self)
             return
+        from datatable import create_table_window_from_api_expression_ret, TableWindow
         azq_report_gen_expression = "list_modules_with_process_cell_func.run()"
         swa = SubWindowArea(self.mdi, self.gc)
         widget = create_table_window_from_api_expression_ret(

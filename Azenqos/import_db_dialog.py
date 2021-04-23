@@ -22,8 +22,12 @@ from PyQt5.QtWidgets import (
 )
 
 import azq_utils
-from cell_layer_task import CellLayerTask
-from tasks import LayerTask
+try:
+    from cell_layer_task import CellLayerTask
+    from tasks import LayerTask
+except:
+    pass
+
 
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 

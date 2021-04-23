@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QApplication
+from PyQt5.QtWidgets import QApplication
 from datatable import create_table_window_from_api_expression_ret
 import sys
 import analyzer_vars

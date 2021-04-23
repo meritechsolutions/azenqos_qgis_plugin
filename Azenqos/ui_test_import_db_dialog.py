@@ -4,7 +4,8 @@ import analyzer_vars
 
 
 def test():
-    QApplication([])
+    app = QApplication([])
+    print("app: ", app)  # use it so pyflakes wont complain - we need a ref to qapplicaiton otherwise we'll get segfault
 
     from import_db_dialog import import_db_dialog
 

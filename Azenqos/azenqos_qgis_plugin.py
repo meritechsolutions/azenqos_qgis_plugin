@@ -248,14 +248,3 @@ class azenqos_qgis_plugin:
         if self.dlg is not None:
             self.dlg.show()
 
-
-def ask_operation_mode():
-    msgBox = QMessageBox()
-    msgBox.setWindowTitle("Operation mode")
-    msgBox.setText("Please choose operation mode:")
-    msgBox.addButton(
-        QPushButton("ONLINE - AZENQOS Cloud Analytics"), QMessageBox.YesRole
-    )
-    msgBox.addButton(QPushButton("OFFLINE - AZENQOS .AZM logfile"), QMessageBox.NoRole)
-    reply = msgBox.exec_()
-    return reply

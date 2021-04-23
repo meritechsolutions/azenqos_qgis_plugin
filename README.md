@@ -37,12 +37,12 @@ Using Standlone mode to launch without QGIS (Developer mode)
 `pip3 install -r requirements-dev.txt`
 
 - Install pyqt5
-  - If you are on Windows run:
+  - If you are on Windows, install Python 3.8.5 first, then in the command prompt, get into this folder and run:
   `pip3 install -r requirements-dev-windows.txt`
-  - If you are on Ubuntu run:
+  - If you are on Ubuntu, open a terminal and run:
   `sudo apt install python3-pyqt5`
   
-- Launch analyzer in standalone mode:
+- Launch analyzer in standalone mode, cd into this folder and run:
 `cd Azenqos`
 `python3 ui_test_main_window.py`
 

@@ -28,7 +28,7 @@ def test_pyflakes(fp):
 
 
 def test():
-    files = os.listdir(".")
+    files = sorted(os.listdir("."))    
     files = [fn for fn in files if fn.endswith(".py") and not fn.startswith(".#")]
 
     for test_func in [test_pyflakes, test_formatting]:

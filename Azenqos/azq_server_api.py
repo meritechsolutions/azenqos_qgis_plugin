@@ -21,9 +21,7 @@ def api_login_get_token(server, user, passwd, passwd_sha=None):
     # print("send auth_token: %s" % auth_token)
     resp = requests.get(
         "https://{}/api/login".format(host),
-        headers={
-            "Authorization": "Bearer {}".format(auth_token),
-        },
+        headers={"Authorization": "Bearer {}".format(auth_token),},
         verify=False,
     )
     if resp.status_code == 200:
@@ -41,9 +39,7 @@ def api_create_process(server, token, lhl, azq_report_gen_expression):
     host = urlparse(server).netloc
     resp = requests.post(
         "https://{}/api_livegen/livegen_process".format(host),
-        headers={
-            "Authorization": "Bearer {}".format(token),
-        },
+        headers={"Authorization": "Bearer {}".format(token),},
         json={
             "process_type": "azq_report_gen",
             "pg_host": "azq_pg",
@@ -60,8 +56,7 @@ def api_create_process(server, token, lhl, azq_report_gen_expression):
     if resp.status_code != 200:
         raise Exception(
             "Got failed status_code: {} resp.text: {}".format(
-                resp.status_code,
-                resp.text,
+                resp.status_code, resp.text,
             )
         )
     resp_dict = resp.json()
@@ -72,9 +67,7 @@ def api_get_process(server, token, proc_uuid):
     host = urlparse(server).netloc
     resp = requests.get(
         "https://{}/api_livegen/livegen_process/{}".format(host, proc_uuid),
-        headers={
-            "Authorization": "Bearer {}".format(token),
-        },
+        headers={"Authorization": "Bearer {}".format(token),},
         verify=False,
     )
     # print("resp.status_code", resp.status_code)
@@ -82,8 +75,7 @@ def api_get_process(server, token, proc_uuid):
     if resp.status_code != 200:
         raise Exception(
             "Got failed status_code: {} resp.text: {}".format(
-                resp.status_code,
-                resp.text,
+                resp.status_code, resp.text,
             )
         )
     resp_dict = resp.json()
@@ -94,9 +86,7 @@ def api_resp_get_stdout(server, token, resp_dict):
     host = urlparse(server).netloc
     resp = requests.get(
         "https://{}/{}".format(host, resp_dict["stdout_log_url"]),
-        headers={
-            "Authorization": "Bearer {}".format(token),
-        },
+        headers={"Authorization": "Bearer {}".format(token),},
         verify=False,
     )
     # print("resp.status_code", resp.status_code)
@@ -104,8 +94,7 @@ def api_resp_get_stdout(server, token, resp_dict):
     if resp.status_code != 200:
         raise Exception(
             "Got failed status_code: {} resp.text: {}".format(
-                resp.status_code,
-                resp.text,
+                resp.status_code, resp.text,
             )
         )
     return resp.text
@@ -115,9 +104,7 @@ def api_delete_process(server, token, proc_uuid):
     host = urlparse(server).netloc
     resp = requests.delete(
         "https://{}/api_livegen/livegen_process/{}".format(host, proc_uuid),
-        headers={
-            "Authorization": "Bearer {}".format(token),
-        },
+        headers={"Authorization": "Bearer {}".format(token),},
         verify=False,
     )
     # print("resp.status_code", resp.status_code)
@@ -125,8 +112,7 @@ def api_delete_process(server, token, proc_uuid):
     if resp.status_code != 200:
         raise Exception(
             "Got failed status_code: {} resp.text: {}".format(
-                resp.status_code,
-                resp.text,
+                resp.status_code, resp.text,
             )
         )
     resp_dict = resp.json()

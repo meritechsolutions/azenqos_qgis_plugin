@@ -5,7 +5,7 @@ import pyflakes.api
 
 
 def test_formatting(fp):
-    print(("TEST pyflakes:", fp, "start"))
+    print(("TEST black:", fp, "start"))
     mode = black.FileMode()
     fast = False
     file_contents = None
@@ -13,14 +13,14 @@ def test_formatting(fp):
         file_contents = f.read().decode()
     needs_change = False
     try:
-        black.format_file_contents(file_contents, fast=fast, mode=mode)
+        ret = black.format_file_contents(file_contents, fast=fast, mode=mode)
+        print("black ret:", ret)
         needs_change = True
     except black.NothingChanged:
         needs_change = False
     if needs_change:
         raise Exception("test_formatting FAILED: try run command: black .")
-    
-
+    print(("TEST black:", fp, "done"))
 
 
 def test_pyflakes(fp):
@@ -32,7 +32,11 @@ def test_pyflakes(fp):
 
 def test():
     files = sorted(os.listdir("."))
-    files = [fn for fn in files if fn.endswith(".py") and not fn.startswith(".#") and not fn == "__init__.py"]
+    files = [
+        fn
+        for fn in files
+        if fn.endswith(".py") and not fn.startswith(".#") and not fn == "__init__.py"
+    ]
 
     for test_func in [test_pyflakes, test_formatting]:
         for fp in files:

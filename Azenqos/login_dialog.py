@@ -173,10 +173,7 @@ class login_dialog(QDialog):
             success = True
         if not success:
             QtWidgets.QMessageBox.critical(
-                self,
-                "Operation failed...",
-                error,
-                QtWidgets.QMessageBox.Ok,
+                self, "Operation failed...", error, QtWidgets.QMessageBox.Ok,
             )
             self.ui_login_thread_failed()
         else:

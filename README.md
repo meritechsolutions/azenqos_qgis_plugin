@@ -45,7 +45,7 @@ Using Standlone mode to replay/analyze without QGIS (Developer mode)
 - Install pyqt5
   - If you are on Windows, install Python 3.8.5 first, then in the command prompt, get into this folder and run:
   `pip3 install -r requirements-dev-windows.txt`
-  - If you are on Ubuntu, open a terminal and run:
+  - If you are on Ubuntu, open a terminal and run (not required if qgis is already installed):
   `sudo apt install python3-pyqt5`
   
 - Launch analyzer in standalone mode, cd into this folder and run:

@@ -13,7 +13,7 @@ echo "Any existing Azenqos plugins would get deleted and replaced"
 echo "== Finding local QGIS installation folder..."
 
 echo "== Installing required python packages into local python3 env..."
-python3 -m pip install -r requirements.txt
+sudo python3 -m pip install -r requirements.txt
 exit_if_failed
 
 mkdir -p ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/

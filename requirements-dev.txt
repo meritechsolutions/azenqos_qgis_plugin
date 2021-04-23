@@ -1,2 +1,3 @@
 black==19.10b0
 pyflakes
+pyqt==5.11.3

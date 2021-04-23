@@ -5,4 +5,3 @@ setuptools==45.2.0
 psutil==5.8.0
 requests==2.22.0
 pyarrow==3.0.0
-PyQt5==5.11.3

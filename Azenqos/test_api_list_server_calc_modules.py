@@ -11,13 +11,14 @@ def test(server, user, passwd, lhl):
     ret_dict = azq_server_api.api_py_eval_get_parsed_ret_dict(
         server, token, lhl, "list_modules_with_process_cell_func.run()"
     )
-    # print("ret_dict: {}".format(ret_dict))
+    print("ret_dict: {}".format(ret_dict))
     assert ret_dict
-    assert ret_dict["ret_type"] == "<type 'dict'>"
-    assert isinstance(ret_dict["ret"], dict)
-    for test_mod in ["plot_param", "rach_ssr", "plot_histogram"]:
-        func_def = ret_dict["ret"][test_mod]
-        print("mod: {} process_cell_func_def: {}".format(test_mod, func_def))
+    assert ret_dict["ret_type"] == "<class 'pandas.core.frame.DataFrame'>"
+    assert ret_dict["ret_dump"].endswith(".parquet")
+    df = azq_server_api.parse_py_eval_ret_dict_for_df(server, token, ret_dict)
+    print("df:\n", df)
+    assert 'plot_param' in df.module.values
+    assert 'voice_report' in df.module.values
 
 
 if __name__ == "__main__":

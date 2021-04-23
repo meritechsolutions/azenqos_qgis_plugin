@@ -43,10 +43,12 @@ Using Standlone mode to launch without QGIS (Developer mode)
   `sudo apt install python3-pyqt5`
   
 - Launch analyzer in standalone mode:
+`cd Azenqos`
 `python3 ui_test_main_window.py`
 
-Running tests
--------------
+
+Running tests (install developer mode dependencies in previous step first)
+----------------------------------------------------------------
 
 - Non-ui tests: run `./test.sh` in 'Azenqos' folder for GNU/Linux, otherwise use pytest.
 - Testing specific ui dialogs/windows: run ui_test_* files with python3, for example - to launch main window in standalone (non-QGIS) mode - do: `python3 ui_test_main_window.py`

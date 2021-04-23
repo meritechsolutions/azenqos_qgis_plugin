@@ -36,7 +36,7 @@ Installation instructions for Ubuntu GNU/Linux
 - Repeat the same when you want to upgrade the plugin
 
 
-Using Standlone mode to replay/analyze without QGIS (Developer mode)
+Using Standlone mode to replay/analyze logs without QGIS (Developer mode)
 ------------------------------------------------------------
 
 - Run:

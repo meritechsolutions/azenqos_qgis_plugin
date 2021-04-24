@@ -553,26 +553,29 @@ class TableWindow(QWidget):
 
         timeCell = None
         try:
+            '''
             cellContent = str(item.data())
             try:
-                timeCell = datetime.datetime.strptime(
-                    str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
-                ).timestamp()
+                timeCell = azq_utils.datetimeStringtoTimestamp(str(cellContent))
             except Exception:
-                # if current cell is not Time cell
-                headers = [item.lower() for item in self.tableHeader]
-                try:
-                    columnIndex = headers.index("time")
-                except Exception:
-                    columnIndex = -1
-                if not columnIndex == -1:
-                    timeItem = item.sibling(item.row(), columnIndex)
-                    cellContent = str(timeItem.data())
-                    timeCell = datetime.datetime.strptime(
-                        str(cellContent), "%Y-%m-%d %H:%M:%S.%f"
-                    ).timestamp()
-                else:
-                    timeCell = timeCell
+            '''
+            # check maybe current cell is not Time cell
+            print("updateslider get timecell0")
+            headers = [item.lower() for item in self.tableHeader]
+            print("updateslider get timecell1")
+            try:
+                columnIndex = headers.index("time")
+            except Exception:
+                columnIndex = -1
+            print("updateslider get timecell2 columnIndex: {}".format(columnIndex))
+            if not columnIndex == -1:
+                print("updateslider get timecell3")
+                timeItem = item.sibling(item.row(), columnIndex)
+                cellContent = str(timeItem.data())
+                timeCell = azq_utils.datetimeStringtoTimestamp(cellContent)
+                print("updateslider get timecell3 end timeCell: {}".format(timeCell))
+            else:
+                timeCell = timeCell
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -774,8 +777,6 @@ class DetailWidget(QDialog):
         for index in indices:
             self.gc.openedWindows.pop(index)
         self.close()
-        if self.polqaWavFile:
-            self.polqaWavFile.stop()
         del self
 
     def setDecodedDetail(self, detail):
@@ -819,16 +820,15 @@ class DetailWidget(QDialog):
         f = open(self.side["text_file"], "r")
         self.textEdit.setPlainText(self.detailText + "\n" + f.read())
         f.close()
-        from PyQt5 import QtMultimedia
 
-        self.polqaWavFile = QtMultimedia.QSound(self.side["wav_file"])
+        self.polqaWavFile = (self.side["wav_file"])
         self.resize(self.width, self.height)
         self.show()
         self.raise_()
         self.activateWindow()
 
     def saveWaveFile(self):
-        wavfilepath = str(self.polqaWavFile.fileName())
+        wavfilepath = str(self.polqaWavFile)
         filename = QFileDialog.getSaveFileName(
             self, "Save file as ...", wavfilepath.replace(".wav", ""), ".wav"
         )
@@ -844,7 +844,23 @@ class DetailWidget(QDialog):
     def playWavFile(self):
         print("play wav file")
         if self.polqaWavFile:
-            self.polqaWavFile.play()
+            if os.path.isfile(self.polqaWavFile):
+                try:
+                    print("play wav startfile start")
+                    if os.name == "nt":
+                        os.startfile(self.polqaWavFile)
+                    else:
+                        opener = "open" if sys.platform == "darwin" else "xdg-open"
+                        import subprocess
+                        subprocess.call([opener, self.polqaWavFile])
+                    print("play wav startfile done")
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: play wav startfile exception: {}", exstr)
+                    pass
+            else:
+                print("WARNING: NOT os.path.isfile(self.polqaWavFile): {}".format(self.polqaWavFile))
 
 
 class TableModel(QAbstractTableModel):

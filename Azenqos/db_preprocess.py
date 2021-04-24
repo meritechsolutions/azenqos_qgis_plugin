@@ -81,15 +81,42 @@ def prepare_spatialite_views(dbcon):
             table = preprocess_azm.get_table_for_column(param)
             assert table
             view = param
-            if view == "polqa_mos":
-                view = "polqa_mos_1"
-                sqlstr = "create table polqa_mos_1 as select pm.log_hash, pm.time, l.modem_time, l.posid, l.geom, pm.polqa_mos from(select strftime('%Y-%m-%d %H:%M:%S', pm.time) as t, pm.log_hash, pm.time, pm.polqa_mos from polqa_mos as pm group by t) as pm left join (select strftime('%Y-%m-%d %H:%M:%S', l.time) as t, l.modem_time, l.posid, l.geom from  location l  group by t) as l on pm.t = l.t;"
+            table_cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns
+            table_has_geom = "geom" in table_cols
+            print("table: {} table_has_geom {}".format(table, table_has_geom))
+            if not table_has_geom:
+                print("not table_has_geom so gen sql merge in from location table by time - START")
+                sqlstr_old = """
+                create table polqa_mos_1 as
+                select pm.log_hash, pm.time, l.modem_time, l.posid, l.geom, pm.polqa_mos from
+                (select strftime('%Y-%m-%d %H:%M:%S', pm.time) as t, pm.log_hash, pm.time, pm.polqa_mos from polqa_mos as pm group by t) as pm
+                left join (select strftime('%Y-%m-%d %H:%M:%S', l.time) as t, l.modem_time, l.posid, l.geom from location l  group by t) as l on pm.t = l.t;
+                """
+                max_gps_diff_seconds = 5
+                if table == view:
+                    view = table+"_1"
+                sqlstr = """
+                create table {col} as
+                select a.log_hash, a.time,
+                (SELECT geom FROM location b WHERE a.log_hash = b.log_hash and b.geom is not null and a.time >= b.time and (strftime('%s',a.time) - strftime('%s', b.time) <= {max_gps_diff_seconds}) ORDER BY b.time DESC limit 1)
+                as geom,
+                {param}                
+                FROM {table} a where {param} is not null""".format(
+                    col=view,
+                    param=param,
+                    table=table,
+                    max_gps_diff_seconds=max_gps_diff_seconds,
+                )
+                print("not table_has_geom so gen sql merge in from location table by time - DONE")
             else:
                 sqlstr = "create table {col} as select log_hash, time, modem_time, posid, geom, {col} from {table} ;".format(
                     col=view, table=table
                 )
             print("create view sqlstr: %s" % sqlstr)
             dbcon.execute(sqlstr)
+            view_cols = pd.read_sql("select * from {} where false".format(view), dbcon).columns
+            assert "geom" in view_cols
+            assert param in view_cols
             tables_to_rm_stray_neg1_rows.append(view)
 
             sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
@@ -101,7 +128,7 @@ def prepare_spatialite_views(dbcon):
             theme_df = azq_theme_manager.get_theme_df_for_column(param)
             if theme_df is None:
                 continue
-            # print("theme_df:\n%s" % theme_df)
+            print("param: {} got theme_df:\n{}".format(param, theme_df))
 
             ranges_xml = "<ranges>\n"
             for index, row in theme_df.iterrows():
@@ -165,7 +192,7 @@ def prepare_spatialite_views(dbcon):
             df = pd.DataFrame(
                 {
                     "id": [layer_style_id],
-                    "f_table_name": [param],
+                    "f_table_name": [view],
                     "f_geometry_column": ["geom"],
                     "stylename": [param],
                     "styleqml": [

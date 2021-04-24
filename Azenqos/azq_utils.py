@@ -1446,7 +1446,11 @@ def signal_emit(signal_obj, emit_obj):
 
 def datetimeStringtoTimestamp(datetimeString: str):
     try:
-        element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+        element = None
+        try:
+            element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+        except ValueError:
+            element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S")  # some ts str comes without millis like: "2021-04-22 15:22:18"
         timestamp = datetime.datetime.timestamp(element)
         return timestamp
     except:

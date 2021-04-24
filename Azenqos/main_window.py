@@ -83,6 +83,7 @@ class main_window(QMainWindow):
 
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
 
+
     def __init__(self, qgis_iface):
         super(main_window, self).__init__(None)
 
@@ -97,6 +98,7 @@ class main_window(QMainWindow):
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
         )
+
         self.dbfp = None
         self.qgis_iface = qgis_iface
         self.timeSliderThread = timeSliderThread(self.gc)
@@ -1259,18 +1261,15 @@ Log_hash list: {}""".format(
         self.timeEdit.setDateTime(sampledate)
 
     def clickCanvas(self, point, button):
+        print("clickCanvas start")
         layerData = []
         selectedTime = None
         self.clearAllSelectedFeatures()
+        qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
+        print("qgis_selected_layers: ", qgis_selected_layers)
 
-        for layerName in self.gc.activeLayers:
-            layer = None
-            root = QgsProject.instance().layerTreeRoot()
-            layers = root.findLayers()
-            for la in layers:
-                if la.name() == layerName:
-                    layer = la.layer()
-                    break
+
+        for layer in qgis_selected_layers:
 
             if not layer:
                 continue
@@ -1334,6 +1333,8 @@ Log_hash list: {}""".format(
             self.gc.timeSlider.update()
 
             # self.canvas.refreshself.gc.tableList()
+        print("clickCanvas done")
+
 
     def clickCanvasWorker(self, point, button):
         print("%s: clickCanvasWorker" % os.path.basename(__file__))
@@ -1520,8 +1521,13 @@ Log_hash list: {}""".format(
                 for lf in layerFeatures:
                     lc += 1
                     fids.append(lf.id())
-                    time_list.append(lf.attribute("time"))
-                if len(fids):
+                    lft = lf.attribute("time")
+                    if isinstance(lft, str):
+                        #print("ltf: {} type: {}".format(lft, type(lft)))  - sometimes comes as qdatetime we cant add
+                        time_list.append(lft)
+
+                if len(fids) and len(time_list):
+                    #print("time_list: {}".format(time_list))
                     sr = pd.Series(time_list, index=fids, dtype="datetime64[ns]")
                     sids = [sr.idxmax()]
                     # print("sr:", sr)

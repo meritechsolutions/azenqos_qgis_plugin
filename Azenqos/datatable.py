@@ -48,6 +48,7 @@ import qgis_layers_gen
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
     signal_ui_thread_setup_ui = pyqtSignal()  # use with skip_setup_ui in ctor
+    signal_ui_thread_emit_select_row = pyqtSignal(int)
 
     progress_update_signal = pyqtSignal(int)
     status_update_signal = pyqtSignal(str)
@@ -116,6 +117,10 @@ class TableWindow(QWidget):
             self.ui_thread_model_datachanged
         )
         self.signal_ui_thread_setup_ui.connect(self.ui_thread_sutup_ui)
+        self.ui_thread_selecting_row_dont_trigger_timechanged = False
+        self.signal_ui_thread_emit_select_row.connect(
+            self.ui_thread_emit_select_row
+        )
         self.prev_layout = None
         if not skip_setup_ui:
             self.setupUi()
@@ -126,6 +131,25 @@ class TableWindow(QWidget):
         # self.properties_window = PropertiesWindow(
         #     self, self.gc.azenqosDatabase, self.dataList, self.tableHeader
         # )
+
+    def ui_thread_emit_select_row(self, row):
+        print("ui_thread_emit_select_row: {} start".format(row))
+        try:
+            self.ui_thread_selecting_row_dont_trigger_timechanged = True
+            self.tableView.selectRow(self.currentRow)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print(
+                "WARNING: ui_thread_emit_select_row() title {} exception: {}".format(
+                    self.title,
+                    exstr
+                )
+            )
+        finally:
+            self.ui_thread_selecting_row_dont_trigger_timechanged = False
+        print("ui_thread_emit_select_row: {} done".format(row))
+
 
     def setupUiDry(self):
         print("tablewindow setupuidry()")
@@ -448,7 +472,7 @@ class TableWindow(QWidget):
             self.properties_window.show()
 
     def hilightRow(self, sampledate, threading=False):
-        print("hilightRow: sampledate: %s" % sampledate)
+        print("hilightRow: sampledate: %s start" % sampledate)
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
@@ -473,6 +497,7 @@ class TableWindow(QWidget):
 
         if threading and worker:
             self.gc.threadpool.start(worker)
+        print("hilightRow: sampledate: %s done" % sampledate)
 
     def showDetail(self, item):
         row_index = item.row()
@@ -534,7 +559,12 @@ class TableWindow(QWidget):
         """
 
     def updateSlider(self, item):
-
+        print("updateslider start self.ui_thread_selecting_row_dont_trigger_timechanged: {}".format(self.ui_thread_selecting_row_dont_trigger_timechanged))
+        if self.ui_thread_selecting_row_dont_trigger_timechanged:
+            print("updateslider done because self.ui_thread_selecting_row_dont_trigger_timechanged: {}".format(
+                self.ui_thread_selecting_row_dont_trigger_timechanged)
+            )
+            return
         # get selected row time for signalling and events table
 
         if not self.tableHeader:
@@ -589,8 +619,10 @@ class TableWindow(QWidget):
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: updateSlider timecell exception:", exstr)
+        print("updateslider done")
 
     def findCurrentRow(self):
+        print("findcurrentrow start")
         if isinstance(self.dataList, pd.DataFrame):
             if self.dateString:
                 df = self.tableModel.df  # self.dataList
@@ -600,8 +632,10 @@ class TableWindow(QWidget):
                 print("findcurrentrow after query df len: %d", len(df))
                 if len(df):
                     self.currentRow = df.index[-1]
-                    self.tableView.selectRow(self.currentRow)
+                    print("set currentrow: {}".format(self.currentRow))
+                    self.signal_ui_thread_emit_select_row.emit(self.currentRow)
                 return
+        print("findcurrentrow done")
 
     def closeEvent(self, QCloseEvent):
         indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]

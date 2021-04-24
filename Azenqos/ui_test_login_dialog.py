@@ -6,7 +6,8 @@ import login_dialog
 
 def test():
     gc = analyzer_vars.analyzer_vars()
-    QApplication([])
+    app = QApplication([])
+    print("app: {}".format(app))
     dlg = login_dialog.login_dialog(None, gc)
     dlg.show()
     ret = dlg.exec()

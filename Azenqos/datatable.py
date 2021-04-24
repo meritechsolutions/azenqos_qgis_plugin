@@ -1,10 +1,10 @@
-import datetime
 import os
 import shutil
 import sqlite3
 import sys
 import threading
 import traceback
+
 import pandas as pd
 from PyQt5.QtCore import (
     pyqtSignal,
@@ -33,7 +33,6 @@ from PyQt5.QtWidgets import (
 )
 
 import azq_server_api
-
 # Adding folder path
 from filter_header import FilterHeader, SortFilterProxyModel
 from worker import Worker

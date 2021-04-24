@@ -6,7 +6,7 @@ import params_disp_df
 ################################## df get functions
 
 def get_nr_radio_params_disp_df(dbcon, time_before):
-    n_param_args = 4
+    #n_param_args = 4
     parameter_to_columns_list = [
         (
             [

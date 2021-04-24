@@ -86,12 +86,14 @@ def prepare_spatialite_views(dbcon):
             print("table: {} table_has_geom {}".format(table, table_has_geom))
             if not table_has_geom:
                 print("not table_has_geom so gen sql merge in from location table by time - START")
+                '''
                 sqlstr_old = """
                 create table polqa_mos_1 as
                 select pm.log_hash, pm.time, l.modem_time, l.posid, l.geom, pm.polqa_mos from
                 (select strftime('%Y-%m-%d %H:%M:%S', pm.time) as t, pm.log_hash, pm.time, pm.polqa_mos from polqa_mos as pm group by t) as pm
                 left join (select strftime('%Y-%m-%d %H:%M:%S', l.time) as t, l.modem_time, l.posid, l.geom from location l  group by t) as l on pm.t = l.t;
                 """
+                '''
                 max_gps_diff_seconds = 5
                 if table == view:
                     view = table+"_1"

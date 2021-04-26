@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>18</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -92,6 +92,8 @@
      </property>
      <addaction name="action5GNR_Radio_Parameters"/>
      <addaction name="action5GNR_Serving_Neighbors"/>
+     <addaction name="action5GNR_Data_Params"/>
+     <addaction name="action5GNR_Beams"/>
      <addaction name="actionNR_Line_Chart"/>
     </widget>
     <widget class="QMenu" name="menuSignalling">
@@ -413,6 +415,16 @@
   <action name="actionHSUPA_Statistics">
    <property name="text">
     <string>HSUPA Statistics</string>
+   </property>
+  </action>
+  <action name="action5GNR_Beams">
+   <property name="text">
+    <string>5GNR Beams</string>
+   </property>
+  </action>
+  <action name="action5GNR_Data_Params">
+   <property name="text">
+    <string>5GNR Data Params</string>
    </property>
   </action>
  </widget>

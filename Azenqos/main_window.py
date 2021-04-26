@@ -353,6 +353,35 @@ Log_hash list: {}""".format(
         )
         self.add_subwindow_with_widget(swa, widget)
 
+    @pyqtSlot()
+    def on_action5GNR_Beams_triggered(self):
+        print("action nr beams")
+        import nr_query
+
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "5GNR Beams",
+            nr_query.get_nr_beams_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_action5GNR_Data_Params_triggered(self):
+        print("action nr data")
+        import nr_query
+
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "5GNR Data",
+            nr_query.get_nr_data_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+
+
     ############# LTE menu slots
     @pyqtSlot()
     def on_actionLTE_Radio_Parameters_triggered(self):

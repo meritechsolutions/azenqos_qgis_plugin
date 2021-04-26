@@ -6,7 +6,6 @@ import params_disp_df
 ################################## df get functions
 
 def get_nr_radio_params_disp_df(dbcon, time_before):
-    #n_param_args = 4
     parameter_to_columns_list = [
         (
             [
@@ -92,8 +91,8 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
             [
                 '"" as unused4',
                 "nr_pucch_tx_power_1",
-                "nr_pucch_mtp_1",
-                "nr_pucch_dl_pathlos_1",
+                "nr_pucch_mtpl_1",
+                "nr_pucch_dl_pathloss_1",
                 "nr_pucch_g_i_1",
             ],
             "nr_cell_meas"
@@ -187,6 +186,338 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
+def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
+    df_list = []
+
+    pcell_scell_col_prefix_sr = pd.Series(
+        [
+            "nr_dl_arfcn_",
+            "nr_servingbeam_pci_",
+            "nr_servingbeam_ssb_index_",
+            "nr_servingbeam_ss_rsrp_",
+            "nr_servingbeam_ss_rsrq_",
+            "nr_servingbeam_ss_sinr_",
+        ]
+    )
+    pcell_scell_col_prefix_renamed = ["ARFCN", "PCI", "BmIdx", "RSRP", "RSRQ", "SINR"]
+    parameter_to_columns_list = [
+        ("Time", ["time"]),
+        (
+            [
+                "PCell",
+                "SCell1",
+                "SCell2",
+                "SCell3",
+                "SCell4",
+                "SCell5",
+                "SCell6",
+                "SCell7",
+            ],
+            list(pcell_scell_col_prefix_sr + "1")
+            + list(pcell_scell_col_prefix_sr + "2")
+            + list(pcell_scell_col_prefix_sr + "3")
+            + list(pcell_scell_col_prefix_sr + "4")
+            + list(pcell_scell_col_prefix_sr + "5")
+            + list(pcell_scell_col_prefix_sr + "6")
+            + list(pcell_scell_col_prefix_sr + "7")
+            + list(pcell_scell_col_prefix_sr + "8"),
+        ),
+    ]
+    df = params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table="nr_cell_meas",
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+    # print("df.head():\n%s" % df.head())
+    df.columns = ["CellGroup"] + pcell_scell_col_prefix_renamed
+    # print("df.head():\n%s" % df.head())
+    df_list.append(df)
+
+    dcell_col_suffix_sr = pd.Series(
+        ["_dl_arfcn_1", "_pci_1", "_ssb_index_1", "_ss_rsrp_1", "_ss_rsrq_1", "_ss_sinr_1"]
+    )  # a mistake during elm sheets made this unnecessary _1 required
+    dcell_col_renamed = ["ARFCN", "PCI", "BmIdx", "RSRP", "RSRQ", "SINR"]
+    dparameter_to_columns_list = [
+        (
+            ["DCell1", "DCell2", "DCell3", "DCell4"],
+            list("nr_detectedbeam1" + dcell_col_suffix_sr)
+            + list("nr_detectedbeam2" + dcell_col_suffix_sr)
+            + list("nr_detectedbeam3" + dcell_col_suffix_sr)
+            + list("nr_detectedbeam4" + dcell_col_suffix_sr),
+        )
+    ]
+    dcell_df = params_disp_df.get(
+        dbcon,
+        dparameter_to_columns_list,
+        time_before,
+        default_table="nr_cell_meas",
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+    # print("0dcell_df.head():\n%s" % dcell_df.head())
+    dcell_df.columns = ["CellGroup"] + dcell_col_renamed
+    # print("dcell_df.head():\n%s" % dcell_df.head())
+    df_list.append(dcell_df)
+
+    final_df = pd.concat(df_list, sort=False)
+    return final_df
+
+def get_nr_beams_disp_df(dbcon, time_before):
+    df_list = []
+    pcell_scell_col_prefix_sr = pd.Series(
+        [
+            "nr_band_",
+            "nr_dl_arfcn_",
+            "nr_servingbeam_pci_",
+            "nr_servingbeam_ssb_index_",
+            "nr_servingbeam_ss_rsrp_",
+            "nr_servingbeam_ss_rsrq_",
+            "nr_servingbeam_ss_sinr_",
+        ]
+    )
+    pcell_scell_col_prefix_renamed = ["BAND", "ARFCN", "PCI", "BmIdx", "RSRP", "RSRQ", "SINR"]
+    parameter_to_columns_list = [
+        (
+            [
+                "PCell",
+                "SCell1",
+                "SCell2",
+                "SCell3",
+                "SCell4",
+                "SCell5",
+                "SCell6",
+                "SCell7",
+            ],
+            list(pcell_scell_col_prefix_sr + "1")
+            + list(pcell_scell_col_prefix_sr + "2")
+            + list(pcell_scell_col_prefix_sr + "3")
+            + list(pcell_scell_col_prefix_sr + "4")
+            + list(pcell_scell_col_prefix_sr + "5")
+            + list(pcell_scell_col_prefix_sr + "6")
+            + list(pcell_scell_col_prefix_sr + "7")
+            + list(pcell_scell_col_prefix_sr + "8"),
+        ),
+    ]
+    df = params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table="nr_cell_meas",
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+    df.columns = ["CellGroup"] + pcell_scell_col_prefix_renamed
+    df_list.append(df)
+
+    final_df = pd.concat(df_list, sort=False)
+    return final_df
+
+
+def get_nr_data_disp_df(dbcon, time_before):
+    parameter_to_columns_list = [
+        (
+            [
+                "DL APP TP (MBps)",
+            ],
+            [
+                "data_trafficstat_dl_mbps",
+            ],
+            "android_info_1sec",
+        ),
+        (
+            [
+                "DL NR PDCP TP (MBps)",
+                "DL NR RLC TP (MBps)",
+                "DL NR MAC TP (MBps)",
+            ],
+            [
+                "nr_pdcp_dl_tp_mbps",
+                "nr_rlc_dl_tp_mbps",
+                "nr_mac_dl_tp_mbps",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "DL LTE L1 TP (MBps)",
+            ],
+            [
+                "lte_l1_dl_throughput_all_carriers_mbps",
+            ],
+            "lte_l1_dl_tp",
+        ),
+        (
+            [
+                "DL NR PDSCH TP (MBps)",
+                "DL LTE PDCP TP (MBps)",
+            ],
+            [
+                "nr_p_plus_scell_nr_pdsch_tput_mbps",
+                "nr_p_plus_scell_lte_dl_pdcp_tput_mbps",
+            ],
+            "nr_cell_meas",
+        ),(
+            [
+                " ",
+                "UL APP TP (MBps)",
+            ],
+            [
+                '"" as unused1',
+                "data_trafficstat_ul_mbps",
+            ],
+            "android_info_1sec",
+        ),
+        (
+            [
+                "UL NR MAC TP (MBps)",
+            ],
+            [
+                "nr_mac_ul_tp_mbps",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "UL LTE L1 TP (MBps)",
+            ],
+            [
+                "lte_l1_ul_throughput_all_carriers_mbps_1",
+            ],
+            "lte_l1_ul_tp",
+        ),
+        (
+            [
+                "UL NR PDSCH TP (MBps)",
+            ],
+            [
+                "nr_p_plus_scell_nr_pusch_tput_mbps",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR CQI",
+                "NR CRI",
+                "NR LI",
+                "NR RI",
+                "NR PMI I1 1",
+                "NR PMI I1 2",
+                "NR PMI I1 3",
+                "NR PMI I2",
+            ],
+            [
+                "nr_cqi",
+                "nr_cri_1",
+                "nr_li_1",
+                "nr_ri_1",
+                "nr_wb_pmi_i1_1_1",
+                "nr_wb_pmi_i1_2_1",
+                "nr_wb_pmi_i1_3_1",
+                "nr_wb_pmi_i2_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR CSI CQI",
+                "NR CSI CRI",
+                "NR CSI RI",
+                "NR CSI LI",
+            ],
+            [
+                "nr_csi_cqi",
+                "nr_csi_cri",
+                "nr_csi_ri",
+                "nr_csi_li",
+            ],
+            "nr_csi_report",
+        ),
+        (
+            [
+                "NR DL N CRC Pass TB",
+                "NR DL N CRC Fail TB",
+                "NR UL N CRC Pass TB",
+                "NR UL N CRC Fail TB",
+                "NR UL N All Tx",
+                "NR UL N Re Tx",
+                "NR DL MCS",
+                "NR DL MCS(Avg)",
+                "NR DL Mod",
+                "NR UL MCS",
+                "NR UL MCS(Avg)",
+                "NR UL Mod",
+                "Mod % last second:",
+            ],
+            [
+                "nr_num_crc_pass_tb_1",
+                "nr_num_crc_fail_tb_1",
+                "nr_num_ul_crc_pass_tb_1",
+                "nr_num_ul_crc_fail_tb_1",
+                "nr_num_ul_all_tx_type_1",
+                "nr_num_ul_re_tx_type_1",
+                "nr_dl_mcs_mode_1",
+                "nr_dl_mcs_avg_1",
+                "nr_modulation_1",
+                "nr_ul_mcs_mode_1",
+                "nr_ul_mcs_avg_1",
+                "nr_ul_modulation_1",
+                '"" as unused2',
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR DL Mod QPSK %",
+                "NR DL Mod 16QAM %",
+                "NR DL Mod 64QAM %",
+                "NR DL Mod 256QAM %",
+                "NR DL Mod 1024QAM %",
+            ],
+            [
+                "nr_qpsk_1",
+                "nr_16qam_1",
+                "nr_64qam_1",
+                "nr_256qam_1",
+                "nr_1024qam_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR UL Num RB",
+                "NR UL Modulation",
+            ],
+            [
+                "nr_ul_num_rb",
+                "nr_ul_modulation_order",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "NR UL Mod QPSK %",
+                "NR UL Mod 16QAM %",
+                "NR UL Mod 64QAM %",
+                "NR UL Mod 256QAM %",
+                "NR UL Mod 1024QAM %",
+            ],
+            [
+                "nr_ul_qpsk_1",
+                "nr_ul_16qam_1",
+                "nr_ul_64qam_1",
+                "nr_ul_256qam_1",
+                "nr_ul_1024qam_1",
+            ],
+            "nr_cell_meas",
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        not_null_first_col=False,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
 
 # def get_nr_radio_params_disp_df(dbcon, time_before):
 #     n_param_args = 8
@@ -269,79 +600,3 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
 #         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
 #     )
 
-
-def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
-    df_list = []
-
-    pcell_scell_col_prefix_sr = pd.Series(
-        [
-            "nr_dl_arfcn_",
-            "nr_servingbeam_pci_",
-            "nr_servingbeam_ss_rsrp_",
-            "nr_servingbeam_ss_rsrq_",
-            "nr_servingbeam_ss_sinr_",
-        ]
-    )
-    pcell_scell_col_prefix_renamed = ["ARFCN", "PCI", "RSRP", "RSRQ", "SINR"]
-    parameter_to_columns_list = [
-        ("Time", ["time"]),
-        (
-            [
-                "PCell",
-                "SCell1",
-                "SCell2",
-                "SCell3",
-                "SCell4",
-                "SCell5",
-                "SCell6",
-                "SCell7",
-            ],
-            list(pcell_scell_col_prefix_sr + "1")
-            + list(pcell_scell_col_prefix_sr + "2")
-            + list(pcell_scell_col_prefix_sr + "3")
-            + list(pcell_scell_col_prefix_sr + "4")
-            + list(pcell_scell_col_prefix_sr + "5")
-            + list(pcell_scell_col_prefix_sr + "6")
-            + list(pcell_scell_col_prefix_sr + "7")
-            + list(pcell_scell_col_prefix_sr + "8"),
-        ),
-    ]
-    df = params_disp_df.get(
-        dbcon,
-        parameter_to_columns_list,
-        time_before,
-        default_table="nr_cell_meas",
-        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
-    )
-    # print("df.head():\n%s" % df.head())
-    df.columns = ["CellGroup"] + pcell_scell_col_prefix_renamed
-    # print("df.head():\n%s" % df.head())
-    df_list.append(df)
-
-    dcell_col_suffix_sr = pd.Series(
-        ["_pci_1", "_ss_rsrp_1", "_ss_rsrq_1", "_ss_sinr_1"]
-    )  # a mistake during elm sheets made this unnecessary _1 required
-    dcell_col_renamed = ["PCI", "RSRP", "RSRQ", "SINR"]
-    dparameter_to_columns_list = [
-        (
-            ["DCell1", "DCell2", "DCell3", "DCell4"],
-            list("nr_detectedbeam1" + dcell_col_suffix_sr)
-            + list("nr_detectedbeam2" + dcell_col_suffix_sr)
-            + list("nr_detectedbeam3" + dcell_col_suffix_sr)
-            + list("nr_detectedbeam4" + dcell_col_suffix_sr),
-        )
-    ]
-    dcell_df = params_disp_df.get(
-        dbcon,
-        dparameter_to_columns_list,
-        time_before,
-        default_table="nr_cell_meas",
-        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
-    )
-    # print("0dcell_df.head():\n%s" % dcell_df.head())
-    dcell_df.columns = ["CellGroup"] + dcell_col_renamed
-    # print("dcell_df.head():\n%s" % dcell_df.head())
-    df_list.append(dcell_df)
-
-    final_df = pd.concat(df_list, sort=False)
-    return final_df

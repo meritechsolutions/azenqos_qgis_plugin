@@ -16,14 +16,16 @@ except:
 
 
 class LayerTask(QgsTask):
-    def __init__(self, desc, databasePath, gc):
+    def __init__(self, desc, databasePath, gc, add_map=True):
         QgsTask.__init__(self, desc)
+        print("start layertask: databasePath {}".format(databasePath))
         self.dbPath = databasePath
         self.start_time = None
         self.desc = desc
         self.exception = None
         self.vLayers = []
         self.gc = gc
+        self.add_map=add_map
 
     def addMapToQgis(self):
         # urlWithParams = 'type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
@@ -81,7 +83,8 @@ class LayerTask(QgsTask):
     def finished(self, result):
         if result:
             # gc.mostFeaturesLayer = None
-            self.addMapToQgis()
+            if self.add_map:
+                self.addMapToQgis()
             # geom_column = "geom"
             self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
 

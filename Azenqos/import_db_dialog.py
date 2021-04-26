@@ -348,6 +348,7 @@ class import_db_dialog(QDialog):
 
         raise Exception("invalid state")
 
+
     def ui_handler_import_done(self, error):
         if error:
             print("ui_handler_import_done() error: %s" % error)
@@ -360,14 +361,14 @@ class import_db_dialog(QDialog):
             print("ui_handler_import_done() success")
             import azq_utils
 
+
             azq_utils.write_local_file("config_prev_azm", self.dbPathLineEdit.text())
             self.getTimeForSlider()
             print("getTimeForSlider() done")
 
             if self.gc.qgis_iface:
                 print("starting layertask")
-                self.layerTask = LayerTask(u"Add layers", self.databasePath, self.gc)
-                QgsApplication.taskManager().addTask(self.layerTask)
+                self.select_layer_task()
                 self.longTask = CellLayerTask(
                     "Load cell file", self.cellPathLineEdit.text().split(","), self.gc
                 )
@@ -376,6 +377,12 @@ class import_db_dialog(QDialog):
                 print("NOT starting layertask because no self.gc.qgis_iface")
 
             self.close()
+
+
+    def select_layer_task(self):
+        self.layerTask = LayerTask(u"Add layers", self.gc.db_fp, self.gc)
+        QgsApplication.taskManager().addTask(self.layerTask)
+
 
     def import_selection(self):
         zip_fp = self.zip_fp
@@ -404,6 +411,7 @@ class import_db_dialog(QDialog):
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: import_selection() failed exception:", exstr)
             self.import_done_signal.emit(exstr)
+
 
     def getTimeForSlider(self):
         startTime = None

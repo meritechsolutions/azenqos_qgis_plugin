@@ -39,10 +39,21 @@ def prepare_spatialite_views(dbcon):
         CREATE TABLE IF NOT EXISTS geometry_columns (f_table_name VARCHAR(256) NOT NULL,f_geometry_column VARCHAR(256) NOT NULL,type VARCHAR(30) NOT NULL,coord_dimension INTEGER NOT NULL,srid INTEGER,spatial_index_enabled INTEGER NOT NULL);
         """
     )
+
+    dbcon.execute(
+        """
+        delete from geometry_columns where true;
+        """
+    )
+
     dbcon.execute(
         """CREATE TABLE IF NOT EXISTS 'layer_styles' ( "id" INTEGER PRIMARY KEY AUTOINCREMENT, 'f_table_catalog' VARCHAR(256), 'f_table_schema' VARCHAR(256), 'f_table_name' VARCHAR(256), 'f_geometry_column' VARCHAR(256), 'stylename' VARCHAR(30), 'styleqml' VARCHAR, 'stylesld' VARCHAR, 'useasdefault' INTEGER_BOOLEAN, 'description' VARCHAR, 'owner' VARCHAR(30), 'ui' VARCHAR(30), 'update_time' TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"""
     )
     dbcon.execute("delete from layer_styles;")
+
+    df = pd.read_sql("select * from geometry_columns", dbcon)
+    print("geometry_columns df:\n{}".format(df.head()))
+    assert len(df) == 0
 
     default_qml_fp = os.path.join(azq_utils.get_module_path(), "default_style.qml")
     default_qml = None
@@ -70,6 +81,9 @@ def prepare_spatialite_views(dbcon):
     # get list of params in azenqos theme xml
     params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
     print("params_to_gen:", params_to_gen)
+
+    assert "lte_cell_meas" not in get_geom_cols_df(dbcon).f_table_name.values
+    dbcon.commit()
 
     # create layer_styles table if not exist
     tables_to_rm_stray_neg1_rows = ["signalling", "events"]
@@ -124,6 +138,7 @@ def prepare_spatialite_views(dbcon):
             sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
                 view
             )
+            print("insert into geometry_columns view {} sqlstr: {}".format(view, sqlstr))
             dbcon.execute(sqlstr)
 
             # get theme df for this param
@@ -231,6 +246,8 @@ def prepare_spatialite_views(dbcon):
                 continue
             print("WARNING: prepare_spatialte_views exception:", exstr)
 
+    assert "lte_cell_meas" not in get_geom_cols_df(dbcon).f_table_name.values
+
     # remove stray -1 -1 rows
     for view in tables_to_rm_stray_neg1_rows:
         for index, row in df_posids_indoor_start.iterrows():
@@ -248,8 +265,14 @@ def prepare_spatialite_views(dbcon):
                 dbcon.execute(sqlstr)
                 dbcon.commit()
 
+    assert "lte_cell_meas" not in get_geom_cols_df(dbcon).f_table_name.values
     ## for each param
     # create view for param
     # put param view into geometry_columns to register for display
     # create param QML theme based on default_style.qml
     # put qml entry into 'layer_styles' table
+
+def get_geom_cols_df(dbcon):
+    df = pd.read_sql("select * from geometry_columns", dbcon)
+    print("geom df:\n{}".format(df.head()))
+    return df

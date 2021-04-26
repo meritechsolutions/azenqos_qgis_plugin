@@ -1037,6 +1037,7 @@ Log_hash list: {}""".format(
             )
             self.importDatabaseBtn.setObjectName("importDatabaseBtn")
 
+
             # Layer Select Button
             self.layerSelect = QToolButton()
             self.layerSelect.setIcon(
@@ -1044,7 +1045,6 @@ Log_hash list: {}""".format(
             )
             self.layerSelect.setObjectName("layerBtn")
 
-            # caused duplicated calls to pyqtslots funcs above so not using: QtCore.QMetaObject.connectSlotsByName(self)
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.loadBtn.clicked.connect(self.loadWorkspaceFile)
@@ -1233,11 +1233,11 @@ Log_hash list: {}""".format(
 
     def selectLayer(self):
         if self.qgis_iface:
-            print("%s: selectLayer" % os.path.basename(__file__))
-            self.qgis_iface.addVectorLayer(self.dbfp, None, "ogr")
-            # Setting CRS
-            my_crs = QgsCoordinateReferenceSystem(4326)
-            QgsProject.instance().setCrs(my_crs)
+            if os.path.isfile(self.gc.db_fp):
+                self.layerTask = tasks.LayerTask(u"Add layers", self.gc.db_fp, self.gc, add_map=False)  # map was already added at first layertask after import_db_dialog finished
+                QgsApplication.taskManager().addTask(self.layerTask)
+            else:
+                qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
 
     def pauseTime(self):
         self.gc.timeSlider.setEnabled(True)

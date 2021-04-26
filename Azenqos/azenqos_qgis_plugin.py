@@ -34,8 +34,7 @@ import azq_utils
 
 
 # Initialize Qt resources from file resources.py
-from Azenqos import qt_utils
-
+import qt_utils, version
 
 class azenqos_qgis_plugin:
     """QGIS Plugin Implementation."""
@@ -262,7 +261,7 @@ class azenqos_qgis_plugin:
             from qgis.PyQt.QtCore import Qt
 
             if self.dock_widget is None:
-                self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer', self.qgis_iface.mainWindow())
+                self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer   v{}'.format(version.VERSION), self.qgis_iface.mainWindow())
             self.main_window = main_window.main_window(self.qgis_iface, None)
             self.dock_widget.setWidget(self.main_window)
             self.dock_widget.setFloating(False)

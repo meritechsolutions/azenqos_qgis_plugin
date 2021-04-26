@@ -14,6 +14,8 @@ def test():
     if reply == QMessageBox.Cancel:
         print("got cancel")
 
+    qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=None)
+
 
 if __name__ == "__main__":
     test()

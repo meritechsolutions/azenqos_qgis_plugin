@@ -92,6 +92,8 @@
      </property>
      <addaction name="action5GNR_Radio_Parameters"/>
      <addaction name="action5GNR_Serving_Neighbors"/>
+     <addaction name="action5GNR_Data_Params"/>
+     <addaction name="action5GNR_Beams"/>
      <addaction name="actionNR_Line_Chart"/>
     </widget>
     <widget class="QMenu" name="menuSignalling">
@@ -424,7 +426,17 @@
   </action>
   <action name="actionCascade">
    <property name="text">
-    <string>Cascade</string>
+     <string>Cascade</string>
+   </property>
+  </action>
+  <action name="action5GNR_Beams">
+   <property name="text">
+    <string>5GNR Beams</string>
+   </property>
+  </action>
+  <action name="action5GNR_Data_Params">
+   <property name="text">
+    <string>5GNR Data Params</string>
    </property>
   </action>
  </widget>

@@ -368,6 +368,35 @@ Log_hash list: {}""".format(
         )
         self.add_subwindow_with_widget(swa, widget)
 
+    @pyqtSlot()
+    def on_action5GNR_Beams_triggered(self):
+        print("action nr beams")
+        import nr_query
+
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "5GNR Beams",
+            nr_query.get_nr_beams_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+
+    @pyqtSlot()
+    def on_action5GNR_Data_Params_triggered(self):
+        print("action nr data")
+        import nr_query
+
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "5GNR Data",
+            nr_query.get_nr_data_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+
+
     ############# LTE menu slots
     @pyqtSlot()
     def on_actionLTE_Radio_Parameters_triggered(self):
@@ -948,6 +977,9 @@ Log_hash list: {}""".format(
         linechart_window.setWindowTitle("GSM Data Line Chart")
 
     def add_subwindow_with_widget(self, swa, widget, w=280, h=250):
+        if self.gc.db_fp is None or os.path.isfile(self.gc.db_fp) == False:
+            qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
+            return False
         swa.setWidget(widget)
         self.mdi.addSubWindow(swa)
         swa.resize(w, h)
@@ -1448,7 +1480,10 @@ Log_hash list: {}""".format(
     #     iface.mapCanvas().refresh()
 
     def hilightFeature(self):
-        self.selectFeatureOnLayersByTime()
+        try:
+            self.selectFeatureOnLayersByTime()
+        except:
+            pass
 
 
     def selectFeatureOnLayersByTime(self):

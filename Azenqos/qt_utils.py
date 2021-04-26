@@ -6,6 +6,8 @@ def msgbox(msg, title="Message", parent=None):
     msgBox.setWindowTitle(title)
     msgBox.setText(msg)
     msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
+    reply = msgBox.exec_()
+    return reply
 
 
 def ask_text(parent, title, msg):

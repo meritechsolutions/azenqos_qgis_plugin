@@ -47,7 +47,7 @@ def read_local_file(fname, auto_decode=True):
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
-        print("WARNING: read_local_file - exception: {}".format(exstr))
+        #print("WARNING: read_local_file - exception: {}".format(exstr))
     return None
 
 

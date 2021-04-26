@@ -28,12 +28,13 @@ import traceback
 
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QAction, QListWidget, QMessageBox
 
 import azq_utils
 
 
 # Initialize Qt resources from file resources.py
+from Azenqos import qt_utils
 
 
 class azenqos_qgis_plugin:
@@ -47,7 +48,8 @@ class azenqos_qgis_plugin:
             application at run time.
         :type qgis_iface: QgsInterface
         """
-
+        self.main_window = None
+        self.dock_widget = None
         from PyQt5.QtCore import QT_VERSION_STR
 
         print(
@@ -77,10 +79,6 @@ class azenqos_qgis_plugin:
         self.actions = []
         self.menu = self.tr(u"&Azenqos")
 
-        # Check if plugin was started the first time in current QGIS session
-        # Must be set in initGui() to survive plugin reloads
-        self.first_start = None
-        self.dlg = None
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -183,14 +181,12 @@ class azenqos_qgis_plugin:
             parent=self.qgis_iface.mainWindow(),
         )
 
-        # will be set False in run()
-        self.first_start = True
 
     def unload(self):
         print("azenqos_plugin: unload()")
         try:
-            if self.dlg is not None:
-                self.dlg.close()
+            if self.main_window is not None:
+                self.main_window.close()
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -239,12 +235,64 @@ class azenqos_qgis_plugin:
             print("debug_qgis_pyexec flagged - running... DONE")
             return
 
-        if self.dlg is None or self.dlg.closed:
-            self.first_start = False
-            import main_window
+        '''
+        import qt_utils
+        ret = qt_utils.ask_yes_no(self.qgis_iface.mainWindow(), "New AZENQOS Replay/Analyzer launch", "Please select launch mode", "New panel inside QGIS", "New separate window")
+        print("launch mode ret: {}".format(ret))
+        qgis_panel_dock_mode = not ret
+        '''
+        qgis_panel_dock_mode = True  # user can pop-out anyway
 
-            self.dlg = main_window.main_window(self.qgis_iface)
+        if self.main_window is not None:
+            reply = qt_utils.ask_yes_no(None, 'Close existing?', '''The AZENQOS replay/analyzer panel already exists under QGIS menu 'View' > 'Panels'.\nThis will close it, remove all layers and open new one.\nDo you wish to proceed?''', question=True)
+            print("reply: {}".format(reply))
+            if reply == QMessageBox.Yes:
+                print("close prev main_window start")
+                self.main_window.close()
+                self.main_window = None
+                print("close prev main_window done")
+            else:
+                return
 
+
+        import main_window
+
+        if qgis_panel_dock_mode:
+            from PyQt5.QtGui import QDockWidget
+            from qgis.PyQt.QtCore import Qt
+
+            if self.dock_widget is None:
+                self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer', self.qgis_iface.mainWindow())
+            self.main_window = main_window.main_window(self.qgis_iface, None)
+            self.dock_widget.setWidget(self.main_window)
+            self.dock_widget.setFloating(False)
+            self.qgis_iface.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
+        else:
+            self.main_window = main_window.main_window(self.qgis_iface)
+        self.main_window.show()
+
+        '''
         if self.dlg is not None:
-            self.dlg.show()
+            from PyQt5 import QtCore
+            #self.qgis_iface.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dlg)
+            #self.dlg.show()
+            from qgis.PyQt.QtCore import Qt
+            from qgis.PyQt.QtWidgets import QApplication
+
+
+
+            iface.showAttributeTable(iface.activeLayer())
+
+
+            # Get active Attribute Table
+            attrTables = [d for d in QApplication.instance().allWidgets() if d.objectName() == u'AttributeTable']
+            # Get Layers Panel
+            layersPanel = [x for x in iface.mainWindow().findChildren(QDockWidget) if x.objectName() == 'Layers']
+
+            # Add Attribute Table
+            #iface.addDockWidget(Qt.LeftDockWidgetArea, attrTables[0])
+            # Add (re-add) Layers Panel so that new panel appears below
+            #iface.addDockWidget(Qt.LeftDockWidgetArea, layersPanel[0])
+        '''
+
 

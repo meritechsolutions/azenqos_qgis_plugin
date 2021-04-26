@@ -84,8 +84,11 @@ class main_window(QMainWindow):
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
 
 
-    def __init__(self, qgis_iface):
-        super(main_window, self).__init__(None)
+    def __init__(self, qgis_iface, parent=None):
+        if qgis_iface is not None and parent is None:
+            parent = qgis_iface.mainWindow()
+        print("mainwindow __init__ parent: {}".format(parent))
+        super(main_window, self).__init__(parent)
 
         azq_utils.cleanup_died_processes_tmp_folders()
 

@@ -9,7 +9,7 @@
         begin                : 2019-03-18
         git sha              : $Format:%H$
         copyright            : Copyright (C) 2019-2020 Freewill FX Co., Ltd. All rights reserved
-        email                : gritmanoch@longdo.com
+        email                : support@azenqos.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -261,7 +261,7 @@ class azenqos_qgis_plugin:
             from qgis.PyQt.QtCore import Qt
 
             if self.dock_widget is None:
-                self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer   v{}'.format(version.VERSION), self.qgis_iface.mainWindow())
+                self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer v%.03f' % version.VERSION, self.qgis_iface.mainWindow())
             self.main_window = main_window.main_window(self.qgis_iface, None)
             self.dock_widget.setWidget(self.main_window)
             self.dock_widget.setFloating(False)

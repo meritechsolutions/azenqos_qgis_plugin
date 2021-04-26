@@ -82,7 +82,10 @@ class timeSliderThread(QThread):
         self.currentSliderValue = None
 
     def __del__(self):
-        self.wait()
+        try:
+            self.wait()
+        except:
+            pass
 
     def run(self):
         self.playTime()

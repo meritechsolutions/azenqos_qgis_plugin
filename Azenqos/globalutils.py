@@ -52,11 +52,7 @@ class ElementInfo:
             if name in obj["name"]:
                 return obj
 
-    def addDatabase(self):
-        databasePath = "/Users/Maxorz/Desktop/DB_Test/ARGazqdata.db"
-        global db
-        db = QSqlDatabase.addDatabase("QSQLITE")
-        db.setDatabaseName(databasePath)
+
 
 
 class Row:

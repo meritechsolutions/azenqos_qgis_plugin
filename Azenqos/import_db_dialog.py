@@ -397,10 +397,8 @@ class import_db_dialog(QDialog):
             )
             preprocess_azm.extract_all_from_zip(zip_fp, azq_utils.tmp_gen_path())
             assert os.path.isfile(self.databasePath)
-            dbcon = (
-                self.addDatabase()
-            )  # this will create views/tables per param as per specified theme so must check theme before here
-            if not dbcon:
+            ret = self.addDatabase()  # this will create views/tables per param as per specified theme so must check theme before here
+            if not ret:
                 raise Exception(
                     "Failed to open azqdata.db file inside the unzipped supplied azm file"
                 )
@@ -442,45 +440,47 @@ class import_db_dialog(QDialog):
         return True
 
     def addDatabase(self):
-
         # check db
         assert os.path.isfile(self.databasePath)
-        dbcon = sqlite3.connect(self.databasePath)
-        logs_df = pd.read_sql("select * from logs limit 1", dbcon)
-        if not len(logs_df):
-            raise Exception("invalid log database - cant read log metadata")
-        log_hash = logs_df.iloc[0].log_hash
-        if not log_hash:
-            raise Exception("invalid log database - cant read log_hash")
+        try:
+            dbcon = sqlite3.connect(self.databasePath)
+            logs_df = pd.read_sql("select * from logs limit 1", dbcon)
+            if not len(logs_df):
+                raise Exception("invalid log database - cant read log metadata")
+            log_hash = logs_df.iloc[0].log_hash
+            if not log_hash:
+                raise Exception("invalid log database - cant read log_hash")
 
-        # check theme
-        theme_fp = self.themePathLineEdit.text()
-        if theme_fp == "Default":
-            theme_fp = azq_theme_manager.get_ori_default_theme()
-        azq_theme_manager.set_default_theme_file(theme_fp)
-        params_in_theme = (
-            azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
-        )
-        if not params_in_theme:
-            raise Exception(
-                "Invalid theme file: failed to read any params from theme file: {}".format(
-                    theme_fp
-                )
+            # check theme
+            theme_fp = self.themePathLineEdit.text()
+            if theme_fp == "Default":
+                theme_fp = azq_theme_manager.get_ori_default_theme()
+            azq_theme_manager.set_default_theme_file(theme_fp)
+            params_in_theme = (
+                azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
             )
-        print("params_in_theme:", params_in_theme)
-        azq_utils.write_local_file("config_prev_theme", theme_fp)
+            if not params_in_theme:
+                raise Exception(
+                    "Invalid theme file: failed to read any params from theme file: {}".format(
+                        theme_fp
+                    )
+                )
+            print("params_in_theme:", params_in_theme)
+            azq_utils.write_local_file("config_prev_theme", theme_fp)
 
-        db_preprocess.prepare_spatialite_views(dbcon)
-        dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
-        assert self.databasePath
-        dbcon = sqlite3.connect(self.databasePath)
-        self.gc.databasePath = self.databasePath
-        self.gc.db_fp = self.gc.databasePath
-        self.gc.azenqosDatabase = QSqlDatabase.addDatabase("QSQLITE")
-        assert self.gc.azenqosDatabase
+            db_preprocess.prepare_spatialite_views(dbcon)
+            dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
 
-        self.gc.azenqosDatabase.setDatabaseName(self.databasePath)
-        return dbcon
+            assert self.databasePath
+            self.gc.databasePath = self.databasePath
+            self.gc.db_fp = self.gc.databasePath
+
+        finally:
+            try:
+                dbcon.close()
+            except:
+                pass
+        return True
 
     def setIncrementValue(self):
         self.gc.sliderLength = self.gc.maxTimeValue - self.gc.minTimeValue

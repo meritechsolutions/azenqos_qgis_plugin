@@ -403,7 +403,6 @@ def get_theme_df_for_column(
             eid = elm.find("elementID")
             # print "eid.text", eid.text
             if eid.text == param_col:
-
                 print(("got matching eid for param_col ", param_col))
                 is_reverse_cum = False
                 try:
@@ -417,10 +416,13 @@ def get_theme_df_for_column(
                 rl = elm.find("rangeList")
                 dprint("found rangeList - extract ranges:")
                 rl.findall("ColorTheme.Bin")
+                '''
                 if len(rl.findall("ColorTheme.Bin")) == 0:
                     all_records.append(
                         ["#808080", str(-(sys.maxsize - 1)), str(sys.maxsize), "1"]
                     )
+                '''
+
                 for ctb in rl.findall("ColorTheme.Bin"):
                     # print "ctb: ",ctb
                     record = []
@@ -429,8 +431,8 @@ def get_theme_df_for_column(
                         record.append(ctb_child.text)
                         if ctb_child.tag not in headers:
                             headers.append(ctb_child.tag)
-
                     all_records.append(record)
+
                 print("all_records", all_records)
                 if is_reverse_cum:
                     all_records.reverse()

@@ -308,6 +308,7 @@ class TableWindow(QWidget):
         self.proxyModel.dataChanged.emit(
             index_topleft, index_bottomright, [QtCore.Qt.DisplayRole]
         )
+        self.tableView.scrollToTop()
 
     def setup_ui_with_custom_df(self, custom_df):
         self.custom_df = custom_df

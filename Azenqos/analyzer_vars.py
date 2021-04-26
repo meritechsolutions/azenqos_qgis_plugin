@@ -1,7 +1,7 @@
 import os
 
 from PyQt5.QtCore import QThreadPool
-from PyQt5.QtSql import QSqlDatabase
+
 
 
 class analyzer_vars:
@@ -12,10 +12,8 @@ class analyzer_vars:
     mdi = None
     qgis_iface = None
     mostFeaturesLayer = None
-    azenqosDatabase = None
     databasePath = None
     db_fp = None  # same as databasePath but in snake_case
-    dbcon = None
     minTimeValue = 0
     maxTimeValue = 99
     fastForwardValue = 1
@@ -46,12 +44,7 @@ class analyzer_vars:
     # server mode vars (stored in login_dialog class like server, token, user, lhl etc)
     login_dialog = None
 
+
     def close_db(gc):
-        if gc.azenqosDatabase:
-            gc.azenqosDatabase.close()
-            QSqlDatabase.removeDatabase(gc.azenqosDatabase.connectionName())
-            names = QSqlDatabase.connectionNames()
-            for name in names:
-                QSqlDatabase.database(name).close()
-                QSqlDatabase.removeDatabase(name)
-            gc.azenqosDatabase = None
+        # now we dont use qsqldatabase anymore
+        pass

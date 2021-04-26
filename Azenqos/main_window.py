@@ -78,6 +78,9 @@ import linechart_multi_y_axis
 import time
 import pandas as pd
 
+TIME_COL_DEFAULT_WIDTH = 150
+NAME_COL_DEFAULT_WIDTH = 180
+
 
 class main_window(QMainWindow):
 
@@ -122,10 +125,20 @@ class main_window(QMainWindow):
             self.clickTool.canvasClicked.connect(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
 
-        self.timechange_service_thread = Worker(self.timeChangedWorkerFunc)
-        self.gc.threadpool.start(self.timechange_service_thread)
+        self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
+        self.timechange_service_thread.start()
 
         print("main_window __init__() done")
+
+    @pyqtSlot()
+    def on_actionTile_triggered(self):
+        print("tile")
+        self.mdi.tileSubWindows()
+
+    @pyqtSlot()
+    def on_actionCascade_triggered(self):
+        print("cascade")
+        self.mdi.cascadeSubWindows()
 
     @pyqtSlot()
     def on_actionExit_triggered(self):
@@ -300,6 +313,8 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.setColumnWidth(1, TIME_COL_DEFAULT_WIDTH);
+        widget.tableView.setColumnWidth(2, NAME_COL_DEFAULT_WIDTH);
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):
@@ -318,6 +333,10 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.setColumnWidth(1, TIME_COL_DEFAULT_WIDTH);
+        widget.tableView.setColumnWidth(2, NAME_COL_DEFAULT_WIDTH);
+        widget.tableView.setColumnWidth(3, NAME_COL_DEFAULT_WIDTH);
+
 
     ############# NR menu slots
 
@@ -928,9 +947,10 @@ Log_hash list: {}""".format(
         linechart_window.open()
         linechart_window.setWindowTitle("GSM Data Line Chart")
 
-    def add_subwindow_with_widget(self, swa, widget):
+    def add_subwindow_with_widget(self, swa, widget, w=280, h=250):
         swa.setWidget(widget)
         self.mdi.addSubWindow(swa)
+        swa.resize(w, h)
         swa.show()
         self.gc.openedWindows.append(widget)
 
@@ -1051,8 +1071,6 @@ Log_hash list: {}""".format(
             self.importDatabaseBtn.clicked.connect(self.open_logs)
             self.maptool.clicked.connect(self.setMapTool)
             self.setupToolBar()
-
-            # self._gui_restore()
 
             self.setWindowTitle(
                 "AZENQOS Log Replay & Analyzer tool      v.%.03f" % VERSION
@@ -1287,11 +1305,6 @@ Log_hash list: {}""".format(
         print("clickCanvas done")
 
 
-    def clickCanvasWorker(self, point, button):
-        print("%s: clickCanvasWorker" % os.path.basename(__file__))
-        worker = Worker(self.clickCanvas, point, button)
-        self.gc.threadpool.start(worker)
-
     def useCustomMapTool(self):
         currentTool = self.canvas.mapTool()
         if currentTool != self.clickTool:
@@ -1310,7 +1323,10 @@ Log_hash list: {}""".format(
         if self.gc.databasePath:
             msgBox = QMessageBox()
             msgBox.setWindowTitle("Log already open")
-            msgBox.setText("To open a new log, please close/exit first...")
+            if self.qgis_iface is not None:
+                msgBox.setText("To open a new log, click on the AZENQOS QGIS plugin icon/menu to close this and start a new session...")
+            else:
+                msgBox.setText("To open a new log, please close/exit first...")
             msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
             msgBox.exec_()
             return
@@ -1322,6 +1338,7 @@ Log_hash list: {}""".format(
         if self.gc.sliderLength:
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
         if self.gc.databasePath:
+            self._gui_restore()
             self.ui.statusbar.showMessage(
                 "Opened log db: {}".format(self.gc.databasePath)
             )
@@ -1553,7 +1570,7 @@ Log_hash list: {}""".format(
 
     def cleanup(self):
         try:
-            # self._gui_save()
+            self._gui_save()
             # saving = Utils().saveState(self.gc.CURRENT_PATH)
             if self.qgis_iface:
                 self.qgis_iface.actionPan().trigger()
@@ -1681,6 +1698,7 @@ Log_hash list: {}""".format(
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: _gui_save() - exception: {}".format(exstr))
+
 
     def _gui_restore(self):
         """

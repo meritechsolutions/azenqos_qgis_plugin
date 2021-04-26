@@ -8,7 +8,7 @@
                              -------------------
         begin                : 2019-03-18
         copyright            : Copyright (C) 2019-2020 Freewill FX Co., Ltd. All rights reserved
-        email                : gritmanoch@longdo.com
+        email                : support@azenqos.com
         git sha              : $Format:%H$
  ***************************************************************************/
 

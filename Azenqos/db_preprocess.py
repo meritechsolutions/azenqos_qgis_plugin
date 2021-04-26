@@ -82,7 +82,7 @@ def prepare_spatialite_views(dbcon):
     params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
     print("params_to_gen:", params_to_gen)
 
-    assert "lte_cell_meas" not in get_geom_cols_df(dbcon).f_table_name.values
+
     dbcon.commit()
 
     # create layer_styles table if not exist
@@ -145,7 +145,11 @@ def prepare_spatialite_views(dbcon):
             dbcon.execute(sqlstr)
 
             # get theme df for this param
-            theme_df = azq_theme_manager.get_theme_df_for_column(param)
+            theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
+            if 'match_value' in theme_df.columns:
+                # id columns like pci, earfcn
+                theme_df.Lower = theme_df.match_value
+                theme_df.Upper = theme_df.match_value
             if theme_df is None:
                 continue
             print("param: {} got theme_df:\n{}".format(param, theme_df))
@@ -249,7 +253,7 @@ def prepare_spatialite_views(dbcon):
                 continue
             print("WARNING: prepare_spatialte_views exception:", exstr)
 
-    assert "lte_cell_meas" not in get_geom_cols_df(dbcon).f_table_name.values
+
 
     # remove stray -1 -1 rows
     for view in tables_to_rm_stray_neg1_rows:
@@ -268,7 +272,7 @@ def prepare_spatialite_views(dbcon):
                 dbcon.execute(sqlstr)
                 dbcon.commit()
 
-    assert "lte_cell_meas" not in get_geom_cols_df(dbcon).f_table_name.values
+
     ## for each param
     # create view for param
     # put param view into geometry_columns to register for display

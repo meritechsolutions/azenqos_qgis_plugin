@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>18</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -154,6 +154,8 @@
     <property name="title">
      <string>Windows</string>
     </property>
+    <addaction name="actionTile"/>
+    <addaction name="actionCascade"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -413,6 +415,16 @@
   <action name="actionHSUPA_Statistics">
    <property name="text">
     <string>HSUPA Statistics</string>
+   </property>
+  </action>
+  <action name="actionTile">
+   <property name="text">
+    <string>Tile</string>
+   </property>
+  </action>
+  <action name="actionCascade">
+   <property name="text">
+    <string>Cascade</string>
    </property>
   </action>
  </widget>

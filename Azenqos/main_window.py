@@ -1460,7 +1460,10 @@ Log_hash list: {}""".format(
     #     iface.mapCanvas().refresh()
 
     def hilightFeature(self):
-        self.selectFeatureOnLayersByTime()
+        try:
+            self.selectFeatureOnLayersByTime()
+        except:
+            pass
 
 
     def selectFeatureOnLayersByTime(self):

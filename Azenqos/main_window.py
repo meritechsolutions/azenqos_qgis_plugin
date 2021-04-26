@@ -121,10 +121,6 @@ class main_window(QMainWindow):
             self.canvas.setMapTool(self.clickTool)
             self.clickTool.canvasClicked.connect(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
-            QgsProject.instance().layersAdded.connect(self.renamingLayers)
-            root = QgsProject.instance().layerTreeRoot()
-            root.addedChildren.connect(self.mergeLayerGroup)
-            QgsProject.instance().layerWillBeRemoved.connect(self.removingTreeLayer)
 
         self.timechange_service_thread = Worker(self.timeChangedWorkerFunc)
         self.gc.threadpool.start(self.timechange_service_thread)
@@ -1073,7 +1069,9 @@ Log_hash list: {}""".format(
                 QIcon(QPixmap(os.path.join(dirname, "res", "layer.png")))
             )
             self.layerSelect.setObjectName("layerBtn")
-
+            self.layerSelect.setToolTip(
+                "<b>Load layers</b><br>Click to load additional layers from the currently opened log file into the QGIS map."
+            )
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.loadBtn.clicked.connect(self.loadWorkspaceFile)
@@ -1112,62 +1110,6 @@ Log_hash list: {}""".format(
         self.toolbar.addWidget(self.speedLabel)
         self.toolbar.addWidget(self.playSpeed)
 
-    def renamingLayers(self, layers):
-
-        # Configure layers data source + rename layers
-        # uri = QgsDataSourceUri()
-        # uri.setDatabase(self.databaseUi.databasePath)
-        # root = QgsProject.instance().layerTreeRoot()
-        for layer in layers:
-            print("renamingLayers: ", layer.name())
-            name = layer.name().split(" ")
-            if name[0] == "azqdata":
-
-                # Handle duplicate layers
-                if " ".join(name[1:]) in self.gc.activeLayers:
-                    toBeRemoved = QgsProject.instance().mapLayersByName(
-                        " ".join(name[1:])
-                    )
-                    if len(toBeRemoved) > 0:
-                        QgsProject.instance().removeMapLayer(toBeRemoved[0])
-                        self.gc.activeLayers.remove(" ".join(name[1:]))
-
-                # Setting up layer data source
-                layer.setName(" ".join(name[1:]))
-                self.gc.activeLayers.append(" ".join(name[1:]))
-                # uri.setDataSource("", " ".join(name[1:]), geom_column)
-                # layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
-
-                # Force adding layer to root node
-                # cloneLayer = layer.clone()
-                # root.insertChildNode(0, cloneLayer)
-        pass
-
-        # self.zoomToActiveLayer()
-
-    def mergeLayerGroup(self, node, iFrom=None, iTo=None):
-        if type(node) is QgsLayerTreeGroup:
-            rootNode = QgsProject.instance().layerTreeRoot()
-            treeGroups = rootNode.findGroups()
-            layerOrder = rootNode.customLayerOrder()
-            if len(treeGroups) > 0:
-                for group in treeGroups:
-                    groupLayers = group.findLayers()
-                    for gl in groupLayers:
-                        cloneLayer = gl.clone()
-                        rootNode.insertChildNode(0, cloneLayer)
-                    group.removeAllChildren()
-            if len(self.gc.activeLayers) + 1 == len(layerOrder):
-                rootNode.removeChildrenGroupWithoutLayers()
-
-        pass
-
-    def removingTreeLayer(self, id):
-        try:
-            layer = QgsProject.instance().mapLayer(id)
-            self.gc.activeLayers.remove(layer.name())
-        except:
-            pass
 
     def selectChanged(self):
         if self.gc.h_list:
@@ -1313,18 +1255,23 @@ Log_hash list: {}""".format(
                 print("layer.name()", layer.name())
 
                 # Loop through all features in a rect near point xy
-                offset = 0.0005
+                offset = 0.000180
                 p1 = QgsPointXY(point.x() - offset, point.y() - offset)
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
                 nearby_features = layer.getFeatures(rect)
                 for f in nearby_features:
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
+                    #print("p distance:", distance)
                     if distance != -1.0 and distance <= 0.001:
+                        #print("p distance enter:", distance)
                         closestFeatureId = f.id()
                         time = layer.getFeature(closestFeatureId).attribute("time")
                         info = (layer, closestFeatureId, distance, time)
                         layerData.append(info)
+                    else:
+                        pass
+                        #print("p distance not enter:", distance)
 
                 """
                 # Loop through all features in the layer
@@ -1340,6 +1287,7 @@ Log_hash list: {}""".format(
                         layerData.append(info)
                 """
 
+        print("len(layerData) n nearest features:", len(layerData))
         if not len(layerData) > 0:
             # Looks like no vector layers were found - do nothing
             return
@@ -1348,7 +1296,7 @@ Log_hash list: {}""".format(
         layerData.sort(key=lambda element: element[2])
 
         for (layer, closestFeatureId, distance, time) in layerData:
-            # layer.select(closestFeatureId)
+            layer.select(closestFeatureId)
             selectedTime = time
             break
         try:
@@ -1473,9 +1421,7 @@ Log_hash list: {}""".format(
         # print("signal_ui_thread_emit_time_slider_updated.emit()")
         self.signal_ui_thread_emit_time_slider_updated.emit(self.gc.currentTimestamp)
 
-        if len(self.gc.activeLayers) > 0:
-            QgsMessageLog.logMessage("[-- have self.gc.tableList --]")
-            self.hilightFeature()
+        self.hilightFeature()
 
         # print("%s: timeChange8" % os.path.basename(__file__))
 
@@ -1513,23 +1459,13 @@ Log_hash list: {}""".format(
     #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
     #     iface.mapCanvas().refresh()
 
-    def hilightFeature(self, time_mode=True):
-        if time_mode:
-            self.selectFeatureOnLayersByTime()
-        else:
-            print("%s: hilightFeature" % os.path.basename(__file__))
-            QgsMessageLog.logMessage("[-- Start hilight features --]")
-            self.getPosIdsByTable()
-            if len(self.posIds) > 0 and len(self.posObjs) > 0:
-                self.usePosIdsSelectedFeatures()
-            QgsMessageLog.logMessage("[-- End hilight features --]")
+    def hilightFeature(self):
+        self.selectFeatureOnLayersByTime()
+
 
     def selectFeatureOnLayersByTime(self):
-        root = QgsProject.instance().layerTreeRoot()
-        layers = root.findLayers()
-        for layer in layers:
-            if layer.name() not in self.gc.activeLayers:
-                continue
+        qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
+        for layer in qgis_selected_layers:
             try:
                 # print("selectFeatureOnLayersByTime layer: %s" % layer.name())
                 end_dt = datetime.datetime.fromtimestamp(self.gc.currentTimestamp)
@@ -1545,7 +1481,7 @@ Log_hash list: {}""".format(
                     .setFlags(QgsFeatureRequest.NoGeometry)
                 )
 
-                layerFeatures = layer.layer().getFeatures(request)
+                layerFeatures = layer.getFeatures(request)
                 # print("filt request ret:", layerFeatures)
                 lc = 0
                 fids = []
@@ -1564,7 +1500,7 @@ Log_hash list: {}""".format(
                     sids = [sr.idxmax()]
                     # print("sr:", sr)
                     # print("select ids:", sids)
-                    layer.layer().selectByIds(sids)
+                    layer.selectByIds(sids)
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -1669,8 +1605,6 @@ Log_hash list: {}""".format(
 
                 QgsProject.instance().reloadAllLayers()
                 QgsProject.instance().clear()
-                # self.gc.tableList = []
-                self.gc.activeLayers = []
                 QgsProject.removeAllMapLayers(QgsProject.instance())
 
             if len(self.gc.openedWindows) > 0:

@@ -270,28 +270,3 @@ class azenqos_qgis_plugin:
             self.main_window = main_window.main_window(self.qgis_iface)
         self.main_window.show()
 
-        '''
-        if self.dlg is not None:
-            from PyQt5 import QtCore
-            #self.qgis_iface.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dlg)
-            #self.dlg.show()
-            from qgis.PyQt.QtCore import Qt
-            from qgis.PyQt.QtWidgets import QApplication
-
-
-
-            iface.showAttributeTable(iface.activeLayer())
-
-
-            # Get active Attribute Table
-            attrTables = [d for d in QApplication.instance().allWidgets() if d.objectName() == u'AttributeTable']
-            # Get Layers Panel
-            layersPanel = [x for x in iface.mainWindow().findChildren(QDockWidget) if x.objectName() == 'Layers']
-
-            # Add Attribute Table
-            #iface.addDockWidget(Qt.LeftDockWidgetArea, attrTables[0])
-            # Add (re-add) Layers Panel so that new panel appears below
-            #iface.addDockWidget(Qt.LeftDockWidgetArea, layersPanel[0])
-        '''
-
-

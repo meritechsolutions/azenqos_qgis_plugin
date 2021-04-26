@@ -9,7 +9,6 @@ class analyzer_vars:
     maxColumns = 50
     maxRows = 1000
     schemaList = []
-    activeLayers = []
     mdi = None
     qgis_iface = None
     mostFeaturesLayer = None

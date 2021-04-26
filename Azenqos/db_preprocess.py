@@ -98,6 +98,9 @@ def prepare_spatialite_views(dbcon):
             table_cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns
             table_has_geom = "geom" in table_cols
             print("table: {} table_has_geom {}".format(table, table_has_geom))
+            table_len = pd.read_sql("select count(*) from {}".format(table), dbcon).iloc[0,0]
+            if not table_len:
+                continue  # skip this param as no rows
             if not table_has_geom:
                 print("not table_has_geom so gen sql merge in from location table by time - START")
                 '''

@@ -160,6 +160,11 @@ class main_window(QMainWindow):
         print("save workspace")
         self.saveWorkspaceFile()
 
+    @pyqtSlot()
+    def on_actionSupport_triggered(self):
+        print("action support")
+        qt_utils.msgbox("Please email support@azenqos.com", "Technical support", self)
+
     ############# server_modules menu slots
     @pyqtSlot()
     def on_actionSession_info_triggered(self):

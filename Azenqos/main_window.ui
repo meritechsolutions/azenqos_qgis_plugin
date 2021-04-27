@@ -163,6 +163,7 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionSupport"/>
    </widget>
    <widget class="QMenu" name="menuServer_modules">
     <property name="title">
@@ -426,7 +427,7 @@
   </action>
   <action name="actionCascade">
    <property name="text">
-     <string>Cascade</string>
+    <string>Cascade</string>
    </property>
   </action>
   <action name="action5GNR_Beams">
@@ -437,6 +438,11 @@
   <action name="action5GNR_Data_Params">
    <property name="text">
     <string>5GNR Data Params</string>
+   </property>
+  </action>
+  <action name="actionSupport">
+   <property name="text">
+    <string>Technical support</string>
    </property>
   </action>
  </widget>

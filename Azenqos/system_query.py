@@ -1,5 +1,7 @@
 import pandas as pd
 
+import params_disp_df
+
 
 def get_technology_df(dbcon, time_before):
     rat_to_table_and_primary_where_dict = {
@@ -31,3 +33,88 @@ def get_technology_df(dbcon, time_before):
     df.sort_values(["log_hash", "time", "rat"], inplace=True)
     df = df[~pd.isnull(df.main_param)]
     return df
+
+def get_gsm_wcdma_system_info_df(dbcon, time_before):
+    parameter_to_columns_list = [
+        ("Time", ["time"], "serving_system"),
+        (
+            [
+                "MCC",
+                "MNC",
+                "LAC",
+                "Service Status",
+                "Service Domain",
+                "Service Capability",
+                "System Mode",
+                "Roaming Status",
+                "System ID Type",
+            ],
+            [
+                "serving_system_mcc",
+                "serving_system_mnc",
+                "serving_system_lac",
+                "cm_service_status",
+                "cm_service_domain",
+                "cm_service_capability",
+                "cm_system_mode",
+                "cm_roaming_status",
+                "cm_system_id_type",
+            ],
+            "serving_system",
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        not_null_first_col=False,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+def get_lte_system_info_df(dbcon, time_before):
+    parameter_to_columns_list = [
+        ("Time", ["time"], "lte_sib1_info"),
+        (
+            [
+                "MCC",
+                "MNC",
+                "TAC",
+                "ECI",
+            ], 
+            [
+                "lte_sib1_mcc",
+                "lte_sib1_mnc",
+                "lte_sib1_tac",
+                "lte_sib1_eci",
+            ],
+            "lte_sib1_info"
+        ),
+        (
+            [
+                "LAC",
+                "Service Status",
+                "Service Domain",
+                "Service Capability",
+                "System Mode",
+                "Roaming Status",
+                "System ID Type",
+            ],
+            [
+                "serving_system_lac",
+                "cm_service_status",
+                "cm_service_domain",
+                "cm_service_capability",
+                "cm_system_mode",
+                "cm_roaming_status",
+                "cm_system_id_type",
+            ],
+            "serving_system",
+        ),
+    ]
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        not_null_first_col=False,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )

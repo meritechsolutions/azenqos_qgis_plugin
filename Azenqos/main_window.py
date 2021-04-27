@@ -303,6 +303,36 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        
+    @pyqtSlot()
+    def on_actionGSM_WCDMA_System_Info_triggered(self):
+        print("action gsm wdcma system info")
+        import system_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "GSM/WCDMA System Info",
+            system_query.get_gsm_wcdma_system_info_df,
+            l3_alt_wireshark_decode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    @pyqtSlot()
+    def on_actionLTE_System_Info_triggered(self):
+        print("action lte system info")
+        import system_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "LTE System Info",
+            system_query.get_lte_system_info_df,
+            l3_alt_wireshark_decode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     ############# signalling menu slots
     @pyqtSlot()

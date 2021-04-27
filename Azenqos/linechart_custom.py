@@ -105,6 +105,14 @@ class LineChart(QtWidgets.QDialog):
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
         self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.updateTime(datetime.datetime.strptime(self.gc.currentDateTimeString, "%Y-%m-%d %H:%M:%S.%f"))
+        self.tableView.setStyleSheet(
+            """
+            * {
+            font-size: 11px;
+            }
+            QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
+            """
+        )
 
     def plot(self, dfList):
         self.graphWidget.axes.clear()

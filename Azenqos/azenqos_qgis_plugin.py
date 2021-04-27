@@ -28,13 +28,13 @@ import traceback
 
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QListWidget, QMessageBox
+from PyQt5.QtWidgets import QAction, QMessageBox
 
 import azq_utils
-
-
 # Initialize Qt resources from file resources.py
-import qt_utils, version
+import qt_utils
+import version
+
 
 class azenqos_qgis_plugin:
     """QGIS Plugin Implementation."""

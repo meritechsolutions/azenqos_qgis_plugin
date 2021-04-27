@@ -2,7 +2,6 @@ import datetime
 import os
 import sqlite3
 import sys
-
 # Adding folder path
 import threading
 import traceback
@@ -11,7 +10,6 @@ import pandas as pd
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -22,6 +20,7 @@ from PyQt5.QtWidgets import (
 )
 
 import azq_utils
+
 try:
     from cell_layer_task import CellLayerTask
     from tasks import LayerTask

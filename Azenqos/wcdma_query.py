@@ -1,5 +1,4 @@
 import pandas as pd
-from PyQt5.QtSql import QSqlQuery
 
 import params_disp_df
 

@@ -124,8 +124,10 @@ class main_window(QMainWindow):
             self.canvas.setMapTool(self.clickTool)
             self.clickTool.canvasClicked.connect(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
-
-        QgsProject.instance().layersAdded.connect(self.rename_layers)
+        try:
+            QgsProject.instance().layersAdded.connect(self.rename_layers)
+        except:
+            pass
 
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
@@ -760,9 +762,9 @@ Log_hash list: {}""".format(
         linechart_window = linechart_file_name.LineChart(
             self.gc,
             paramList=[
-                {"name": "nr_servingbeam_ss_rsrp_1", "null": True, "data": False},
-                {"name": "nr_servingbeam_ss_rsrq_1", "null": True, "data": False},
-                {"name": "nr_servingbeam_ss_sinr_1", "null": True, "data": False},
+                {"name": "nr_servingbeam_ss_rsrp_1", "null": False, "data": False},
+                {"name": "nr_servingbeam_ss_rsrq_1", "null": False, "data": False},
+                {"name": "nr_servingbeam_ss_sinr_1", "null": False, "data": False},
             ],
         )
 

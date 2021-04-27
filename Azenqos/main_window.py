@@ -1159,8 +1159,6 @@ Log_hash list: {}""".format(
                 hi.hide()
         self.gc.h_list = []
         layer = self.qgis_iface.activeLayer()
-
-        # layer = QgsProject.instance().mapLayersByName(layerName)[0]
         if not layer:
             return False
         if layer.type() == layer.VectorLayer:
@@ -1700,9 +1698,19 @@ Log_hash list: {}""".format(
                 root.removeChildNode(azqGroup)
 
     def renamingLayers(self, layers):
+        if layers is None:
+            return
+        layers = QgsProject.instance().mapLayers().values()
         for layer in layers:
-            print("renamingLayers: ", layer.name())
-            name = layer.name().split(" ")
+            name = layer.name()
+            print("renamingLayers layer:", name)
+            if "azqdata " in name:
+                try:
+                    param = name.split("azqdata ")[1]
+                    layer.setName(param)
+                except Exception as e:
+                    print("WARNING: renaming layers exception: {}".format(e))
+
     '''
     -
     

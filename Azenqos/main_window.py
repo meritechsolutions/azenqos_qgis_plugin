@@ -285,6 +285,43 @@ Log_hash list: {}""".format(
     def is_logged_in(self):
         return self.gc.login_dialog and self.gc.login_dialog.token
 
+    ############# log menu slots
+    @pyqtSlot()
+    def on_actionLog_Info_triggered(self):
+        print("action log info")
+        import log_query
+
+        headers = ["log_hash", "script_name", "script", "phonemodel", "imsi", "imei"]
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Log Info",
+            log_query.get_logs_info_df,
+            tableHeader=headers,
+            time_list_mode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        
+
+    @pyqtSlot()
+    def on_actionLogs_triggered(self):
+        print("action logs")
+        import log_query
+
+        headers = ["log_hash", "log_start_time", "log_end_time", "log_tag", "log_ori_file_name", "log_app_version", "log_license_edition", "log_required_pc_version", "log_timezone_offset"]
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Logs",
+            log_query.get_logs_df,
+            tableHeader=headers,
+            time_list_mode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        
     ############# system menu slots
     @pyqtSlot()
     def on_actionTechnology_triggered(self):
@@ -299,7 +336,6 @@ Log_hash list: {}""".format(
             system_query.get_technology_df,
             tableHeader=headers,
             time_list_mode=True,
-            l3_alt_wireshark_decode=True,
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
@@ -313,7 +349,6 @@ Log_hash list: {}""".format(
             swa,
             "GSM/WCDMA System Info",
             system_query.get_gsm_wcdma_system_info_df,
-            l3_alt_wireshark_decode=True,
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
@@ -328,7 +363,6 @@ Log_hash list: {}""".format(
             swa,
             "LTE System Info",
             system_query.get_lte_system_info_df,
-            l3_alt_wireshark_decode=True,
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)

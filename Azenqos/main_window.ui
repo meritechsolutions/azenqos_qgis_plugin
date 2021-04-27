@@ -145,6 +145,13 @@
      <addaction name="actionGSM_WCDMA_System_Info"/>
      <addaction name="actionLTE_System_Info"/>
     </widget>
+    <widget class="QMenu" name="menuLog">
+     <property name="title">
+      <string>Log</string>
+     </property>
+     <addaction name="actionLog_Info"/>
+     <addaction name="actionLogs"/>
+    </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
@@ -152,6 +159,7 @@
     <addaction name="menuSignalling"/>
     <addaction name="menuData"/>
     <addaction name="menuSystem"/>
+    <addaction name="menuLog"/>
     <addaction name="actionPCAP"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
@@ -455,6 +463,16 @@
   <action name="actionLTE_System_Info">
    <property name="text">
     <string>LTE System Info</string>
+   </property>
+  </action>
+  <action name="actionLog_Info">
+   <property name="text">
+    <string>Log Info</string>
+   </property>
+  </action>
+  <action name="actionLogs">
+   <property name="text">
+    <string>Logs</string>
    </property>
   </action>
  </widget>

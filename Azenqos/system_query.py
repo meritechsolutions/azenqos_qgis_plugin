@@ -62,6 +62,7 @@ def get_gsm_wcdma_system_info_df(dbcon, time_before):
             ],
             "serving_system",
         ),
+        ("WCDMA RRC State", ["wcdma_rrc_state"], "wcdma_rrc_state"),
     ]
     return params_disp_df.get(
         dbcon,
@@ -110,6 +111,8 @@ def get_lte_system_info_df(dbcon, time_before):
             ],
             "serving_system",
         ),
+        ("LTE RRC State", ["lte_rrc_state"], "lte_rrc_state"),
+        ("LTE EMM State", ["lte_emm_state"], "lte_emm_state"),
     ]
     return params_disp_df.get(
         dbcon,

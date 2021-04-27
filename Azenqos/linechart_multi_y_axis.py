@@ -7,7 +7,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QMenu
+from PyQt5.QtGui import QMenu, QHeaderView
 
 # from qgis.gui import QgsColorButton
 from PyQt5.uic import loadUi
@@ -96,6 +96,16 @@ class LineChart(QtWidgets.QDialog):
         )
         self.ui.checkBox_2.setChecked(False)
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
+        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.updateTime(datetime.datetime.strptime(self.gc.currentDateTimeString, "%Y-%m-%d %H:%M:%S.%f"))
+        self.tableView.setStyleSheet(
+            """
+            * {
+            font-size: 11px;
+            }
+            QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
+            """
+        )
 
     def plot(self, dfList):
         self.graphWidget.axes.clear()

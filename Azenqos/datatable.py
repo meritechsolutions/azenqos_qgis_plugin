@@ -1025,7 +1025,7 @@ class PdTableModel(QAbstractTableModel):
                         ret = "%.02f" % ret
                     else:
                         ret = str(ret)
-                if ret.endswith(".00"):
+                if ret.endswith("000") and "." in ret:
                     ret = ret[:-3]
                 # print("data() index:index.row() {}, index.column() {} ret {}".format(index.row(), index.column(), ret))
                 return ret

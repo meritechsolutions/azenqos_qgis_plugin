@@ -50,16 +50,23 @@ class DataFrameModel(QtCore.QAbstractTableModel):
             and 0 <= index.column() < self.columnCount()
         ):
             return QtCore.QVariant()
-        row = self._dataframe.index[index.row()]
+        #row = self._dataframe.index[index.row()]
         col = self._dataframe.columns[index.column()]
         dt = self._dataframe[col].dtype
 
-        val = self._dataframe.iloc[row][col]
-
+        val = self._dataframe.iloc[index.row(), index.column()]
+        ret = val
         if role == QtCore.Qt.DisplayRole:
-            if len(str(val)) > 0 and str(val)[0] == "#":
-                return
-            return str(val)
+            if pd.isnull(val):
+                return ret
+            if not isinstance(val, str):
+                if isinstance(val, float):
+                    ret = "%.02f" % val
+                else:
+                    ret = str(val)
+            if ret is not None and ret.endswith("000") and "." in ret:
+                ret = ret[:-3]
+            return ret
         elif role == DataFrameModel.ValueRole:
             return val
         if role == DataFrameModel.DtypeRole:

@@ -45,7 +45,7 @@ class import_db_dialog(QDialog):
     import_done_signal = pyqtSignal(str)
 
     def __init__(self, parent_window, gc):
-        super(import_db_dialog, self).__init__()
+        super(import_db_dialog, self).__init__(parent=parent_window)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
         self.parent_window = parent_window

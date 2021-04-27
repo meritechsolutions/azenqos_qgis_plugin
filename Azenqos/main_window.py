@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QWidget,
     QStyle,
     QMessageBox,
-    QPushButton,
+    QPushButton, QHeaderView,
 )
 from PyQt5.uic import loadUi
 
@@ -125,9 +125,11 @@ class main_window(QMainWindow):
             self.clickTool.canvasClicked.connect(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
 
+        QgsProject.instance().layersAdded.connect(self.rename_layers)
+
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
-
+        self.resize(1024,768)
         print("main_window __init__() done")
 
     @pyqtSlot()
@@ -358,6 +360,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
@@ -400,6 +403,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
     ############# LTE menu slots
@@ -416,6 +420,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_Serving_Neighbors_triggered(self):
@@ -444,6 +449,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_PUCCH_PDSCH_Params_triggered(self):
@@ -458,6 +464,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_RRC_SIB_States_triggered(self):
@@ -472,6 +479,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_RLC_triggered(self):
@@ -486,6 +494,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_VoLTE_triggered(self):
@@ -500,6 +509,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     ############# WCDMA menu slots
 
@@ -516,6 +526,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionWCDMA_Active_Monitored_sets_triggered(self):
@@ -544,6 +555,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionWCDMA_Bearers_triggered(self):
@@ -574,6 +586,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionGSM_Serving_Neighbors_triggered(self):
@@ -602,6 +615,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionGSM_C_I_triggered(self):
@@ -722,6 +736,7 @@ Log_hash list: {}""".format(
         self.add_subwindow_with_widget(swa, widget)
 
     def show_line_chart_dialog(self):
+        return True  # temporary as nr line chart when not ok becomes unreadable
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Question)
         msgBox.setText("Use Multiple Y-Axis")
@@ -758,9 +773,9 @@ Log_hash list: {}""".format(
 
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
-        self.add_subwindow_with_widget(swa, linechart_window)
-        linechart_window.open()
-        linechart_window.setWindowTitle("NR Line Chart")
+        if self.add_subwindow_with_widget(swa, linechart_window):
+            linechart_window.open()
+            linechart_window.setWindowTitle("NR Line Chart")
 
     @pyqtSlot()
     def on_actionNR_DATA_Line_Chart_triggered(self):
@@ -990,6 +1005,7 @@ Log_hash list: {}""".format(
         swa.resize(w, h)
         swa.show()
         self.gc.openedWindows.append(widget)
+        return True
 
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_local_fp("main_window.ui"), self)
@@ -1143,8 +1159,6 @@ Log_hash list: {}""".format(
                 hi.hide()
         self.gc.h_list = []
         layer = self.qgis_iface.activeLayer()
-
-        # layer = QgsProject.instance().mapLayersByName(layerName)[0]
         if not layer:
             return False
         if layer.type() == layer.VectorLayer:
@@ -1682,6 +1696,49 @@ Log_hash list: {}""".format(
             azqGroup = root.findGroup("Azenqos")
             if azqGroup:
                 root.removeChildNode(azqGroup)
+
+    def rename_layers(self, layers):
+        if layers is None:
+            return
+        layers = QgsProject.instance().mapLayers().values()
+        for layer in layers:
+            name = layer.name()
+            print("renamingLayers layer:", name)
+            if "azqdata " in name:
+                try:
+                    param = name.split("azqdata ")[1]
+                    layer.setName(param)
+                except Exception as e:
+                    print("WARNING: renaming layers exception: {}".format(e))
+
+    '''
+    -
+    
+    if name[0] == "azqdata":
+        -
+    -  # Handle duplicate layers
+    -
+    if " ".join(name[1:]) in self.gc.activeLayers:
+        -                    toBeRemoved = QgsProject.instance().mapLayersByName(
+            -                        " ".join(name[1:])
+            -)
+    -
+    if len(toBeRemoved) > 0:
+        -                        QgsProject.instance().removeMapLayer(toBeRemoved[0])
+    -                        self.gc.activeLayers.remove(" ".join(name[1:]))
+    -
+    -  # Setting up layer data source
+    -                layer.setName(" ".join(name[1:]))
+    -                self.gc.activeLayers.append(" ".join(name[1:]))
+    -  # uri.setDataSource("", " ".join(name[1:]), geom_column)
+    -  # layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
+    -
+    -  # Force adding layer to root node
+    -  # cloneLayer = layer.clone()
+    -  # root.insertChildNode(0, cloneLayer)
+    -
+    pass
+    '''
 
     def _gui_save(self):
         # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values

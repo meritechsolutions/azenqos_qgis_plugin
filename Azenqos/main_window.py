@@ -125,6 +125,8 @@ class main_window(QMainWindow):
             self.clickTool.canvasClicked.connect(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
 
+        QgsProject.instance().layersAdded.connect(self.renamingLayers)
+
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
         self.resize(1024,768)
@@ -1696,6 +1698,39 @@ Log_hash list: {}""".format(
             azqGroup = root.findGroup("Azenqos")
             if azqGroup:
                 root.removeChildNode(azqGroup)
+
+    def renamingLayers(self, layers):
+        for layer in layers:
+            print("renamingLayers: ", layer.name())
+            name = layer.name().split(" ")
+    '''
+    -
+    
+    if name[0] == "azqdata":
+        -
+    -  # Handle duplicate layers
+    -
+    if " ".join(name[1:]) in self.gc.activeLayers:
+        -                    toBeRemoved = QgsProject.instance().mapLayersByName(
+            -                        " ".join(name[1:])
+            -)
+    -
+    if len(toBeRemoved) > 0:
+        -                        QgsProject.instance().removeMapLayer(toBeRemoved[0])
+    -                        self.gc.activeLayers.remove(" ".join(name[1:]))
+    -
+    -  # Setting up layer data source
+    -                layer.setName(" ".join(name[1:]))
+    -                self.gc.activeLayers.append(" ".join(name[1:]))
+    -  # uri.setDataSource("", " ".join(name[1:]), geom_column)
+    -  # layer.setDataSource(uri.uri(), " ".join(name[1:]), "spatialite")
+    -
+    -  # Force adding layer to root node
+    -  # cloneLayer = layer.clone()
+    -  # root.insertChildNode(0, cloneLayer)
+    -
+    pass
+    '''
 
     def _gui_save(self):
         # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values

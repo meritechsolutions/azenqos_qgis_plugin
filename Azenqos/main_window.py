@@ -125,7 +125,7 @@ class main_window(QMainWindow):
             self.clickTool.canvasClicked.connect(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
 
-        QgsProject.instance().layersAdded.connect(self.renamingLayers)
+        QgsProject.instance().layersAdded.connect(self.rename_layers)
 
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
@@ -1697,7 +1697,7 @@ Log_hash list: {}""".format(
             if azqGroup:
                 root.removeChildNode(azqGroup)
 
-    def renamingLayers(self, layers):
+    def rename_layers(self, layers):
         if layers is None:
             return
         layers = QgsProject.instance().mapLayers().values()

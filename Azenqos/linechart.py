@@ -9,7 +9,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 
 # from qgis.gui import QgsColorButton
-from PyQt5.QtWidgets import QMenu
+from PyQt5.QtWidgets import QMenu, QHeaderView
 from PyQt5.uic import loadUi
 
 import add_param_dialog
@@ -104,6 +104,9 @@ class LineChart(QtWidgets.QDialog):
         self.ui.checkBox_2.setChecked(False)
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
         self.ui.multiYCheck.setCheckable(False)
+        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #doesnt work to init chart self.updateTime(self.gc.currentDateTimeString)
+        #doesnt work to init chart self.updateInternal()
 
     def plot(self, dfList):
         self.graphWidget.axes.clear()

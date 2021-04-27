@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QWidget,
     QStyle,
     QMessageBox,
-    QPushButton,
+    QPushButton, QHeaderView,
 )
 from PyQt5.uic import loadUi
 
@@ -127,7 +127,7 @@ class main_window(QMainWindow):
 
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
-
+        self.resize(1024,768)
         print("main_window __init__() done")
 
     @pyqtSlot()
@@ -358,7 +358,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.setColumnWidth(0, TIME_COL_DEFAULT_WIDTH);
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
@@ -401,7 +401,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.setColumnWidth(0, TIME_COL_DEFAULT_WIDTH);
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
     ############# LTE menu slots
@@ -418,6 +418,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_Serving_Neighbors_triggered(self):
@@ -446,6 +447,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_PUCCH_PDSCH_Params_triggered(self):
@@ -460,6 +462,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_RRC_SIB_States_triggered(self):
@@ -474,6 +477,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_RLC_triggered(self):
@@ -488,6 +492,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_VoLTE_triggered(self):
@@ -502,6 +507,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     ############# WCDMA menu slots
 
@@ -518,6 +524,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionWCDMA_Active_Monitored_sets_triggered(self):
@@ -546,6 +553,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionWCDMA_Bearers_triggered(self):
@@ -576,6 +584,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionGSM_Serving_Neighbors_triggered(self):
@@ -604,6 +613,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionGSM_C_I_triggered(self):
@@ -724,6 +734,7 @@ Log_hash list: {}""".format(
         self.add_subwindow_with_widget(swa, widget)
 
     def show_line_chart_dialog(self):
+        return True  # temporary as nr line chart when not ok becomes unreadable
         msgBox = QtWidgets.QMessageBox()
         msgBox.setIcon(QtWidgets.QMessageBox.Question)
         msgBox.setText("Use Multiple Y-Axis")
@@ -760,9 +771,9 @@ Log_hash list: {}""".format(
 
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
-        self.add_subwindow_with_widget(swa, linechart_window)
-        linechart_window.open()
-        linechart_window.setWindowTitle("NR Line Chart")
+        if self.add_subwindow_with_widget(swa, linechart_window):
+            linechart_window.open()
+            linechart_window.setWindowTitle("NR Line Chart")
 
     @pyqtSlot()
     def on_actionNR_DATA_Line_Chart_triggered(self):
@@ -992,6 +1003,7 @@ Log_hash list: {}""".format(
         swa.resize(w, h)
         swa.show()
         self.gc.openedWindows.append(widget)
+        return True
 
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_local_fp("main_window.ui"), self)

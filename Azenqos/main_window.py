@@ -358,6 +358,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.setColumnWidth(0, TIME_COL_DEFAULT_WIDTH);
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
@@ -400,6 +401,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.setColumnWidth(0, TIME_COL_DEFAULT_WIDTH);
 
 
     ############# LTE menu slots

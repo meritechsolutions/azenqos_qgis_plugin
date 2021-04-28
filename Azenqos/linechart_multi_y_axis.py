@@ -7,7 +7,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QMenu, QHeaderView
+from PyQt5.QtGui import QMenu, QHeaderView, QFont
 
 # from qgis.gui import QgsColorButton
 from PyQt5.uic import loadUi
@@ -88,6 +88,11 @@ class LineChart(QtWidgets.QDialog):
         self.updateChart.connect(self.onUpdateChart)
         self.updateTable.connect(self.onUpdateTable)
 
+        self.tick_font = QFont()
+        self.tick_font.setPixelSize(10)
+        self.graphWidget.axes.getAxis("bottom").setStyle(tickFont=self.tick_font)
+        #self.graphWidget.getAxis("bottom").setStyle(tickTextOffset=20)
+
         self.ui.tableView.customContextMenuRequested.connect(self.onTableRightClick)
         enable_slot = partial(self.enable_zoom, self.ui.checkBox_2)
         disable_slot = partial(self.disable_zoom, self.ui.checkBox_2)
@@ -97,7 +102,8 @@ class LineChart(QtWidgets.QDialog):
         self.ui.checkBox_2.setChecked(False)
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
         self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.updateTime(datetime.datetime.strptime(self.gc.currentDateTimeString, "%Y-%m-%d %H:%M:%S.%f"))
+        if self.gc.currentDateTimeString is not None:
+            self.updateTime(datetime.datetime.strptime(self.gc.currentDateTimeString, "%Y-%m-%d %H:%M:%S.%f"))
         self.tableView.setStyleSheet(
             """
             * {
@@ -126,6 +132,7 @@ class LineChart(QtWidgets.QDialog):
             if len(df) == 0:
                 continue
             axis = pg.AxisItem("left")
+            axis.setStyle(tickFont=self.tick_font)
             viewBox = None
             if viewBox1 == None:
                 viewBox1 = self.graphWidget.axes.vb
@@ -154,7 +161,7 @@ class LineChart(QtWidgets.QDialog):
                 if col in ["log_hash", "Time"]:
                     continue
                 color = self.colorDict[col]
-                axis.setLabel(col)
+                axis.setLabel(col, **{'font-size': '10pt'})
                 axis.setPen(color, width=2)
                 self.axisDict[col] = axis
                 df = df.fillna(np.NaN)

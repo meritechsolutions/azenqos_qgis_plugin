@@ -302,6 +302,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.setSortingEnabled(True)
         
 
     @pyqtSlot()
@@ -321,6 +322,7 @@ Log_hash list: {}""".format(
         )
         self.add_subwindow_with_widget(swa, widget)
         widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        widget.tableView.setSortingEnabled(True)
         
     ############# system menu slots
     @pyqtSlot()
@@ -339,6 +341,8 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        widget.tableView.setSortingEnabled(True)
         
     @pyqtSlot()
     def on_actionGSM_WCDMA_System_Info_triggered(self):
@@ -388,6 +392,7 @@ Log_hash list: {}""".format(
         self.add_subwindow_with_widget(swa, widget)
         widget.tableView.setColumnWidth(1, TIME_COL_DEFAULT_WIDTH);
         widget.tableView.setColumnWidth(2, NAME_COL_DEFAULT_WIDTH);
+        widget.tableView.setSortingEnabled(True)
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):
@@ -409,6 +414,7 @@ Log_hash list: {}""".format(
         widget.tableView.setColumnWidth(1, TIME_COL_DEFAULT_WIDTH);
         widget.tableView.setColumnWidth(2, NAME_COL_DEFAULT_WIDTH);
         widget.tableView.setColumnWidth(3, NAME_COL_DEFAULT_WIDTH);
+        widget.tableView.setSortingEnabled(True)
 
 
     ############# NR menu slots

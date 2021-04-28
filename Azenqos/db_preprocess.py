@@ -266,6 +266,7 @@ def prepare_spatialite_views(dbcon):
                     # sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
                     #     view, row.log_hash, posid
                     # )
+
                     sqlstr = "update {} set geom = null where log_hash = {} and posid = {};".format(
                         view, row.log_hash, posid
                     )
@@ -276,6 +277,7 @@ def prepare_spatialite_views(dbcon):
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: remove stray -1 -1 rows exception:", exstr)
+
 
 
     ## for each param

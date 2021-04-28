@@ -265,12 +265,15 @@ def prepare_spatialite_views(dbcon):
                 # sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
                 #     view, row.log_hash, posid
                 # )
-                sqlstr = "update {} set geom = null where log_hash = {} and posid = {};".format(
-                    view, row.log_hash, posid
-                )
-                print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)
-                dbcon.execute(sqlstr)
-                dbcon.commit()
+                try:
+                    sqlstr = "update {} set geom = null where log_hash = {} and posid = {};".format(
+                        view, row.log_hash, posid
+                    )
+                    print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)
+                    dbcon.execute(sqlstr)
+                    dbcon.commit()
+                except:
+                    continue
 
 
     ## for each param

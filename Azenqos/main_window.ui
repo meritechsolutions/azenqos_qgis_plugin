@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -142,6 +142,15 @@
       <string>System</string>
      </property>
      <addaction name="actionTechnology"/>
+     <addaction name="actionGSM_WCDMA_System_Info"/>
+     <addaction name="actionLTE_System_Info"/>
+    </widget>
+    <widget class="QMenu" name="menuLog">
+     <property name="title">
+      <string>Log</string>
+     </property>
+     <addaction name="actionLog_Info"/>
+     <addaction name="actionLogs"/>
     </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
@@ -150,6 +159,7 @@
     <addaction name="menuSignalling"/>
     <addaction name="menuData"/>
     <addaction name="menuSystem"/>
+    <addaction name="menuLog"/>
     <addaction name="actionPCAP"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
@@ -443,6 +453,26 @@
   <action name="actionSupport">
    <property name="text">
     <string>Technical support</string>
+   </property>
+  </action>
+  <action name="actionGSM_WCDMA_System_Info">
+   <property name="text">
+    <string>GSM/WCDMA System Info</string>
+   </property>
+  </action>
+  <action name="actionLTE_System_Info">
+   <property name="text">
+    <string>LTE System Info</string>
+   </property>
+  </action>
+  <action name="actionLog_Info">
+   <property name="text">
+    <string>Log Info</string>
+   </property>
+  </action>
+  <action name="actionLogs">
+   <property name="text">
+    <string>Logs</string>
    </property>
   </action>
  </widget>

@@ -124,8 +124,10 @@ class main_window(QMainWindow):
             self.canvas.setMapTool(self.clickTool)
             self.clickTool.canvasClicked.connect(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
-
-        QgsProject.instance().layersAdded.connect(self.rename_layers)
+        try:
+            QgsProject.instance().layersAdded.connect(self.rename_layers)
+        except:
+            pass
 
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
@@ -283,6 +285,43 @@ Log_hash list: {}""".format(
     def is_logged_in(self):
         return self.gc.login_dialog and self.gc.login_dialog.token
 
+    ############# log menu slots
+    @pyqtSlot()
+    def on_actionLog_Info_triggered(self):
+        print("action log info")
+        import log_query
+
+        headers = ["log_hash", "script_name", "script", "phonemodel", "imsi", "imei"]
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Log Info",
+            log_query.get_logs_info_df,
+            tableHeader=headers,
+            time_list_mode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        
+
+    @pyqtSlot()
+    def on_actionLogs_triggered(self):
+        print("action logs")
+        import log_query
+
+        headers = ["log_hash", "log_start_time", "log_end_time", "log_tag", "log_ori_file_name", "log_app_version", "log_license_edition", "log_required_pc_version", "log_timezone_offset"]
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Logs",
+            log_query.get_logs_df,
+            tableHeader=headers,
+            time_list_mode=True,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        
     ############# system menu slots
     @pyqtSlot()
     def on_actionTechnology_triggered(self):
@@ -297,10 +336,37 @@ Log_hash list: {}""".format(
             system_query.get_technology_df,
             tableHeader=headers,
             time_list_mode=True,
-            l3_alt_wireshark_decode=True,
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+        
+    @pyqtSlot()
+    def on_actionGSM_WCDMA_System_Info_triggered(self):
+        print("action gsm wdcma system info")
+        import system_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "GSM/WCDMA System Info",
+            system_query.get_gsm_wcdma_system_info_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    @pyqtSlot()
+    def on_actionLTE_System_Info_triggered(self):
+        print("action lte system info")
+        import system_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "LTE System Info",
+            system_query.get_lte_system_info_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     ############# signalling menu slots
     @pyqtSlot()
@@ -760,9 +826,9 @@ Log_hash list: {}""".format(
         linechart_window = linechart_file_name.LineChart(
             self.gc,
             paramList=[
-                {"name": "nr_servingbeam_ss_rsrp_1", "null": True, "data": False},
-                {"name": "nr_servingbeam_ss_rsrq_1", "null": True, "data": False},
-                {"name": "nr_servingbeam_ss_sinr_1", "null": True, "data": False},
+                {"name": "nr_servingbeam_ss_rsrp_1", "null": False, "data": False},
+                {"name": "nr_servingbeam_ss_rsrq_1", "null": False, "data": False},
+                {"name": "nr_servingbeam_ss_sinr_1", "null": False, "data": False},
             ],
         )
 

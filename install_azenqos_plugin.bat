@@ -30,11 +30,26 @@ if defined EP16 (
     python3 -m pip install -r requirements.txt || (echo INSTALL FAILED && pause && exit 1)
 )
 
-if not defined EP16 (
-    if not defined EP10 (
-        echo NO QGIS FOUND && pause && exit 1
-    )
-) 
+For /F "Skip=1 Tokens=2*" %%A In (
+    'reg query "HKLM\SOFTWARE\QGIS 3.18" -v InstallPath 2^>Nul'
+) Do Set "EP18=%%~B"
+
+if defined EP18 (
+    Echo Found QGIS InstallPath: %EP18%
+    echo == Preparing QGIS16 cmd env...
+    call "%EP18%\bin\o4w_env.bat" || (echo INSTALL FAILED && pause && exit 1)
+    call "py3_env" || (echo INSTALL FAILED && pause && exit 1)
+    echo == Installing required python packages into QGIS's python env...
+    python3 -m pip install -r requirements.txt || (echo INSTALL FAILED && pause && exit 1)
+)
+
+if not defined EP18 (
+    if not defined EP16 (
+        if not defined EP10 (
+            echo NO QGIS FOUND && pause && exit 1
+        )
+    ) 
+)
 
 echo == Removing any existing plugin folders...
 rmdir /q /s "%appdata%\QGIS\QGIS3\profiles\default\python\plugins\Azenqos"

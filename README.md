@@ -27,7 +27,7 @@ Installation instructions for Windows
 
 Installation instructions for Ubuntu GNU/Linux
 -------------------------------------
-- Note: Tested on Ubuntu 20.04 LTS
+- Note: Tested on Ubuntu 20.04 LTS, Python 3.8.5
 - Install QGIS Long Term Release on Ubuntu (`sudo apt install qgis`), open `qgis` and complete first time setup if first run.
 - Close QGIS if it is already open.
 - Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder. (Or if you know how to use `git` then git clone this repo)

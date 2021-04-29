@@ -1545,7 +1545,12 @@ Log_hash list: {}""".format(
         #TODO port gc.openedWindows later because lower parts still exception - self.gc.openedWindows = opened_windows
         if len(self.gc.openedWindows) > 0:
             for window in self.gc.openedWindows:
-                if not window.isVisible():
+                is_visible = False
+                try:
+                    is_visible = window.isVisible()  # handle c++ window deleted runtime error
+                except:
+                    pass
+                if not is_visible:
                     print("window {} not visible so omit".format(window))
                     continue
                 if isinstance(window, linechart_custom.LineChart):

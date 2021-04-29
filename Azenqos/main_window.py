@@ -1534,10 +1534,14 @@ Log_hash list: {}""".format(
 
         self.hilightFeature()
 
-        # print("%s: timeChange8" % os.path.basename(__file__))
-
+        opened_windows = list(self.gc.mdi.subWindowList())
+        print("%s: timeChange8" % os.path.basename(__file__), "len(opened_windows): ", len(opened_windows))
+        #TODO port gc.openedWindows later because lower parts still exception - self.gc.openedWindows = opened_windows
         if len(self.gc.openedWindows) > 0:
             for window in self.gc.openedWindows:
+                if not window.isVisible():
+                    print("window {} not visible so omit".format(window))
+                    continue
                 if isinstance(window, linechart_custom.LineChart):
                     window.updateTime(sampledate)
                 elif isinstance(window, linechart_multi_y_axis.LineChart):

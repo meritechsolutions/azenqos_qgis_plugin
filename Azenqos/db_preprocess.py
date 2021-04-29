@@ -97,6 +97,7 @@ def prepare_spatialite_views(dbcon):
             view = param
             table_cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns
             table_has_geom = "geom" in table_cols
+            table_has_modem_time = "modem_time" in table_cols
             print("table: {} table_has_geom {}".format(table, table_has_geom))
             table_len = pd.read_sql("select count(*) from {}".format(table), dbcon).iloc[0,0]
             if not table_len:
@@ -128,8 +129,9 @@ def prepare_spatialite_views(dbcon):
                 )
                 print("not table_has_geom so gen sql merge in from location table by time - DONE")
             else:
-                sqlstr = "create table {col} as select log_hash, time, modem_time, posid, geom, {col} from {table} ;".format(
-                    col=view, table=table
+                sqlstr = "create table {col} as select log_hash, time, {modem_time_part}, posid, geom, {col} from {table} ;".format(
+                    col=view, table=table,
+                    modem_time_part="modem_time" if table_has_modem_time else "null as modem_time"
                 )
             print("create view sqlstr: %s" % sqlstr)
             dbcon.execute(sqlstr)
@@ -143,6 +145,7 @@ def prepare_spatialite_views(dbcon):
             )
             print("insert into geometry_columns view {} sqlstr: {}".format(view, sqlstr))
             dbcon.execute(sqlstr)
+            dbcon.commit()
 
             # get theme df for this param
             theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)

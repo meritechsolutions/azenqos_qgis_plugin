@@ -41,7 +41,7 @@ def get_lte_rrc_sib_states_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=True,
-        custom_lookback_dur_millis=24 * 3600,
+        custom_lookback_dur_millis=24 * 3600 * 1000,
     )
 
 

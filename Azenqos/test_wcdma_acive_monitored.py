@@ -13,9 +13,9 @@ def test():
     with sqlite3.connect(dbfp) as dbcon:
         df = wcdma_query.get_wcdma_acive_monitored_df(dbcon, "2020-09-02 12:15:29.546")
         print("df.head():\n %s" % df.head(20))
-        assert df.iloc[1, 3] == 211
+        assert df.iloc[1, 2] == 211
         assert len(df) == 14
-        assert len(df.columns) == 7
+        assert len(df.columns) == 5
 
 
 if __name__ == "__main__":

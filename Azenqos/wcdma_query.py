@@ -10,22 +10,23 @@ def get_wcdma_acive_monitored_df(dbcon, time_before):
     df_list = []
 
     cell_col_prefix_renamed = [
-        "Cell ID",
-        "Cell Name",
+        #"Cell ID",
+        #"Cell Name",
+        "UARFCN",
         "PSC",
         "Ec/Io",
         "RSCP ",
-        "UARFCN",
+
     ]
 
     aset_col_prefix_sr = pd.Series(
         [
-            "wcdma_aset_cellfile_matched_cellid_",
-            "wcdma_aset_cellfile_matched_cellname_",
+            #"wcdma_aset_cellfile_matched_cellid_",
+            #"wcdma_aset_cellfile_matched_cellname_",
+            "wcdma_aset_cellfreq_",
             "wcdma_aset_sc_",
             "wcdma_aset_ecio_",
             "wcdma_aset_rscp_",
-            "wcdma_aset_cellfreq_",
         ]
     )
     aset_n_param = 3
@@ -65,12 +66,13 @@ def get_wcdma_acive_monitored_df(dbcon, time_before):
 
     mset_col_prefix_sr = pd.Series(
         [
-            "wcdma_mset_cellfile_matched_cellid_",
-            "wcdma_mset_cellfile_matched_cellname_",
+            #"wcdma_mset_cellfile_matched_cellid_",
+            #"wcdma_mset_cellfile_matched_cellname_",
+            "wcdma_mset_cellfreq_",
             "wcdma_mset_sc_",
             "wcdma_mset_ecio_",
             "wcdma_mset_rscp_",
-            "wcdma_mset_cellfreq_",
+
         ]
     )
     mset_n_param = 6
@@ -101,12 +103,12 @@ def get_wcdma_acive_monitored_df(dbcon, time_before):
 
     dset_col_prefix_sr = pd.Series(
         [
-            "wcdma_dset_cellfile_matched_cellid_",
-            "wcdma_dset_cellfile_matched_cellname_",
+            #"wcdma_dset_cellfile_matched_cellid_",
+            #"wcdma_dset_cellfile_matched_cellname_",
+            "wcdma_dset_cellfreq_",
             "wcdma_dset_sc_",
             "wcdma_dset_ecio_",
             "wcdma_dset_rscp_",
-            "wcdma_dset_cellfreq_",
         ]
     )
     dset_n_param = 4
@@ -165,7 +167,7 @@ def get_wcdma_radio_params_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=False,
-        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=24*3600*1000,
     )
 
 

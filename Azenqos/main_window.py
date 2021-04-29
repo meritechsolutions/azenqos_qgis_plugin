@@ -92,6 +92,7 @@ class main_window(QMainWindow):
             parent = qgis_iface.mainWindow()
         print("mainwindow __init__ parent: {}".format(parent))
         super(main_window, self).__init__(parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
         azq_utils.cleanup_died_processes_tmp_folders()
 
@@ -1492,7 +1493,12 @@ Log_hash list: {}""".format(
                         "%s: timeChangedWorkerFunc: timechange_to_service_counter: %d so calling timeChangeImpl() START"
                         % (os.path.basename(__file__), ret)
                     )
-                    self.timeChangeImpl()
+                    try:
+                        self.timeChangeImpl()
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print("WARNING: timeChangeImpl - exception: {}".format(exstr))
                     print(
                         "%s: timeChangedWorkerFunc: timechange_to_service_counter: %d so calling timeChangeImpl() END"
                         % (os.path.basename(__file__), ret)

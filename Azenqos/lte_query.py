@@ -407,29 +407,64 @@ def get_volte_disp_df(dbcon, time_before):
             [
                 "RTP Packet delay (ms.)",
                 "RTCP SR Params:",
-                "RTCP Round trip time (ms.)",
-                "RTCP SR Params - Jitter DL:",
-                "RTCP SR Jitter DL (ts unit)",
-                "RTCP SR Jitter DL (ms.)",
-                "RTCP SR Params - Jitter UL:",
-                "RTCP SR Jitter UL (ts unit)",
-                "RTCP SR Jitter UL (ms.)",
-                "RTCP SR Params - Packet loss rate:",
-                "RTCP SR Packet loss DL (%)",
-                "RTCP SR Packet loss UL (%)",
             ],
             [
                 "lte_volte_rtp_pkt_delay_avg",
                 '"" as unused2',
+            ],
+            "lte_volte_stats",
+        ),
+        (
+            [
+                "RTCP Round trip time (ms.)",
+                "RTCP SR Params - Jitter DL:",
+            ],
+            [
                 "lte_volte_rtp_round_trip_time",
                 '"" as unused3',
+            ],
+            "lte_volte_stats",
+        ),
+        (
+            [
+                "RTCP SR Jitter DL (ts unit)",
+                "RTCP SR Jitter DL (ms.)",
+                "RTCP SR Params - Jitter UL:",
+            ],
+            [
                 "lte_volte_rtp_jitter_dl",
                 "lte_volte_rtp_jitter_dl_millis",
                 '"" as unused4',
+            ],
+            "lte_volte_stats",
+        ),
+        (
+            [
+                "RTCP SR Jitter UL (ts unit)",
+                "RTCP SR Jitter UL (ms.)",
+                "RTCP SR Params - Packet loss rate:",
+            ],
+            [
                 "lte_volte_rtp_jitter_ul",
                 "lte_volte_rtp_jitter_ul_millis",
                 '"" as unused5',
+            ],
+            "lte_volte_stats",
+        ),
+        (
+            [
+                "RTCP SR Packet loss DL (%)",
+            ],
+            [
                 "lte_volte_rtp_packet_loss_rate_dl",
+            ],
+            "lte_volte_stats",
+        ),
+        (
+            [
+                "RTCP SR Packet loss UL (%)",
+            ],
+            [
                 "lte_volte_rtp_packet_loss_rate_ul",
             ],
             "lte_volte_stats",

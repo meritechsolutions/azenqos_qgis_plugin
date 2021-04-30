@@ -145,7 +145,7 @@ def get_wcdma_radio_params_disp_df(dbcon, time_before):
     parameter_to_columns_list = [
         (
             ["Time", "Tx Power", "Max Tx Power"],
-            ["time," "wcdma_txagc", "wcdma_maxtxpwr",],
+            ["time", "wcdma_txagc", "wcdma_maxtxpwr",],
             "wcdma_tx_power",
         ),
         ("RSSI", ["wcdma_rssi"], "wcdma_rx_power"),
@@ -166,8 +166,8 @@ def get_wcdma_radio_params_disp_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        not_null_first_col=False,
-        custom_lookback_dur_millis=24*3600*1000,
+        not_null_first_col=True,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
 

@@ -377,17 +377,25 @@ def get_lte_pucch_pdsch_disp_df(dbcon, time_before):
 
 def get_volte_disp_df(dbcon, time_before):
     parameter_to_columns_list = [
-        ("Time", ["time"], "lte_volte_stats"),
         (
             [
+                "Time",
                 "Codec:",
+            ],
+            [
+                "time",
+                '"" as unused0',
+            ],
+            "lte_volte_stats",
+        ),
+        (
+            [
                 "AMR SpeechCodec-RX",
                 "AMR SpeechCodec-TX",
                 "Delay interval avg:",
                 "Audio Packet delay (ms.)",
             ],
             [
-                '"" as unused0',
                 "gsm_speechcodecrx",
                 "gsm_speechcodectx",
                 '"" as unused1',
@@ -431,7 +439,7 @@ def get_volte_disp_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        not_null_first_col=False,
+        not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 

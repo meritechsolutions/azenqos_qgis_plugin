@@ -29,12 +29,8 @@ def get_lte_rrc_sib_states_df(dbcon, time_before):
             ],
             "lte_sib1_info",
         ),
-        (
-            ["Time", "Transmission Mode (RRC-tm)"],
-            ["time", "lte_transmission_mode_l3",],
-            "lte_rrc_transmode_info",
-        ),
-        (["Time", "RRC State"], ["time", "lte_rrc_state",], "lte_rrc_state",),
+        (["Transmission Mode (RRC-tm)"],["lte_transmission_mode_l3",],"lte_rrc_transmode_info",),
+        (["RRC State"], ["lte_rrc_state",], "lte_rrc_state",),
     ]
     return params_disp_df.get(
         dbcon,
@@ -76,7 +72,7 @@ def get_lte_radio_params_disp_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        not_null_first_col=True,
+        not_null_first_col=False,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
@@ -110,7 +106,7 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         default_table="lte_cell_meas",
-        not_null_first_col=True,
+        not_null_first_col=False,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
@@ -155,7 +151,7 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        not_null_first_col=True,
+        not_null_first_col=False,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())
@@ -214,7 +210,7 @@ def get_lte_rlc_disp_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        not_null_first_col=True,
+        not_null_first_col=False,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 

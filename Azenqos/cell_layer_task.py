@@ -3,6 +3,7 @@ import traceback
 import pandas as pd
 from PyQt5.QtGui import QColor
 
+from qgis.utils import iface
 from qgis.PyQt.QtCore import QVariant
 from qgis.core import (
     QgsProject,
@@ -12,7 +13,7 @@ from qgis.core import (
     QgsPointXY,
     QgsGeometry,
     QgsTask,
-    QgsVectorLayer,
+    QgsVectorLayer
 )
 
 import azq_utils
@@ -77,6 +78,7 @@ class CellLayerTask(QgsTask):
             .apply(cell_to_polygon, axis=1)
             .values.tolist()
         )
+
         layer = QgsVectorLayer("Polygon?system=" + system, name, "memory")
         pr = layer.dataProvider()
         pr.addAttributes(fields)
@@ -124,6 +126,7 @@ class CellLayerTask(QgsTask):
                 gsm_cells_layer,
             ]
             azq_utils.write_local_file("config_prev_cell_file", ",".join(self.files))
+
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -133,6 +136,7 @@ class CellLayerTask(QgsTask):
     def finished(self, result):
         try:
             QgsProject.instance().addMapLayers(self.cells_layers)
+            
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))

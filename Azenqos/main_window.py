@@ -87,7 +87,12 @@ import pandas as pd
 TIME_COL_DEFAULT_WIDTH = 150
 NAME_COL_DEFAULT_WIDTH = 180
 
-is_plot_5g_spider = False
+is_already_plot = dict()
+is_already_plot['5G'] = False
+is_already_plot['4G'] = False
+is_already_plot['3G'] = False
+is_already_plot['2G'] = False
+
 
 
 class main_window(QMainWindow):
@@ -1711,7 +1716,6 @@ Log_hash list: {}""".format(
         print('rename_layers start')
         if layers is None:
             return
-
         layers = QgsProject.instance().mapLayers().values()
         for layer in layers:
             name = layer.name()
@@ -1724,7 +1728,8 @@ Log_hash list: {}""".format(
                 except Exception as e:
                     print("WARNING: renaming layers exception: {}".format(e))
 
-        self.plot_5g_spider()
+        self.plot_rat_spider("5G")
+        self.plot_rat_spider("4G")
     
 
     '''
@@ -1874,17 +1879,22 @@ Log_hash list: {}""".format(
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
-    def plot_5g_spider(self):
-        cell_5g = dict()
-        global is_plot_5g_spider
-        print("is_plot_5g_spider", is_plot_5g_spider)
+    def plot_rat_spider(self,rat):
+        cell = dict()
+        parameter = dict()
+        parameter['5G'] = "nr_servingbeam_pci_1"
+        parameter['4G'] = "lte_physical_cell_id_1"
+        global is_already_plot
+        print("is_plot_5g_spider", is_already_plot[rat])
+        if is_already_plot[rat]:
+            return
         layers = QgsProject.instance().mapLayers().values()
         for layer in layers:
             name = layer.name()
             print("renamingLayers layer:", name)
             print('start layer working')
             print(layer)
-            if "5G cells" in name:
+            if rat+" cells" in name:
                 for item in layer.getFeatures():
                     pci = item.attribute('pci')
                     try:
@@ -1892,16 +1902,16 @@ Log_hash list: {}""".format(
                     except:
                         pci = None
                     print(type(item))
-                    print("5g cell file pci:",type(pci), pci)
+                    print("cell file pci:",type(pci), pci)
                     geometry = item.geometry()
                     point_list = geometry.asPolygon()
-                    point_lon = point_list[0][0].x()
-                    point_lat = point_list[0][0].y()
-                    print('5g cell point:',point_lat, point_lon)
-                    cell_5g[pci] = (point_lon, point_lat)
+                    point_lon = point_list[0][1].x()
+                    point_lat = point_list[0][1].y()
+                    print('cell point:',point_lat, point_lon)
+                    cell[pci] = (point_lon, point_lat)
                     
             print('end get cell info')
-            if "nr_servingbeam_pci_1" in name and not is_plot_5g_spider:
+            if parameter[rat] in name and not is_already_plot[rat]:
                 new_layer = None
                 wkt_line_list = []
                 for item in layer.getFeatures():
@@ -1919,14 +1929,14 @@ Log_hash list: {}""".format(
                         lat = coordinate[1]
                         string = "Id:{},lon:{},lat:{}, pci:{}".format(item.id(),lon, lat, pci)
                         print(string)
-                        if pci in cell_5g.keys():
-                            cell_location = cell_5g[pci]
+                        if pci in cell.keys():
+                            cell_location = cell[pci]
                             print("cell_location , point_location", cell_location, (lon,lat))
                             wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],lon, lat)
                             wkt_line_list.append(wkt_line)
 
                 # Specify the geometry type
-                new_layer = QgsVectorLayer('LineString?crs=epsg:4326', '5G_Spider' , 'memory')
+                new_layer = QgsVectorLayer('LineString?crs=epsg:4326', rat+'_Spider' , 'memory')
                 wkt_str = ",".join(wkt_line_list)
 
                 prov = new_layer.dataProvider()                
@@ -1934,12 +1944,13 @@ Log_hash list: {}""".format(
                 feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
                 prov.addFeatures([feat])
                 new_layer.updateExtents()
-                            
+                print("spider_add_map_layer")
+                is_already_plot[rat] = True
                 QgsProject.instance().addMapLayers([new_layer])
-                is_plot_5g_spider = True
+                
    
             print('end layer working')
-        print('is_plot_5g_spider end:', is_plot_5g_spider) 
+        print('is_plot_spider end:', is_already_plot[rat]) 
 
 class SubWindowArea(QMdiSubWindow):
     def __init__(self, item, gc):

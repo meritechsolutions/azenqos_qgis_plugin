@@ -1972,7 +1972,7 @@ Log_hash list: {}""".format(
         parameter['5G'] = "nr_servingbeam_pci_1"
         parameter['4G'] = "lte_physical_cell_id_1"
         global is_already_plot
-        print("is_plot_5g_spider", is_already_plot[rat])
+        print("is_already_plot", is_already_plot[rat])
         if is_already_plot[rat]:
             return
         layers = QgsProject.instance().mapLayers().values()
@@ -2037,7 +2037,7 @@ Log_hash list: {}""".format(
                 
    
             print('end layer working')
-        print('is_plot_spider end:', is_already_plot[rat]) 
+        print('is_already_plot end:', is_already_plot[rat])
 
 class SubWindowArea(QMdiSubWindow):
     def __init__(self, item, gc):

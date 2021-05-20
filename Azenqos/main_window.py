@@ -29,7 +29,7 @@ from timeslider import timeSliderThread, timeSlider
 
 from datatable import TableWindow, create_table_window_from_api_expression_ret
 from worker import Worker
-
+from qgis.PyQt.QtCore import QVariant
 try:
     # noinspection PyUnresolvedReferences
     from qgis.core import (
@@ -37,11 +37,17 @@ try:
         QgsLayerTreeGroup,
         QgsCoordinateReferenceSystem,
         QgsPointXY,
+        QgsPoint,
         QgsRectangle,
         QgsGeometry,
         QgsMessageLog,
         QgsFeatureRequest,
         QgsApplication,
+        QgsWkbTypes,
+        QgsVectorLayer,
+        QgsFeature,
+        QgsField,
+        QgsFields
     )
 
     # from qgis.utils import
@@ -81,11 +87,18 @@ import pandas as pd
 TIME_COL_DEFAULT_WIDTH = 150
 NAME_COL_DEFAULT_WIDTH = 180
 
+is_already_plot = dict()
+is_already_plot['5G'] = False
+is_already_plot['4G'] = False
+is_already_plot['3G'] = False
+is_already_plot['2G'] = False
+
+
 
 class main_window(QMainWindow):
 
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
-
+    
 
     def __init__(self, qgis_iface, parent=None):
         if qgis_iface is not None and parent is None:
@@ -1262,6 +1275,8 @@ Log_hash list: {}""".format(
             self.timeEdit.setDateTime(
                 datetime.datetime.fromtimestamp(self.gc.currentTimestamp)
             )
+        
+        
 
     def setPlaySpeed(self, value):
         value = float(1) if value == "" else float(value)
@@ -1785,18 +1800,24 @@ Log_hash list: {}""".format(
                 root.removeChildNode(azqGroup)
 
     def rename_layers(self, layers):
+        print('rename_layers start')
         if layers is None:
             return
         layers = QgsProject.instance().mapLayers().values()
         for layer in layers:
             name = layer.name()
             print("renamingLayers layer:", name)
+            
             if "azqdata " in name:
                 try:
                     param = name.split("azqdata ")[1]
                     layer.setName(param)
                 except Exception as e:
                     print("WARNING: renaming layers exception: {}".format(e))
+
+        self.plot_rat_spider("5G")
+        self.plot_rat_spider("4G")
+    
 
     '''
     -
@@ -1945,6 +1966,78 @@ Log_hash list: {}""".format(
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
+    def plot_rat_spider(self,rat):
+        cell = dict()
+        parameter = dict()
+        parameter['5G'] = "nr_servingbeam_pci_1"
+        parameter['4G'] = "lte_physical_cell_id_1"
+        global is_already_plot
+        print("is_plot_5g_spider", is_already_plot[rat])
+        if is_already_plot[rat]:
+            return
+        layers = QgsProject.instance().mapLayers().values()
+        for layer in layers:
+            name = layer.name()
+            print("renamingLayers layer:", name)
+            print('start layer working')
+            print(layer)
+            if rat+" cells" in name:
+                for item in layer.getFeatures():
+                    pci = item.attribute('pci')
+                    try:
+                        pci = int(pci)
+                    except:
+                        pci = None
+                    print(type(item))
+                    print("cell file pci:",type(pci), pci)
+                    geometry = item.geometry()
+                    point_list = geometry.asPolygon()
+                    point_lon = point_list[0][1].x()
+                    point_lat = point_list[0][1].y()
+                    print('cell point:',point_lat, point_lon)
+                    cell[pci] = (point_lon, point_lat)
+                    
+            print('end get cell info')
+            if parameter[rat] in name and not is_already_plot[rat]:
+                new_layer = None
+                wkt_line_list = []
+                for item in layer.getFeatures():
+                    pci = item.attributes()[-1]
+                    try:
+                        pci = int(pci)
+                    except:
+                        pci = None
+                    
+                    if pci is not None:
+                        print("PCI:", pci, item.attributes())
+                        geometry = item.geometry()
+                        coordinate = geometry.asPoint()
+                        lon = coordinate[0]
+                        lat = coordinate[1]
+                        string = "Id:{},lon:{},lat:{}, pci:{}".format(item.id(),lon, lat, pci)
+                        print(string)
+                        if pci in cell.keys():
+                            cell_location = cell[pci]
+                            print("cell_location , point_location", cell_location, (lon,lat))
+                            wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],lon, lat)
+                            wkt_line_list.append(wkt_line)
+
+                # Specify the geometry type
+                new_layer = QgsVectorLayer('LineString?crs=epsg:4326', rat+'_Spider' , 'memory')
+                wkt_str = ",".join(wkt_line_list)
+
+                prov = new_layer.dataProvider()                
+                feat = QgsFeature()
+                feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
+                prov.addFeatures([feat])
+                new_layer.updateExtents()
+                print("spider_add_map_layer")
+                is_already_plot[rat] = True
+                QgsProject.instance().addMapLayers([new_layer])
+                
+   
+            print('end layer working')
+        print('is_plot_spider end:', is_already_plot[rat]) 
 
 class SubWindowArea(QMdiSubWindow):
     def __init__(self, item, gc):

@@ -125,8 +125,6 @@ class CellLayerTask(QgsTask):
                 wcdma_cells_layer,
                 gsm_cells_layer,
             ]
-            azq_utils.write_local_file("config_prev_cell_file", ",".join(self.files))
-
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))

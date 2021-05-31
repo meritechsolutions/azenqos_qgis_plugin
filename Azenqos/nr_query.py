@@ -7,10 +7,259 @@ import preprocess_azm
 ################################## df get functions
 
 def get_nr_radio_params_disp_df(dbcon, time_before):
-    if not preprocess_azm.is_leg_nr_tables():
-        return "ttttttttttttttttttt"
+    if preprocess_azm.is_leg_nr_tables():
+        parameter_to_columns_list = get_nr_radio_params_list_old()
+    else:
+        parameter_to_columns_list = get_nr_radio_params_list()
 
-    parameter_to_columns_list = [
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        not_null_first_col=False,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+def get_nr_radio_params_list():
+    params_list = [
+        (
+            [
+                "---- PCell ----",
+                "NR DL FREQ",
+                "NR ARFCN",
+                "NR Band",
+                "NR PCI",
+                "NR SSB Index",
+                "NR SS RSRP",
+                "NR SS RSRQ",
+                "NR SS SINR",
+                "NR N Rx Ant",
+                "NR N Tx Ant",
+                "NR SubCarrier Size",
+                "NR DL RB",
+                "NR DL Bandwidth",
+            ],
+            [
+                '"" as unused1',
+                "nr_dl_frequency_1",
+                "nr_dl_arfcn_1",
+                "nr_band_1",
+                "nr_servingbeam_pci_1",
+                "nr_servingbeam_ssb_index_1",
+                "nr_servingbeam_ss_rsrp_1",
+                "nr_servingbeam_ss_rsrq_1",
+                "nr_servingbeam_ss_sinr_1",
+                "nr_num_rx_ant_1",
+                "nr_num_tx_ant_1",
+                "nr_numerology_scs_1",
+                "nr_dl_rb_1",
+                "nr_bw_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR UL RB",
+            ],
+            [
+                "nr_ul_rb_1",
+            ],
+            "nr_ul_rb"
+        ),
+        (
+            [
+                "NR UL Bandwidth",
+            ],
+            [
+                "nr_ul_bw_1",
+            ],
+            "nr_cell_meas"
+        ),
+        (
+            [
+                "NR Num Layers",
+                "   ",
+            ],
+            [
+                "nr_numlayers_1",
+                '"" as unused2',
+            ],
+            "nr_deb_stat"
+        ),
+        (
+            [
+                "NR DL TxMode",
+                "NR UL TxMode",
+            ],
+            [
+                "nr_pdsch_tx_mode_1",
+                "nr_ul_tx_mode_1",
+            ],
+            "nr_cell_meas"
+        ),
+        (
+            [
+                "NR ENDC Total Tx Power",
+                "---- PUSCH ----",
+                "NR PUSCH Tx Power",
+            ],
+            [
+                "nr_endc_total_tx_power",
+                '"" as unused3',
+                "nr_pusch_tx_power_1",
+            ],
+            "nr_deb_stat"
+        ),
+        (
+            [
+                "NR PUSCH MTPL",
+                "NR PUSCH DL Ploss",
+                "NR PUSCH f(i)",
+            ],
+            [
+                "nr_pusch_mtpl_1",
+                "nr_pusch_dl_pathloss_1",
+                "nr_pusch_f_i_1",
+            ],
+            "nr_cell_meas"
+        ),
+        (
+            [
+                "---- PUSCH ----",
+                "NR PUCCH Tx Power",
+            ],
+            [
+                '"" as unused4',
+                "nr_pucch_tx_power_1",
+            ],
+            "nr_deb_stat"
+        ),
+        (
+            [
+                "NR PUCCH MTPL",
+                "NR PUCCH DL PLoss",
+                "NR PUCCH g(i)",
+            ],
+            [
+                "nr_pucch_mtpl_1",
+                "nr_pucch_dl_pathloss_1",
+                "nr_pucch_g_i_1",
+            ],
+            "nr_cell_meas"
+        ),
+        (
+            [
+                "---- SRS ----",
+                "NR SRX Tx Power",
+            ],
+            [
+                '"" as unused5',
+                "nr_srs_tx_power_1",
+            ],
+            "nr_tx_srs_status"
+        ),
+        (
+            [
+                "NR SRX MTPL",
+            ],
+            [
+                "nr_srs_mtpl_1",
+            ],
+            "nr_deb_stat"
+        ),
+        (
+            [
+                "NR SRX DL PLoss",
+                "NR SRX PC Adj State",
+            ],
+            [
+                "nr_srs_dl_pathloss_1",
+                "nr_srs_pc_adj_state_1",
+            ],
+            "nr_cell_meas"
+        ),
+        (
+            [
+                "---- RACH ----",
+                "NR PRACH Tx Power",
+            ],
+            [
+                '"" as unused6',
+                "nr_prach_tx_power",
+            ],
+            "nr_deb_stat"
+        ),
+        (
+            [
+                "RACH PLoss",
+                "RACH Reason",
+            ],
+            [
+                "nr_p_plus_scell_nr_rach_pathloss_1",
+                "nr_p_plus_scell_nr_rach_reason_1",
+            ],
+            "nr_prach_status"
+        ),
+        (
+            [
+                "RACH CRNTI",
+                "RACH CNType",
+                "RACH AttNum",
+                "RACH Result",
+            ],
+            [
+                "nr_p_plus_scell_nr_rach_crnti",
+                "nr_p_plus_scell_nr_rach_contention_type",
+                "nr_p_plus_scell_nr_rach_attempt_number",
+                "nr_p_plus_scell_nr_rach_result",
+            ],
+            "nr_rach_stat"
+        ),
+        (
+            [
+                "RACH N Success",
+                "RACH N Fail",
+                "RACH N Abort",
+                "RACH N OthRslt",
+                "RACH N 1stAttScss",
+                "RACH N MltAttScss",
+                "RACH N FailMsg2",
+                "RACH N FailMsg4",
+            ],
+            [
+                "nr_p_plus_scell_nr_rach_num_success",
+                "nr_p_plus_scell_nr_rach_num_fail",
+                "nr_p_plus_scell_nr_rach_num_abort",
+                "nr_p_plus_scell_nr_rach_num_other_result",
+                "nr_p_plus_scell_nr_rach_num_first_attempt_success",
+                "nr_p_plus_scell_nr_rach_num_multiple_attempt_success",
+                "nr_p_plus_scell_nr_rach_num_fail_msg2",
+                "nr_p_plus_scell_nr_rach_num_fail_msg4",
+            ],
+            "nr_cell_meas"
+        ),
+        (
+            [
+                "---- ReconfigWithSync params ----",
+                "target_arfcn",
+                "offset_to_carrier",
+                "carrier_bandwidth_rbs",
+                "carrier_bandwidth_mhz",
+            ],
+            [
+                '"" as unused6',
+                "nr_reconfigwithsync_target_arfcn",
+                "nr_reconfigwithsync_carrier_offset_to_carrier_1",
+                "nr_reconfigwithsync_carrier_bandwidth_rbs_1",
+                "nr_reconfigwithsync_carrier_bandwidth_mhz_1",
+            ],
+            "nr_reconfigwithsync_params"
+        ),
+    ]
+    return params_list
+
+def get_nr_radio_params_list_old():
+    params_list = [
         (
             [
                 "---- PCell ----",
@@ -182,13 +431,8 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
             "nr_reconfigwithsync_params"
         ),
     ]
-    return params_disp_df.get(
-        dbcon,
-        parameter_to_columns_list,
-        time_before,
-        not_null_first_col=False,
-        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
-    )
+    return params_list
+    
 
 def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
     df_list = []

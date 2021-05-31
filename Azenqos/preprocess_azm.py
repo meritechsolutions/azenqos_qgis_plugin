@@ -14,6 +14,8 @@ import pandas as pd
 from dprint import debug_file_flag
 from dprint import dprint
 
+import azq_utils
+
 # pd.set_option('display.max_colwidth', -1)
 
 # global constants
@@ -1883,7 +1885,6 @@ def get_azqdata_max_sip_and_qmdl_flush_ts_diff_millis():
     return ret
 
 def get_azm_apk_ver(dbcon):
-
     ver = pd.read_sql("select max(log_app_version) from logs", dbcon).iloc[0,0]
     ret = apk_verstr_to_ver_int(ver)
 
@@ -1892,7 +1893,6 @@ def get_azm_apk_ver(dbcon):
 
 def is_leg_nr_tables():
     global AZQ_ELM_CSV
-    print("ttttttttttttttttt",AZQ_ELM_CSV )
     return AZQ_ELM_CSV == "azq_global_element_info_list_pre_nr_table_restructure.csv"
 
 

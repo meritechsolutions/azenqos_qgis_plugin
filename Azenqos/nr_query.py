@@ -562,7 +562,300 @@ def get_nr_beams_disp_df(dbcon, time_before):
 
 
 def get_nr_data_disp_df(dbcon, time_before):
-    parameter_to_columns_list = [
+    if preprocess_azm.is_leg_nr_tables():
+        parameter_to_columns_list = get_nr_data_params_list_old()
+    else:
+        parameter_to_columns_list = get_nr_data_params_list()
+
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        not_null_first_col=False,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+def get_nr_data_params_list():
+    params_list = [
+        (
+            [
+                "DL APP TP (MBps)",
+            ],
+            [
+                "data_trafficstat_dl_mbps",
+            ],
+            "android_info_1sec",
+        ),
+        (
+            [
+                "DL NR PDCP TP (MBps)",
+            ],
+            [
+                "nr_pdcp_dl_tp_mbps",
+            ],
+            "nr_pdcp_throughput",
+        ),
+        (
+            [
+                "DL NR RLC TP (MBps)",
+            ],
+            [
+                "nr_rlc_dl_tp_mbps",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "DL NR MAC TP (MBps)",
+            ],
+            [
+                "nr_mac_tp_dl_mbps",
+            ],
+            "nr_mac_throughput",
+        ),
+        (
+            [
+                "DL LTE L1 TP (MBps)",
+            ],
+            [
+                "lte_l1_dl_throughput_all_carriers_mbps",
+            ],
+            "lte_l1_dl_tp",
+        ),
+        (
+            [
+                "DL NR PDSCH TP (MBps)",
+            ],
+            [
+                "nr_p_plus_scell_nr_pdsch_tput_mbps",
+            ],
+            "nr_throughput",
+        ),
+        (
+            [
+                "DL LTE PDCP TP (MBps)",
+            ],
+            [
+                "nr_p_plus_scell_lte_dl_pdcp_tput_mbps",
+            ],
+            "nr_pdcp_throughput",
+        ),
+        (
+            [
+                " ",
+                "UL APP TP (MBps)",
+            ],
+            [
+                '"" as unused1',
+                "data_trafficstat_ul_mbps",
+            ],
+            "android_info_1sec",
+        ),
+        (
+            [
+                "UL NR MAC TP (MBps)",
+            ],
+            [
+                "nr_mac_tp_ul_mbps",
+            ],
+            "nr_mac_throughput",
+        ),
+        (
+            [
+                "UL LTE L1 TP (MBps)",
+            ],
+            [
+                "lte_l1_ul_throughput_all_carriers_mbps_1",
+            ],
+            "lte_l1_ul_tp",
+        ),
+        (
+            [
+                "UL NR PDSCH TP (MBps)",
+            ],
+            [
+                "nr_p_plus_scell_nr_pusch_tput_mbps",
+            ],
+            "nr_throughput",
+        ),
+        (
+            [
+                "NR CQI",
+            ],
+            [
+                "nr_cqi",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "NR CRI",
+                "NR LI",
+            ],
+            [
+                "nr_cri_1",
+                "nr_li_1",
+            ],
+            "nr_csi_report",
+        ),
+        (
+            [
+                "NR RI",
+            ],
+            [
+                "nr_ri_1",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "NR PMI I1 1",
+                "NR PMI I1 2",
+                "NR PMI I1 3",
+                "NR PMI I2",
+            ],
+            [
+                "nr_wb_pmi_i1_1_1",
+                "nr_wb_pmi_i1_2_1",
+                "nr_wb_pmi_i1_3_1",
+                "nr_wb_pmi_i2_1",
+            ],
+            "nr_csi_report",
+        ),
+        (
+            [
+                "NR CSI CQI",
+                "NR CSI RI",
+            ],
+            [
+                "nr_csi_cqi",
+                "nr_csi_ri",
+            ],
+            "nr_csi_report",
+        ),
+        (
+            [
+                "NR DL N CRC Pass TB",
+                "NR DL N CRC Fail TB",
+            ],
+            [
+                "nr_num_crc_pass_tb_1",
+                "nr_num_crc_fail_tb_1",
+            ],
+            "nr_pdsch_status",
+        ),
+        (
+            [
+                "NR UL N CRC Pass TB",
+                "NR UL N CRC Fail TB",
+                "NR UL N All Tx",
+                "NR UL N Re Tx",
+                "NR DL MCS",
+            ],
+            [
+                "nr_num_ul_crc_pass_tb_1",
+                "nr_num_ul_crc_fail_tb_1",
+                "nr_num_ul_all_tx_type_1",
+                "nr_num_ul_re_tx_type_1",
+                "nr_dl_mcs_mode_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR DL MCS(Avg)",
+            ],
+            [
+                "nr_dl_mcs_avg_1",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "NR DL Mod",
+            ],
+            [
+                "nr_modulation_1",
+            ],
+            "nr_dci_11",
+        ),
+        (
+            [
+                "NR UL MCS",
+            ],
+            [
+                "nr_ul_mcs_mode_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR UL MCS(Avg)",
+            ],
+            [
+                "nr_ul_mcs_avg_1",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "NR UL Mod",
+                "Mod % last second:",
+            ],
+            [
+                "nr_ul_modulation_1",
+                '"" as unused2',
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR DL Mod QPSK %",
+                "NR DL Mod 16QAM %",
+                "NR DL Mod 64QAM %",
+                "NR DL Mod 256QAM %",
+                "NR DL Mod 1024QAM %",
+            ],
+            [
+                "nr_qpsk_1",
+                "nr_16qam_1",
+                "nr_64qam_1",
+                "nr_256qam_1",
+                "nr_1024qam_1",
+            ],
+            "nr_pdsch_stat",
+        ),
+        (
+            [
+                "NR UL Modulation",
+            ],
+            [
+                "nr_ul_modulation_order",
+            ],
+            "nr_pusch_status",
+        ),
+        (
+            [
+                "NR UL Mod QPSK %",
+                "NR UL Mod 16QAM %",
+                "NR UL Mod 64QAM %",
+                "NR UL Mod 256QAM %",
+                "NR UL Mod 1024QAM %",
+            ],
+            [
+                "nr_ul_qpsk_1",
+                "nr_ul_16qam_1",
+                "nr_ul_64qam_1",
+                "nr_ul_256qam_1",
+                "nr_ul_1024qam_1",
+            ],
+            "nr_cell_meas",
+        ),
+    ]
+    return params_list
+
+def get_nr_data_params_list_old():
+    params_list = [
         (
             [
                 "DL APP TP (MBps)",
@@ -759,14 +1052,7 @@ def get_nr_data_disp_df(dbcon, time_before):
             "nr_cell_meas",
         ),
     ]
-    return params_disp_df.get(
-        dbcon,
-        parameter_to_columns_list,
-        time_before,
-        not_null_first_col=False,
-        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
-    )
-
+    return params_list
 # def get_nr_radio_params_disp_df(dbcon, time_before):
 #     n_param_args = 8
 #     parameter_to_columns_list = [

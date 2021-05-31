@@ -1,11 +1,15 @@
 import pandas as pd
 
 import params_disp_df
+import preprocess_azm
 
 
 ################################## df get functions
 
 def get_nr_radio_params_disp_df(dbcon, time_before):
+    if not preprocess_azm.is_leg_nr_tables():
+        return "ttttttttttttttttttt"
+
     parameter_to_columns_list = [
         (
             [

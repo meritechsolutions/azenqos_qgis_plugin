@@ -29,7 +29,6 @@ from timeslider import timeSliderThread, timeSlider
 
 from datatable import TableWindow, create_table_window_from_api_expression_ret
 from worker import Worker
-from qgis.PyQt.QtCore import QVariant
 try:
     # noinspection PyUnresolvedReferences
     from qgis.core import (
@@ -52,6 +51,7 @@ try:
 
     # from qgis.utils import
     from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
+    from qgis.PyQt.QtCore import QVariant
 
     print("mainwindow working in qgis mode")
 except:

@@ -71,12 +71,13 @@ class import_db_dialog(QDialog):
         layout = QGridLayout()
         radiobutton = QRadioButton("AZENQOS Server login")
         self.radioButtonServer = radiobutton
-        radiobutton.setChecked(True)
+        radiobutton.setChecked(False)
         radiobutton.mode = "server"
         radiobutton.toggled.connect(self.onRadioClicked)
         layout.addWidget(radiobutton, 0, 0)
 
         radiobutton = QRadioButton("Local .azm log file")
+        radiobutton.setChecked(True)
         radiobutton.mode = "local"
         radiobutton.toggled.connect(self.onRadioClicked)
         layout.addWidget(radiobutton, 0, 1)
@@ -240,7 +241,14 @@ class import_db_dialog(QDialog):
             ",".join(fileNames)
         ) if fileNames else self.cellPathLineEdit.setText("")
 
+    def save_settings(self):
+        import azq_utils
+        azq_utils.write_local_file("config_prev_azm", self.dbPathLineEdit.text())
+        azq_utils.write_local_file("config_prev_theme", self.themePathLineEdit.text())
+        azq_utils.write_local_file("config_prev_cell_file", self.cellPathLineEdit.text())
+
     def check_and_start_import(self):
+        self.save_settings()
         if self.radioButtonServer.isChecked() == False:
             if not self.dbPathLineEdit.text():
                 QtWidgets.QMessageBox.critical(
@@ -349,6 +357,7 @@ class import_db_dialog(QDialog):
 
 
     def ui_handler_import_done(self, error):
+
         if error:
             print("ui_handler_import_done() error: %s" % error)
             QtWidgets.QMessageBox.critical(
@@ -360,8 +369,6 @@ class import_db_dialog(QDialog):
             print("ui_handler_import_done() success")
             import azq_utils
 
-
-            azq_utils.write_local_file("config_prev_azm", self.dbPathLineEdit.text())
             self.getTimeForSlider()
             print("getTimeForSlider() done")
 
@@ -465,8 +472,6 @@ class import_db_dialog(QDialog):
                     )
                 )
             print("params_in_theme:", params_in_theme)
-            azq_utils.write_local_file("config_prev_theme", theme_fp)
-
             db_preprocess.prepare_spatialite_views(dbcon)
             dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
 

@@ -90,7 +90,7 @@ class import_db_dialog(QDialog):
         )
         vbox.addWidget(azm_gb)
         vbox.addStretch()
-        azm_gb.setEnabled(False)
+        azm_gb.setEnabled(True)
         self.azm_gb = azm_gb
 
         theme_gb = QGroupBox(

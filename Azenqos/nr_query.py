@@ -435,8 +435,86 @@ def get_nr_radio_params_list_old():
     
 
 def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
-    df_list = []
+    if preprocess_azm.is_leg_nr_tables():
+        df_list = get_nr_serv_and_neigh_list_old(dbcon, time_before)
+    else:
+        df_list = get_nr_serv_and_neigh_list(dbcon, time_before)
 
+    final_df = pd.concat(df_list, sort=False)
+    return final_df
+
+def get_nr_serv_and_neigh_list(dbcon, time_before):
+    df_list = []
+    pcell_scell_col_prefix_sr = pd.Series(
+        [
+            "nr_dl_arfcn_",
+            "nr_servingbeam_pci_",
+            "nr_servingbeam_ssb_index_",
+            "nr_servingbeam_ss_rsrp_",
+            "nr_servingbeam_ss_rsrq_",
+            "nr_servingbeam_ss_sinr_",
+        ]
+    )
+    pcell_scell_col_prefix_renamed = ["ARFCN", "PCI", "BmIdx", "RSRP", "RSRQ", "SINR"]
+    parameter_to_columns_list = [
+        ("Time", ["time"]),
+        (
+            [
+                "PCell",
+                "SCell1",
+                "SCell2",
+                "SCell3",
+                "SCell4",
+                "SCell5",
+                "SCell6",
+                "SCell7",
+            ],
+            list(pcell_scell_col_prefix_sr + "1")
+            + list(pcell_scell_col_prefix_sr + "2")
+            + list(pcell_scell_col_prefix_sr + "3")
+            + list(pcell_scell_col_prefix_sr + "4")
+            + list(pcell_scell_col_prefix_sr + "5")
+            + list(pcell_scell_col_prefix_sr + "6")
+            + list(pcell_scell_col_prefix_sr + "7")
+            + list(pcell_scell_col_prefix_sr + "8"),
+        ),
+    ]
+    df = params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        default_table="nr_cell_meas",
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+    df.columns = ["CellGroup"] + pcell_scell_col_prefix_renamed
+    df_list.append(df)
+
+    dcell_col_suffix_sr = pd.Series(
+        ["_dl_arfcn_1", "_pci_1", "_ssb_index_1", "_ss_rsrp_1", "_ss_rsrq_1", "_ss_sinr_1"]
+    )  # a mistake during elm sheets made this unnecessary _1 required
+    dcell_col_renamed = ["ARFCN", "PCI", "BmIdx", "RSRP", "RSRQ", "SINR"]
+    dparameter_to_columns_list = [
+        (
+            ["DCell1", "DCell2", "DCell3", "DCell4"],
+            list("nr_detectedbeam1" + dcell_col_suffix_sr)
+            + list("nr_detectedbeam2" + dcell_col_suffix_sr)
+            + list("nr_detectedbeam3" + dcell_col_suffix_sr)
+            + list("nr_detectedbeam4" + dcell_col_suffix_sr),
+        )
+    ]
+    dcell_df = params_disp_df.get(
+        dbcon,
+        dparameter_to_columns_list,
+        time_before,
+        default_table="nr_intra_neighbor",
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+    dcell_df.columns = ["CellGroup"] + dcell_col_renamed
+    df_list.append(dcell_df)
+    return df_list
+
+def get_nr_serv_and_neigh_list_old(dbcon, time_before):
+    df_list = []
     pcell_scell_col_prefix_sr = pd.Series(
         [
             "nr_dl_arfcn_",
@@ -507,9 +585,7 @@ def get_nr_serv_and_neigh_disp_df(dbcon, time_before):
     dcell_df.columns = ["CellGroup"] + dcell_col_renamed
     # print("dcell_df.head():\n%s" % dcell_df.head())
     df_list.append(dcell_df)
-
-    final_df = pd.concat(df_list, sort=False)
-    return final_df
+    return df_list
 
 def get_nr_beams_disp_df(dbcon, time_before):
     df_list = []

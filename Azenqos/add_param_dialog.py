@@ -36,6 +36,8 @@ class AddParamDialog(QDialog):
         completer.setCompletionMode(QCompleter.PopupCompletion)
         completer.setModel(self.ui.comboBox.model())
         self.ui.comboBox.setCompleter(completer)
+        if not preprocess_azm.is_leg_nr_tables():
+            self.ui.not_null_checkbox.hide()
         enableNotNullSlot = partial(self.checkNotNull, self.ui.not_null_checkbox)
         disableNotNullSlot = partial(self.unCheckNotNull, self.ui.not_null_checkbox)
         self.ui.not_null_checkbox.stateChanged.connect(

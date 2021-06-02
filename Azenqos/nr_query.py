@@ -27,31 +27,73 @@ def get_nr_radio_params_list():
                 "---- PCell ----",
                 "NR DL FREQ",
                 "NR ARFCN",
-                "NR Band",
-                "NR PCI",
-                "NR SSB Index",
-                "NR SS RSRP",
-                "NR SS RSRQ",
-                "NR SS SINR",
-                "NR N Rx Ant",
-                "NR N Tx Ant",
-                "NR SubCarrier Size",
-                "NR DL RB",
-                "NR DL Bandwidth",
             ],
             [
                 '"" as unused1',
                 "nr_dl_frequency_1",
                 "nr_dl_arfcn_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR Band",
+                "NR PCI",
+                "NR SSB Index",
+            ],
+            [
                 "nr_band_1",
                 "nr_servingbeam_pci_1",
                 "nr_servingbeam_ssb_index_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR SS RSRP",
+                "NR SS RSRQ",
+                "NR SS SINR",
+            ],
+            [
                 "nr_servingbeam_ss_rsrp_1",
                 "nr_servingbeam_ss_rsrq_1",
                 "nr_servingbeam_ss_sinr_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR N Rx Ant",
+            ],
+            [
                 "nr_num_rx_ant_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR N Tx Ant",
+            ],
+            [
                 "nr_num_tx_ant_1",
+            ],
+            "nr_deb_stat",
+        ),
+        (
+            [
+                "NR SubCarrier Size",
+            ],
+            [
                 "nr_numerology_scs_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR DL RB",
+                "NR DL Bandwidth",
+            ],
+            [
                 "nr_dl_rb_1",
                 "nr_bw_1",
             ],
@@ -267,21 +309,6 @@ def get_nr_radio_params_list_old():
                 "NR ARFCN",
                 "NR Band",
                 "NR PCI",
-                "NR SSB Index",
-                "NR SS RSRP",
-                "NR SS RSRQ",
-                "NR SS SINR",
-                "NR N Rx Ant",
-                "NR N Tx Ant",
-                "NR SubCarrier Size",
-                "NR DL RB",
-                "NR DL Bandwidth",
-                "NR UL RB",
-                "NR UL Bandwidth",
-                "NR Num Layers",
-                "   ",
-                "NR DL TxMode",
-                "NR UL TxMode",
             ],
             [
                 '"" as unused1',
@@ -289,17 +316,72 @@ def get_nr_radio_params_list_old():
                 "nr_dl_arfcn_1",
                 "nr_band_1",
                 "nr_servingbeam_pci_1",
-                "nr_servingbeam_ssb_index_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR SS RSRP",
+                "NR SS RSRQ",
+                "NR SS SINR",
+            ],
+            [
                 "nr_servingbeam_ss_rsrp_1",
                 "nr_servingbeam_ss_rsrq_1",
                 "nr_servingbeam_ss_sinr_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR N Rx Ant",
+            ],
+            [
                 "nr_num_rx_ant_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR N Tx Ant",
+            ],
+            [
                 "nr_num_tx_ant_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR SubCarrier Size",
+            ],
+            [
                 "nr_numerology_scs_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR DL RB",
+                "NR DL Bandwidth",
+                "NR UL RB",
+                "NR UL Bandwidth",
+            ],
+            [
                 "nr_dl_rb_1",
                 "nr_bw_1",
                 "nr_ul_rb_1",
                 "nr_ul_bw_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR Num Layers",
+                "   ",
+                "NR DL TxMode",
+                "NR UL TxMode",
+            ],
+            [
                 "nr_numlayers_1",
                 '"" as unused2',
                 "nr_pdsch_tx_mode_1",
@@ -685,7 +767,7 @@ def get_nr_data_params_list():
                 "DL NR MAC TP (MBps)",
             ],
             [
-                "nr_mac_tp_dl_mbps",
+                "nr_mac_tp_dl_mbps_1",
             ],
             "nr_mac_throughput",
         ),
@@ -732,7 +814,7 @@ def get_nr_data_params_list():
                 "UL NR MAC TP (MBps)",
             ],
             [
-                "nr_mac_tp_ul_mbps",
+                "nr_mac_tp_ul_mbps_1",
             ],
             "nr_mac_throughput",
         ),

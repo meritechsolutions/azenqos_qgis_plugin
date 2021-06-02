@@ -844,15 +844,15 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        not_null_nr = False
+        old_nr = False
         if preprocess_azm.is_leg_nr_tables():
-            not_null_nr =True
+            old_nr =True
         linechart_window = linechart_file_name.LineChart(
             self.gc,
             paramList=[
-                {"name": "nr_servingbeam_ss_rsrp_1", "null": not_null_nr, "data": False},
-                {"name": "nr_servingbeam_ss_rsrq_1", "null": not_null_nr, "data": False},
-                {"name": "nr_servingbeam_ss_sinr_1", "null": not_null_nr, "data": False},
+                {"name": "nr_servingbeam_ss_rsrp_1", "null": old_nr, "data": False},
+                {"name": "nr_servingbeam_ss_rsrq_1", "null": old_nr, "data": False},
+                {"name": "nr_servingbeam_ss_sinr_1", "null": old_nr, "data": False},
             ],
         )
 
@@ -875,32 +875,32 @@ Log_hash list: {}""".format(
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
-        not_null_nr = False
+        old_nr = False
         if preprocess_azm.is_leg_nr_tables():
-            not_null_nr =True
+            old_nr =True
         linechart_window = linechart_file_name.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_trafficstat_dl/1000", "null": not_null_nr, "data": not_null_nr},
-                {"name": "data_trafficstat_ul/1000", "null": not_null_nr, "data": True},
+                {"name": "data_trafficstat_dl/1000", "null": old_nr, "data": True},
+                {"name": "data_trafficstat_ul/1000", "null": old_nr, "data": True},
                 {
                     "name": "nr_p_plus_scell_nr_pdsch_tput_mbps",
-                    "null": not_null_nr,
+                    "null": old_nr,
                     "data": True,
                 },
                 {
                     "name": "nr_p_plus_scell_nr_pusch_tput_mbps",
-                    "null": not_null_nr,
+                    "null": old_nr,
                     "data": True,
                 },
                 {
                     "name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps",
-                    "null": not_null_nr,
+                    "null": old_nr,
                     "data": True,
                 },
                 {
                     "name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps",
-                    "null": not_null_nr,
+                    "null": old_nr,
                     "data": True,
                 },
             ],

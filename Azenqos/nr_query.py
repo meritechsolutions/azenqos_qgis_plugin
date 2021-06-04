@@ -91,10 +91,17 @@ def get_nr_radio_params_list():
         (
             [
                 "NR DL RB",
-                "NR DL Bandwidth",
             ],
             [
                 "nr_dl_rb_1",
+            ],
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR DL Bandwidth",
+            ],
+            [
                 "nr_bw_1",
             ],
             "nr_cell_meas",
@@ -284,15 +291,36 @@ def get_nr_radio_params_list():
             [
                 "---- ReconfigWithSync params ----",
                 "target_arfcn",
-                "offset_to_carrier",
-                "carrier_bandwidth_rbs",
-                "carrier_bandwidth_mhz",
             ],
             [
                 '"" as unused6',
                 "nr_reconfigwithsync_target_arfcn",
+            ],
+            "nr_reconfigwithsync_params"
+        ),
+        (
+            [
+                "offset_to_carrier",
+            ],
+            [
                 "nr_reconfigwithsync_carrier_offset_to_carrier_1",
+            ],
+            "nr_reconfigwithsync_params"
+        ),
+        (
+            [
+                "carrier_bandwidth_rbs",
+            ],
+            [
                 "nr_reconfigwithsync_carrier_bandwidth_rbs_1",
+            ],
+            "nr_reconfigwithsync_params"
+        ),
+        (
+            [
+                "carrier_bandwidth_mhz",
+            ],
+            [
                 "nr_reconfigwithsync_carrier_bandwidth_mhz_1",
             ],
             "nr_reconfigwithsync_params"

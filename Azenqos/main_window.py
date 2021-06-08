@@ -1803,7 +1803,7 @@ Log_hash list: {}""".format(
         print('rename_layers start')
         if layers is None:
             return
-        layers = QgsProject.instance().mapLayers().values()
+            
         for layer in layers:
             name = layer.name()
             print("renamingLayers layer:", name)
@@ -1969,8 +1969,17 @@ Log_hash list: {}""".format(
     def plot_rat_spider(self,rat):
         cell = dict()
         parameter = dict()
-        parameter['5G'] = "nr_servingbeam_pci_1"
-        parameter['4G'] = "lte_physical_cell_id_1"
+        parameter['5G'] = ["nr_servingbeam_pci_1"]
+        parameter['4G'] = ["lte_physical_cell_id_1","lte_neigh_physical_cell_id_1","lte_neigh_physical_cell_id_2","lte_neigh_physical_cell_id_3"]
+        parameter['3G'] = ["wcdma_sc_1", "wcdma_sc_2", "wcdma_sc_3", "wcdma_aset_sc_1","wcdma_aset_sc_2","wcdma_aset_sc_3"]
+        parameter['2G'] = ["gsm_arfcn_bcch"]
+
+        cellfile_att_param = dict()
+        cellfile_att_param['5G'] = 'pci'
+        cellfile_att_param['4G'] = 'pci'
+        cellfile_att_param['3G'] = 'psc'
+        cellfile_att_param['2G'] = 'bcch'
+
         global is_already_plot
         print("is_already_plot", is_already_plot[rat])
         if is_already_plot[rat]:
@@ -1983,57 +1992,61 @@ Log_hash list: {}""".format(
             print(layer)
             if rat+" cells" in name:
                 for item in layer.getFeatures():
-                    pci = item.attribute('pci')
+                    cellfile_att = item.attribute(cellfile_att_param[rat])
                     try:
-                        pci = int(pci)
+                        cellfile_att = int(cellfile_att)
                     except:
-                        pci = None
+                        cellfile_att = None
                     print(type(item))
-                    print("cell file pci:",type(pci), pci)
+                    print("cell file cellfile_att:",type(cellfile_att), cellfile_att)
                     geometry = item.geometry()
                     point_list = geometry.asPolygon()
                     point_lon = point_list[0][1].x()
                     point_lat = point_list[0][1].y()
                     print('cell point:',point_lat, point_lon)
-                    cell[pci] = (point_lon, point_lat)
+                    cell[cellfile_att] = (point_lon, point_lat)
                     
             print('end get cell info')
-            if parameter[rat] in name and not is_already_plot[rat]:
-                new_layer = None
-                wkt_line_list = []
-                for item in layer.getFeatures():
-                    pci = item.attributes()[-1]
-                    try:
-                        pci = int(pci)
-                    except:
-                        pci = None
-                    
-                    if pci is not None:
-                        print("PCI:", pci, item.attributes())
-                        geometry = item.geometry()
-                        coordinate = geometry.asPoint()
-                        lon = coordinate[0]
-                        lat = coordinate[1]
-                        string = "Id:{},lon:{},lat:{}, pci:{}".format(item.id(),lon, lat, pci)
-                        print(string)
-                        if pci in cell.keys():
-                            cell_location = cell[pci]
-                            print("cell_location , point_location", cell_location, (lon,lat))
-                            wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],lon, lat)
-                            wkt_line_list.append(wkt_line)
+            for param in parameter[rat]:
+                if param in name and not is_already_plot[rat]:
+                    new_layer = None
+                    wkt_line_list = []
+                    for item in layer.getFeatures():
+                        plot_att = item.attributes()[-1]
+                        try:
+                            plot_att = int(plot_att)
+                        except:
+                            plot_att = None
+                        
+                        if plot_att is not None:
+                            # print("plot_att:", plot_att, item.attributes())
+                            geometry = item.geometry()
+                            try:
+                                coordinate = geometry.asPoint()
+                                lon = coordinate[0]
+                                lat = coordinate[1]
+                                string = "Id:{},lon:{},lat:{}, plot_att:{}".format(item.id(),lon, lat, plot_att)
+                                print(string)
+                                if plot_att in cell.keys():
+                                    cell_location = cell[plot_att]
+                                    print("cell_location , point_location", cell_location, (lon,lat))
+                                    wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],lon, lat)
+                                    wkt_line_list.append(wkt_line)
+                            except:
+                                print("Geometry Point is null: Cannot convert to lat, lon")
 
-                # Specify the geometry type
-                new_layer = QgsVectorLayer('LineString?crs=epsg:4326', rat+'_Spider' , 'memory')
-                wkt_str = ",".join(wkt_line_list)
+                    # Specify the geometry type
+                    new_layer = QgsVectorLayer('LineString?crs=epsg:4326', 'Spider for '+param , 'memory')
+                    wkt_str = ",".join(wkt_line_list)
 
-                prov = new_layer.dataProvider()                
-                feat = QgsFeature()
-                feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
-                prov.addFeatures([feat])
-                new_layer.updateExtents()
-                print("spider_add_map_layer")
-                is_already_plot[rat] = True
-                QgsProject.instance().addMapLayers([new_layer])
+                    prov = new_layer.dataProvider()                
+                    feat = QgsFeature()
+                    feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
+                    prov.addFeatures([feat])
+                    new_layer.updateExtents()
+                    print("spider_add_map_layer")
+                    is_already_plot[rat] = True
+                    QgsProject.instance().addMapLayers([new_layer])
                 
    
             print('end layer working')

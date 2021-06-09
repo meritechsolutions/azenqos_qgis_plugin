@@ -471,7 +471,7 @@ def get_volte_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         not_null_first_col=True,
-        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+        custom_lookback_dur_millis=5000,
     )
 
 

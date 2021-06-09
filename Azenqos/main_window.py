@@ -29,7 +29,6 @@ from timeslider import timeSliderThread, timeSlider
 
 from datatable import TableWindow, create_table_window_from_api_expression_ret
 from worker import Worker
-from qgis.PyQt.QtCore import QVariant
 try:
     # noinspection PyUnresolvedReferences
     from qgis.core import (
@@ -52,6 +51,7 @@ try:
 
     # from qgis.utils import
     from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
+    from qgis.PyQt.QtCore import QVariant
 
     print("mainwindow working in qgis mode")
 except:
@@ -838,17 +838,21 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionNR_Line_Chart_triggered(self):
+        import preprocess_azm
         print("action nr line chart")
         is_use_multi_y = self.show_line_chart_dialog()
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
+        old_nr = False
+        if preprocess_azm.is_leg_nr_tables():
+            old_nr =True
         linechart_window = linechart_file_name.LineChart(
             self.gc,
             paramList=[
-                {"name": "nr_servingbeam_ss_rsrp_1", "null": False, "data": False},
-                {"name": "nr_servingbeam_ss_rsrq_1", "null": False, "data": False},
-                {"name": "nr_servingbeam_ss_sinr_1", "null": False, "data": False},
+                {"name": "nr_servingbeam_ss_rsrp_1", "null": old_nr, "data": False},
+                {"name": "nr_servingbeam_ss_rsrq_1", "null": old_nr, "data": False},
+                {"name": "nr_servingbeam_ss_sinr_1", "null": old_nr, "data": False},
             ],
         )
 
@@ -865,34 +869,38 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionNR_DATA_Line_Chart_triggered(self):
+        import preprocess_azm
         print("action nr data line chart")
         is_use_multi_y = self.show_line_chart_dialog()
         linechart_file_name = linechart_custom
         if is_use_multi_y:
             linechart_file_name = linechart_multi_y_axis
+        old_nr = False
+        if preprocess_azm.is_leg_nr_tables():
+            old_nr =True
         linechart_window = linechart_file_name.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_trafficstat_dl/1000", "null": True, "data": True},
-                {"name": "data_trafficstat_ul/1000", "null": True, "data": True},
+                {"name": "data_trafficstat_dl/1000", "null": old_nr, "data": True},
+                {"name": "data_trafficstat_ul/1000", "null": old_nr, "data": True},
                 {
                     "name": "nr_p_plus_scell_nr_pdsch_tput_mbps",
-                    "null": True,
+                    "null": old_nr,
                     "data": True,
                 },
                 {
                     "name": "nr_p_plus_scell_nr_pusch_tput_mbps",
-                    "null": True,
+                    "null": old_nr,
                     "data": True,
                 },
                 {
                     "name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps",
-                    "null": True,
+                    "null": old_nr,
                     "data": True,
                 },
                 {
                     "name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps",
-                    "null": True,
+                    "null": old_nr,
                     "data": True,
                 },
             ],

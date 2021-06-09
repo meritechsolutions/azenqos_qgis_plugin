@@ -14,11 +14,14 @@ import pandas as pd
 from dprint import debug_file_flag
 from dprint import dprint
 
+import azq_utils
+
 # pd.set_option('display.max_colwidth', -1)
 
 # global constants
 TIME_TO_POSID_DIV = 1000
 g_recov_ver = "1.1"
+AZQ_ELM_CSV = "azq_global_element_info_list.csv"
 
 # global data vars
 g_dbfile = None
@@ -1168,32 +1171,20 @@ def fix_pandas() -> None:
 
 
 g_azq_global_elm_info_df = None
+g_azq_global_elm_info_df_elm_csv_fn = None
 
 
 def get_elm_df_from_csv():
     global g_azq_global_elm_info_df
-
-    if g_azq_global_elm_info_df is not None:
+    global AZQ_ELM_CSV
+    global g_azq_global_elm_info_df_elm_csv_fn
+    if g_azq_global_elm_info_df is not None and g_azq_global_elm_info_df_elm_csv_fn == AZQ_ELM_CSV:
         return g_azq_global_elm_info_df
-    cols = [
-        "id",
-        "var_name",
-        "csharp_oldname",
-        "db_table",
-        "var_type",
-        "db_type",
-        "val_min",
-        "val_max",
-        "n_arg_max",
-        "name",
-        "expiry",
-        "definition",
-    ]
-    csvfp = os.path.join(get_module_path(), "azq_global_element_info_list.csv")
-    fix_pandas()
-    g_azq_global_elm_info_df = pd.read_csv(csvfp, compression=None, names=cols).iloc[
-        3:
-    ]  # first two rows are comments
+    print("get_elm_df_from_csv AZQ_ELM_CSV:", AZQ_ELM_CSV)
+    cols = ["id","var_name","csharp_oldname","db_table","var_type","db_type","val_min","val_max","n_arg_max","name","expiry","definition"]
+    
+    g_azq_global_elm_info_df_elm_csv_fn = AZQ_ELM_CSV
+    g_azq_global_elm_info_df = pd.read_csv(os.path.join(azq_utils.get_module_path(), AZQ_ELM_CSV ),names=cols).iloc[3:]  # first two rows are comments
 
     g_azq_global_elm_info_df["n_arg_max"].fillna(value="1", inplace=True)
 
@@ -1201,8 +1192,6 @@ def get_elm_df_from_csv():
 
 
 gei_df_n_max_arg_1_elm = None
-
-
 def get_gei_df_n_max_arg_1_elm():
     global gei_df_n_max_arg_1_elm
     if gei_df_n_max_arg_1_elm is None:
@@ -1894,3 +1883,45 @@ def get_azqdata_max_sip_and_qmdl_flush_ts_diff_millis():
             exstr,
         )
     return ret
+
+def get_azm_apk_ver(dbcon):
+    ver = pd.read_sql("select max(log_app_version) from logs", dbcon).iloc[0,0]
+    ret = apk_verstr_to_ver_int(ver)
+
+    return ret
+
+
+def is_leg_nr_tables():
+    global AZQ_ELM_CSV
+    return AZQ_ELM_CSV == "azq_global_element_info_list_pre_nr_table_restructure.csv"
+
+
+def update_default_element_csv_for_dbcon_azm_ver(dbcon):
+    global AZQ_ELM_CSV
+    if get_azm_apk_ver(dbcon) < 31650:
+        print("get_azm_apk_ver(dbcon) < 31650 so set pre nr table restructure csv")
+        AZQ_ELM_CSV = "azq_global_element_info_list_pre_nr_table_restructure.csv"
+    print("update_default_element_csv_for_dbcon_azm_ver() done AZQ_ELM_CSV:", AZQ_ELM_CSV)
+
+
+def get_azqdata_dat_apk_ver(ret_ori_str=False):
+    global g_datfile
+
+    try:
+        first_line = get_azqdata_dat_first_line()
+        # example: 1488181012233,2,AndroidLogStart,v3.0.602,2.0.7:15,28800000
+        verstr = first_line.split(",")[3].strip()
+        if ret_ori_str:
+            return verstr
+        ret = apk_verstr_to_ver_int(verstr)
+        return ret
+    except Exception as ve:
+        print("WARNING: get_azqdata_dat_apk_ver failed probably no azqdata.dat: try get from db if exists next - exception:", ve)
+        db_path = os.path.join(get_tmp_process_dir(), "azqdata.db")
+        if not os.path.isfile(db_path):
+            raise ve
+        else:
+            with sqlite3.connect(db_path) as dbcon:
+                return get_sqlite_apk_ver(dbcon)
+            
+    raise Exception("invalid state")

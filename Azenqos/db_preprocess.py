@@ -280,6 +280,8 @@ def prepare_spatialite_views(dbcon):
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: remove stray -1 -1 rows exception:", exstr)
+    
+    preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
 
 
 

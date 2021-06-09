@@ -1817,6 +1817,8 @@ Log_hash list: {}""".format(
 
         self.plot_rat_spider("5G")
         self.plot_rat_spider("4G")
+        self.plot_rat_spider("3G")
+        self.plot_rat_spider("2G")
     
 
     '''
@@ -1980,6 +1982,12 @@ Log_hash list: {}""".format(
         cellfile_att_param['3G'] = 'psc'
         cellfile_att_param['2G'] = 'bcch'
 
+        cell_count = dict()
+        cell_count['5G'] = 0
+        cell_count['4G'] = 0
+        cell_count['3G'] = 0
+        cell_count['2G'] = 0
+
         global is_already_plot
         print("is_already_plot", is_already_plot[rat])
         if is_already_plot[rat]:
@@ -1991,6 +1999,8 @@ Log_hash list: {}""".format(
             print('start layer working')
             print(layer)
             if rat+" cells" in name:
+                # print(">>>>>>>>>>>>>>>>>>>",name,len(layer))
+                cell_count[rat] = len(layer)
                 for item in layer.getFeatures():
                     cellfile_att = item.attribute(cellfile_att_param[rat])
                     try:
@@ -2008,7 +2018,7 @@ Log_hash list: {}""".format(
                     
             print('end get cell info')
             for param in parameter[rat]:
-                if param in name and not is_already_plot[rat]:
+                if param in name and not is_already_plot[rat] and cell_count[rat] > 0:
                     new_layer = None
                     wkt_line_list = []
                     for item in layer.getFeatures():

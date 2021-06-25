@@ -789,16 +789,7 @@ def get_nr_data_params_list():
                 "nr_rlc_dl_tp_mbps",
             ],
             "nr_deb_stat",
-        ),
-        (
-            [
-                "DL NR MAC TP (MBps)",
-            ],
-            [
-                "nr_mac_tp_dl_mbps_1",
-            ],
-            "nr_mac_throughput",
-        ),
+        ),        
         (
             [
                 "DL LTE L1 TP (MBps)",
@@ -836,15 +827,6 @@ def get_nr_data_params_list():
                 "data_trafficstat_ul_mbps",
             ],
             "android_info_1sec",
-        ),
-        (
-            [
-                "UL NR MAC TP (MBps)",
-            ],
-            [
-                "nr_mac_tp_ul_mbps_1",
-            ],
-            "nr_mac_throughput",
         ),
         (
             [
@@ -1055,12 +1037,10 @@ def get_nr_data_params_list_old():
             [
                 "DL NR PDCP TP (MBps)",
                 "DL NR RLC TP (MBps)",
-                "DL NR MAC TP (MBps)",
             ],
             [
                 "nr_pdcp_dl_tp_mbps",
                 "nr_rlc_dl_tp_mbps",
-                "nr_mac_dl_tp_mbps",
             ],
             "nr_deb_stat",
         ),
@@ -1093,16 +1073,7 @@ def get_nr_data_params_list_old():
                 "data_trafficstat_ul_mbps",
             ],
             "android_info_1sec",
-        ),
-        (
-            [
-                "UL NR MAC TP (MBps)",
-            ],
-            [
-                "nr_mac_ul_tp_mbps",
-            ],
-            "nr_deb_stat",
-        ),
+        ),        
         (
             [
                 "UL LTE L1 TP (MBps)",

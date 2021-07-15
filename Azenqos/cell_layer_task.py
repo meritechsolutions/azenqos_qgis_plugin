@@ -36,6 +36,7 @@ fields.append(QgsField("mnc", QVariant.Int))
 fields.append(QgsField("PCI", QVariant.Int))
 fields.append(QgsField("PSC", QVariant.Int))
 fields.append(QgsField("BCCH", QVariant.Int))
+fields.append(QgsField("cgi", QVariant.String))
 
 
 def cell_to_polygon(cell):
@@ -59,6 +60,7 @@ def cell_to_polygon(cell):
     poly["longitude"] = cell.lon
     poly["mcc"] = cell.mcc
     poly["mnc"] = cell.mnc
+    poly["cgi"] = cell.cgi
     system = cell.system.lower()
     poly[g_main_cell_col[system].upper()] = cell[g_main_cell_col[system]]
     poly.setGeometry(QgsGeometry.fromPolygonXY([points]))
@@ -106,6 +108,7 @@ class CellLayerTask(QgsTask):
         if not len(frames):
             return
         df = pd.concat(frames)
+        
         try:
             nr_cells_layer = self.create_cell_layer(
                 df, "nr", "5G cells", get_default_color_for_index(0)

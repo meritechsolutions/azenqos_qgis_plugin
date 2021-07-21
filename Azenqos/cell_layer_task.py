@@ -3,7 +3,6 @@ import traceback
 import pandas as pd
 from PyQt5.QtGui import QColor
 
-from qgis.utils import iface
 from qgis.PyQt.QtCore import QVariant
 from qgis.core import (
     QgsProject,
@@ -16,7 +15,6 @@ from qgis.core import (
     QgsVectorLayer
 )
 
-import azq_utils
 from azq_cell_file import read_cell_file, g_main_cell_col
 from azq_utils import get_default_color_for_index
 

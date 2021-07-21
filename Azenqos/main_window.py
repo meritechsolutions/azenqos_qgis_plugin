@@ -2080,7 +2080,7 @@ Log_hash list: {}""".format(
                         for item in layer.getFeatures():
                             cellfile_att = item.attribute('cgi')
                             # print(type(item))
-                            # print("cell file cellfile_att:",type(cellfile_att), cellfile_att)
+                            # print("cell file cellfile_att:", cellfile_att)
                             geometry = item.geometry()
                             point_list = geometry.asPolygon()
                             point_lon = point_list[0][1].x()
@@ -2142,8 +2142,9 @@ Log_hash list: {}""".format(
                         df = pd.merge_asof(param_df, df, on='time', by='log_hash', direction='nearest', tolerance=pd.Timedelta('1000ms'))
                         df = pd.merge_asof(df, location_df, on='time', by='log_hash', direction='nearest', tolerance=pd.Timedelta('2000ms'))
                         # print(df)
-
                         
+                        df = df[df.lat.notnull()]
+                        df = df[df.lon.notnull()]
                         for index, row in df.iterrows():
                             if row['cgi'] in cell.keys():
                                 # print(row['cgi'], row['lat'], row['lon'], cell[row['cgi']])

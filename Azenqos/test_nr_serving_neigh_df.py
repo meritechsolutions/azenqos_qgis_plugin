@@ -1,4 +1,4 @@
-import sqlite3
+# import sqlite3
 import nr_query
 import integration_test_helpers
 

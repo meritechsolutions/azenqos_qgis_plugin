@@ -367,7 +367,6 @@ class import_db_dialog(QDialog):
             return False
         else:
             print("ui_handler_import_done() success")
-            import azq_utils
 
             self.getTimeForSlider()
             print("getTimeForSlider() done")

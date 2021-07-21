@@ -1921,7 +1921,8 @@ def get_azqdata_dat_apk_ver(ret_ori_str=False):
         if not os.path.isfile(db_path):
             raise ve
         else:
-            with sqlite3.connect(db_path) as dbcon:
-                return get_sqlite_apk_ver(dbcon)
+            raise Exception("invalid state with sqlite3")
+            # with sqlite3.connect(db_path) as dbcon:
+            #     return get_sqlite_apk_ver(dbcon)
             
     raise Exception("invalid state")

@@ -4,37 +4,29 @@ AZENQOS Log Replay QGIS Plugin
 Install this plugin into QGIS to analyze AZENQOS '.azm' test logs: analyze Layer-3 Signalling, Events, 5GNR/LTE/WCDMA/GSM mesurements - all syncing with the QGIS map plot of your test log captured from the [AZENQOS Android Drivetest tool](https://www2.azenqos.com/) app.
 
 
-Installation instructions for Windows
--------------------------------------
+Installation instructions
+-------------------------
 
-- Install *QGIS Standalone Installer Version 3.10 or 3.16 (64 bit)* from: 
+- Install *QGIS Standalone Installer from: 
   - Open a web browser to: <https://qgis.org/en/site/forusers/download.html>
   - Click on 'Downloads for Windows'
   - Scroll down to 'Long term release (most stable)'
-  - Click on 'QGIS Standalone Installer Version 3.16 (64 bit)' to start download.
+  - Click on 'QGIS Standalone Installer (64 bit)' to start download.
   - Install the downloaded file.
-- If first install, open QGIS, complete first time setup then exit (we just want it to create required folders).
-- Close QGIS if it is open.
-- Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder.
-- In the extracted folder, double-click on <pre>install_azenqos_plugin.bat</pre> - it must show 'SUCCESS', otherwise fix as per error message shown.
-- If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
+  
+- Download Azenqos QGIS Plugin
+![](example_screenshots/download_azenqos_QGIS_plugin.PNG)
+  - Click on 'Releases' button at the right of page or [click here](https://github.com/freewillfx-azenqos/azenqos_qgis_plugin/releases).
+  - Find the Lasted releases and download azenqos_qgis_plugin_xxxx.zip in assets section.
+
+![](example_screenshots/Install_from_zip.PNG)
+- In QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed from ZIP' and Browse for the ZIP that you have downloaded then Click "Installed Plugin" button.
+- Restart QGIS
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') - the analyzer window will launch.
 - In the analyzer window, go to File > Open log file... to choose a .azm log file to analyze.
 - After a log has been opened. Go to Presentation to open each required analyzer window - like Signalling > Layer-3 Messages.
 
 - Repeat the same steps above when you want to upgrade the plugin to a new version (version is shown at top-right of analyzer window).
-
-
-Installation instructions for Ubuntu GNU/Linux
--------------------------------------
-- Note: Tested on Ubuntu 20.04 LTS, Python 3.8.5
-- Install QGIS Long Term Release on Ubuntu (`sudo apt install qgis`), open `qgis` and complete first time setup if first run.
-- Close QGIS if it is already open.
-- Click on near top-right of this github page: 'Code' button > 'Download ZIP' - save it to your computer, extract the zip to a folder. (Or if you know how to use `git` then git clone this repo)
-- Open a terminal to that folder then run <pre>./install_azenqos_plugin_ubuntu.sh</pre> - it must show 'SUCCESS', otherwise fix as per error message shown. (Note that this makes a link to contents of this folder so dont delete this folder unless you're going to re-install from a new version)
-- If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin
-- Press on the AZENQOS icon button in toolbar (or in 'Plugins') to choose a .azm log file to analyze.
-- Repeat the same when you want to upgrade the plugin
 
 
 Using Standlone mode to replay/analyze logs without QGIS (Developer mode)

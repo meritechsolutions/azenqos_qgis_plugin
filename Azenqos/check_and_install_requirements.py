@@ -10,18 +10,27 @@ def get_local_fp(fn):
 
 def check_and_install_requirements():
     needs_install = False
-    pkg_list = subprocess.check_output(['python', '-m', 'pip', 'freeze']).decode().split('\n')
+    # pkg_list = subprocess.check_output(['python', '-m', 'pip', 'freeze']).decode().split('\n')
+    # pkg_list = [x.strip() for x in pkg_list]
     requirement_fp = get_local_fp('requirements.txt')
     requirement_list = None
     with open(requirement_fp,"r") as f:
-        requirement_list = f.readlines()
-    pkg_list = [x.strip() for x in pkg_list]
+        requirement_list = f.read().splitlines()
     for requirement in requirement_list:
         requirement = requirement.lower().strip()
-        if requirement not in pkg_list:
+        sub_index = requirement.index('==')
+        lib_name = requirement[0:sub_index]
+        version = requirement[sub_index+2:]
+        try:
+            exec("import {}".format(lib_name))
+            existing_version = eval("{}.__version__".format(lib_name))
+            if version != existing_version:
+                raise Exception
+        except:
             needs_install = True
             print("not found:", requirement)
             break
+
     if needs_install:
         print("need_to_restart")
         cmd = ['python', '-m', 'pip', 'install', '-r', requirement_fp]

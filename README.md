@@ -13,14 +13,14 @@ Installation instructions
   - Scroll down to 'Long term release (most stable)'
   - Click on 'QGIS Standalone Installer (64 bit)' to start download.
   - Install the downloaded file.
-  
+
 - Download Azenqos QGIS Plugin
 ![](example_screenshots/download_azenqos_QGIS_plugin.PNG)
   - Click on 'Releases' button at the right of page or [click here](https://github.com/freewillfx-azenqos/azenqos_qgis_plugin/releases).
   - Find the Lasted releases and download azenqos_qgis_plugin_xxxx.zip in assets section.
 
 ![](example_screenshots/Install_from_zip.PNG)
-- In QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed from ZIP' and Browse for the ZIP that you have downloaded then Click "Installed Plugin" button.
+- In QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed from ZIP' and Browse for the ZIP that you have downloaded then click "Installed Plugin" button.
 - Restart QGIS
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') - the analyzer window will launch.
 - In the analyzer window, go to File > Open log file... to choose a .azm log file to analyze.

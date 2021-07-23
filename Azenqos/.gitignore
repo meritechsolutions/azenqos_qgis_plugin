@@ -1,5 +1,4 @@
 file/
-config_prev_azm
-config_prev_theme
+config_*
 settings.ini
 tmp_gen

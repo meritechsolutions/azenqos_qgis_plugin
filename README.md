@@ -16,7 +16,7 @@ Installation instructions
 
 - Download Azenqos QGIS Plugin
   - Click on 'Releases' button at the right of page or [click here](https://github.com/freewillfx-azenqos/azenqos_qgis_plugin/releases).
-  - Find the lated releases and download azenqos_qgis_plugin_xxxx.zip in assets section as below screenshot.
+  - Find the latest releases and download azenqos_qgis_plugin_xxxx.zip in assets section as below screenshot.
 ![](example_screenshots/download_azenqos_QGIS_plugin.PNG)
 
 - In QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed from ZIP' and Browse for the ZIP that you have downloaded then click "Installed Plugin" button as below screenshot.

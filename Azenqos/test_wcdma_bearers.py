@@ -1,4 +1,5 @@
 import sqlite3
+import contextlib
 
 import integration_test_helpers
 import wcdma_query
@@ -10,7 +11,7 @@ def test():
     )
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
-    with sqlite3.connect(dbfp) as dbcon:
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         df = wcdma_query.get_wcdma_bearers_df(dbcon, "2020-09-02 12:15:57.175")
         print("df.head():\n %s" % df.head(20))
         assert df.iloc[1, 1] == 6

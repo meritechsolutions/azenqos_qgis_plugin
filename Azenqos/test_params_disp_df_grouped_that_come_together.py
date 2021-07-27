@@ -1,4 +1,5 @@
 import sqlite3
+import contextlib
 
 import integration_test_helpers
 import params_disp_df
@@ -21,7 +22,7 @@ def test():
             ),
         )
     ]
-    with sqlite3.connect(dbfp) as dbcon:
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         # valid time
         time_before = "2020-08-18 13:47:42.382"
         df_pdd = params_disp_df.get(

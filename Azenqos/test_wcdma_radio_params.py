@@ -1,4 +1,5 @@
 import sqlite3
+import contextlib
 
 import numpy as np
 
@@ -12,7 +13,7 @@ def test():
     )
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
-    with sqlite3.connect(dbfp) as dbcon:
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         df = wcdma_query.get_wcdma_radio_params_disp_df(
             dbcon, "2020-09-02 12:15:29.547"
         )

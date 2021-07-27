@@ -4,6 +4,7 @@ import sqlite3
 
 import azq_utils
 import preprocess_azm
+import contextlib
 
 
 def unzip_azm_to_tmp_get_dbfp(azmfp):
@@ -15,7 +16,7 @@ def unzip_azm_to_tmp_get_dbfp(azmfp):
     return dbfp
 
 def get_dbcon(dbfp):
-    dbcon = sqlite3.connect(dbfp)
+    dbcon = contextlib.closing(sqlite3.connect(dbfp))
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
     return dbcon
 

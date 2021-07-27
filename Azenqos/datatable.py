@@ -4,6 +4,7 @@ import sqlite3
 import sys
 import threading
 import traceback
+import contextlib
 
 import pandas as pd
 from PyQt5.QtCore import (
@@ -267,7 +268,7 @@ class TableWindow(QWidget):
                     self, "New layer", "Please specify layer name:"
                 )
                 if layer_name:
-                    with sqlite3.connect(self.gc.databasePath) as dbcon:
+                    with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                         # load it into qgis as new layer
                         qgis_layers_gen.create_qgis_layer_df(
                             self.tableModel.df, dbcon, layer_name=layer_name
@@ -425,7 +426,7 @@ class TableWindow(QWidget):
             and self.refresh_data_from_dbcon_and_time_func is not None
         ):
             try:
-                with sqlite3.connect(self.gc.databasePath) as dbcon:
+                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                     print(
                         "datatable refreshTableContents() refresh_data_from_dbcon_and_time_func"
                     )

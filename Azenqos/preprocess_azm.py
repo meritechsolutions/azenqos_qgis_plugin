@@ -7,7 +7,6 @@ import sys
 import traceback
 import zipfile
 from datetime import datetime
-import contextlib
 
 import numpy as np
 import pandas as pd

@@ -296,7 +296,7 @@ def api_py_eval_get_parsed_ret_dict(
                 "Server process running - loop_count: {}".format(loop_count),
             )
         signal_emit(status_update_signal, "Server process completed...")
-        # print('server process complete - resp_dict:', resp_dict)
+        print('server process complete - resp_dict:', resp_dict)
         signal_emit(progress_update_signal, 50)
 
         # cleanup server process immediately and set proc_uuid as None so no need re-cleanup in finally block
@@ -376,7 +376,7 @@ def parse_py_eval_ret_dict_for_df(server, token, py_eval_ret_dict: dict):
         azq_utils.download_file(pq_url, target_fp)
         assert os.path.isfile(target_fp) == True
         df = pd.read_parquet(target_fp)
-        df.columns = [x.decode("utf-8") for x in df.columns]
+        #df.columns = [x.decode("utf-8") for x in df.columns]
         for col in df.columns:
             try:
                 df[col] = df[col].apply(lambda x: x.decode("utf-8"))

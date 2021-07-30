@@ -9,6 +9,7 @@ def test():
         )
     except Exception as exstr:
         raised = True
+        print("exstr:", exstr)
         assert "Unauthorized" in str(exstr)
 
     assert raised == True

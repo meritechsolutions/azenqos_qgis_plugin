@@ -13,7 +13,7 @@ for f in files:
     if f.startswith("azenqos_qgis_plugin") and f.endswith(".zip"):
         os.remove(f)
 
-print("### gen new release qgis plubin zip")
+print("### gen new release qgis plugin zip")
 today = date.today()
 date_str = today.strftime("%Y-%m-%d")
 branch = subprocess.check_output("git branch --show-current", shell=True).decode('utf8').splitlines()[0]
@@ -23,7 +23,7 @@ subprocess.check_output("git archive -o {} HEAD:Azenqos".format(target_fp), shel
 print("zip gen done at:\n{}".format(target_fp))
 
 print("### push release to github")
-cmd = "gh release create v{} {}".format(version, target_fp)
+cmd = "gh release create v{} {}".format(version.VERSION, target_fp)
 print("push to github cmd:")
 print(cmd)
 ret = os.system(cmd)

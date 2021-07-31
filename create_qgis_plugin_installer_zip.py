@@ -14,3 +14,8 @@ commit = subprocess.check_output("git rev-parse --short HEAD", shell=True).decod
 target_fp = "azenqos_qgis_plugin_{}_{}_{}_{}.zip".format(date_str, branch, version.VERSION, commit)
 subprocess.check_output("git archive -o {} HEAD:Azenqos".format(target_fp), shell=True)
 print("SUCCESS zip gen done at:\n{}".format(target_fp))
+cmd = "gh release create v{} {}".format(version, target_fp)
+print("push to github cmd:")
+print(cmd)
+ret = os.system(cmd)
+assert ret == 0

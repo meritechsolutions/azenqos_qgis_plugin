@@ -3,7 +3,6 @@ import azq_utils
 import pandas as pd
 import os
 import sqlite3
-import contextlib
 
 azmfp = os.path.join(
     azq_utils.get_module_path(),
@@ -11,7 +10,7 @@ azmfp = os.path.join(
 )
 dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
-with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+with sqlite3.connect(dbfp) as dbcon:
     df = pd.read_sql("select log_hash, time from location", dbcon)
     import qgis_layers_gen
 

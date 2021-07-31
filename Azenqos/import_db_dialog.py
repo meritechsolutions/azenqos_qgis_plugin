@@ -5,7 +5,6 @@ import sys
 # Adding folder path
 import threading
 import traceback
-import contextlib
 
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets
@@ -420,7 +419,7 @@ class import_db_dialog(QDialog):
     def getTimeForSlider(self):
         startTime = None
         endTime = None
-        with contextlib.closing(sqlite3.connect(self.databasePath)) as dbcon:
+        with sqlite3.connect(self.databasePath) as dbcon:
             df = pd.read_sql(
                 "select min(log_start_time) as startTime, max(log_end_time) as endTime from logs",
                 dbcon,
@@ -449,7 +448,7 @@ class import_db_dialog(QDialog):
         # check db
         assert os.path.isfile(self.databasePath)
         try:
-            dbcon = contextlib.closing(sqlite3.connect(self.databasePath))
+            dbcon = sqlite3.connect(self.databasePath)
             logs_df = pd.read_sql("select * from logs limit 1", dbcon)
             if not len(logs_df):
                 raise Exception("invalid log database - cant read log metadata")

@@ -1,5 +1,4 @@
 import sqlite3
-import contextlib
 
 import pandas as pd
 
@@ -75,7 +74,7 @@ def test():
             ),
         ),
     ]
-    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+    with sqlite3.connect(dbfp) as dbcon:
 
         #################### test query separately
         # valid time

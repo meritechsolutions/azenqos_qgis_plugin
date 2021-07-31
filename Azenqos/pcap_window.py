@@ -2,7 +2,6 @@ import os
 import sqlite3
 import subprocess
 from os import path
-import contextlib
 
 import numpy as np
 import pandas as pd
@@ -110,7 +109,7 @@ def new_get_all_pcap_content(azm_path):
     global log_hash
     global time_offset
     db_path = os.path.join(azm_path, "azqdata.db")
-    with contextlib.closing(sqlite3.connect(db_path)) as dbcon:
+    with sqlite3.connect(db_path) as dbcon:
         log_hash = pd.read_sql("select log_hash from log_info limit 1", dbcon).iloc[
             0, 0
         ]

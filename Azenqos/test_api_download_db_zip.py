@@ -5,7 +5,6 @@ import db_preprocess
 import pandas as pd
 import sqlite3
 import integration_test_helpers
-import contextlib
 
 
 def test(server, user, passwd, lhl):
@@ -19,7 +18,7 @@ def test(server, user, passwd, lhl):
     azmfp = ret
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
-    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+    with sqlite3.connect(dbfp) as dbcon:
         db_preprocess.prepare_spatialite_views(dbcon)
 
         df = pd.read_sql("select * from lte_inst_rsrp_1", dbcon)

@@ -1922,7 +1922,7 @@ def get_azqdata_dat_apk_ver(ret_ori_str=False):
             raise ve
         else:
             raise Exception("invalid state with sqlite3")
-            # with contextlib.closing(sqlite3.connect(db_path)) as dbcon:
+            # with sqlite3.connect(db_path) as dbcon:
             #     return get_sqlite_apk_ver(dbcon)
             
     raise Exception("invalid state")

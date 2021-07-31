@@ -2,7 +2,6 @@ import datetime
 import shutil
 import threading
 import traceback
-import contextlib
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QSettings, pyqtSlot, pyqtSignal
@@ -2071,7 +2070,7 @@ Log_hash list: {}""".format(
     
                 print('end layer working')
             else:
-                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                with sqlite3.connect(self.gc.databasePath) as dbcon:
                     new_layer = None
                     wkt_line_list = []
                     df = None

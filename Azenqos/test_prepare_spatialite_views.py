@@ -1,6 +1,5 @@
 import sqlite3
 import os
-import contextlib
 
 import pandas as pd
 
@@ -23,7 +22,7 @@ def test():
 
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
-    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+    with sqlite3.connect(dbfp) as dbcon:
         assert "lte_cell_meas" in db_preprocess.get_geom_cols_df(dbcon).f_table_name.values
         assert "lte_inst_rsrp_1" not in db_preprocess.get_geom_cols_df(dbcon).f_table_name.values
         db_preprocess.prepare_spatialite_views(dbcon)

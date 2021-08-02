@@ -1403,6 +1403,7 @@ Log_hash list: {}""".format(
                     if distance != -1.0 and distance <= 0.001:
                         #print("p distance enter:", distance)
                         closestFeatureId = f.id()
+                        # print(layer.getFeature(closestFeatureId).attributes())
                         time = layer.getFeature(closestFeatureId).attribute("time")
                         info = (layer, closestFeatureId, distance, time)
                         layerData.append(info)
@@ -1450,6 +1451,10 @@ Log_hash list: {}""".format(
             self.gc.timeSlider.update()
 
             # self.canvas.refreshself.gc.tableList()
+
+            # draw cell
+            self.plot_rat_spider("4G",focus_time=selectedTime)
+            
         print("clickCanvas done")
 
 
@@ -1977,7 +1982,7 @@ Log_hash list: {}""".format(
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
-    def plot_rat_spider(self,rat, is_legacy=False):
+    def plot_rat_spider(self,rat, is_legacy=False, focus_time=None):
         cell = dict()
         parameter = dict()
         parameter['5G'] = ["nr_servingbeam_pci_1"]
@@ -1996,6 +2001,8 @@ Log_hash list: {}""".format(
         cell_count['4G'] = 0
         cell_count['3G'] = 0
         cell_count['2G'] = 0
+
+        active_layer = None
 
         global is_already_plot
         print("is_already_plot", is_already_plot[rat])
@@ -2074,6 +2081,9 @@ Log_hash list: {}""".format(
                     new_layer = None
                     wkt_line_list = []
                     df = None
+                    
+                    if name == 'lte_physical_cell_id_1':
+                        active_layer = layer
 
                     if rat+" cells" in name:
                         cell_count[rat] = len(layer)
@@ -2093,7 +2103,10 @@ Log_hash list: {}""".format(
                         df = pd.read_sql_query(sqlstr,dbcon)
                         df["cgi"] = df.mcc.astype(int).astype(str) + " " + df.mnc.astype(int).astype(str) + " " + df.lac.astype(int).astype(str) + " " + df.cell_id.astype(int).astype(str)
                         
-                        param_sql = "select log_hash, time, lte_physical_cell_id_1 from lte_cell_meas order by time"
+                        if focus_time is not None:
+                            param_sql = "select log_hash, time, lte_physical_cell_id_1 from lte_cell_meas where time = '{}' order by time".format(focus_time)
+                        else:
+                            param_sql = "select log_hash, time, lte_physical_cell_id_1 from lte_cell_meas order by time"
                         param_df = pd.read_sql_query(param_sql, dbcon)
 
                     if rat == "3G" and 'wcdma_' in name and not is_already_plot[rat] and cell_count[rat] > 0:
@@ -2153,7 +2166,11 @@ Log_hash list: {}""".format(
                                 wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],row.lon, row.lat)
                                 wkt_line_list.append(wkt_line)
 
-                        new_layer = QgsVectorLayer('LineString?crs=epsg:4326', 'Spider for '+rat , 'memory')
+                        new_layer_name = 'Spider for '+rat
+                        if focus_time is not None:
+                            new_layer_name += focus_time
+
+                        new_layer = QgsVectorLayer('LineString?crs=epsg:4326', new_layer_name , 'memory')
                         wkt_str = ",".join(wkt_line_list)
 
                         prov = new_layer.dataProvider()                
@@ -2165,8 +2182,10 @@ Log_hash list: {}""".format(
                         print("spider_add_map_layer")
                         is_already_plot[rat] = True
                         QgsProject.instance().addMapLayers([new_layer])
+                        self.qgis_iface.setActiveLayer(active_layer)
 
         print('is_already_plot end:', is_already_plot[rat])
+        is_already_plot[rat] = False
 
 class SubWindowArea(QMdiSubWindow):
     def __init__(self, item, gc):

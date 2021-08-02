@@ -542,6 +542,7 @@ def read_cell_file(
         dprint("read_cell_file: df post filt out nan len {}".format(len(df)))
 
         df = df_cellfile_check_and_convert(df, fp_for_error_report=fp)
+        print("Read cellfile success")
     except Exception as e:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))

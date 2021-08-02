@@ -106,7 +106,6 @@ class CellLayerTask(QgsTask):
         if not len(frames):
             return
         df = pd.concat(frames)
-        
         try:
             nr_cells_layer = self.create_cell_layer(
                 df, "nr", "5G cells", get_default_color_for_index(0)

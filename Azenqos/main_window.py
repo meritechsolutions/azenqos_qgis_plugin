@@ -1404,9 +1404,14 @@ Log_hash list: {}""".format(
                         #print("p distance enter:", distance)
                         closestFeatureId = f.id()
                         # print(layer.getFeature(closestFeatureId).attributes())
-                        time = layer.getFeature(closestFeatureId).attribute("time")
-                        info = (layer, closestFeatureId, distance, time)
-                        layerData.append(info)
+                        try:
+                            time = layer.getFeature(closestFeatureId).attribute("time")
+                            info = (layer, closestFeatureId, distance, time)
+                            layerData.append(info)
+                        except:
+                            type_, value_, traceback_ = sys.exc_info()
+                            exstr = str(traceback.format_exception(type_, value_, traceback_))
+                            print("WARNING: clickoncanvas handle exception: {}".format(exstr))
                     else:
                         pass
                         #print("p distance not enter:", distance)

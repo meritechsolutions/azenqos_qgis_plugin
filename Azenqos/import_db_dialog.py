@@ -427,6 +427,12 @@ class import_db_dialog(QDialog):
             assert len(df) == 1
             startTime = df.iloc[0].startTime
             endTime = df.iloc[0].endTime
+            if not endTime:
+                df = pd.read_sql(
+                    "select max(time) as endTime from events",
+                    dbcon,
+                )
+                endTime = df.iloc[0].endTime
 
         assert startTime
         assert endTime

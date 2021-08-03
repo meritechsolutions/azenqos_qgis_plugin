@@ -71,6 +71,8 @@ class CellLayerTask(QgsTask):
         self.files = files
         self.cells_layers = []
         self.gc = gc
+        import azq_cell_file
+        azq_cell_file.clear_cell_file_cache()
 
     def create_cell_layer(self, df, system, name, color):
         features = (
@@ -129,12 +131,19 @@ class CellLayerTask(QgsTask):
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: load cell file - exception: {}".format(exstr))
+
+
+
         return True
 
     def finished(self, result):
         try:
             QgsProject.instance().addMapLayers(self.cells_layers)
-            
+            import spider_plot
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "5G")
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "4G")
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "3G")
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "2G")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))

@@ -500,6 +500,8 @@ def get_csv_separator_for_file(fp):
 g_cell_file_to_df_dict = {}
 def clear_cell_file_cache():
     global g_cell_file_to_df_dict
+    global g_cell_file_df_cache
+    g_cell_file_df_cache.clear()
     g_cell_file_to_df_dict.clear()
 
 

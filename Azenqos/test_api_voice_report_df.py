@@ -3,7 +3,7 @@ import azq_server_api
 
 
 def test(server, user, passwd, lhl):
-    return  # disabled for now likes to get stuck when tested together
+    #return  # disabled for now likes to get stuck when tested together
     print("server", server)
     print("user", user)
     print("passwd", passwd)

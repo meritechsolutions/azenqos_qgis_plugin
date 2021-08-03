@@ -25,6 +25,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.uic import loadUi
 
 import qt_utils, azq_utils
+import spider_plot
 from timeslider import timeSliderThread, timeSlider
 
 from datatable import TableWindow, create_table_window_from_api_expression_ret
@@ -87,13 +88,6 @@ import sqlite3
 
 TIME_COL_DEFAULT_WIDTH = 150
 NAME_COL_DEFAULT_WIDTH = 180
-
-is_already_plot = dict()
-is_already_plot['5G'] = False
-is_already_plot['4G'] = False
-is_already_plot['3G'] = False
-is_already_plot['2G'] = False
-
 
 
 class main_window(QMainWindow):
@@ -1458,7 +1452,16 @@ Log_hash list: {}""".format(
             # self.canvas.refreshself.gc.tableList()
 
             # draw cell
-            self.plot_rat_spider("4G",focus_time=selectedTime)
+            ori_active_layer = None
+            try:
+                ori_active_layer = self.gc.qgis_iface.activeLayer()
+            except:
+                pass
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "4G", single_point_layer_time=selectedTime)
+
+            if ori_active_layer is not None:
+                self.gc.qgis_iface.setActiveLayer(ori_active_layer)
+
             
         print("clickCanvas done")
 
@@ -1834,11 +1837,7 @@ Log_hash list: {}""".format(
                 except Exception as e:
                     print("WARNING: renaming layers exception: {}".format(e))
             
-        self.plot_rat_spider("5G")
-        self.plot_rat_spider("4G")
-        self.plot_rat_spider("3G")
-        self.plot_rat_spider("2G")
-    
+
 
     '''
     -
@@ -1987,210 +1986,8 @@ Log_hash list: {}""".format(
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
-    def plot_rat_spider(self,rat, is_legacy=False, focus_time=None):
-        cell = dict()
-        parameter = dict()
-        parameter['5G'] = ["nr_servingbeam_pci_1"]
-        parameter['4G'] = ["lte_physical_cell_id_1","lte_neigh_physical_cell_id_1","lte_neigh_physical_cell_id_2","lte_neigh_physical_cell_id_3"]
-        parameter['3G'] = ["wcdma_sc_1", "wcdma_sc_2", "wcdma_sc_3", "wcdma_aset_sc_1","wcdma_aset_sc_2","wcdma_aset_sc_3"]
-        parameter['2G'] = ["gsm_arfcn_bcch"]
 
-        cellfile_att_param = dict()
-        cellfile_att_param['5G'] = 'pci'
-        cellfile_att_param['4G'] = 'pci'
-        cellfile_att_param['3G'] = 'psc'
-        cellfile_att_param['2G'] = 'bcch'
 
-        cell_count = dict()
-        cell_count['5G'] = 0
-        cell_count['4G'] = 0
-        cell_count['3G'] = 0
-        cell_count['2G'] = 0
-
-        active_layer = None
-
-        global is_already_plot
-        print("is_already_plot", is_already_plot[rat])
-        if is_already_plot[rat]:
-            return
-        layers = QgsProject.instance().mapLayers().values()
-        for layer in layers:
-            name = layer.name()
-            print("renamingLayers layer:", name)
-            print('start layer working')
-            print(layer)
-            if is_legacy:
-                if rat+" cells" in name:
-                    cell_count[rat] = len(layer)
-                    for item in layer.getFeatures():
-                        cellfile_att = item.attribute(cellfile_att_param[rat])
-                        try:
-                            cellfile_att = int(cellfile_att)
-                        except:
-                            cellfile_att = None
-                        print(type(item))
-                        print("cell file cellfile_att:",type(cellfile_att), cellfile_att)
-                        geometry = item.geometry()
-                        point_list = geometry.asPolygon()
-                        point_lon = point_list[0][1].x()
-                        point_lat = point_list[0][1].y()
-                        print('cell point:',point_lat, point_lon)
-                        cell[cellfile_att] = (point_lon, point_lat)
-                 
-                print('end get cell info')
-                for param in parameter[rat]:
-                    if param in name and not is_already_plot[rat] and cell_count[rat] > 0:
-                        new_layer = None
-                        wkt_line_list = []
-                        for item in layer.getFeatures():
-                            plot_att = item.attributes()[-1]
-                            try:
-                                plot_att = int(plot_att)
-                            except:
-                                plot_att = None
-                            
-                            if plot_att is not None:
-                                # print("plot_att:", plot_att, item.attributes())
-                                geometry = item.geometry()
-                                try:
-                                    coordinate = geometry.asPoint()
-                                    lon = coordinate[0]
-                                    lat = coordinate[1]
-                                    string = "Id:{},lon:{},lat:{}, plot_att:{}".format(item.id(),lon, lat, plot_att)
-                                    print(string)
-                                    if plot_att in cell.keys():
-                                        cell_location = cell[plot_att]
-                                        print("cell_location , point_location", cell_location, (lon,lat))
-                                        wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],lon, lat)
-                                        wkt_line_list.append(wkt_line)
-                                except:
-                                    print("Geometry Point is null: Cannot convert to lat, lon")
-
-                        # Specify the geometry type
-                        new_layer = QgsVectorLayer('LineString?crs=epsg:4326', 'Spider for '+param , 'memory')
-                        wkt_str = ",".join(wkt_line_list)
-
-                        prov = new_layer.dataProvider()                
-                        feat = QgsFeature()
-                        feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
-                        prov.addFeatures([feat])
-                        new_layer.updateExtents()
-                        print("spider_add_map_layer")
-                        is_already_plot[rat] = True
-                        QgsProject.instance().addMapLayers([new_layer])
-                    
-    
-                print('end layer working')
-            else:
-                with sqlite3.connect(self.gc.databasePath) as dbcon:
-                    new_layer = None
-                    wkt_line_list = []
-                    df = None
-                    
-                    if name == 'lte_physical_cell_id_1':
-                        active_layer = layer
-
-                    if rat+" cells" in name:
-                        cell_count[rat] = len(layer)
-                        for item in layer.getFeatures():
-                            cellfile_att = item.attribute('cgi')
-                            # print(type(item))
-                            # print("cell file cellfile_att:", cellfile_att)
-                            geometry = item.geometry()
-                            point_list = geometry.asPolygon()
-                            point_lon = point_list[0][1].x()
-                            point_lat = point_list[0][1].y()
-                            # print('cell point:',point_lat, point_lon)
-                            cell[cellfile_att] = (point_lon, point_lat)
-                    
-                    if rat == "4G" and 'lte_' in name and not is_already_plot[rat] and cell_count[rat] > 0:
-                        sqlstr = "select log_hash, time, lte_sib1_mcc as mcc, lte_sib1_mnc as mnc, lte_sib1_tac as lac, lte_sib1_eci as cell_id from lte_sib1_info order by time"
-                        df = pd.read_sql_query(sqlstr,dbcon)
-                        df["cgi"] = df.mcc.astype(int).astype(str) + " " + df.mnc.astype(int).astype(str) + " " + df.lac.astype(int).astype(str) + " " + df.cell_id.astype(int).astype(str)
-                        
-                        if focus_time is not None:
-                            param_sql = "select log_hash, time, lte_physical_cell_id_1 from lte_cell_meas where time = '{}' order by time".format(focus_time)
-                        else:
-                            param_sql = "select log_hash, time, lte_physical_cell_id_1 from lte_cell_meas order by time"
-                        param_df = pd.read_sql_query(param_sql, dbcon)
-
-                    if rat == "3G" and 'wcdma_' in name and not is_already_plot[rat] and cell_count[rat] > 0:
-                        asql = "select log_hash, time, mm_characteristics_mcc as mcc, mm_characteristics_mnc as mnc, mm_characteristics_lac as lac from mm_state where mm_characteristics_mcc is not null and mm_characteristics_mnc is not null and mm_characteristics_lac is not null order by time"
-                        bsql = "select log_hash, time, wcdma_cellid as cell_id from wcdma_idle_cell_info where wcdma_cellid is not null"
-                        
-                        df_a = pd.read_sql_query(asql,dbcon)
-                        df_b = pd.read_sql_query(bsql,dbcon)
-
-                        df_a['time'] = pd.to_datetime(df_a['time'])
-                        df_a['log_hash'] = df_a.log_hash.astype(int)
-                        df_b['time'] = pd.to_datetime(df_b['time'])
-                        df_b['log_hash'] = df_b.log_hash.astype(int)
-                        df = pd.merge_asof(df_a, df_b, on='time', by='log_hash', direction='nearest', tolerance=pd.Timedelta('3600000ms'))
-
-                        df["cgi"] = df.mcc.astype(int).astype(str) + " " + df.mnc.astype(int).astype(str) + " " + df.lac.astype(int).astype(str) + " " + df.cell_id.astype(int).astype(str)
-                    
-                        param_sql = "select log_hash, time, wcdma_aset_sc_1 from wcdma_cell_meas order by time"
-                        param_df = pd.read_sql_query(param_sql, dbcon)
-
-                    if rat == "2G" and 'gsm_' in name and not is_already_plot[rat] and cell_count[rat] > 0:
-                        sqlstr = "select log_hash, time, gsm_cgi as cgi, gsm_arfcn_bcch from gsm_cell_meas order by time"
-                        df = pd.read_sql_query(sqlstr,dbcon)
-                        
-                        param_df = df[['log_hash','time','gsm_arfcn_bcch']]
-
-                    if df is not None:
-                        df['time'] = pd.to_datetime(df['time'])
-                        df = df[['log_hash','time','cgi']]
-                        df = df.set_index('time', drop=True)
-                        df = df.groupby('log_hash').resample('200ms').pad()
-                        df = df[['cgi']]
-                        df = df.reset_index()
-                        df = df[df.log_hash.notnull()]
-                        df['log_hash'] = df.log_hash.astype(int)
-
-                        param_df['time'] = pd.to_datetime(param_df['time'])
-                        param_df['log_hash'] = param_df.log_hash.astype(int)
-
-                        location_sql = "select log_hash, time, positioning_lat as lat, positioning_lon as lon from location order by time"
-                        location_df = pd.read_sql_query(location_sql, dbcon)
-                        location_df['time'] = pd.to_datetime(location_df['time'])
-                        location_df['log_hash'] = location_df.log_hash.astype(int)
-
-                        # print(location_df)
-                        df = pd.merge_asof(param_df, df, on='time', by='log_hash', direction='nearest', tolerance=pd.Timedelta('1000ms'))
-                        df = pd.merge_asof(df, location_df, on='time', by='log_hash', direction='nearest', tolerance=pd.Timedelta('2000ms'))
-                        # print(df)
-                        
-                        df = df[df.lat.notnull()]
-                        df = df[df.lon.notnull()]
-                        for index, row in df.iterrows():
-                            if row['cgi'] in cell.keys():
-                                # print(row['cgi'], row['lat'], row['lon'], cell[row['cgi']])
-                                cell_location = cell[row['cgi']]
-                                # print(cell_location)
-                                wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],row.lon, row.lat)
-                                wkt_line_list.append(wkt_line)
-
-                        new_layer_name = 'Spider for '+rat
-                        if focus_time is not None:
-                            new_layer_name += focus_time
-
-                        new_layer = QgsVectorLayer('LineString?crs=epsg:4326', new_layer_name , 'memory')
-                        wkt_str = ",".join(wkt_line_list)
-
-                        prov = new_layer.dataProvider()                
-                        feat = QgsFeature()
-                        feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
-                        prov.addFeatures([feat])
-                        new_layer.updateExtents()
-                        # print(wkt_str[:10],wkt_str[-10:])
-                        print("spider_add_map_layer")
-                        is_already_plot[rat] = True
-                        QgsProject.instance().addMapLayers([new_layer])
-                        self.qgis_iface.setActiveLayer(active_layer)
-
-        print('is_already_plot end:', is_already_plot[rat])
-        is_already_plot[rat] = False
 
 class SubWindowArea(QMdiSubWindow):
     def __init__(self, item, gc):

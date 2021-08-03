@@ -374,10 +374,12 @@ class import_db_dialog(QDialog):
             if self.gc.qgis_iface:
                 print("starting layertask")
                 self.select_layer_task()
+                self.gc.cell_files = self.cellPathLineEdit.text().split(",")
                 self.longTask = CellLayerTask(
-                    "Load cell file", self.cellPathLineEdit.text().split(","), self.gc
+                    "Load cell file", self.gc.cell_files, self.gc
                 )
                 QgsApplication.taskManager().addTask(self.longTask)
+
             else:
                 print("NOT starting layertask because no self.gc.qgis_iface")
 

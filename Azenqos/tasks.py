@@ -33,7 +33,7 @@ class LayerTask(QgsTask):
             "type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
         )
 
-        rlayer = QgsRasterLayer(urlWithParams, "Street map", "wms")
+        rlayer = QgsRasterLayer(urlWithParams, "OSM", "wms")
         if rlayer.isValid():
             QgsProject.instance().addMapLayer(rlayer)
             # self.azqGroup.addLayer(rlayer)
@@ -83,6 +83,13 @@ class LayerTask(QgsTask):
             # gc.mostFeaturesLayer = None
             if self.add_map:
                 self.addMapToQgis()
+
+            import spider_plot
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "5G")
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "4G")
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "3G")
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "2G")
+
             # geom_column = "geom"
             self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
 

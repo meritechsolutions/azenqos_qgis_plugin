@@ -1458,3 +1458,16 @@ def datetimeStringtoTimestamp(datetimeString: str):
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("datetimestringtotimestamp exception: %s" % exstr)
     return None
+
+
+
+def get_qgis_layers_dict():
+    ret = {}
+    try:
+        from qgis._core import QgsProject
+        layers = QgsProject.instance().mapLayers().values()
+        for layer in layers:
+            ret[layer.name()] = layer
+    except Exception as e:
+        print("WARNING: layer_name_to_layer_dict exception:", e)
+    return ret

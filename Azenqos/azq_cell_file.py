@@ -497,6 +497,41 @@ def get_csv_separator_for_file(fp):
     return ","
 
 
+g_cell_file_to_df_dict = {}
+def clear_cell_file_cache():
+    global g_cell_file_to_df_dict
+    g_cell_file_to_df_dict.clear()
+
+
+def read_cellfiles(cell_files, rat):
+    global g_cell_file_to_df_dict
+    df_list = []
+    for cell_file in cell_files:
+        if cell_file in g_cell_file_to_df_dict:
+            df_list.append(g_cell_file_to_df_dict[cell_file])
+            continue
+        try:
+            g_cell_file_to_df_dict[cell_file] = read_cell_file(cell_file)
+            df_list.append(g_cell_file_to_df_dict[cell_file])
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: read_cellfiles() exception: {}".format(exstr))
+    if len(df_list) == 0:
+        raise Exception("no successfully read cellfiles")
+    df = pd.concat(df_list)
+    rat_alias_dict = {
+        "5G": "nr",
+        "4G": "lte",
+        "3G": "wcdma",
+        "2G": "gsm"
+    }
+    if rat in rat_alias_dict:
+        rat = rat_alias_dict[rat]
+    df_slice = df[df["system"].str.lower() == rat]
+    return df_slice
+
+
 def read_cell_file(
     fp, extra_required_columns=[], raise_exception_if_check_failed=False
 ):

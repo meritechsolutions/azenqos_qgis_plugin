@@ -44,6 +44,18 @@ class analyzer_vars:
     # server mode vars (stored in login_dialog class like server, token, user, lhl etc)
     login_dialog = None
 
+    g_is_already_plot_spider = dict()
+    g_is_already_plot_spider['5G'] = False
+    g_is_already_plot_spider['4G'] = False
+    g_is_already_plot_spider['3G'] = False
+    g_is_already_plot_spider['2G'] = False
+
+    cell_files = []
+    cell_count = dict()
+    cell_count['5G'] = 0
+    cell_count['4G'] = 0
+    cell_count['3G'] = 0
+    cell_count['2G'] = 0
 
     def close_db(gc):
         # now we dont use qsqldatabase anymore

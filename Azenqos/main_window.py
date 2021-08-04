@@ -1370,6 +1370,7 @@ Log_hash list: {}""".format(
         layerData = []
         selected_time = None
         selected_log_hash = None
+        selected_posid = None
         self.clearAllSelectedFeatures()
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         print("qgis_selected_layers: ", qgis_selected_layers)
@@ -1403,12 +1404,14 @@ Log_hash list: {}""".format(
                         try:
                             time = layer.getFeature(closestFeatureId).attribute("time")
                             log_hash = None
+                            posid = None
                             try:
                                 log_hash = layer.getFeature(closestFeatureId).attribute("log_hash")
+                                posid = layer.getFeature(closestFeatureId).attribute("posid")
                             except:
                                 # in case this layer added by user and no 'log_hash' col
                                 pass
-                            info = (layer, closestFeatureId, distance, time, log_hash)
+                            info = (layer, closestFeatureId, distance, time, log_hash, posid)
                             layerData.append(info)
                         except:
                             type_, value_, traceback_ = sys.exc_info()
@@ -1440,12 +1443,14 @@ Log_hash list: {}""".format(
         # Sort the layer information by shortest distance
         layerData.sort(key=lambda element: element[2])
 
-        for (layer, closestFeatureId, distance, time, log_hash) in layerData:
+        for (layer, closestFeatureId, distance, time, log_hash, posid) in layerData:
             layer.select(closestFeatureId)
             selected_time = time
             selected_log_hash = log_hash
+            selected_posid = posid
             self.gc.selected_pont_time = selected_time
             self.gc.selected_point_log_hash = selected_log_hash
+            self.gc.selected_point_posid = selected_posid
             break  # break on first one
 
         try:
@@ -1470,12 +1475,21 @@ Log_hash list: {}""".format(
             except:
                 pass
 
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_layer_time=selected_time, plot_spider_param="lte_physical_cell_id_1")
+            single_point_match_dict = {
+                "log_hash": selected_log_hash,
+                "posid": selected_posid,
+                "time": selected_time,
+            }
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_match_dict=single_point_match_dict,
+                                        plot_spider_param="lte_physical_cell_id_1",
+                                        freq_code_match_mode=True)
             for i in range(3):
                 spider_plot.plot_rat_spider(
                     self.gc.cell_files, self.gc.databasePath, "lte",
-                    single_point_layer_time=selected_time,
-                    plot_spider_param="lte_neigh_physical_cell_id_{}".format(i+1)
+                    single_point_match_dict=single_point_match_dict,
+                    plot_spider_param="lte_neigh_physical_cell_id_{}".format(i+1),
+                    freq_code_match_mode=True,
+                    dotted_lines=True
                 )
 
             if ori_active_layer is not None:

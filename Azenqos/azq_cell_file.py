@@ -27,6 +27,12 @@ g_main_cell_col["lte"] = "pci"
 g_main_cell_col["wcdma"] = "psc"
 g_main_cell_col["gsm"] = "bcch"
 
+g_main_cell_freq_col = dict.fromkeys(CELL_FILE_RATS)
+g_main_cell_freq_col["nr"] = "arfcn"
+g_main_cell_freq_col["lte"] = "earfcn"
+g_main_cell_freq_col["wcdma"] = "uarfcn"
+g_main_cell_freq_col["gsm"] = "bcch"
+
 g_detail_label_format_dict = dict.fromkeys(CELL_FILE_RATS)
 for rat in CELL_FILE_RATS:
     g_detail_label_format_dict[rat] = "#" + g_main_cell_col[rat].upper()

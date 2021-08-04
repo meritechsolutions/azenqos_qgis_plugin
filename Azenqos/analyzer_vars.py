@@ -26,6 +26,7 @@ class analyzer_vars:
     # these are set from mainwindow directly on clickcanvas match, not from timeslider
     selected_point_time = None
     selected_point_log_hash = None
+    selected_point_posid = None
 
     clickedLatLon = {"lat": 0, "lon": 0}
     sliderLength = 0

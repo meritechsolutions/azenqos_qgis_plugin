@@ -1755,7 +1755,8 @@ def merge_lat_lon_into_df(
     merge_by="log_hash",
     is_indoor=False,
     within_millis_of_gps=30 * 1000,
-    asof_lat_lon_direction="nearest",
+    asof_lat_lon_direction="backward",
+    posid_mode=False
 ):
     df["time"] = pd.to_datetime(df["time"])
     df["log_hash"] = df["log_hash"].astype(np.int64)

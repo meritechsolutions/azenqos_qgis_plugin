@@ -1363,6 +1363,55 @@ def get_default_color_for_index(i):
         return "#%02x%02x%02x" % (r(), r(), r())
 
 
+def get_module_parent_path():
+    from pathlib import Path
+    return str(Path(get_module_path()).parent)
+
+
+def get_last_run_log_fp():
+    mpp = get_module_parent_path()
+    log_fn = "azenqos_qgis_plugin_last_run_log.txt"
+    log_fp = os.path.join(mpp, log_fn)
+    return log_fp
+
+
+get_last_run_log_f = None
+ori_stdout = None
+ori_stderr = None
+def close_last_run_log():
+    global get_last_run_log_f
+    global ori_stdout
+    if get_last_run_log_f is not None:
+        get_last_run_log_f.close()
+        get_last_run_log_f = None
+        if ori_stdout is not None:
+            sys.stdout = ori_stdout
+        if ori_stderr is not None:
+            sys.stderr = ori_stderr
+
+
+def open_and_redirect_stdout_to_last_run_log():
+    global get_last_run_log_f
+    global ori_stdout
+    global ori_stderr
+    try:
+        close_last_run_log()
+        get_last_run_log_f = open(get_last_run_log_fp(), 'w')
+        if ori_stdout is None:
+            ori_stdout = sys.stdout
+        if ori_stderr is None:
+            ori_stderr = sys.stderr
+        sys.stdout = get_last_run_log_f
+        sys.stderr = get_last_run_log_f
+        import version
+        import datetime
+        print("--- new stdout log start version: {} time: {} ---".format(("%.03f" % version.VERSION), datetime.datetime.today().strftime('%Y-%m-%d-%H:%M:%S')))
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: windows set stdout redir exception:", exstr)
+
+
 def tmp_gen_path_parent():
     dp = os.path.join(get_module_path(), TMP_FOLDER_NAME)
     if not os.path.isdir(dp):

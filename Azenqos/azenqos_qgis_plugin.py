@@ -26,9 +26,11 @@ import os.path
 import sys
 import traceback
 import os
-if os.name == "nt":
+
+def try_redirect_stdout_to_log():
     try:
-        log_fp = "C:\\azenqos_qgis_plugin_last_run_log.txt"
+        import azq_utils
+        log_fp = "azenqos_qgis_plugin_last_run_log.txt"
         sys.stdout = open(log_fp, 'w')
         import version
         import datetime
@@ -38,6 +40,7 @@ if os.name == "nt":
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: windows set stdout redir exception:", exstr)
 
+try_redirect_stdout_to_log()
 
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon

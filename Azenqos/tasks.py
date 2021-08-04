@@ -1,3 +1,7 @@
+import os
+import sys
+
+
 import time
 
 try:
@@ -71,25 +75,30 @@ class LayerTask(QgsTask):
             self.gc.qgis_iface.mapCanvas().setExtent(extent)
             self.gc.qgis_iface.mapCanvas().refresh()
 
+
     def run(self):
         if not self.gc.qgis_iface:
             return
-        QgsMessageLog.logMessage("[-- Start add layers --]", tag="Processing")
         self.start_time = time.time()
         return True
+
 
     def finished(self, result):
         if result:
             # gc.mostFeaturesLayer = None
+            print("tasks.py finished() 0")
             if self.add_map:
+                print("tasks.py finished() 1 add map")
                 self.addMapToQgis()
 
+                print("tasks.py finished() 2 add spider plots")
                 import spider_plot
                 spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "nr")
                 spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte")
                 spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "wcdma")
                 spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "gsm")
 
+            print("tasks.py finished() 3 addVectorLayer")
             # geom_column = "geom"
             self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
 

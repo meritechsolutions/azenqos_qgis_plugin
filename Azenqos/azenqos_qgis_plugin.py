@@ -27,9 +27,17 @@ import sys
 import traceback
 import os
 if os.name == "nt":
-    mpath = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-    log_fp = os.path.join(mpath, "last_run.log")
-    sys.stdout = open(log_fp, 'w')
+    try:
+        mpath = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        log_fp = os.path.join(mpath, "C:\\last_run_log.txt")
+        sys.stdout = open(log_fp, 'w')
+        import version
+        import datetime
+        print("--- new log start version: {} time: {} ---", ("%.03f" % version.VERSION), datetime.datetime.today().strftime('%Y-%m-%d-%H:%M:%S'))
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: windows set stdout redir exception:", exstr)
 
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
@@ -267,7 +275,7 @@ class azenqos_qgis_plugin:
                 from qgis.PyQt.QtCore import Qt
 
                 if self.dock_widget is None:
-                    self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer v%.03f' % version.VERSION, self.qgis_iface.mainWindow())
+                    self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer - v%.03f' % version.VERSION, self.qgis_iface.mainWindow())
                 self.main_window = main_window.main_window(self.qgis_iface, None)
                 self.dock_widget.setWidget(self.main_window)
                 self.dock_widget.setFloating(False)

@@ -28,8 +28,7 @@ import traceback
 import os
 if os.name == "nt":
     try:
-        mpath = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-        log_fp = os.path.join(mpath, "C:\\azenqos_qgis_plugin_last_run_log.txt")
+        log_fp = os.path.join(os.getenv('APPDATA'), "azenqos_qgis_plugin_last_run_log.txt")
         sys.stdout = open(log_fp, 'w')
         import version
         import datetime

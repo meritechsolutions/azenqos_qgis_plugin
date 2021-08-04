@@ -1766,6 +1766,8 @@ def merge_lat_lon_into_df(
 
     location_df = get_dbcon_location_df(dbcon, is_indoor=is_indoor)
     location_df = location_df.sort_values("time")
+    print("location_df.head()", location_df.head())
+    print("df.head()", df.head())
     if debug_file_flag:
         location_df.to_csv(
             "tmp/merge_lat_lon_into_df_location_df.csv", quoting=csv.QUOTE_ALL

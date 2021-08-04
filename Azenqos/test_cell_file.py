@@ -1,7 +1,4 @@
-import pandas as pd
 import azq_cell_file
-import integration_test_helpers
-
 
 
 def test():
@@ -12,7 +9,6 @@ def test():
     azq_cell_file.add_cell_lat_lon_to_cellfile_df(df, distance=0.001)
     assert 'cell_lat' in df.columns
     print("df.head()\n", df.head())
-    df0 = df
 
     df = azq_cell_file.read_cellfiles(cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)    
     assert len(df)

@@ -25,6 +25,11 @@
 import os.path
 import sys
 import traceback
+import os
+if os.name == "nt":
+    mpath = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    log_fp = os.path.join(mpath, "last_run.log")
+    sys.stdout = open(log_fp, 'w')
 
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon

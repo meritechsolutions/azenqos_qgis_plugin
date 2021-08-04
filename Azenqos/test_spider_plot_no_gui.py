@@ -1,11 +1,9 @@
+import sqlite3
+
 import pandas as pd
 
-import spider_plot
-import analyzer_vars
-import azq_utils
 import integration_test_helpers
-import sqlite3
-import pandas as pd
+import spider_plot
 
 
 def test():

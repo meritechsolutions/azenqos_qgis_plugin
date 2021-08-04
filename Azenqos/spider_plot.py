@@ -30,7 +30,7 @@ def plot_rat_spider(cell_files, dbfp, rat, single_point_match_dict=None, plot_sp
         if single_point_match_dict is not None:
             assert isinstance(single_point_match_dict, dict)
 
-        from qgis._core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsProject, QgsMarkerSymbol
+        from qgis._core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsProject
 
         if plot_spider_param is None:
             plot_spider_param = rat_to_spider_param_dict[rat][0]
@@ -128,6 +128,7 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
         cgi_df, param_df = get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_dict=single_point_match_dict)
         assert param_df is not None
         assert len(param_df)
+        print("param_df head0", param_df.head())
         if not freq_code_match_mode:
             assert cgi_df is not None
             assert len(cgi_df)
@@ -140,17 +141,18 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
         df = df[['cgi']]
         df = df.reset_index()
         df = df[df.log_hash.notnull()]
-        df['log_hash'] = df.log_hash.astype(int)
+        print("param_df head1", param_df.head())
+        df['log_hash'] = df.log_hash.astype(np.int64)
         cgi_df = df
-
+        print("len cgi_df:", len(cgi_df))
         param_df['time'] = pd.to_datetime(param_df['time'])
-        param_df['log_hash'] = param_df.log_hash.astype(int)
+        param_df['log_hash'] = param_df.log_hash.astype(np.int64)
 
         '''
         location_sql = "select log_hash, time, positioning_lat as param_lat, positioning_lon as param_lon from location order by time"
         location_df = pd.read_sql_query(location_sql, dbcon)
         location_df['time'] = pd.to_datetime(location_df['time'])
-        location_df['log_hash'] = location_df.log_hash.astype(int)
+        location_df['log_hash'] = location_df.log_hash.astype(np.int64)
         '''
         df = None
         if freq_code_match_mode:
@@ -158,32 +160,38 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
         else:
             df = pd.merge_asof(param_df, cgi_df, on='time', by='log_hash', direction='nearest',
             tolerance=pd.Timedelta('1000ms'))
-
+        print("len df0:", len(df))
         df = preprocess_azm.merge_lat_lon_into_df(dbcon, df)
+        print("len df0.1:", len(df), "head\n", df.head())
         df.rename(columns={'positioning_lat':'param_lat', 'positioning_lon':'param_lon'}, inplace=True)
+        print("len df0.2:", len(df))
         '''
         df = pd.merge_asof(df, location_df, on='time', by='log_hash', direction='backward',
                            tolerance=pd.Timedelta('2000ms'))
         '''
         df = df[(df.param_lat.notnull()) & (df.param_lon.notnull())]
+        print("len df0.3:", len(df))
         if not freq_code_match_mode:
+            print("len df0.4:", len(df))
             df = df[df.cgi.notnull()]
+            print("len df0.5:", len(df))
         df = df.drop_duplicates(["param_lat", "param_lon"])
+        print("len df0.6:", len(df))
         df = df.dropna(subset=["param_lat", "param_lon"])
-
+        print("len df1:", len(df))
         ###############
-
         merged_df = None
-
+        print("len df1.1:", len(df))
         if not freq_code_match_mode:
+            print("len df1.11:", len(df))
             print("cgi mode df matched cgi len:", len(df))
             print("start gen wkt_line_list df.head()", df[["param_lat", "param_lon", "cgi"]].head(), "\ncells_df.head()", cells_df.head())
             cells_df = cells_df[["cgi", "cell_lat", "cell_lon"]].copy()
             merged_df = df.merge(cells_df, on="cgi", how="inner")
             #merged_df = merged_df[["param_lat", "cell_lat", "param_lon", "cell_lon"]]
             print("merged_df head:", merged_df.head(10))
-
         else:
+            print("len df1.12:", len(df))
             print("freq_code mode df matched cgi len:", len(df))
             merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[azq_cell_file.g_main_cell_freq_col[rat], azq_cell_file.g_main_cell_col[rat]], how="inner")
             #merged_df = merged_df[["param_lat", "cell_lat", "param_lon", "cell_lon"]]
@@ -243,7 +251,7 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
             )
         print("lte param_sql:", param_sql)
         param_df = pd.read_sql_query(param_sql, dbcon)
-        print("lte param df len:", len(param_df))
+        print("lte param df len:", len(param_df), "head()", param_df.head())
     elif rat == "wcdma":
         asql = "select log_hash, time, mm_characteristics_mcc as mcc, mm_characteristics_mnc as mnc, mm_characteristics_lac as lac from mm_state where mm_characteristics_mcc is not null and mm_characteristics_mnc is not null and mm_characteristics_lac is not null order by time"
         bsql = "select log_hash, time, wcdma_cellid as cell_id from wcdma_idle_cell_info where wcdma_cellid is not null"
@@ -252,9 +260,9 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
         df_b = pd.read_sql_query(bsql, dbcon)
 
         df_a['time'] = pd.to_datetime(df_a['time'])
-        df_a['log_hash'] = df_a.log_hash.astype(int)
+        df_a['log_hash'] = df_a.log_hash.astype(np.int64)
         df_b['time'] = pd.to_datetime(df_b['time'])
-        df_b['log_hash'] = df_b.log_hash.astype(int)
+        df_b['log_hash'] = df_b.log_hash.astype(np.int64)
         df = pd.merge_asof(df_a, df_b, on='time', by='log_hash', direction='nearest',
                            tolerance=pd.Timedelta('3600000ms'))
 

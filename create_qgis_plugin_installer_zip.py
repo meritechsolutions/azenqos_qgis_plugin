@@ -34,7 +34,15 @@ print("zip gen done at:\n{}".format(target_fp))
 
 if debug:
     print("########## DEBUG DEV MODE NOT PUSHING to gh")
-    cmd = ''' scp {} test0.azenqos.com:/host_shared_dir/tmp_gen/'''
+    cmd = ''' cp {} ~/Downloads '''.format(target_fp)
+    print("cp to downloads cmd:\n", cmd)
+    ret = os.system(cmd)
+    print("cp to downloads ret:", ret)
+    
+    
+    cmd = ''' scp {} test0.azenqos.com:/host_shared_dir/tmp_gen/ '''.format(target_fp)
+    print("pusing zip with scp cmd:\n", cmd)
+    assert 0 == os.system(cmd)
     url = "https://test0.azenqos.com/tmp_gen/{}".format(target_fp)
     print("pushed test zip to url")
     print(url)

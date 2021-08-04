@@ -12,8 +12,7 @@ rat_to_spider_param_dict = dict()
 rat_to_spider_param_dict['nr'] = ["nr_servingbeam_pci_1"]
 rat_to_spider_param_dict['lte'] = ["lte_physical_cell_id_1", "lte_neigh_physical_cell_id_1",
                                       "lte_neigh_physical_cell_id_2", "lte_neigh_physical_cell_id_3"]
-rat_to_spider_param_dict['wcdma'] = ["wcdma_sc_1", "wcdma_sc_2", "wcdma_sc_3", "wcdma_aset_sc_1", "wcdma_aset_sc_2",
-"wcdma_aset_sc_3"]
+rat_to_spider_param_dict['wcdma'] = ["wcdma_aset_sc_1", "wcdma_aset_sc_2", "wcdma_aset_sc_3"]
 rat_to_spider_param_dict['2G'] = ["gsm_arfcn_bcch"]
 
 cellfile_att_param = dict()
@@ -22,12 +21,14 @@ cellfile_att_param['lte'] = 'pci'
 cellfile_att_param['wcdma'] = 'psc'
 cellfile_att_param['gsm'] = 'bcch'
 
-def plot_rat_spider(cell_files, dbfp, rat, single_point_layer_time=None):
+
+def plot_rat_spider(cell_files, dbfp, rat, single_point_layer_time=None, plot_spider_param=None):
     print("plot_spider_param - START")
     try:
         from qgis._core import QgsVectorLayer, QgsFeature, QgsGeometry, QgsProject
 
-        plot_spider_param = rat_to_spider_param_dict[rat][0]
+        if plot_spider_param is None:
+            plot_spider_param = rat_to_spider_param_dict[rat][0]
         new_layer_name = get_spider_or_line_to_site_layer_name(rat, plot_spider_param, single_point_layer_time)
 
         # remove currently selected layer first, in case we dont have a match when we do single point plot so prev layer must be removed first
@@ -147,6 +148,7 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_layer_t
 
 def get_spider_layer_name(rat):
     return "Spider_"+rat
+
 
 def get_line_to_site_layer_name(rat):
     return "Line_to_site_"+rat

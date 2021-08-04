@@ -1469,7 +1469,14 @@ Log_hash list: {}""".format(
                 ori_active_layer = self.gc.qgis_iface.activeLayer()
             except:
                 pass
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_layer_time=selected_time)
+
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_layer_time=selected_time, plot_spider_param="lte_physical_cell_id_1")
+            for i in range(3):
+                spider_plot.plot_rat_spider(
+                    self.gc.cell_files, self.gc.databasePath, "lte",
+                    single_point_layer_time=selected_time,
+                    plot_spider_param="lte_neigh_physical_cell_id_{}".format(i+1)
+                )
 
             if ori_active_layer is not None:
                 self.gc.qgis_iface.setActiveLayer(ori_active_layer)

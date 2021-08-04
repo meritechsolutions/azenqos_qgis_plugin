@@ -1482,7 +1482,7 @@ Log_hash list: {}""".format(
             }
             spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_match_dict=single_point_match_dict,
                                         plot_spider_param="lte_physical_cell_id_1",
-                                        freq_code_match_mode=False)
+                                        freq_code_match_mode=True)
             for i in range(3):
                 spider_plot.plot_rat_spider(
                     self.gc.cell_files, self.gc.databasePath, "lte",

@@ -46,7 +46,8 @@ try:
         QgsVectorLayer,
         QgsFeature,
         QgsField,
-        QgsFields
+        QgsFields,
+        QgsLineSymbol
     )
 
     # from qgis.utils import
@@ -2184,6 +2185,9 @@ Log_hash list: {}""".format(
                         feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
                         prov.addFeatures([feat])
                         new_layer.updateExtents()
+                        print(new_layer.renderer().type())
+                        symbol = QgsLineSymbol.createSimple({'penStyle': 'dotted'})
+                        new_layer.renderer().setSymbol(symbol)
                         # print(wkt_str[:10],wkt_str[-10:])
                         print("spider_add_map_layer")
                         is_already_plot[rat] = True

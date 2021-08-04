@@ -11,6 +11,9 @@ if len(sys.argv) == 2 and sys.argv[1] == "debug":
 
 if debug:
     print("########## DEBUG DEV MODE NOT RUNNING TESTS")
+    print("########## DEBUG DEV MODE commit now to get changes into git archive output...")
+    os.system(''' git commit -a -m "debug new ver" ''')
+
 else:
     print("### run tests")
     assert 0 == os.system("cd Azenqos && make clean && ./test.sh")

@@ -34,6 +34,7 @@ print("zip gen done at:\n{}".format(target_fp))
 
 if debug:
     print("########## DEBUG DEV MODE NOT PUSHING to gh")
+    os.system(''' git commit -a -m "debug new ver" ''')
     cmd = ''' cp {} ~/Downloads '''.format(target_fp)
     print("cp to downloads cmd:\n", cmd)
     ret = os.system(cmd)

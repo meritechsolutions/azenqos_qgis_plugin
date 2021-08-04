@@ -235,13 +235,12 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
             earfcn_pci_params = earfcn_pci_params.replace("lte_", "lte_neigh_")
             earfcn_pci_params = earfcn_pci_params.replace("_1", "_{}".format(plot_spider_param[-1]))
         if single_point_match_dict is not None:
-            param_sql = "select log_hash, time, {}, {} from {} where log_hash = {} and posid = {} and time = '{}'".format(
+            param_sql = "select log_hash, time, {}, {} from {} where log_hash = {} and posid = {} order by time desc limit 1".format(
                 plot_spider_param,
                 earfcn_pci_params,
                 table,
                 single_point_match_dict["log_hash"],
                 single_point_match_dict["posid"],
-                single_point_match_dict["time"],
             )
         else:
             param_sql = "select log_hash, time, {}, {} from {} order by time".format(

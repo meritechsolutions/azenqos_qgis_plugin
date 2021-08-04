@@ -1368,7 +1368,8 @@ Log_hash list: {}""".format(
     def clickCanvas(self, point, button):
         print("clickCanvas start")
         layerData = []
-        selectedTime = None
+        selected_time = None
+        selected_log_hash = None
         self.clearAllSelectedFeatures()
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         print("qgis_selected_layers: ", qgis_selected_layers)
@@ -1391,6 +1392,7 @@ Log_hash list: {}""".format(
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
                 nearby_features = layer.getFeatures(rect)
+
                 for f in nearby_features:
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
                     #print("p distance:", distance)
@@ -1400,7 +1402,13 @@ Log_hash list: {}""".format(
                         # print(layer.getFeature(closestFeatureId).attributes())
                         try:
                             time = layer.getFeature(closestFeatureId).attribute("time")
-                            info = (layer, closestFeatureId, distance, time)
+                            log_hash = None
+                            try:
+                                log_hash = layer.getFeature(closestFeatureId).attribute("log_hash")
+                            except:
+                                # in case this layer added by user and no 'log_hash' col
+                                pass
+                            info = (layer, closestFeatureId, distance, time, log_hash)
                             layerData.append(info)
                         except:
                             type_, value_, traceback_ = sys.exc_info()
@@ -1432,16 +1440,20 @@ Log_hash list: {}""".format(
         # Sort the layer information by shortest distance
         layerData.sort(key=lambda element: element[2])
 
-        for (layer, closestFeatureId, distance, time) in layerData:
+        for (layer, closestFeatureId, distance, time, log_hash) in layerData:
             layer.select(closestFeatureId)
-            selectedTime = time
-            break
+            selected_time = time
+            selected_log_hash = log_hash
+            self.gc.selected_pont_time = selected_time
+            self.gc.selected_point_log_hash = selected_log_hash
+            break  # break on first one
+
         try:
             selectedTimestamp = azq_utils.datetimeStringtoTimestamp(
-                selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")
+                selected_time.toString("yyyy-MM-dd HH:mm:ss.zzz")
             )
         except:
-            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selectedTime)
+            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selected_time)
         if selectedTimestamp:
             timeSliderValue = self.gc.sliderLength - (
                 self.gc.maxTimeValue - selectedTimestamp
@@ -1457,7 +1469,7 @@ Log_hash list: {}""".format(
                 ori_active_layer = self.gc.qgis_iface.activeLayer()
             except:
                 pass
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "4G", single_point_layer_time=selectedTime)
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_layer_time=selected_time)
 
             if ori_active_layer is not None:
                 self.gc.qgis_iface.setActiveLayer(ori_active_layer)

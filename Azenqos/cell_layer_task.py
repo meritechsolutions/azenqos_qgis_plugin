@@ -37,9 +37,9 @@ fields.append(QgsField("BCCH", QVariant.Int))
 fields.append(QgsField("cgi", QVariant.String))
 
 
-def cell_to_polygon(cell):
+def cell_to_polygon(cell, sector_distance=0.001):
     poly = QgsFeature()
-    distance = 0.001
+    distance = sector_distance
     point2_dir = cell.dir + (cell.ant_bw / 2)
     point3_dir = cell.dir - (cell.ant_bw / 2)
     point1 = QgsPointXY(cell.lon, cell.lat)
@@ -110,16 +110,16 @@ class CellLayerTask(QgsTask):
         df = pd.concat(frames)
         try:
             nr_cells_layer = self.create_cell_layer(
-                df, "nr", "5G cells", get_default_color_for_index(0)
+                df, "nr", "NR cells", get_default_color_for_index(0)
             )
             lte_cells_layer = self.create_cell_layer(
-                df, "lte", "4G cells", get_default_color_for_index(1)
+                df, "lte", "LTE cells", get_default_color_for_index(1)
             )
             wcdma_cells_layer = self.create_cell_layer(
-                df, "wcdma", "3G cells", get_default_color_for_index(2)
+                df, "wcdma", "WCDMA cells", get_default_color_for_index(2)
             )
             gsm_cells_layer = self.create_cell_layer(
-                df, "gsm", "2G cells", get_default_color_for_index(3)
+                df, "gsm", "GSM cells", get_default_color_for_index(3)
             )
             self.cells_layers = [
                 nr_cells_layer,
@@ -139,11 +139,6 @@ class CellLayerTask(QgsTask):
     def finished(self, result):
         try:
             QgsProject.instance().addMapLayers(self.cells_layers)
-            import spider_plot
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "5G")
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "4G")
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "3G")
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "2G")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))

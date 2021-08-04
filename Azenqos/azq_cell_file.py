@@ -505,7 +505,7 @@ def clear_cell_file_cache():
     g_cell_file_to_df_dict.clear()
 
 
-def read_cellfiles(cell_files, rat):
+def read_cellfiles(cell_files, rat, add_cell_lat_lon_sector_distance=None):
     global g_cell_file_to_df_dict
     df_list = []
     for cell_file in cell_files:
@@ -522,17 +522,25 @@ def read_cellfiles(cell_files, rat):
     if len(df_list) == 0:
         raise Exception("no successfully read cellfiles")
     df = pd.concat(df_list)
-    rat_alias_dict = {
+    rat = check_rat_alias(rat)
+    df = df[df["system"].str.lower() == rat].copy()
+    if add_cell_lat_lon_sector_distance:
+        add_cell_lat_lon_to_cellfile_df(df, distance=add_cell_lat_lon_sector_distance)
+    return df
+
+
+rat_alias_dict = {
         "5G": "nr",
         "4G": "lte",
         "3G": "wcdma",
         "2G": "gsm"
-    }
-    if rat in rat_alias_dict:
-        rat = rat_alias_dict[rat]
-    df_slice = df[df["system"].str.lower() == rat]
-    return df_slice
+}
 
+
+def check_rat_alias(rat):
+    if rat.upper() in rat_alias_dict:
+        rat = rat_alias_dict[rat]
+    return rat
 
 def read_cell_file(
     fp, extra_required_columns=[], raise_exception_if_check_failed=False
@@ -800,3 +808,19 @@ def df_cellfile_check_and_convert(df, fp_for_error_report=None):
         )
 
     return df
+
+
+def add_cell_lat_lon_to_cellfile_df(df, distance=0.001):
+    assert 'lat' in df.columns
+    assert 'lon' in df.columns
+    assert 'dir' in df.columns
+    tmp_cols = ["rads", "dx", "dy"]
+
+    # using formula inspired by https://qgis.org/api/qgspointxy_8cpp_source.html  QgsPointXY QgsPointXY::project( double distance, double bearing ) const
+    df["rads"] = (df["dir"] * np.pi) / 180.0;
+    df["dx"] = distance * np.sin(df["rads"])
+    df["dy"] = distance * np.cos(df["rads"])
+    df["cell_lat"] = df["lat"] + df["dy"]
+    df["cell_lon"] = df["lon"] + df["dx"]
+    for tmp_col in tmp_cols:
+        del df[tmp_col]

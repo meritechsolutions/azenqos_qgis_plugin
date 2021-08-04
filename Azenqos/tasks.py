@@ -84,6 +84,12 @@ class LayerTask(QgsTask):
             if self.add_map:
                 self.addMapToQgis()
 
+                import spider_plot
+                spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "nr")
+                spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte")
+                spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "wcdma")
+                spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "gsm")
+
             # geom_column = "geom"
             self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
 

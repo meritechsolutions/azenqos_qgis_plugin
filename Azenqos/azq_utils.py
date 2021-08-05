@@ -1390,12 +1390,14 @@ class tee_stdout(object):
         self.file = None
     def write(self, data):
         if data is None:
-            return 
+            return
+        ori_data = data
         if self.file is not None:
-            if data.strip():
-                self.file.write(data)
+            data = data.strip()
+            if data:
+                self.file.write(": "+data)
                 self.file.write("\n")
-        self.stdout.write(data)
+        self.stdout.write(ori_data)
     def flush(self):
         if self.file is not None:
             self.file.flush()

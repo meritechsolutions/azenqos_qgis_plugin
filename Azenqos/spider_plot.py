@@ -55,7 +55,7 @@ def plot_rat_spider(cell_files, dbfp, rat, single_point_match_dict=None, plot_sp
 
         if dotted_lines:
             from PyQt5.QtCore import Qt
-            new_layer.renderer().symbol().symbolLayer(0).setPenStyle(Qt.PenStyle.DotLine)
+            new_layer.renderer().symbol().symbolLayer(0).setPenStyle(Qt.PenStyle.DashLine)
 
         #print("new_layer_name:", new_layer_name)
         cur_layers_dict = azq_utils.get_qgis_layers_dict()

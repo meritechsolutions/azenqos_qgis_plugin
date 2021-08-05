@@ -1389,6 +1389,8 @@ class tee_stdout(object):
             self.file.close()
         self.file = None
     def write(self, data):
+        if data is None:
+            return 
         if self.file is not None:
             if data.strip():
                 self.file.write(data)

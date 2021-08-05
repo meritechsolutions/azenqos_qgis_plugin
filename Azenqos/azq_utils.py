@@ -1392,10 +1392,11 @@ class tee_stdout(object):
         if data is None:
             return
         ori_data = data
+        data = data.strip()
         if self.file is not None:
-            data = data.strip()
-            if data:
-                self.file.write(": "+data)
+            if data.strip():
+                self.file.write(time.strftime('%Y-%m-%d-%H:%M:%S')+": ")
+                self.file.write(data)
                 self.file.write("\n")
         self.stdout.write(ori_data)
     def flush(self):

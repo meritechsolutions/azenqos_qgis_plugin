@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -67,7 +67,12 @@
     <addaction name="actionOpen_workspace"/>
     <addaction name="actionSave_workspace"/>
     <addaction name="separator"/>
+    <addaction name="actionEdit_settings"/>
+    <addaction name="actionLoad_settings"/>
+    <addaction name="actionRestore_settings"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuPresentation">
     <property name="title">
@@ -473,6 +478,26 @@
   <action name="actionLogs">
    <property name="text">
     <string>Logs</string>
+   </property>
+  </action>
+  <action name="actionEdit_settings">
+   <property name="text">
+    <string>Edit settings</string>
+   </property>
+  </action>
+  <action name="actionRestore_settings">
+   <property name="text">
+    <string>Restore default settings</string>
+   </property>
+  </action>
+  <action name="actionApply_Settings">
+   <property name="text">
+    <string>Apply Settings</string>
+   </property>
+  </action>
+  <action name="actionLoad_settings">
+   <property name="text">
+    <string>Load settings</string>
    </property>
   </action>
  </widget>

@@ -125,7 +125,7 @@ class import_db_dialog(QDialog):
         tmp_box.addWidget(self.browseButtonTheme)
         ##################################
 
-        ############ theme_gb setup
+        ############ cell_gb setup
         tmp_box = QVBoxLayout()
         cell_gb.setLayout(tmp_box)
 

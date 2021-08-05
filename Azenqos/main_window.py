@@ -124,7 +124,7 @@ class main_window(QMainWindow):
         self.qgis_iface = qgis_iface
         self.timeSliderThread = timeSliderThread(self.gc)
         self.settings = QSettings(
-            azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat
+            azq_utils.get_local_fp("ui_settings.ini"), QSettings.IniFormat
         )
         ########################
 
@@ -163,6 +163,41 @@ class main_window(QMainWindow):
     def on_actionExit_triggered(self):
         print("exit")
         self.close()
+
+    @pyqtSlot()
+    def on_actionSettings_triggered(self):
+        print("settings")
+        self.gc.save_preferences()
+        print("launch settings start")
+        azq_utils.launch_file(analyzer_vars.get_pref_fp())
+        print("launch settings done")
+
+    @pyqtSlot()
+    def on_actionEdit_settings_triggered(self):
+        print("edit settings")
+        self.gc.save_preferences()
+        print("launch settings start")
+        azq_utils.launch_file(analyzer_vars.get_pref_fp())
+        qt_utils.msgbox("Please edit, save the file, then click on menu: File > Load settings", parent=self)
+
+    @pyqtSlot()
+    def on_actionRestore_settings_triggered(self):
+        print("restore settings")
+        self.gc.delete_preferences()  # also restores current pref
+        self.gc.save_preferences()
+        kv_str = ""
+        for key in self.gc.pref:
+            kv_str += "{}: {}\n".format(key, self.gc.pref[key])
+        qt_utils.msgbox("Default settings restored:\n\n{}".format(kv_str), parent=self)
+
+    @pyqtSlot()
+    def on_actionLoad_settings_triggered(self):
+        print("load settings")
+        ret = self.gc.load_preferences()
+        kv_str = ""
+        for key in self.gc.pref:
+            kv_str += "{}: {}\n".format(key, self.gc.pref[key])
+        qt_utils.msgbox("Settings loaded success: {}\n\n{}".format(ret, kv_str), parent=self)
 
     @pyqtSlot()
     def on_actionOpen_log_triggered(self):
@@ -1102,6 +1137,7 @@ Log_hash list: {}""".format(
         self.gc.openedWindows.append(widget)
         return True
 
+
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_local_fp("main_window.ui"), self)
         self.toolbar = self.ui.toolBar
@@ -1489,16 +1525,21 @@ Log_hash list: {}""".format(
                 "posid": selected_posid,
                 "time": selected_time,
             }
+
+            options_dict = {"distance_limit_m": int(self.gc.pref["point_to_site_match_max_distance_meters"])}
+            freq_code_match_mode = self.gc.pref["point_to_site_serving_match_cgi"] == "0"
+
             spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_match_dict=single_point_match_dict,
                                         plot_spider_param="lte_physical_cell_id_1",
-                                        freq_code_match_mode=True)
+                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
             for i in range(3):
                 spider_plot.plot_rat_spider(
                     self.gc.cell_files, self.gc.databasePath, "lte",
                     single_point_match_dict=single_point_match_dict,
                     plot_spider_param="lte_neigh_physical_cell_id_{}".format(i+1),
-                    freq_code_match_mode=True,
-                    dotted_lines=True
+                    freq_code_match_mode=True,  # neigh cant use cgi mode
+                    dotted_lines=True,
+                    options_dict=options_dict
                 )
 
             if ori_active_layer is not None:
@@ -1538,12 +1579,15 @@ Log_hash list: {}""".format(
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
-        if self.qgis_iface:
+        if self.gc.db_fp:
             print("starting layertask")
             self.add_map_layer()
             self.add_spider_layer()
             self.add_cell_layers()
             self.add_db_layers()
+        else:
+            print("log not opened")
+            return
 
         if self.gc.sliderLength:
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
@@ -1754,7 +1798,7 @@ Log_hash list: {}""".format(
                 for mdiwindow in self.mdi.subWindowList():
                     mdiwindow.close()
                 self.gc.openedWindows = []
-            shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
+            shutil.copyfile(fp, azq_utils.get_local_fp("ui_settings.ini"))
             self.settings.sync()  # load changes
             self._gui_restore()
             self.settings.sync()
@@ -1769,7 +1813,7 @@ Log_hash list: {}""".format(
             print("saveWorkspaceFile:", fp)
             self._gui_save()
             self.settings.sync()  # save changes
-            shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
+            shutil.copyfile(azq_utils.get_local_fp("ui_settings.ini"), fp)
 
     def closeEvent(self, event):
         print("analyzer_window: closeEvent:", event)
@@ -1997,10 +2041,15 @@ Log_hash list: {}""".format(
 
     def add_spider_layer(self):
         import spider_plot
-        spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "nr")
-        spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte")
-        spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "wcdma")
-        spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "gsm")
+        import azq_cell_file
+        for rat in azq_cell_file.CELL_FILE_RATS:
+            options_dict = {"distance_limit_m": int(self.gc.pref["spider_match_max_distance_meters"])}
+            pref_key = "cell_{}_sector_size_meters".format(rat)
+            sector_size_meters = float(self.gc.pref[pref_key])
+            options_dict["sector_size_meters"] = sector_size_meters
+            freq_code_match_mode = self.gc.pref["spider_match_cgi"] == "0"
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, rat, options_dict=options_dict, freq_code_match_mode=freq_code_match_mode)
+
 
     def add_cell_layers(self):
         if self.gc.cell_files:

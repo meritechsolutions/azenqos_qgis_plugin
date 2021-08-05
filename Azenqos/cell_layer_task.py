@@ -38,7 +38,10 @@ fields.append(QgsField("BCCH", QVariant.Int))
 fields.append(QgsField("cgi", QVariant.String))
 
 
-def cell_to_polygon(cell, sector_distance=0.001):
+def cell_to_polygon(cell, sector_distance=0.001, sector_size_meters=0):
+    if sector_size_meters:
+        import azq_cell_file
+        sector_distance = azq_cell_file.METER_IN_WGS84 * sector_size_meters
     poly = QgsFeature()
     distance = sector_distance
     point2_dir = cell.dir + (cell.ant_bw / 2)
@@ -79,9 +82,15 @@ class CellLayerTask(QgsTask):
         azq_cell_file.clear_cell_file_cache()
 
     def create_cell_layer(self, df, system, name, color):
+        system = system.lower()
+        import azq_cell_file
+        assert system in azq_cell_file.CELL_FILE_RATS
+        pref_key = "cell_{}_sector_size_meters".format(system)
+        sector_size_meters = float(self.gc.pref[pref_key])
+        print("create_cell_layer system {} sector_size_meters {}".format(system, sector_size_meters))
         features = (
             df[df["system"].str.lower() == system]
-            .apply(cell_to_polygon, axis=1)
+            .apply(cell_to_polygon, sector_size_meters=sector_size_meters, axis=1)
             .values.tolist()
         )
 

@@ -1546,3 +1546,52 @@ def get_qgis_layers_dict():
     except Exception as e:
         print("WARNING: layer_name_to_layer_dict exception:", e)
     return ret
+
+
+def write_dict_to_ini(d, fpath):
+    try:
+        import configparser
+        with open(fpath, "w") as f:
+            config = configparser.ConfigParser()
+            config.add_section('main')
+            for key in d:
+                config.set('main', key, str(d[key]))
+            config.write(f)
+    except Exception as e:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(("WARNING: write ini {} exception {}".format(fpath, exstr)))
+
+
+def load_ini_to_dict_keys(fpath, d):
+    if not os.path.isfile(fpath):
+        return False
+    try:
+        import configparser
+        config = configparser.ConfigParser()
+        with open(fpath,"r") as f:
+            config.read_file(f)
+        for key in d:
+            try:
+                d[key] = config.get('main', key)
+                d[key] = str(d[key])
+            except Exception as pe:
+                print(("WARNING: load config for key: {} failed with exception: {}".format(key, pe)))
+            print(('load key {} final val {} type {}'.format(key, d[key], type(d[key]))))
+        return True
+    except Exception as e:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(("WARNING: load ini {} exception {}".format(fpath, exstr)))
+    return False
+
+
+def launch_file(fp):
+    if not os.path.isfile(fp):
+        return
+    if os.name == "nt":
+        os.startfile(fp)
+    else:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        import subprocess
+        subprocess.call([opener, fp])

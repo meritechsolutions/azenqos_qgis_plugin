@@ -115,11 +115,11 @@ def gen_spider_wkt_lines(cell_files, dbfp, rat, plot_spider_param, single_point_
     return wkt_sr
 
 
-def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_dict, sector_distance=0.0007, freq_code_match_mode=False, options_dict={}):
+def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_dict, freq_code_match_mode=False, options_dict={}):
     if single_point_match_dict is not None:
         assert isinstance(single_point_match_dict, dict)
     print("gen_spider_df freq_code_match_mode: {}".format(freq_code_match_mode))
-    cells_df = azq_cell_file.read_cellfiles(cell_files, rat=rat, add_cell_lat_lon_sector_distance=sector_distance)
+    cells_df = azq_cell_file.read_cellfiles(cell_files, rat=rat, add_cell_lat_lon_sector_distance=(float(options_dict["sector_size_meters"])*azq_cell_file.METER_IN_WGS84) if "sector_size_meters" in options_dict else None)
     if len(cells_df) == 0:
         raise Exception("len(cells_df) == 0")
     with sqlite3.connect(dbfp) as dbcon:

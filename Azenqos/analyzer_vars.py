@@ -2,6 +2,21 @@ import os
 
 from PyQt5.QtCore import QThreadPool
 
+DEFAULT_PREF = {
+
+    "cell_nr_sector_size_meters": "30",
+    "cell_lte_sector_size_meters": "40",
+    "cell_wcdma_sector_size_meters": "50",
+    "cell_gsm_sector_size_meters": "60",
+
+    "spider_match_max_distance_meters": "15000",
+    "spider_match_cgi": "0",
+
+    "point_to_site_match_max_distance_meters": "15000",
+    "point_to_site_serving_match_cgi": "0",
+
+}
+import azq_utils
 
 
 class analyzer_vars:
@@ -51,6 +66,35 @@ class analyzer_vars:
     # server mode vars (stored in login_dialog class like server, token, user, lhl etc)
     login_dialog = None
 
+    pref = DEFAULT_PREF.copy()
+
+    def __init__(self):
+        self.load_preferences()
+
+
+    def delete_preferences(self):
+        import azq_utils
+        fp = get_pref_fp()
+        if os.path.isfile(fp):
+            os.remove(fp)
+        assert False == os.path.isfile(fp)
+        self.pref = DEFAULT_PREF.copy()
+
+
+    def load_preferences(self):
+        import azq_utils
+        self.pref = DEFAULT_PREF.copy()  # in case below load fails
+        return azq_utils.load_ini_to_dict_keys(get_pref_fp(), self.pref)
+
+
+    def save_preferences(self):
+        import azq_utils
+        azq_utils.write_dict_to_ini(self.pref, get_pref_fp())
+
     def close_db(gc):
         # now we dont use qsqldatabase anymore
         pass
+
+def get_pref_fp():
+    import azq_utils
+    return azq_utils.get_local_fp("preferences.ini")

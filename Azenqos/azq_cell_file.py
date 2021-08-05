@@ -13,6 +13,10 @@ import plot_param_zorders
 from dprint import dprint
 
 CELL_FILE_RATS = ["nr", "lte", "wcdma", "gsm"]
+WGS84_UNIT_TO_METERS_MULTIPLIER = 110574.0
+METER_IN_WGS84 = 1.0/WGS84_UNIT_TO_METERS_MULTIPLIER
+WGS84_UNIT_TO_KM_MULTIPLIER = WGS84_UNIT_TO_METERS_MULTIPLIER / 1000.0
+
 
 g_cell_fp_dict = dict.fromkeys(CELL_FILE_RATS)
 g_theme_dict = dict.fromkeys(CELL_FILE_RATS)

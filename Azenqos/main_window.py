@@ -2171,10 +2171,9 @@ Log_hash list: {}""".format(
                                 wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],row.lon, row.lat)
                                 wkt_line_list.append(wkt_line)
 
+                        new_layer_name = 'Spider for '+rat
                         if focus_time is not None:
-                            new_layer_name = 'Line from ' + focus_time + ' to cell'
-                        else:
-                            new_layer_name = 'Spider for '+rat
+                            new_layer_name += focus_time
 
                         new_layer = QgsVectorLayer('LineString?crs=epsg:4326', new_layer_name , 'memory')
                         wkt_str = ",".join(wkt_line_list)

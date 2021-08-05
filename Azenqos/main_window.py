@@ -1341,10 +1341,7 @@ Log_hash list: {}""".format(
 
     def selectLayer(self):
         if self.qgis_iface:
-            if os.path.isfile(self.gc.db_fp):
-                self.add_db_layers()
-            else:
-                qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
+            self.add_db_layers()
 
     def pauseTime(self):
         self.gc.timeSlider.setEnabled(True)
@@ -1983,7 +1980,7 @@ Log_hash list: {}""".format(
             self.db_layer_task = db_layer_task.LayerTask(u"Add layers", self.gc.db_fp, self.gc, self.task_done_signal)
             self.db_layer_task.run_blocking()
         else:
-            qt_utils.msgbox("No database of log found", parent=self)
+            qt_utils.msgbox("No database of log found", title="Please open a log first", parent=self)
 
 
     def add_map_layer(self):

@@ -1529,6 +1529,10 @@ Log_hash list: {}""".format(
             options_dict = {"distance_limit_m": int(self.gc.pref["point_to_site_match_max_distance_meters"])}
             freq_code_match_mode = self.gc.pref["point_to_site_serving_match_cgi"] == "0"
 
+            options_dict = {"distance_limit_m": int(self.gc.pref["spider_match_max_distance_meters"])}
+            pref_key = "cell_{}_sector_size_meters".format("lte")
+            sector_size_meters = float(self.gc.pref[pref_key])
+            options_dict["sector_size_meters"] = sector_size_meters
             spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_match_dict=single_point_match_dict,
                                         plot_spider_param="lte_physical_cell_id_1",
                                         freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)

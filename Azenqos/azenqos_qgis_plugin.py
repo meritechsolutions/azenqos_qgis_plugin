@@ -25,12 +25,13 @@
 import os.path
 import sys
 import traceback
-
+import os
+import azq_utils
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QMessageBox
 
-import azq_utils
+
 # Initialize Qt resources from file resources.py
 import qt_utils
 import version
@@ -211,7 +212,6 @@ class azenqos_qgis_plugin:
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-
         debug_exec_str = azq_utils.read_local_file("debug_qgis_pyexec")
         if debug_exec_str is None or debug_exec_str.strip() == "":
             pass
@@ -262,7 +262,7 @@ class azenqos_qgis_plugin:
                 from qgis.PyQt.QtCore import Qt
 
                 if self.dock_widget is None:
-                    self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer v%.03f' % version.VERSION, self.qgis_iface.mainWindow())
+                    self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer - v%.03f' % version.VERSION, self.qgis_iface.mainWindow())
                 self.main_window = main_window.main_window(self.qgis_iface, None)
                 self.dock_widget.setWidget(self.main_window)
                 self.dock_widget.setFloating(False)

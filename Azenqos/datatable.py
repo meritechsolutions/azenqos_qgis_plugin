@@ -881,12 +881,7 @@ class DetailWidget(QDialog):
             if os.path.isfile(self.polqaWavFile):
                 try:
                     print("play wav startfile start")
-                    if os.name == "nt":
-                        os.startfile(self.polqaWavFile)
-                    else:
-                        opener = "open" if sys.platform == "darwin" else "xdg-open"
-                        import subprocess
-                        subprocess.call([opener, self.polqaWavFile])
+                    azq_utils.launch_file(self.polqaWavFile)
                     print("play wav startfile done")
                 except:
                     type_, value_, traceback_ = sys.exc_info()

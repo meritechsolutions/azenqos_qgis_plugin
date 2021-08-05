@@ -1755,7 +1755,8 @@ def merge_lat_lon_into_df(
     merge_by="log_hash",
     is_indoor=False,
     within_millis_of_gps=30 * 1000,
-    asof_lat_lon_direction="nearest",
+    asof_lat_lon_direction="backward",
+    posid_mode=False
 ):
     df["time"] = pd.to_datetime(df["time"])
     df["log_hash"] = df["log_hash"].astype(np.int64)
@@ -1765,6 +1766,8 @@ def merge_lat_lon_into_df(
 
     location_df = get_dbcon_location_df(dbcon, is_indoor=is_indoor)
     location_df = location_df.sort_values("time")
+    print("location_df.head()", location_df.head())
+    print("df.head()", df.head())
     if debug_file_flag:
         location_df.to_csv(
             "tmp/merge_lat_lon_into_df_location_df.csv", quoting=csv.QUOTE_ALL

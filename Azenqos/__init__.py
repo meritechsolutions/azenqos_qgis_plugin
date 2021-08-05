@@ -53,5 +53,4 @@ def classFactory(qgis_iface):  # pylint: disable=invalid-name
         msgBox.exec_()
     
     from azenqos_qgis_plugin import azenqos_qgis_plugin
-
     return azenqos_qgis_plugin(qgis_iface)

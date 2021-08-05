@@ -20,28 +20,15 @@ from PyQt5.QtWidgets import (
 )
 
 import azq_utils
-
-try:
-    from cell_layer_task import CellLayerTask
-    from tasks import LayerTask
-except:
-    pass
-
-
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
 import db_preprocess
 import azq_theme_manager
 import login_dialog
 
-try:
-    from qgis.core import QgsApplication
-except:
-    pass
 
 
 class import_db_dialog(QDialog):
-
     import_done_signal = pyqtSignal(str)
 
     def __init__(self, parent_window, gc):
@@ -138,7 +125,7 @@ class import_db_dialog(QDialog):
         tmp_box.addWidget(self.browseButtonTheme)
         ##################################
 
-        ############ theme_gb setup
+        ############ cell_gb setup
         tmp_box = QVBoxLayout()
         cell_gb.setLayout(tmp_box)
 
@@ -371,23 +358,8 @@ class import_db_dialog(QDialog):
             self.getTimeForSlider()
             print("getTimeForSlider() done")
 
-            if self.gc.qgis_iface:
-                print("starting layertask")
-                self.select_layer_task()
-                self.longTask = CellLayerTask(
-                    "Load cell file", self.cellPathLineEdit.text().split(","), self.gc
-                )
-                QgsApplication.taskManager().addTask(self.longTask)
-            else:
-                print("NOT starting layertask because no self.gc.qgis_iface")
-
+            self.gc.cell_files = self.cellPathLineEdit.text().split(",")
             self.close()
-
-
-    def select_layer_task(self):
-        self.layerTask = LayerTask(u"Add layers", self.gc.db_fp, self.gc)
-        QgsApplication.taskManager().addTask(self.layerTask)
-
 
     def import_selection(self):
         zip_fp = self.zip_fp
@@ -397,6 +369,8 @@ class import_db_dialog(QDialog):
             assert os.path.isfile(zip_fp)
             azq_utils.cleanup_died_processes_tmp_folders()
             assert os.path.isfile(zip_fp)
+
+            azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
             self.databasePath = preprocess_azm.extract_entry_from_zip(
                 zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
             )

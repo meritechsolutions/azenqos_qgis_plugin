@@ -123,7 +123,7 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
             "lte_neigh_rsrq_",
         ]
     )
-    pcell_scell_col_prefix_renamed = ["ARFCN", "PCI", "RSRP", "RSRQ"]
+    pcell_scell_col_prefix_renamed = ["EARFCN", "PCI", "RSRP", "RSRQ"]
     parameter_to_columns_list = [
         (
             [
@@ -151,7 +151,7 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        not_null_first_col=False,
+        not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())

@@ -11,8 +11,9 @@ def test():
         df = lte_query.get_lte_serv_and_neigh_disp_df(dbcon, "2020-08-26 15:42:29.132")
         print("df.head():\n %s" % df.head(20))
         assert df.iloc[1, 1] == 1450
+        assert df.iloc[5, 1] == 1450
         assert len(df) == 13
-        assert len(df.columns) == 7
+        assert len(df.columns) == 6
 
 
 if __name__ == "__main__":

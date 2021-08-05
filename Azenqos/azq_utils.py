@@ -1,3 +1,4 @@
+import time
 import datetime
 import hashlib
 import os
@@ -5,6 +6,7 @@ import random
 import shutil
 import sys
 import traceback
+import uuid
 
 import requests
 
@@ -1363,6 +1365,68 @@ def get_default_color_for_index(i):
         return "#%02x%02x%02x" % (r(), r(), r())
 
 
+def get_module_parent_path():
+    from pathlib import Path
+    return str(Path(get_module_path()).parent)
+
+
+def get_last_run_log_fp():
+    mpp = get_module_parent_path()
+    log_fn = "azenqos_qgis_plugin_last_run_log.txt"
+    log_fp = os.path.join(mpp, log_fn)
+    return log_fp
+
+
+class tee_stdout(object):
+    def __init__(self, name, mode):
+        self.file = open(name, mode)
+        self.stdout = sys.stdout
+        sys.stdout = self
+    def __del__(self):
+        self.close()
+    def close(self):
+        if self.file is not None:
+            sys.stdout = self.stdout
+            self.file.close()
+        self.file = None
+    def write(self, data):
+        if data is None:
+            return
+        ori_data = data
+        data = data.strip()
+        if self.file is not None:
+            if data.strip():
+                self.file.write(time.strftime('%Y-%m-%d-%H:%M:%S')+": ")
+                self.file.write(data)
+                self.file.write("\n")
+        self.stdout.write(ori_data)
+    def flush(self):
+        if self.file is not None:
+            self.file.flush()
+        self.stdout.flush()
+
+
+g_tee_stdout_obj = None
+def close_last_run_log():
+    global g_tee_stdout_obj
+    if g_tee_stdout_obj is not None:
+        g_tee_stdout_obj.close()
+
+
+def open_and_redirect_stdout_to_last_run_log():
+    global g_tee_stdout_obj
+    try:
+        close_last_run_log()
+        g_tee_stdout_obj = tee_stdout(get_last_run_log_fp(), 'w')
+
+        import version
+        print("--- new stdout log start version: {} ---".format(("%.03f" % version.VERSION)))
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: open_and_redirect_stdout_to_last_run_log exception:", exstr)
+
+
 def tmp_gen_path_parent():
     dp = os.path.join(get_module_path(), TMP_FOLDER_NAME)
     if not os.path.isdir(dp):
@@ -1370,8 +1434,15 @@ def tmp_gen_path_parent():
     return dp
 
 
+g_tmp_gen_instance_uuid = str(uuid.uuid4())
+def tmp_gen_new_instance():
+    global g_tmp_gen_instance_uuid
+    g_tmp_gen_instance_uuid = str(uuid.uuid4())
+
+
 def tmp_gen_path():
-    dp = os.path.join(tmp_gen_path_parent(), str(os.getpid()))
+    global g_tmp_gen_instance_uuid
+    dp = os.path.join(tmp_gen_path_parent(), str(os.getpid()), g_tmp_gen_instance_uuid)
     if not os.path.isdir(dp):
         os.makedirs(dp)
     return dp
@@ -1387,11 +1458,14 @@ def cleanup_died_processes_tmp_folders():
     dirlist_no_pid = []
     for folder_name in dirlist:
         int_folder_name = None
+        print("conv folder_name:", folder_name)
         try:
             int_folder_name = int(folder_name)
-        except:
+        except Exception as ex:
+            print("conv folder_name exception so skip:", folder_name, ex)
             continue
         if psutil.pid_exists(int_folder_name):
+            print("conv folder_name pid exists so skip", folder_name)
             continue
         else:
             dirlist_no_pid.append(str(int_folder_name))
@@ -1412,6 +1486,7 @@ def cleanup_died_processes_tmp_folders():
                 )
             )
     print("cleanup_died_processes_tmp_folders() DONE")
+
 
 
 def calc_sha(src):
@@ -1458,3 +1533,65 @@ def datetimeStringtoTimestamp(datetimeString: str):
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("datetimestringtotimestamp exception: %s" % exstr)
     return None
+
+
+
+def get_qgis_layers_dict():
+    ret = {}
+    try:
+        from qgis._core import QgsProject
+        layers = QgsProject.instance().mapLayers().values()
+        for layer in layers:
+            ret[layer.name()] = layer
+    except Exception as e:
+        print("WARNING: layer_name_to_layer_dict exception:", e)
+    return ret
+
+
+def write_dict_to_ini(d, fpath):
+    try:
+        import configparser
+        with open(fpath, "w") as f:
+            config = configparser.ConfigParser()
+            config.add_section('main')
+            for key in d:
+                config.set('main', key, str(d[key]))
+            config.write(f)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(("WARNING: write ini {} exception {}".format(fpath, exstr)))
+
+
+def load_ini_to_dict_keys(fpath, d):
+    if not os.path.isfile(fpath):
+        return False
+    try:
+        import configparser
+        config = configparser.ConfigParser()
+        with open(fpath,"r") as f:
+            config.read_file(f)
+        for key in d:
+            try:
+                d[key] = config.get('main', key)
+                d[key] = str(d[key])
+            except Exception as pe:
+                print(("WARNING: load config for key: {} failed with exception: {}".format(key, pe)))
+            print(('load key {} final val {} type {}'.format(key, d[key], type(d[key]))))
+        return True
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(("WARNING: load ini {} exception {}".format(fpath, exstr)))
+    return False
+
+
+def launch_file(fp):
+    if not os.path.isfile(fp):
+        return
+    if os.name == "nt":
+        os.startfile(fp)
+    else:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        import subprocess
+        subprocess.call([opener, fp])

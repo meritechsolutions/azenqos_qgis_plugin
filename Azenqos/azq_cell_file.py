@@ -13,23 +13,33 @@ import plot_param_zorders
 from dprint import dprint
 
 CELL_FILE_RATS = ["nr", "lte", "wcdma", "gsm"]
+WGS84_UNIT_TO_METERS_MULTIPLIER = 110574.0
+METER_IN_WGS84 = 1.0/WGS84_UNIT_TO_METERS_MULTIPLIER
+WGS84_UNIT_TO_KM_MULTIPLIER = WGS84_UNIT_TO_METERS_MULTIPLIER / 1000.0
+
 
 g_cell_fp_dict = dict.fromkeys(CELL_FILE_RATS)
 g_theme_dict = dict.fromkeys(CELL_FILE_RATS)
 
-CELL_FILE_REQUIRED_COLUMNS = ["dir", "lat", "lon", "ant_bw"]
-CELL_FILE_NUMERIC_COLUMNS = ["dir", "lat", "lon", "ant_bw", "pci", "psc", "bcch"]
-
 # extra main/required cell column in cellfile for each rat, used to draw/match cell too
-g_main_cell_col = dict.fromkeys(CELL_FILE_RATS)
-g_main_cell_col["nr"] = "pci"
-g_main_cell_col["lte"] = "pci"
-g_main_cell_col["wcdma"] = "psc"
-g_main_cell_col["gsm"] = "bcch"
+MAIN_CELL_COL = dict.fromkeys(CELL_FILE_RATS)
+MAIN_CELL_COL["nr"] = "pci"
+MAIN_CELL_COL["lte"] = "pci"
+MAIN_CELL_COL["wcdma"] = "psc"
+MAIN_CELL_COL["gsm"] = "bcch"
+
+MAIN_CELL_CHANNEL_COL = dict.fromkeys(CELL_FILE_RATS)
+MAIN_CELL_CHANNEL_COL["nr"] = "arfcn"
+MAIN_CELL_CHANNEL_COL["lte"] = "earfcn"
+MAIN_CELL_CHANNEL_COL["wcdma"] = "uarfcn"
+MAIN_CELL_CHANNEL_COL["gsm"] = "bcch"
+
+CELL_FILE_REQUIRED_COLUMNS = ["dir", "lat", "lon", "ant_bw", "system"]
+CELL_FILE_NUMERIC_COLUMNS = ["dir", "lat", "lon", "ant_bw"] + list(MAIN_CELL_COL.keys()) + list(MAIN_CELL_CHANNEL_COL.keys())
 
 g_detail_label_format_dict = dict.fromkeys(CELL_FILE_RATS)
 for rat in CELL_FILE_RATS:
-    g_detail_label_format_dict[rat] = "#" + g_main_cell_col[rat].upper()
+    g_detail_label_format_dict[rat] = "#" + MAIN_CELL_COL[rat].upper()
 
 LOG_PARAMS_FOR_CELL_THEME_POPULATE = {
     "nr": ["nr_servingbeam_pci"],
@@ -97,7 +107,7 @@ def set_cell_fp(rat, cfp, raise_exception_if_check_failed=False):
     # test parse if cellfile is valid or not - raise exception here
     get_cell_file_df(
         cfp,
-        [g_main_cell_col[rat]],
+        [MAIN_CELL_COL[rat]],
         raise_exception_if_check_failed=raise_exception_if_check_failed,
     )
 
@@ -419,7 +429,7 @@ def interval_plot(
             or custom_cell_color is not None
         ):
             if custom_cell_color is None:
-                matching_color_column = g_main_cell_col[rat]
+                matching_color_column = MAIN_CELL_COL[rat]
                 theme_df = g_theme_dict[rat]
             else:
                 matching_color_column = custom_cell_color_cellfile
@@ -497,10 +507,53 @@ def get_csv_separator_for_file(fp):
     return ","
 
 
+g_cell_file_to_df_dict = {}
+def clear_cell_file_cache():
+    global g_cell_file_to_df_dict
+    global g_cell_file_df_cache
+    g_cell_file_df_cache.clear()
+    g_cell_file_to_df_dict.clear()
+
+
+def read_cellfiles(cell_files, rat, add_cell_lat_lon_sector_distance=None):
+    global g_cell_file_to_df_dict
+    df_list = []
+    for cell_file in cell_files:
+        if cell_file in g_cell_file_to_df_dict:
+            df_list.append(g_cell_file_to_df_dict[cell_file])
+            continue
+        g_cell_file_to_df_dict[cell_file] = read_cell_file(cell_file)
+        df_list.append(g_cell_file_to_df_dict[cell_file])
+
+    if len(df_list) == 0:
+        raise Exception("no successfully read cellfiles")
+    df = pd.concat(df_list)
+    rat = check_rat_alias(rat)
+    df = df[df["system"].str.lower() == rat].copy()
+    if add_cell_lat_lon_sector_distance:
+        add_cell_lat_lon_to_cellfile_df(df, distance=add_cell_lat_lon_sector_distance)
+    return df
+
+
+rat_alias_dict = {
+        "5G": "nr",
+        "4G": "lte",
+        "3G": "wcdma",
+        "2G": "gsm"
+}
+
+
+def check_rat_alias(rat):
+    if rat.upper() in rat_alias_dict:
+        rat = rat_alias_dict[rat]
+    return rat
+
 def read_cell_file(
-    fp, extra_required_columns=[], raise_exception_if_check_failed=False
+    fp, extra_required_columns=[], raise_exception_if_check_failed=True
 ):
 
+    if not os.path.isfile(fp):
+        raise Exception("cell file does not exist: {}".format(fp))
     print(
         "read_cell_file: raise_exception_if_check_failed:",
         raise_exception_if_check_failed,
@@ -532,6 +585,20 @@ def read_cell_file(
                         nc, nne, os.path.basename(fp), fp
                     )
                 )
+        rats = df.system.unique()
+        for rat in rats:
+            rat = rat.lower()
+            if not rat:
+                raise Exception("invalid cellfile: it has empty 'system' column")
+            if rat not in CELL_FILE_RATS:
+                raise Exception("invalid cellfile: its system column value has invalid RAT: {}".format(rat))
+            if MAIN_CELL_COL[rat] not in df.columns:
+                raise Exception("invalid cellfile: it has system (RAT) value: {} but doesnt have the required main column: {}".format(rat, MAIN_CELL_COL[rat]))
+            if MAIN_CELL_CHANNEL_COL[rat] not in df.columns:
+                raise Exception(
+                    "invalid cellfile: it has system (RAT) value: {} but doesnt have the required main channel column: {}".format(
+                        rat, MAIN_CELL_CHANNEL_COL[rat]))
+
 
         dprint("read_cell_file: df pre filt out nan len {}".format(len(df)))
 
@@ -650,7 +717,7 @@ def apply_cell_file(
 
         if g_cell_fp_dict[rat] is not None:
             print(("plotting cellfile for rat:", rat))
-            df = get_cell_file_df(g_cell_fp_dict[rat], [g_main_cell_col[rat]])
+            df = get_cell_file_df(g_cell_fp_dict[rat], [MAIN_CELL_COL[rat]])
             df = filter_cell_file_df_for_bounds(df, map_bounds)
             if sub_system is not None:
                 if "sub_system" in df.columns:
@@ -763,3 +830,20 @@ def df_cellfile_check_and_convert(df, fp_for_error_report=None):
         )
 
     return df
+
+
+def add_cell_lat_lon_to_cellfile_df(df, distance=0.001):
+    print("add_cell_lat_lon_to_cellfile_df start")
+    assert 'lat' in df.columns
+    assert 'lon' in df.columns
+    assert 'dir' in df.columns
+    tmp_cols = ["rads", "dx", "dy"]
+
+    # using formula inspired by https://qgis.org/api/qgspointxy_8cpp_source.html  QgsPointXY QgsPointXY::project( double distance, double bearing ) const
+    df["rads"] = (df["dir"] * np.pi) / 180.0;
+    df["dx"] = distance * np.sin(df["rads"])
+    df["dy"] = distance * np.cos(df["rads"])
+    df["cell_lat"] = df["lat"] + df["dy"]
+    df["cell_lon"] = df["lon"] + df["dx"]
+    for tmp_col in tmp_cols:
+        del df[tmp_col]

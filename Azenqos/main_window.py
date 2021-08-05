@@ -25,6 +25,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.uic import loadUi
 
 import qt_utils, azq_utils
+import spider_plot
 from timeslider import timeSliderThread, timeSlider
 
 from datatable import TableWindow, create_table_window_from_api_expression_ret
@@ -66,7 +67,7 @@ sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 import analyzer_vars
 
 try:
-    import tasks
+    import db_layer_task
 except:
     pass
 from atomic_int import atomic_int
@@ -88,18 +89,12 @@ import sqlite3
 TIME_COL_DEFAULT_WIDTH = 150
 NAME_COL_DEFAULT_WIDTH = 180
 
-is_already_plot = dict()
-is_already_plot['5G'] = False
-is_already_plot['4G'] = False
-is_already_plot['3G'] = False
-is_already_plot['2G'] = False
-
-
 
 class main_window(QMainWindow):
 
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
-    
+    task_done_signal = pyqtSignal(str)
+
 
     def __init__(self, qgis_iface, parent=None):
         if qgis_iface is not None and parent is None:
@@ -119,12 +114,17 @@ class main_window(QMainWindow):
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
         )
+        self.task_done_signal.connect(
+            self.task_done_slot
+        )
+        self.db_layer_task = None
+        self.cell_layer_task = None
 
         self.dbfp = None
         self.qgis_iface = qgis_iface
         self.timeSliderThread = timeSliderThread(self.gc)
         self.settings = QSettings(
-            azq_utils.get_local_fp("settings.ini"), QSettings.IniFormat
+            azq_utils.get_local_fp("ui_settings.ini"), QSettings.IniFormat
         )
         ########################
 
@@ -163,6 +163,41 @@ class main_window(QMainWindow):
     def on_actionExit_triggered(self):
         print("exit")
         self.close()
+
+    @pyqtSlot()
+    def on_actionSettings_triggered(self):
+        print("settings")
+        self.gc.save_preferences()
+        print("launch settings start")
+        azq_utils.launch_file(analyzer_vars.get_pref_fp())
+        print("launch settings done")
+
+    @pyqtSlot()
+    def on_actionEdit_settings_triggered(self):
+        print("edit settings")
+        self.gc.save_preferences()
+        print("launch settings start")
+        azq_utils.launch_file(analyzer_vars.get_pref_fp())
+        qt_utils.msgbox("Please edit, save the file, then click on menu: File > Load settings", parent=self)
+
+    @pyqtSlot()
+    def on_actionRestore_settings_triggered(self):
+        print("restore settings")
+        self.gc.delete_preferences()  # also restores current pref
+        self.gc.save_preferences()
+        kv_str = ""
+        for key in self.gc.pref:
+            kv_str += "{}: {}\n".format(key, self.gc.pref[key])
+        qt_utils.msgbox("Default settings restored:\n\n{}".format(kv_str), parent=self)
+
+    @pyqtSlot()
+    def on_actionLoad_settings_triggered(self):
+        print("load settings")
+        ret = self.gc.load_preferences()
+        kv_str = ""
+        for key in self.gc.pref:
+            kv_str += "{}: {}\n".format(key, self.gc.pref[key])
+        qt_utils.msgbox("Settings loaded success: {}\n\n{}".format(ret, kv_str), parent=self)
 
     @pyqtSlot()
     def on_actionOpen_log_triggered(self):
@@ -1102,6 +1137,7 @@ Log_hash list: {}""".format(
         self.gc.openedWindows.append(widget)
         return True
 
+
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_local_fp("main_window.ui"), self)
         self.toolbar = self.ui.toolBar
@@ -1341,11 +1377,7 @@ Log_hash list: {}""".format(
 
     def selectLayer(self):
         if self.qgis_iface:
-            if os.path.isfile(self.gc.db_fp):
-                self.layerTask = tasks.LayerTask(u"Add layers", self.gc.db_fp, self.gc, add_map=False)  # map was already added at first layertask after import_db_dialog finished
-                QgsApplication.taskManager().addTask(self.layerTask)
-            else:
-                qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
+            self.add_db_layers()
 
     def pauseTime(self):
         self.gc.timeSlider.setEnabled(True)
@@ -1364,6 +1396,13 @@ Log_hash list: {}""".format(
         if value >= self.gc.sliderLength:
             self.pauseTime()
 
+    def task_done_slot(self, msg):
+        print("main_window task_done_slot msg:", msg)
+        if msg == "cell_layer_task.py":
+            self.cell_layer_task.add_layers_from_ui_thread()
+        elif msg == "db_layer_task.py":
+            self.db_layer_task.add_layers_from_ui_thread()
+
     def ui_thread_emit_time_slider_updated(self, timestamp):
         print("ui_thread_emit_time_slider_updated")
         import datetime
@@ -1374,7 +1413,9 @@ Log_hash list: {}""".format(
     def clickCanvas(self, point, button):
         print("clickCanvas start")
         layerData = []
-        selectedTime = None
+        selected_time = None
+        selected_log_hash = None
+        selected_posid = None
         self.clearAllSelectedFeatures()
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         print("qgis_selected_layers: ", qgis_selected_layers)
@@ -1397,6 +1438,7 @@ Log_hash list: {}""".format(
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
                 nearby_features = layer.getFeatures(rect)
+
                 for f in nearby_features:
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
                     #print("p distance:", distance)
@@ -1406,7 +1448,15 @@ Log_hash list: {}""".format(
                         # print(layer.getFeature(closestFeatureId).attributes())
                         try:
                             time = layer.getFeature(closestFeatureId).attribute("time")
-                            info = (layer, closestFeatureId, distance, time)
+                            log_hash = None
+                            posid = None
+                            try:
+                                log_hash = layer.getFeature(closestFeatureId).attribute("log_hash")
+                                posid = layer.getFeature(closestFeatureId).attribute("posid")
+                            except:
+                                # in case this layer added by user and no 'log_hash' col
+                                pass
+                            info = (layer, closestFeatureId, distance, time, log_hash, posid)
                             layerData.append(info)
                         except:
                             type_, value_, traceback_ = sys.exc_info()
@@ -1438,16 +1488,22 @@ Log_hash list: {}""".format(
         # Sort the layer information by shortest distance
         layerData.sort(key=lambda element: element[2])
 
-        for (layer, closestFeatureId, distance, time) in layerData:
+        for (layer, closestFeatureId, distance, time, log_hash, posid) in layerData:
             layer.select(closestFeatureId)
-            selectedTime = time
-            break
+            selected_time = time
+            selected_log_hash = log_hash
+            selected_posid = posid
+            self.gc.selected_pont_time = selected_time
+            self.gc.selected_point_log_hash = selected_log_hash
+            self.gc.selected_point_posid = selected_posid
+            break  # break on first one
+
         try:
             selectedTimestamp = azq_utils.datetimeStringtoTimestamp(
-                selectedTime.toString("yyyy-MM-dd HH:mm:ss.zzz")
+                selected_time.toString("yyyy-MM-dd HH:mm:ss.zzz")
             )
         except:
-            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selectedTime)
+            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selected_time)
         if selectedTimestamp:
             timeSliderValue = self.gc.sliderLength - (
                 self.gc.maxTimeValue - selectedTimestamp
@@ -1458,7 +1514,41 @@ Log_hash list: {}""".format(
             # self.canvas.refreshself.gc.tableList()
 
             # draw cell
-            self.plot_rat_spider("4G",focus_time=selectedTime)
+            ori_active_layer = None
+            try:
+                ori_active_layer = self.gc.qgis_iface.activeLayer()
+            except:
+                pass
+
+            single_point_match_dict = {
+                "log_hash": selected_log_hash,
+                "posid": selected_posid,
+                "time": selected_time,
+            }
+
+            options_dict = {"distance_limit_m": int(self.gc.pref["point_to_site_match_max_distance_meters"])}
+            freq_code_match_mode = self.gc.pref["point_to_site_serving_match_cgi"] == "0"
+
+            options_dict = {"distance_limit_m": int(self.gc.pref["spider_match_max_distance_meters"])}
+            pref_key = "cell_{}_sector_size_meters".format("lte")
+            sector_size_meters = float(self.gc.pref[pref_key])
+            options_dict["sector_size_meters"] = sector_size_meters
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_match_dict=single_point_match_dict,
+                                        plot_spider_param="lte_physical_cell_id_1",
+                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
+            for i in range(3):
+                spider_plot.plot_rat_spider(
+                    self.gc.cell_files, self.gc.databasePath, "lte",
+                    single_point_match_dict=single_point_match_dict,
+                    plot_spider_param="lte_neigh_physical_cell_id_{}".format(i+1),
+                    freq_code_match_mode=True,  # neigh cant use cgi mode
+                    dotted_lines=True,
+                    options_dict=options_dict
+                )
+
+            if ori_active_layer is not None:
+                self.gc.qgis_iface.setActiveLayer(ori_active_layer)
+
             
         print("clickCanvas done")
 
@@ -1493,6 +1583,16 @@ Log_hash list: {}""".format(
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
+        if self.gc.db_fp:
+            print("starting layertask")
+            self.add_map_layer()
+            self.add_spider_layer()
+            self.add_cell_layers()
+            self.add_db_layers()
+        else:
+            print("log not opened")
+            return
+
         if self.gc.sliderLength:
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
         if self.gc.databasePath:
@@ -1702,7 +1802,7 @@ Log_hash list: {}""".format(
                 for mdiwindow in self.mdi.subWindowList():
                     mdiwindow.close()
                 self.gc.openedWindows = []
-            shutil.copyfile(fp, azq_utils.get_local_fp("settings.ini"))
+            shutil.copyfile(fp, azq_utils.get_local_fp("ui_settings.ini"))
             self.settings.sync()  # load changes
             self._gui_restore()
             self.settings.sync()
@@ -1717,7 +1817,7 @@ Log_hash list: {}""".format(
             print("saveWorkspaceFile:", fp)
             self._gui_save()
             self.settings.sync()  # save changes
-            shutil.copyfile(azq_utils.get_local_fp("settings.ini"), fp)
+            shutil.copyfile(azq_utils.get_local_fp("ui_settings.ini"), fp)
 
     def closeEvent(self, event):
         print("analyzer_window: closeEvent:", event)
@@ -1753,7 +1853,8 @@ Log_hash list: {}""".format(
             self.timeSliderThread.exit()
             # self.removeToolBarActions()
             if self.qgis_iface:
-                self.quitTask = tasks.QuitTask(u"Quiting Plugin", self)
+                import quit_task
+                self.quitTask = quit_task.QuitTask(u"Quiting Plugin", self)
                 QgsApplication.taskManager().addTask(self.quitTask)
 
             # Begin removing layer (which cause db issue)
@@ -1834,11 +1935,7 @@ Log_hash list: {}""".format(
                 except Exception as e:
                     print("WARNING: renaming layers exception: {}".format(e))
             
-        self.plot_rat_spider("5G")
-        self.plot_rat_spider("4G")
-        self.plot_rat_spider("3G")
-        self.plot_rat_spider("2G")
-    
+
 
     '''
     -
@@ -1926,6 +2023,65 @@ Log_hash list: {}""".format(
             print("WARNING: _gui_save() - exception: {}".format(exstr))
 
 
+    def add_db_layers(self):
+        if self.gc.db_fp:
+            self.db_layer_task = db_layer_task.LayerTask(u"Add layers", self.gc.db_fp, self.gc, self.task_done_signal)
+            self.db_layer_task.run_blocking()
+        else:
+            qt_utils.msgbox("No database of log found", title="Please open a log first", parent=self)
+
+
+    def add_map_layer(self):
+        urlWithParams = (
+            "type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
+        )
+        from qgis._core import QgsRasterLayer
+        rlayer = QgsRasterLayer(urlWithParams, "OSM", "wms")
+        if rlayer.isValid():
+            QgsProject.instance().addMapLayer(rlayer)
+        else:
+            QgsMessageLog.logMessage("Invalid layer")
+
+
+    def add_spider_layer(self):
+        import spider_plot
+        import azq_cell_file
+        if not self.gc.cell_files:
+            return
+        try:
+            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)
+        except Exception as e:
+            qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
+            return
+        for rat in azq_cell_file.CELL_FILE_RATS:
+            options_dict = {"distance_limit_m": int(self.gc.pref["spider_match_max_distance_meters"])}
+            pref_key = "cell_{}_sector_size_meters".format(rat)
+            sector_size_meters = float(self.gc.pref[pref_key])
+            options_dict["sector_size_meters"] = sector_size_meters
+            freq_code_match_mode = self.gc.pref["spider_match_cgi"] == "0"
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, rat, options_dict=options_dict, freq_code_match_mode=freq_code_match_mode)
+
+
+    def add_cell_layers(self):
+        if not self.gc.cell_files:
+            return
+        import azq_cell_file
+        try:
+            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)
+        except Exception as e:
+            qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
+            return
+        if self.gc.cell_files:
+            from Azenqos.cell_layer_task import CellLayerTask
+            print("starting celllayertask")
+            self.cell_layer_task = CellLayerTask(
+            "Load cell file", self.gc.cell_files, self.gc, self.task_done_signal
+            )
+            self.cell_layer_task.run_blocking()
+        else:
+            qt_utils.msgbox("No cell-files specified", parent=self)
+
+
     def _gui_restore(self):
         """
         restore "ui" controls with values stored in registry "settings"
@@ -1987,210 +2143,8 @@ Log_hash list: {}""".format(
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: qsettings clear() - exception: {}".format(exstr))
 
-    def plot_rat_spider(self,rat, is_legacy=False, focus_time=None):
-        cell = dict()
-        parameter = dict()
-        parameter['5G'] = ["nr_servingbeam_pci_1"]
-        parameter['4G'] = ["lte_physical_cell_id_1","lte_neigh_physical_cell_id_1","lte_neigh_physical_cell_id_2","lte_neigh_physical_cell_id_3"]
-        parameter['3G'] = ["wcdma_sc_1", "wcdma_sc_2", "wcdma_sc_3", "wcdma_aset_sc_1","wcdma_aset_sc_2","wcdma_aset_sc_3"]
-        parameter['2G'] = ["gsm_arfcn_bcch"]
 
-        cellfile_att_param = dict()
-        cellfile_att_param['5G'] = 'pci'
-        cellfile_att_param['4G'] = 'pci'
-        cellfile_att_param['3G'] = 'psc'
-        cellfile_att_param['2G'] = 'bcch'
 
-        cell_count = dict()
-        cell_count['5G'] = 0
-        cell_count['4G'] = 0
-        cell_count['3G'] = 0
-        cell_count['2G'] = 0
-
-        active_layer = None
-
-        global is_already_plot
-        print("is_already_plot", is_already_plot[rat])
-        if is_already_plot[rat]:
-            return
-        layers = QgsProject.instance().mapLayers().values()
-        for layer in layers:
-            name = layer.name()
-            print("renamingLayers layer:", name)
-            print('start layer working')
-            print(layer)
-            if is_legacy:
-                if rat+" cells" in name:
-                    cell_count[rat] = len(layer)
-                    for item in layer.getFeatures():
-                        cellfile_att = item.attribute(cellfile_att_param[rat])
-                        try:
-                            cellfile_att = int(cellfile_att)
-                        except:
-                            cellfile_att = None
-                        print(type(item))
-                        print("cell file cellfile_att:",type(cellfile_att), cellfile_att)
-                        geometry = item.geometry()
-                        point_list = geometry.asPolygon()
-                        point_lon = point_list[0][1].x()
-                        point_lat = point_list[0][1].y()
-                        print('cell point:',point_lat, point_lon)
-                        cell[cellfile_att] = (point_lon, point_lat)
-                 
-                print('end get cell info')
-                for param in parameter[rat]:
-                    if param in name and not is_already_plot[rat] and cell_count[rat] > 0:
-                        new_layer = None
-                        wkt_line_list = []
-                        for item in layer.getFeatures():
-                            plot_att = item.attributes()[-1]
-                            try:
-                                plot_att = int(plot_att)
-                            except:
-                                plot_att = None
-                            
-                            if plot_att is not None:
-                                # print("plot_att:", plot_att, item.attributes())
-                                geometry = item.geometry()
-                                try:
-                                    coordinate = geometry.asPoint()
-                                    lon = coordinate[0]
-                                    lat = coordinate[1]
-                                    string = "Id:{},lon:{},lat:{}, plot_att:{}".format(item.id(),lon, lat, plot_att)
-                                    print(string)
-                                    if plot_att in cell.keys():
-                                        cell_location = cell[plot_att]
-                                        print("cell_location , point_location", cell_location, (lon,lat))
-                                        wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],lon, lat)
-                                        wkt_line_list.append(wkt_line)
-                                except:
-                                    print("Geometry Point is null: Cannot convert to lat, lon")
-
-                        # Specify the geometry type
-                        new_layer = QgsVectorLayer('LineString?crs=epsg:4326', 'Spider for '+param , 'memory')
-                        wkt_str = ",".join(wkt_line_list)
-
-                        prov = new_layer.dataProvider()                
-                        feat = QgsFeature()
-                        feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
-                        prov.addFeatures([feat])
-                        new_layer.updateExtents()
-                        print("spider_add_map_layer")
-                        is_already_plot[rat] = True
-                        QgsProject.instance().addMapLayers([new_layer])
-                    
-    
-                print('end layer working')
-            else:
-                with sqlite3.connect(self.gc.databasePath) as dbcon:
-                    new_layer = None
-                    wkt_line_list = []
-                    df = None
-                    
-                    if name == 'lte_physical_cell_id_1':
-                        active_layer = layer
-
-                    if rat+" cells" in name:
-                        cell_count[rat] = len(layer)
-                        for item in layer.getFeatures():
-                            cellfile_att = item.attribute('cgi')
-                            # print(type(item))
-                            # print("cell file cellfile_att:", cellfile_att)
-                            geometry = item.geometry()
-                            point_list = geometry.asPolygon()
-                            point_lon = point_list[0][1].x()
-                            point_lat = point_list[0][1].y()
-                            # print('cell point:',point_lat, point_lon)
-                            cell[cellfile_att] = (point_lon, point_lat)
-                    
-                    if rat == "4G" and 'lte_' in name and not is_already_plot[rat] and cell_count[rat] > 0:
-                        sqlstr = "select log_hash, time, lte_sib1_mcc as mcc, lte_sib1_mnc as mnc, lte_sib1_tac as lac, lte_sib1_eci as cell_id from lte_sib1_info order by time"
-                        df = pd.read_sql_query(sqlstr,dbcon)
-                        df["cgi"] = df.mcc.astype(int).astype(str) + " " + df.mnc.astype(int).astype(str) + " " + df.lac.astype(int).astype(str) + " " + df.cell_id.astype(int).astype(str)
-                        
-                        if focus_time is not None:
-                            param_sql = "select log_hash, time, lte_physical_cell_id_1 from lte_cell_meas where time = '{}' order by time".format(focus_time)
-                        else:
-                            param_sql = "select log_hash, time, lte_physical_cell_id_1 from lte_cell_meas order by time"
-                        param_df = pd.read_sql_query(param_sql, dbcon)
-
-                    if rat == "3G" and 'wcdma_' in name and not is_already_plot[rat] and cell_count[rat] > 0:
-                        asql = "select log_hash, time, mm_characteristics_mcc as mcc, mm_characteristics_mnc as mnc, mm_characteristics_lac as lac from mm_state where mm_characteristics_mcc is not null and mm_characteristics_mnc is not null and mm_characteristics_lac is not null order by time"
-                        bsql = "select log_hash, time, wcdma_cellid as cell_id from wcdma_idle_cell_info where wcdma_cellid is not null"
-                        
-                        df_a = pd.read_sql_query(asql,dbcon)
-                        df_b = pd.read_sql_query(bsql,dbcon)
-
-                        df_a['time'] = pd.to_datetime(df_a['time'])
-                        df_a['log_hash'] = df_a.log_hash.astype(int)
-                        df_b['time'] = pd.to_datetime(df_b['time'])
-                        df_b['log_hash'] = df_b.log_hash.astype(int)
-                        df = pd.merge_asof(df_a, df_b, on='time', by='log_hash', direction='nearest', tolerance=pd.Timedelta('3600000ms'))
-
-                        df["cgi"] = df.mcc.astype(int).astype(str) + " " + df.mnc.astype(int).astype(str) + " " + df.lac.astype(int).astype(str) + " " + df.cell_id.astype(int).astype(str)
-                    
-                        param_sql = "select log_hash, time, wcdma_aset_sc_1 from wcdma_cell_meas order by time"
-                        param_df = pd.read_sql_query(param_sql, dbcon)
-
-                    if rat == "2G" and 'gsm_' in name and not is_already_plot[rat] and cell_count[rat] > 0:
-                        sqlstr = "select log_hash, time, gsm_cgi as cgi, gsm_arfcn_bcch from gsm_cell_meas order by time"
-                        df = pd.read_sql_query(sqlstr,dbcon)
-                        
-                        param_df = df[['log_hash','time','gsm_arfcn_bcch']]
-
-                    if df is not None:
-                        df['time'] = pd.to_datetime(df['time'])
-                        df = df[['log_hash','time','cgi']]
-                        df = df.set_index('time', drop=True)
-                        df = df.groupby('log_hash').resample('200ms').pad()
-                        df = df[['cgi']]
-                        df = df.reset_index()
-                        df = df[df.log_hash.notnull()]
-                        df['log_hash'] = df.log_hash.astype(int)
-
-                        param_df['time'] = pd.to_datetime(param_df['time'])
-                        param_df['log_hash'] = param_df.log_hash.astype(int)
-
-                        location_sql = "select log_hash, time, positioning_lat as lat, positioning_lon as lon from location order by time"
-                        location_df = pd.read_sql_query(location_sql, dbcon)
-                        location_df['time'] = pd.to_datetime(location_df['time'])
-                        location_df['log_hash'] = location_df.log_hash.astype(int)
-
-                        # print(location_df)
-                        df = pd.merge_asof(param_df, df, on='time', by='log_hash', direction='nearest', tolerance=pd.Timedelta('1000ms'))
-                        df = pd.merge_asof(df, location_df, on='time', by='log_hash', direction='nearest', tolerance=pd.Timedelta('2000ms'))
-                        # print(df)
-                        
-                        df = df[df.lat.notnull()]
-                        df = df[df.lon.notnull()]
-                        for index, row in df.iterrows():
-                            if row['cgi'] in cell.keys():
-                                # print(row['cgi'], row['lat'], row['lon'], cell[row['cgi']])
-                                cell_location = cell[row['cgi']]
-                                # print(cell_location)
-                                wkt_line = "({} {},{} {})".format(cell_location[0],cell_location[1],row.lon, row.lat)
-                                wkt_line_list.append(wkt_line)
-
-                        new_layer_name = 'Spider for '+rat
-                        if focus_time is not None:
-                            new_layer_name += focus_time
-
-                        new_layer = QgsVectorLayer('LineString?crs=epsg:4326', new_layer_name , 'memory')
-                        wkt_str = ",".join(wkt_line_list)
-
-                        prov = new_layer.dataProvider()                
-                        feat = QgsFeature()
-                        feat.setGeometry(QgsGeometry.fromWkt("MULTILINESTRING({})".format(wkt_str)))
-                        prov.addFeatures([feat])
-                        new_layer.updateExtents()
-                        # print(wkt_str[:10],wkt_str[-10:])
-                        print("spider_add_map_layer")
-                        is_already_plot[rat] = True
-                        QgsProject.instance().addMapLayers([new_layer])
-                        self.qgis_iface.setActiveLayer(active_layer)
-
-        print('is_already_plot end:', is_already_plot[rat])
-        is_already_plot[rat] = False
 
 class SubWindowArea(QMdiSubWindow):
     def __init__(self, item, gc):

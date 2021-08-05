@@ -1391,7 +1391,6 @@ class tee_stdout(object):
     def write(self, data):
         if self.file is not None:
             if data.strip():
-                self.file.write(str(time.time()))
                 self.file.write(data)
                 self.file.write("\n")
         self.stdout.write(data)

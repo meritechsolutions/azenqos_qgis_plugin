@@ -44,7 +44,7 @@ def plot_rat_spider(cell_files, dbfp, rat, single_point_match_dict=None, plot_sp
             QgsProject.instance().removeMapLayer(old_layer)
 
         wkt_multiline_string = gen_wkt_lines_plot_rat_spider(cell_files, dbfp, rat, plot_spider_param, single_point_match_dict=single_point_match_dict, freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
-        print("single_point_layer_time: {} wkt_multiline_string: {}".format(single_point_match_dict, wkt_multiline_string))
+        #print("single_point_layer_time: {} wkt_multiline_string: {}".format(single_point_match_dict, wkt_multiline_string))
 
         new_layer = QgsVectorLayer('LineString?crs=epsg:4326', new_layer_name, 'memory')
         prov = new_layer.dataProvider()
@@ -57,7 +57,7 @@ def plot_rat_spider(cell_files, dbfp, rat, single_point_match_dict=None, plot_sp
             from PyQt5.QtCore import Qt
             new_layer.renderer().symbol().symbolLayer(0).setPenStyle(Qt.PenStyle.DotLine)
 
-        print("new_layer_name:", new_layer_name)
+        #print("new_layer_name:", new_layer_name)
         cur_layers_dict = azq_utils.get_qgis_layers_dict()
         if new_layer_name in cur_layers_dict:
             print("remove existing layername pre add: " + new_layer_name)

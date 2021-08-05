@@ -1543,8 +1543,8 @@ Log_hash list: {}""".format(
         print("import_db_dialog ret: {}".format(ret))
         if self.qgis_iface:
             print("starting layertask")
-            self.add_db_layers()
             self.add_cell_layers()
+            self.add_db_layers()
 
         if self.gc.sliderLength:
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)

@@ -20,24 +20,12 @@ from PyQt5.QtWidgets import (
 )
 
 import azq_utils
-
-try:
-    from cell_layer_task import CellLayerTask
-    from db_layer_task import LayerTask
-except:
-    pass
-
-
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
 import db_preprocess
 import azq_theme_manager
 import login_dialog
 
-try:
-    from qgis.core import QgsApplication
-except:
-    pass
 
 
 class import_db_dialog(QDialog):
@@ -381,6 +369,8 @@ class import_db_dialog(QDialog):
             assert os.path.isfile(zip_fp)
             azq_utils.cleanup_died_processes_tmp_folders()
             assert os.path.isfile(zip_fp)
+
+            azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
             self.databasePath = preprocess_azm.extract_entry_from_zip(
                 zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
             )

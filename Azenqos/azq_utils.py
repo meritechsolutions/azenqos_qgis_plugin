@@ -6,6 +6,7 @@ import random
 import shutil
 import sys
 import traceback
+import uuid
 
 import requests
 
@@ -1419,7 +1420,6 @@ def open_and_redirect_stdout_to_last_run_log():
         g_tee_stdout_obj = tee_stdout(get_last_run_log_fp(), 'w')
 
         import version
-        import datetime
         print("--- new stdout log start version: {} ---".format(("%.03f" % version.VERSION)))
     except:
         type_, value_, traceback_ = sys.exc_info()
@@ -1434,8 +1434,15 @@ def tmp_gen_path_parent():
     return dp
 
 
+g_tmp_gen_instance_uuid = str(uuid.uuid4())
+def tmp_gen_new_instance():
+    global g_tmp_gen_instance_uuid
+    g_tmp_gen_instance_uuid = str(uuid.uuid4())
+
+
 def tmp_gen_path():
-    dp = os.path.join(tmp_gen_path_parent(), str(os.getpid()))
+    global g_tmp_gen_instance_uuid
+    dp = os.path.join(tmp_gen_path_parent(), str(os.getpid()), g_tmp_gen_instance_uuid)
     if not os.path.isdir(dp):
         os.makedirs(dp)
     return dp
@@ -1451,11 +1458,14 @@ def cleanup_died_processes_tmp_folders():
     dirlist_no_pid = []
     for folder_name in dirlist:
         int_folder_name = None
+        print("conv folder_name:", folder_name)
         try:
             int_folder_name = int(folder_name)
-        except:
+        except Exception as ex:
+            print("conv folder_name exception so skip:", folder_name, ex)
             continue
         if psutil.pid_exists(int_folder_name):
+            print("conv folder_name pid exists so skip", folder_name)
             continue
         else:
             dirlist_no_pid.append(str(int_folder_name))
@@ -1476,6 +1486,7 @@ def cleanup_died_processes_tmp_folders():
                 )
             )
     print("cleanup_died_processes_tmp_folders() DONE")
+
 
 
 def calc_sha(src):

@@ -1,10 +1,9 @@
 import os.path
 import sys
 import traceback
+
 import pandas as pd
 from PyQt5.QtGui import QColor
-from PyQt5.QtCore import pyqtSignal
-
 from qgis.PyQt.QtCore import QVariant
 from qgis.core import (
     QgsProject,

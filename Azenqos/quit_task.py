@@ -2,14 +2,8 @@ import time
 
 try:
     from qgis.core import (
-        QgsProject,
         QgsTask,
         QgsMessageLog,
-        QgsRasterLayer,
-        QgsRectangle,
-        QgsLayerTreeLayer,
-        QgsMapLayerType,
-        QgsCoordinateReferenceSystem,
     )
 except:
     pass

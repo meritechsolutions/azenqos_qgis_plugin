@@ -8,7 +8,6 @@ try:
         QgsProject,
         QgsTask,
         QgsMessageLog,
-        QgsRasterLayer,
         QgsRectangle,
         QgsLayerTreeLayer,
         QgsMapLayerType,

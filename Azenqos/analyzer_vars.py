@@ -16,7 +16,6 @@ DEFAULT_PREF = {
     "point_to_site_serving_match_cgi": "0",
 
 }
-import azq_utils
 
 
 class analyzer_vars:
@@ -73,7 +72,6 @@ class analyzer_vars:
 
 
     def delete_preferences(self):
-        import azq_utils
         fp = get_pref_fp()
         if os.path.isfile(fp):
             os.remove(fp)

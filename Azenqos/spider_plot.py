@@ -47,6 +47,7 @@ def plot_rat_spider(cell_files, dbfp, rat, single_point_match_dict=None, plot_sp
         #print("single_point_layer_time: {} wkt_multiline_string: {}".format(single_point_match_dict, wkt_multiline_string))
 
         new_layer = QgsVectorLayer('LineString?crs=epsg:4326', new_layer_name, 'memory')
+
         prov = new_layer.dataProvider()
         feat = QgsFeature()
         feat.setGeometry(QgsGeometry.fromWkt(wkt_multiline_string))
@@ -119,7 +120,9 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
     if single_point_match_dict is not None:
         assert isinstance(single_point_match_dict, dict)
     print("gen_spider_df freq_code_match_mode: {}".format(freq_code_match_mode))
-    cells_df = azq_cell_file.read_cellfiles(cell_files, rat=rat, add_cell_lat_lon_sector_distance=(float(options_dict["sector_size_meters"])*azq_cell_file.METER_IN_WGS84) if "sector_size_meters" in options_dict else None)
+    cells_df = azq_cell_file.read_cellfiles(cell_files, rat=rat, add_cell_lat_lon_sector_distance=(float(options_dict["sector_size_meters"])*azq_cell_file.METER_IN_WGS84) if "sector_size_meters" in options_dict else 50.0*azq_cell_file.METER_IN_WGS84)
+    assert 'cell_lat' in cells_df.columns
+    assert 'cell_lon' in cells_df.columns
     if len(cells_df) == 0:
         raise Exception("len(cells_df) == 0")
     with sqlite3.connect(dbfp) as dbcon:
@@ -193,7 +196,7 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
         else:
             print("len df1.12:", len(df))
             print("freq_code mode df matched cgi len:", len(df))
-            merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[azq_cell_file.g_main_cell_freq_col[rat], azq_cell_file.g_main_cell_col[rat]], how="inner")
+            merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[azq_cell_file.MAIN_CELL_CHANNEL_COL[rat], azq_cell_file.MAIN_CELL_COL[rat]], how="inner")
             #merged_df = merged_df[["param_lat", "cell_lat", "param_lon", "cell_lon"]]
 
         if "distance_limit_m" in options_dict:

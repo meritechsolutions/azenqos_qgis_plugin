@@ -2046,6 +2046,13 @@ Log_hash list: {}""".format(
     def add_spider_layer(self):
         import spider_plot
         import azq_cell_file
+        if not self.gc.cell_files:
+            return
+        try:
+            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)
+        except Exception as e:
+            qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
+            return
         for rat in azq_cell_file.CELL_FILE_RATS:
             options_dict = {"distance_limit_m": int(self.gc.pref["spider_match_max_distance_meters"])}
             pref_key = "cell_{}_sector_size_meters".format(rat)
@@ -2056,6 +2063,14 @@ Log_hash list: {}""".format(
 
 
     def add_cell_layers(self):
+        if not self.gc.cell_files:
+            return
+        import azq_cell_file
+        try:
+            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)
+        except Exception as e:
+            qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
+            return
         if self.gc.cell_files:
             from Azenqos.cell_layer_task import CellLayerTask
             print("starting celllayertask")

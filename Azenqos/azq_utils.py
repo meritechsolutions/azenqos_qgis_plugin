@@ -1557,7 +1557,7 @@ def write_dict_to_ini(d, fpath):
             for key in d:
                 config.set('main', key, str(d[key]))
             config.write(f)
-    except Exception as e:
+    except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print(("WARNING: write ini {} exception {}".format(fpath, exstr)))
@@ -1579,7 +1579,7 @@ def load_ini_to_dict_keys(fpath, d):
                 print(("WARNING: load config for key: {} failed with exception: {}".format(key, pe)))
             print(('load key {} final val {} type {}'.format(key, d[key], type(d[key]))))
         return True
-    except Exception as e:
+    except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print(("WARNING: load ini {} exception {}".format(fpath, exstr)))

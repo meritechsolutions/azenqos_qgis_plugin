@@ -16,7 +16,7 @@ from qgis.core import (
     QgsVectorLayer
 )
 
-from azq_cell_file import read_cell_file, g_main_cell_col
+from azq_cell_file import read_cell_file, MAIN_CELL_COL
 from azq_utils import get_default_color_for_index
 
 MESSAGE_CATEGORY = "RandomIntegerSumTask"
@@ -64,7 +64,7 @@ def cell_to_polygon(cell, sector_distance=0.001, sector_size_meters=0):
     poly["mnc"] = cell.mnc
     poly["cgi"] = cell.cgi
     system = cell.system.lower()
-    poly[g_main_cell_col[system].upper()] = cell[g_main_cell_col[system]]
+    poly[MAIN_CELL_COL[system].upper()] = cell[MAIN_CELL_COL[system]]
     poly.setGeometry(QgsGeometry.fromPolygonXY([points]))
     return poly
 
@@ -80,6 +80,7 @@ class CellLayerTask(QgsTask):
         self.task_done_signal = task_done_signal
         import azq_cell_file
         azq_cell_file.clear_cell_file_cache()
+
 
     def create_cell_layer(self, df, system, name, color):
         system = system.lower()

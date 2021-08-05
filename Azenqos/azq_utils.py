@@ -1,3 +1,4 @@
+import time
 import datetime
 import hashlib
 import os
@@ -1375,41 +1376,51 @@ def get_last_run_log_fp():
     return log_fp
 
 
-get_last_run_log_f = None
-ori_stdout = None
-ori_stderr = None
+class tee_stdout(object):
+    def __init__(self, name, mode):
+        self.file = open(name, mode)
+        self.stdout = sys.stdout
+        sys.stdout = self
+    def __del__(self):
+        self.close()
+    def close(self):
+        if self.file is not None:
+            sys.stdout = self.stdout
+            self.file.close()
+        self.file = None
+    def write(self, data):
+        if self.file is not None:
+            if data.strip():
+                self.file.write(time.strftime('%Y-%m-%d-%H:%M:%S.%s')+": ")
+                self.file.write(data)
+                self.file.write("\n")
+        self.stdout.write(data)
+    def flush(self):
+        if self.file is not None:
+            self.file.flush()
+        self.stdout.flush()
+
+
+g_tee_stdout_obj = None
 def close_last_run_log():
-    global get_last_run_log_f
-    global ori_stdout
-    if get_last_run_log_f is not None:
-        get_last_run_log_f.close()
-        get_last_run_log_f = None
-        if ori_stdout is not None:
-            sys.stdout = ori_stdout
-        if ori_stderr is not None:
-            sys.stderr = ori_stderr
+    global g_tee_stdout_obj
+    if g_tee_stdout_obj is not None:
+        g_tee_stdout_obj.close()
 
 
 def open_and_redirect_stdout_to_last_run_log():
-    global get_last_run_log_f
-    global ori_stdout
-    global ori_stderr
+    global g_tee_stdout_obj
     try:
         close_last_run_log()
-        get_last_run_log_f = open(get_last_run_log_fp(), 'w')
-        if ori_stdout is None:
-            ori_stdout = sys.stdout
-        if ori_stderr is None:
-            ori_stderr = sys.stderr
-        sys.stdout = get_last_run_log_f
-        sys.stderr = get_last_run_log_f
+        g_tee_stdout_obj = tee_stdout(get_last_run_log_fp(), 'w')
+
         import version
         import datetime
-        print("--- new stdout log start version: {} time: {} ---".format(("%.03f" % version.VERSION), datetime.datetime.today().strftime('%Y-%m-%d-%H:%M:%S')))
+        print("--- new stdout log start version: {} ---".format(("%.03f" % version.VERSION)))
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
-        print("WARNING: windows set stdout redir exception:", exstr)
+        print("WARNING: open_and_redirect_stdout_to_last_run_log exception:", exstr)
 
 
 def tmp_gen_path_parent():

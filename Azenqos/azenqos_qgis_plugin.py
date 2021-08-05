@@ -26,27 +26,15 @@ import os.path
 import sys
 import traceback
 import os
-
-def try_redirect_stdout_to_log():
-    try:
-        import azq_utils
-        log_fp = "azenqos_qgis_plugin_last_run_log.txt"
-        sys.stdout = open(log_fp, 'w')
-        import version
-        import datetime
-        print("--- new log start version: {} time: {} ---", ("%.03f" % version.VERSION), datetime.datetime.today().strftime('%Y-%m-%d-%H:%M:%S'))
-    except:
-        type_, value_, traceback_ = sys.exc_info()
-        exstr = str(traceback.format_exception(type_, value_, traceback_))
-        print("WARNING: windows set stdout redir exception:", exstr)
-
-try_redirect_stdout_to_log()
-
+import azq_utils
+if os.name == "nt":
+    print("windows os so calling azq_utils.open_and_redirect_stdout_to_last_run_log()")
+    azq_utils.open_and_redirect_stdout_to_last_run_log()
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QMessageBox
 
-import azq_utils
+
 # Initialize Qt resources from file resources.py
 import qt_utils
 import version

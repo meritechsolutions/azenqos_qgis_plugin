@@ -23,7 +23,7 @@ import azq_utils
 
 try:
     from cell_layer_task import CellLayerTask
-    from tasks import LayerTask
+    from db_layer_task import LayerTask
 except:
     pass
 
@@ -41,7 +41,6 @@ except:
 
 
 class import_db_dialog(QDialog):
-
     import_done_signal = pyqtSignal(str)
 
     def __init__(self, parent_window, gc):
@@ -371,25 +370,8 @@ class import_db_dialog(QDialog):
             self.getTimeForSlider()
             print("getTimeForSlider() done")
 
-            if self.gc.qgis_iface:
-                print("starting layertask")
-                self.select_layer_task()
-                self.gc.cell_files = self.cellPathLineEdit.text().split(",")
-                self.longTask = CellLayerTask(
-                    "Load cell file", self.gc.cell_files, self.gc
-                )
-                QgsApplication.taskManager().addTask(self.longTask)
-
-            else:
-                print("NOT starting layertask because no self.gc.qgis_iface")
-
+            self.gc.cell_files = self.cellPathLineEdit.text().split(",")
             self.close()
-
-
-    def select_layer_task(self):
-        self.layerTask = LayerTask(u"Add layers", self.gc.db_fp, self.gc)
-        QgsApplication.taskManager().addTask(self.layerTask)
-
 
     def import_selection(self):
         zip_fp = self.zip_fp

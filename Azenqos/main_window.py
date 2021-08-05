@@ -67,7 +67,7 @@ sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 import analyzer_vars
 
 try:
-    import tasks
+    import db_layer_task
 except:
     pass
 from atomic_int import atomic_int
@@ -93,7 +93,8 @@ NAME_COL_DEFAULT_WIDTH = 180
 class main_window(QMainWindow):
 
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
-    
+    task_done_signal = pyqtSignal(str)
+
 
     def __init__(self, qgis_iface, parent=None):
         if qgis_iface is not None and parent is None:
@@ -113,6 +114,11 @@ class main_window(QMainWindow):
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
         )
+        self.task_done_signal.connect(
+            self.task_done_slot
+        )
+        self.db_layer_task = None
+        self.cell_layer_task = None
 
         self.dbfp = None
         self.qgis_iface = qgis_iface
@@ -1336,8 +1342,7 @@ Log_hash list: {}""".format(
     def selectLayer(self):
         if self.qgis_iface:
             if os.path.isfile(self.gc.db_fp):
-                self.layerTask = tasks.LayerTask(u"Add layers", self.gc.db_fp, self.gc, add_map=False)  # map was already added at first layertask after import_db_dialog finished
-                QgsApplication.taskManager().addTask(self.layerTask)
+                self.add_db_layers()
             else:
                 qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
 
@@ -1357,6 +1362,13 @@ Log_hash list: {}""".format(
         self.gc.timeSlider.update()
         if value >= self.gc.sliderLength:
             self.pauseTime()
+
+    def task_done_slot(self, msg):
+        print("main_window task_done_slot msg:", msg)
+        if msg == "cell_layer_task.py":
+            self.cell_layer_task.add_layers_from_ui_thread()
+        elif msg == "db_layer_task.py":
+            self.db_layer_task.add_layers_from_ui_thread()
 
     def ui_thread_emit_time_slider_updated(self, timestamp):
         print("ui_thread_emit_time_slider_updated")
@@ -1529,6 +1541,11 @@ Log_hash list: {}""".format(
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
+        if self.qgis_iface:
+            print("starting layertask")
+            self.add_db_layers()
+            self.add_cell_layers()
+
         if self.gc.sliderLength:
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
         if self.gc.databasePath:
@@ -1789,7 +1806,8 @@ Log_hash list: {}""".format(
             self.timeSliderThread.exit()
             # self.removeToolBarActions()
             if self.qgis_iface:
-                self.quitTask = tasks.QuitTask(u"Quiting Plugin", self)
+                import quit_task
+                self.quitTask = quit_task.QuitTask(u"Quiting Plugin", self)
                 QgsApplication.taskManager().addTask(self.quitTask)
 
             # Begin removing layer (which cause db issue)
@@ -1956,6 +1974,26 @@ Log_hash list: {}""".format(
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: _gui_save() - exception: {}".format(exstr))
+
+
+    def add_db_layers(self):
+        if self.gc.db_fp:
+            self.db_layer_task = db_layer_task.LayerTask(u"Add layers", self.gc.db_fp, self.gc, self.task_done_signal)
+            self.db_layer_task.run_blocking()
+        else:
+            qt_utils.msgbox("No database of log found", parent=self)
+
+
+    def add_cell_layers(self):
+        if self.gc.cell_files:
+            from Azenqos.cell_layer_task import CellLayerTask
+            print("starting celllayertask")
+            self.cell_layer_task = CellLayerTask(
+            "Load cell file", self.gc.cell_files, self.gc, self.task_done_signal
+            )
+            self.cell_layer_task.run_blocking()
+        else:
+            qt_utils.msgbox("No cell-files specified", parent=self)
 
 
     def _gui_restore(self):

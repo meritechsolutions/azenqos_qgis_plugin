@@ -1,7 +1,9 @@
+import os.path
 import sys
 import traceback
 import pandas as pd
 from PyQt5.QtGui import QColor
+from PyQt5.QtCore import pyqtSignal
 
 from qgis.PyQt.QtCore import QVariant
 from qgis.core import (
@@ -66,11 +68,14 @@ def cell_to_polygon(cell, sector_distance=0.001):
 
 
 class CellLayerTask(QgsTask):
-    def __init__(self, description, files, gc):
+
+
+    def __init__(self, description, files, gc, task_done_signal):
         super().__init__(description)
         self.files = files
         self.cells_layers = []
         self.gc = gc
+        self.task_done_signal = task_done_signal
         import azq_cell_file
         azq_cell_file.clear_cell_file_cache()
 
@@ -92,10 +97,9 @@ class CellLayerTask(QgsTask):
         return layer
 
     def run(self):
-        if not self.gc.qgis_iface:
-            return
+        print("cell_layer_task_run() 0")
         frames = []
-        print("before load cell files")
+
         for path in self.files:
             try:
                 print("read " + path)
@@ -104,45 +108,62 @@ class CellLayerTask(QgsTask):
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: read cell file - exception: {}".format(exstr))
-        print("after load cell files")
+        print("cell_layer_task_run() 1")
         if not len(frames):
             return
-        df = pd.concat(frames)
+        print("cell_layer_task_run() 2")
         try:
+            df = pd.concat(frames)
+            print("cell_layer_task_run() 3")
             nr_cells_layer = self.create_cell_layer(
                 df, "nr", "NR cells", get_default_color_for_index(0)
             )
+            print("cell_layer_task_run() 4")
             lte_cells_layer = self.create_cell_layer(
                 df, "lte", "LTE cells", get_default_color_for_index(1)
             )
+            print("cell_layer_task_run() 5")
             wcdma_cells_layer = self.create_cell_layer(
                 df, "wcdma", "WCDMA cells", get_default_color_for_index(2)
             )
+            print("cell_layer_task_run() 6")
             gsm_cells_layer = self.create_cell_layer(
                 df, "gsm", "GSM cells", get_default_color_for_index(3)
             )
+            print("cell_layer_task_run() 7")
             self.cells_layers = [
                 nr_cells_layer,
                 lte_cells_layer,
                 wcdma_cells_layer,
                 gsm_cells_layer,
             ]
+            print("cell_layer_task_run() 8")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: load cell file - exception: {}".format(exstr))
-
-
-
+        print("cell_layer_task_run() end")
         return True
 
+
     def finished(self, result):
+        self.task_done_signal.emit(os.path.basename(__file__))
+
+    def add_layers_from_ui_thread(self):
         try:
+            print("add_layers_from_ui_thread() 0")
             QgsProject.instance().addMapLayers(self.cells_layers)
+            print("add_layers_from_ui_thread() 1")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: load cell file - exception: {}".format(exstr))
+        print("add_layers_from_ui_thread() end")
+
+    def run_blocking(self):
+        self.run()
+        self.add_layers_from_ui_thread()
+
 
     def cancel(self):
         super().cancel()

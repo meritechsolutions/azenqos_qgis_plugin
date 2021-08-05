@@ -44,6 +44,9 @@ def classFactory(qgis_iface):  # pylint: disable=invalid-name
     :type qgis_iface: QgsInterface
     """
     add_src_folder_to_import_path()
+    import azq_utils
+    azq_utils.open_and_redirect_stdout_to_last_run_log()
+
     import check_and_install_requirements
     if not check_and_install_requirements.check_and_install_requirements():
         msgBox = QMessageBox(None)
@@ -53,5 +56,4 @@ def classFactory(qgis_iface):  # pylint: disable=invalid-name
         msgBox.exec_()
     
     from azenqos_qgis_plugin import azenqos_qgis_plugin
-
     return azenqos_qgis_plugin(qgis_iface)

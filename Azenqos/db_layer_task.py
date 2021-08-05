@@ -19,7 +19,7 @@ except:
 
 
 class LayerTask(QgsTask):
-    def __init__(self, desc, databasePath, gc, task_done_signal, add_map=True):
+    def __init__(self, desc, databasePath, gc, task_done_signal):
         QgsTask.__init__(self, desc)
         print("start layertask: databasePath {}".format(databasePath))
         self.task_done_signal = task_done_signal
@@ -29,20 +29,8 @@ class LayerTask(QgsTask):
         self.exception = None
         self.vLayers = []
         self.gc = gc
-        self.add_map=add_map
 
-    def addMapToQgis(self):
 
-        urlWithParams = (
-            "type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
-        )
-
-        rlayer = QgsRasterLayer(urlWithParams, "OSM", "wms")
-        if rlayer.isValid():
-            QgsProject.instance().addMapLayer(rlayer)
-            # self.azqGroup.addLayer(rlayer)
-        else:
-            QgsMessageLog.logMessage("Invalid layer")
 
     def zoomToActiveLayer(self):
         root = QgsProject.instance().layerTreeRoot()
@@ -91,16 +79,6 @@ class LayerTask(QgsTask):
             if True:
                 # gc.mostFeaturesLayer = None
                 print("db_layer_task.py add_layers_from_ui_thread 0")
-                if self.add_map:
-                    print("db_layer_task.py add_layers_from_ui_thread() 1 add map")
-                    self.addMapToQgis()
-
-                    print("db_layer_task.py add_layers_from_ui_thread() 2 add spider plots")
-                    import spider_plot
-                    spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "nr")
-                    spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte")
-                    spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "wcdma")
-                    spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "gsm")
 
                 print("db_layer_task.py add_layers_from_ui_thread() 3 addVectorLayer")
                 # geom_column = "geom"

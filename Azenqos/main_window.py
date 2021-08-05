@@ -1543,6 +1543,8 @@ Log_hash list: {}""".format(
         print("import_db_dialog ret: {}".format(ret))
         if self.qgis_iface:
             print("starting layertask")
+            self.add_map_layer()
+            self.add_spider_layer()
             self.add_cell_layers()
             self.add_db_layers()
 
@@ -1983,6 +1985,25 @@ Log_hash list: {}""".format(
         else:
             qt_utils.msgbox("No database of log found", parent=self)
 
+
+    def add_map_layer(self):
+        urlWithParams = (
+            "type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
+        )
+        from qgis._core import QgsRasterLayer
+        rlayer = QgsRasterLayer(urlWithParams, "OSM", "wms")
+        if rlayer.isValid():
+            QgsProject.instance().addMapLayer(rlayer)
+        else:
+            QgsMessageLog.logMessage("Invalid layer")
+
+
+    def add_spider_layer(self):
+        import spider_plot
+        spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "nr")
+        spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte")
+        spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "wcdma")
+        spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "gsm")
 
     def add_cell_layers(self):
         if self.gc.cell_files:

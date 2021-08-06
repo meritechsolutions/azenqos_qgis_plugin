@@ -64,7 +64,7 @@ def cell_to_polygon(cell, sector_distance=0.001, sector_size_meters=0):
     poly["mnc"] = cell.mnc
     poly["cgi"] = cell.cgi
     system = cell.system.lower()
-    poly[RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[system].upper()] = cell[RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[system]]
+    poly[RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[system][0].upper()] = cell[RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[system][0]]
     poly.setGeometry(QgsGeometry.fromPolygonXY([points]))
     return poly
 

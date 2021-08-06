@@ -12,6 +12,8 @@ import azq_utils as utils
 import plot_param_zorders
 from dprint import dprint
 
+import itertools
+
 CELL_FILE_RATS = ["nr", "lte", "wcdma", "gsm"]
 WGS84_UNIT_TO_METERS_MULTIPLIER = 110574.0
 METER_IN_WGS84 = 1.0/WGS84_UNIT_TO_METERS_MULTIPLIER
@@ -22,24 +24,26 @@ g_cell_fp_dict = dict.fromkeys(CELL_FILE_RATS)
 g_theme_dict = dict.fromkeys(CELL_FILE_RATS)
 
 # extra main/required cell column in cellfile for each rat, used to draw/match cell too
-MAIN_CELL_COL = dict.fromkeys(CELL_FILE_RATS)
-MAIN_CELL_COL["nr"] = "pci"
-MAIN_CELL_COL["lte"] = "pci"
-MAIN_CELL_COL["wcdma"] = "psc"
-MAIN_CELL_COL["gsm"] = "bcch"
+RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT = dict.fromkeys(CELL_FILE_RATS)
+RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["nr"] = ["pci"]
+RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["lte"] = ["pci"]
+RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["wcdma"] = ["psc"]
+RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["gsm"] = ["bcch", "arfcn", "ch"]
 
-MAIN_CELL_CHANNEL_COL = dict.fromkeys(CELL_FILE_RATS)
-MAIN_CELL_CHANNEL_COL["nr"] = "arfcn"
-MAIN_CELL_CHANNEL_COL["lte"] = "earfcn"
-MAIN_CELL_CHANNEL_COL["wcdma"] = "uarfcn"
-MAIN_CELL_CHANNEL_COL["gsm"] = "bcch"
+RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT = dict.fromkeys(CELL_FILE_RATS)
+RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["nr"] = ("arfcn", "ch")
+RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["lte"] = ("earfcn", "ch")
+RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["wcdma"] = ("uarfcn", "ch")
+RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["gsm"] = RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["gsm"]
 
-CELL_FILE_REQUIRED_COLUMNS = ["dir", "lat", "lon", "ant_bw", "system"]
-CELL_FILE_NUMERIC_COLUMNS = ["dir", "lat", "lon", "ant_bw"] + list(MAIN_CELL_COL.keys()) + list(MAIN_CELL_CHANNEL_COL.keys())
+CELL_FILE_REQUIRED_COLUMNS = ("dir", "lat", "lon", "ant_bw", "system")
+CELL_FILE_NUMERIC_COLUMNS = tuple(["dir", "lat", "lon", "ant_bw"]\
+                            + list(itertools.chain.from_iterable(RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT.keys())) \
+                            + list(itertools.chain.from_iterable(RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT.keys())))
 
 g_detail_label_format_dict = dict.fromkeys(CELL_FILE_RATS)
 for rat in CELL_FILE_RATS:
-    g_detail_label_format_dict[rat] = "#" + MAIN_CELL_COL[rat].upper()
+    g_detail_label_format_dict[rat] = "#" + RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat][0].upper()
 
 LOG_PARAMS_FOR_CELL_THEME_POPULATE = {
     "nr": ["nr_servingbeam_pci"],
@@ -107,7 +111,7 @@ def set_cell_fp(rat, cfp, raise_exception_if_check_failed=False):
     # test parse if cellfile is valid or not - raise exception here
     get_cell_file_df(
         cfp,
-        [MAIN_CELL_COL[rat]],
+        [RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat]],
         raise_exception_if_check_failed=raise_exception_if_check_failed,
     )
 
@@ -429,7 +433,7 @@ def interval_plot(
             or custom_cell_color is not None
         ):
             if custom_cell_color is None:
-                matching_color_column = MAIN_CELL_COL[rat]
+                matching_color_column = RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat]
                 theme_df = g_theme_dict[rat]
             else:
                 matching_color_column = custom_cell_color_cellfile
@@ -515,6 +519,12 @@ def clear_cell_file_cache():
     g_cell_file_to_df_dict.clear()
 
 
+def check_cell_files(cell_files):
+    assert isinstance(cell_files, list)
+    for cell_file in cell_files:
+        read_cell_file(cell_file)
+
+
 def read_cellfiles(cell_files, rat, add_cell_lat_lon_sector_distance=None):
     global g_cell_file_to_df_dict
     df_list = []
@@ -564,7 +574,7 @@ def read_cell_file(
         df = pd.read_csv(fp, sep=get_csv_separator_for_file(fp))
         df.columns = list(map(str.lower, df.columns))
         # df.columns = map(str.strip(), df.columns) # problem about str.strip()
-        rcs = CELL_FILE_REQUIRED_COLUMNS + extra_required_columns
+        rcs = list(CELL_FILE_REQUIRED_COLUMNS) + list(extra_required_columns)
         dprint("read_cell_file: df cols:", df.columns)
         # check if cell file has all required columns:
         for rc in rcs:
@@ -592,12 +602,26 @@ def read_cell_file(
                 raise Exception("invalid cellfile: it has empty 'system' column")
             if rat not in CELL_FILE_RATS:
                 raise Exception("invalid cellfile: its system column value has invalid RAT: {}".format(rat))
-            if MAIN_CELL_COL[rat] not in df.columns:
-                raise Exception("invalid cellfile: it has system (RAT) value: {} but doesnt have the required main column: {}".format(rat, MAIN_CELL_COL[rat]))
-            if MAIN_CELL_CHANNEL_COL[rat] not in df.columns:
-                raise Exception(
-                    "invalid cellfile: it has system (RAT) value: {} but doesnt have the required main channel column: {}".format(
-                        rat, MAIN_CELL_CHANNEL_COL[rat]))
+
+            #####################
+
+            for check_dict in [RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT, RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT]:
+                assert isinstance(check_dict, dict)
+                matched_col = None
+                for mc in check_dict[rat]:
+                    if mc in df.columns:
+                        matched_col = mc
+                        break
+                if not matched_col:
+                    raise Exception(
+                        "invalid cellfile: it has system (RAT) value: {} but does not have the required column: {}".format(
+                            rat, check_dict[rat])
+                    )
+                default_name = check_dict[rat][0]
+                if matched_col != default_name:
+                    print("renaming col: {} to default name: {}".format(matched_col, default_name))
+                    df.rename(columns={matched_col:default_name}, inplace=True)
+            ############################
 
 
         dprint("read_cell_file: df pre filt out nan len {}".format(len(df)))
@@ -717,7 +741,7 @@ def apply_cell_file(
 
         if g_cell_fp_dict[rat] is not None:
             print(("plotting cellfile for rat:", rat))
-            df = get_cell_file_df(g_cell_fp_dict[rat], [MAIN_CELL_COL[rat]])
+            df = get_cell_file_df(g_cell_fp_dict[rat], [RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat]])
             df = filter_cell_file_df_for_bounds(df, map_bounds)
             if sub_system is not None:
                 if "sub_system" in df.columns:

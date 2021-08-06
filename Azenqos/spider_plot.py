@@ -203,7 +203,7 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
         else:
             print("len df1.12:", len(df))
             print("freq_code mode df matched cgi len:", len(df))
-            merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[azq_cell_file.MAIN_CELL_CHANNEL_COL[rat], azq_cell_file.MAIN_CELL_COL[rat]], how="inner")
+            merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[azq_cell_file.RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT[rat], azq_cell_file.RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat]], how="inner")
             #merged_df = merged_df[["param_lat", "cell_lat", "param_lon", "cell_lon"]]
 
         if "distance_limit_m" in options_dict:

@@ -20,6 +20,8 @@ from PyQt5.QtWidgets import (
 )
 
 import azq_utils
+import qt_utils
+
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 
 import db_preprocess
@@ -236,6 +238,20 @@ class import_db_dialog(QDialog):
 
     def check_and_start_import(self):
         self.save_settings()
+
+        cell_files = []
+        cft = self.cellPathLineEdit.text()
+        if cft:
+            cell_files = cft.split(",")
+        self.gc.cell_files = cell_files
+        if self.gc.cell_files:
+            try:
+                import azq_cell_file
+                azq_cell_file.check_cell_files(cell_files)
+            except Exception as e:
+                qt_utils.msgbox("Failed to load the sepcified cellfiles:\n\n{}".format(str(e)), title="Invalid cellfiles", parent=self)
+                return
+
         if self.radioButtonServer.isChecked() == False:
             if not self.dbPathLineEdit.text():
                 QtWidgets.QMessageBox.critical(
@@ -354,11 +370,8 @@ class import_db_dialog(QDialog):
             return False
         else:
             print("ui_handler_import_done() success")
-
             self.getTimeForSlider()
             print("getTimeForSlider() done")
-
-            self.gc.cell_files = self.cellPathLineEdit.text().split(",")
             self.close()
 
     def import_selection(self):

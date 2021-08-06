@@ -1508,9 +1508,6 @@ Log_hash list: {}""".format(
             selected_seqid = seqid
             selected_lat = lat
             selected_lon = lon
-            self.gc.selected_pont_time = selected_time
-            self.gc.selected_point_log_hash = selected_log_hash
-            self.gc.selected_point_posid = selected_posid
             break  # break on first one
 
         selectedTimestamp = None
@@ -1527,6 +1524,16 @@ Log_hash list: {}""".format(
             self.gc.timeSlider.setValue(timeSliderValue)
             self.gc.timeSlider.update()
 
+            single_point_match_dict = {
+                "log_hash": selected_log_hash,
+                "posid": selected_posid,
+                "seqid": selected_seqid,
+                "time": selected_time,
+                "selected_lat": selected_lat,
+                "selected_lon": selected_lon,
+            }
+            self.gc.selected_point_match_dict = single_point_match_dict
+            self.gc.selected_point_match_tuple = self.gc.selected_point_match_tuple_class(log_hash=selected_log_hash, posid=selected_posid, seqid=selected_seqid, time=selected_time, lat=selected_lat, lon=selected_lon)
             # self.canvas.refreshself.gc.tableList()
 
             # draw cell
@@ -1536,14 +1543,7 @@ Log_hash list: {}""".format(
             except:
                 pass
 
-            single_point_match_dict = {
-                "log_hash": selected_log_hash,
-                "posid": selected_posid,
-                "seqid": selected_seqid,
-                "time": selected_time,
-                "selected_lat": selected_lat,
-                "selected_lon": selected_lon,
-            }
+
             print("single_point_match_dict:", single_point_match_dict)
             options_dict = {"distance_limit_m": int(self.gc.pref["point_to_site_match_max_distance_meters"])}
             freq_code_match_mode = self.gc.pref["point_to_site_serving_match_cgi"] == "0"
@@ -2066,6 +2066,7 @@ Log_hash list: {}""".format(
     def add_spider_layer(self):
         import spider_plot
         import azq_cell_file
+        print("add_spider_layer self.gc.cell_files:", self.gc.cell_files)
         if not self.gc.cell_files:
             return
         try:
@@ -2083,6 +2084,7 @@ Log_hash list: {}""".format(
 
 
     def add_cell_layers(self):
+        print("add_cell_layers self.gc.cell_files:", self.gc.cell_files)
         if not self.gc.cell_files:
             return
         import azq_cell_file

@@ -106,7 +106,7 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
         parameter_to_columns_list,
         time_before,
         default_table="lte_cell_meas",
-        not_null_first_col=False,
+        not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
     # print("df.head():\n%s" % df.head())

@@ -1,4 +1,5 @@
 import os
+from collections import namedtuple
 
 from PyQt5.QtCore import QThreadPool
 
@@ -26,8 +27,11 @@ class analyzer_vars:
     mdi = None
     qgis_iface = None
     mostFeaturesLayer = None
+
     databasePath = None
     db_fp = None  # same as databasePath but in snake_case
+    cell_files = []
+
     minTimeValue = 0
     maxTimeValue = 99
     fastForwardValue = 1
@@ -38,9 +42,11 @@ class analyzer_vars:
     recentDateTimeString = ""
 
     # these are set from mainwindow directly on clickcanvas match, not from timeslider
-    selected_point_time = None
-    selected_point_log_hash = None
-    selected_point_posid = None
+    selected_point_match_params = ("log_hash", "posid", "seqid", "time", "lat", "lon")
+    selected_point_match_dict = dict.fromkeys(selected_point_match_params)
+    selected_point_match_tuple_class = namedtuple("single_point_match_tuple", selected_point_match_params)
+    selected_point_match_tuple = None
+
 
     clickedLatLon = {"lat": 0, "lon": 0}
     sliderLength = 0

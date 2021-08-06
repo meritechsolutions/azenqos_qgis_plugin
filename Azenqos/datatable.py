@@ -6,6 +6,7 @@ import threading
 import traceback
 
 import pandas as pd
+import numpy as np
 from PyQt5.QtCore import (
     pyqtSignal,
     Qt,
@@ -34,6 +35,7 @@ from PyQt5.QtWidgets import (
 
 import azq_server_api
 # Adding folder path
+import analyzer_vars
 from filter_header import FilterHeader, SortFilterProxyModel
 from worker import Worker
 
@@ -108,7 +110,8 @@ class TableWindow(QWidget):
         self.customData = []
         self.customHeader = []
         self.currentRow = 0
-        self.dateString = ""
+        self.find_row_time_string = ""
+        self.find_row_log_hash = None
         self.tableViewCount = 0
         self.parentWindow = parent
         self.filterList = None
@@ -254,9 +257,13 @@ class TableWindow(QWidget):
                 qt_utils.msgbox("This table is empty - no rows to use...")
                 return
             if self.tableModel.df is None or (
-                not (
-                    "log_hash" in self.tableModel.df.columns
-                    and "time" in self.tableModel.df.columns
+                (
+                    "log_hash" not in self.tableModel.df.columns
+                    or "time" not in self.tableModel.df.columns
+                ) and
+                (
+                        "lat" not in self.tableModel.df.columns
+                        or "lon" not in self.tableModel.df.columns
                 )
             ):
                 qt_utils.msgbox(
@@ -385,7 +392,7 @@ class TableWindow(QWidget):
 
         sm = self.tableView.selectionModel()
         if sm is not None:
-            sm.selectionChanged.connect(self.updateSlider)
+            sm.selectionChanged.connect(self.update_selected_log_hash_time)
 
         if not self.rows:
             self.rows = self.tableModel.rowCount(self)
@@ -431,7 +438,7 @@ class TableWindow(QWidget):
                     )
                     self.set_pd_df(
                         self.refresh_data_from_dbcon_and_time_func(
-                            dbcon, self.gc.currentDateTimeString
+                            dbcon, {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
                         )
                     )
             except:
@@ -477,7 +484,8 @@ class TableWindow(QWidget):
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
-        self.dateString = str(sampledate)
+        self.find_row_time_string = str(sampledate)
+        self.find_row_log_hash = self.gc.selected_point_match_dict["log_hash"]
         if not self.time_list_mode:
             # table data mode like measurements of that time needs refresh
             if threading:
@@ -559,10 +567,10 @@ class TableWindow(QWidget):
                 self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
         """
 
-    def updateSlider(self, item):
-        print("updateslider start self.ui_thread_selecting_row_dont_trigger_timechanged: {}".format(self.ui_thread_selecting_row_dont_trigger_timechanged))
+    def update_selected_log_hash_time(self, item):
+        print("update_selected_log_hash_time start self.ui_thread_selecting_row_dont_trigger_timechanged: {}".format(self.ui_thread_selecting_row_dont_trigger_timechanged))
         if self.ui_thread_selecting_row_dont_trigger_timechanged:
-            print("updateslider done because self.ui_thread_selecting_row_dont_trigger_timechanged: {}".format(
+            print("update_selected_log_hash_time done because self.ui_thread_selecting_row_dont_trigger_timechanged: {}".format(
                 self.ui_thread_selecting_row_dont_trigger_timechanged)
             )
             return
@@ -581,53 +589,58 @@ class TableWindow(QWidget):
                 item = idx
                 break
 
-        timeCell = None
+        selected_row_time = None
+        selected_row_log_hash = None
         try:
-            '''
-            cellContent = str(item.data())
-            try:
-                timeCell = azq_utils.datetimeStringtoTimestamp(str(cellContent))
-            except Exception:
-            '''
             # check maybe current cell is not Time cell
-            print("updateslider get timecell0")
+            print("update_selected_log_hash_time get timecell0")
             headers = [item.lower() for item in self.tableHeader]
-            print("updateslider get timecell1")
+            print("update_selected_log_hash_time get timecell1")
+            time_col_index = -1
+            log_hash_col_index = -1
+            time_col_index = headers.index("time")
             try:
-                columnIndex = headers.index("time")
-            except Exception:
-                columnIndex = -1
-            print("updateslider get timecell2 columnIndex: {}".format(columnIndex))
-            if not columnIndex == -1:
-                print("updateslider get timecell3")
-                timeItem = item.sibling(item.row(), columnIndex)
-                cellContent = str(timeItem.data())
-                timeCell = azq_utils.datetimeStringtoTimestamp(cellContent)
-                print("updateslider get timecell3 end timeCell: {}".format(timeCell))
-            else:
-                timeCell = timeCell
+                log_hash_col_index = headers.index("log_hash")
+            except Exception as e:
+                print("WARNING: get log_hash_col_index failed for this datatable - exception:", e)
+            print("update_selected_log_hash_time get timecell2 time_col_index: {}".format(time_col_index))
+            ret_contents = []
+            for col_index in [time_col_index, log_hash_col_index]:
+                print("update_selected_log_hash_time get col_index:", col_index)
+                timeItem = item.sibling(item.row(), col_index)
+                ret_contents.append(str(timeItem.data()))
+            print("ret_contents:", ret_contents)
+            selected_row_time = azq_utils.datetimeStringtoTimestamp(ret_contents[0])
+            selected_row_log_hash = np.int64(ret_contents[1])  # in windows somehow int not covering int64 of log_hash in some tests
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: updateSlider exception:", exstr)
+            print("WARNING: update_selected_log_hash_time exception:", exstr)
         finally:
-            if timeCell is not None:
+            if selected_row_time is not None:
                 try:
-                    sliderValue = timeCell - self.gc.minTimeValue
+                    sliderValue = selected_row_time - self.gc.minTimeValue
                     sliderValue = round(sliderValue, 3)
                     self.gc.timeSlider.setValue(sliderValue)
+                    self.gc.selected_row_time = selected_row_time
+                    self.gc.selected_row_log_hash = selected_row_log_hash
+                    self.gc.selected_point_match_dict = dict.fromkeys(analyzer_vars.SELECTED_POINT_MATCH_PARAMS)  # new dict with non vals in keys
+                    self.gc.selected_point_match_dict["time"] = selected_row_time
+                    self.gc.selected_point_match_dict["log_hash"] = selected_row_log_hash
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: updateSlider timecell exception:", exstr)
-        print("updateslider done")
+        print("updateslider done: self.gc.selected_row_time: {}, self.gc.selected_row_log_hash: {}".format(self.gc.selected_row_time, self.gc.selected_row_log_hash))
 
     def findCurrentRow(self):
         print("findcurrentrow start")
         if isinstance(self.dataList, pd.DataFrame):
-            if self.dateString:
+            if self.find_row_time_string:
                 df = self.tableModel.df  # self.dataList
-                ts_query = """time <= '{}'""".format(self.dateString)
+                ts_query = """time <= '{}'""".format(self.find_row_time_string)
+                if self.find_row_log_hash is not None:
+                    ts_query = """time <= '{}' and log_hash = {}""".format(self.find_row_log_hash)
                 print("ts_query:", ts_query)
                 df = df.query(ts_query).reset_index()
                 print("findcurrentrow after query df len: %d", len(df))

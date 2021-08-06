@@ -28,6 +28,12 @@ def _test(server, user, passwd, lhl):
     with sqlite3.connect(dbfp) as dbcon:
         db_preprocess.prepare_spatialite_views(dbcon)
 
+        df = pd.read_sql("select * from signalling", dbcon)
+        assert "geom" in df.columns and "name" in df.columns
+
+        df = pd.read_sql("select * from events", dbcon)
+        assert "geom" in df.columns and "name" in df.columns
+
         df = pd.read_sql("select * from lte_inst_rsrp_1", dbcon)
         assert "geom" in df.columns
         print("len df rsrp:", len(df))

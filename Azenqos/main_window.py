@@ -1533,7 +1533,6 @@ Log_hash list: {}""".format(
                 "selected_lon": selected_lon,
             }
             self.gc.selected_point_match_dict = single_point_match_dict
-            self.gc.selected_point_match_tuple = self.gc.selected_point_match_tuple_class(log_hash=selected_log_hash, posid=selected_posid, seqid=selected_seqid, time=selected_time, lat=selected_lat, lon=selected_lon)
             # self.canvas.refreshself.gc.tableList()
 
             # draw cell

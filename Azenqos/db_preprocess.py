@@ -129,7 +129,7 @@ def prepare_spatialite_views(dbcon):
                 )
                 print("not table_has_geom so gen sql merge in from location table by time - DONE")
             else:
-                sqlstr = "create table {col} as select log_hash, time, {modem_time_part}, posid, geom, {col} from {table} ;".format(
+                sqlstr = "create table {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} ;".format(
                     col=view, table=table,
                     modem_time_part="modem_time" if table_has_modem_time else "null as modem_time"
                 )

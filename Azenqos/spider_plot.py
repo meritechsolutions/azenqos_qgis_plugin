@@ -161,12 +161,19 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
         if freq_code_match_mode:
             df = param_df
         else:
-            df = pd.merge_asof(param_df, cgi_df, on='time', by='log_hash', direction='nearest',
-            tolerance=pd.Timedelta('1000ms'))
+            df = pd.merge_asof(
+                param_df, cgi_df, on='time', by='log_hash', direction='backward',
+                tolerance=pd.Timedelta('1000ms')
+            )
         print("len df0:", len(df))
-        df = preprocess_azm.merge_lat_lon_into_df(dbcon, df)
-        print("len df0.1:", len(df), "head\n", df.head())
-        df.rename(columns={'positioning_lat':'param_lat', 'positioning_lon':'param_lon'}, inplace=True)
+        if "lat" in df.columns and "lon" in df.columns:
+            df.rename(columns={"lat":"param_lat", "lon":"param_lon"}, inplace=True)
+            print("len df0.10:", len(df), "head\n", df.head())
+        else:
+            df = preprocess_azm.merge_lat_lon_into_df(dbcon, df)
+            df.rename(columns={'positioning_lat':'param_lat', 'positioning_lon':'param_lon'}, inplace=True)
+            print("len df0.11:", len(df), "head\n", df.head())
+
         print("len df0.2:", len(df))
         '''
         df = pd.merge_asof(df, location_df, on='time', by='log_hash', direction='backward',
@@ -233,14 +240,19 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
 
         table = "lte_cell_meas"
         earfcn_pci_params = "lte_earfcn_1 as freq, lte_physical_cell_id_1 as code"
+        neigh = False
         if plot_spider_param.startswith("lte_neigh_physical_cell_id_"):
+            neigh = True
             table = "lte_neigh_meas"
             earfcn_pci_params = earfcn_pci_params.replace("lte_", "lte_neigh_")
             earfcn_pci_params = earfcn_pci_params.replace("_1", "_{}".format(plot_spider_param[-1]))
         if single_point_match_dict is not None:
-            param_sql = "select log_hash, time, {}, {} from {} where log_hash = {} and posid = {} order by time desc limit 1".format(
+            param_sql = "select log_hash, time, abs({} - seqid) as seqid_diff, {}, {}, {} as lat, {} as lon from {} where log_hash = {} and posid = {} order by seqid_diff limit 1".format(
+                single_point_match_dict["seqid"],
                 plot_spider_param,
                 earfcn_pci_params,
+                single_point_match_dict["selected_lat"],
+                single_point_match_dict["selected_lon"],
                 table,
                 single_point_match_dict["log_hash"],
                 single_point_match_dict["posid"],

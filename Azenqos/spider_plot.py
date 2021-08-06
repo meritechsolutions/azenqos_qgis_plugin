@@ -240,9 +240,7 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
 
         table = "lte_cell_meas"
         earfcn_pci_params = "lte_earfcn_1 as freq, lte_physical_cell_id_1 as code"
-        neigh = False
         if plot_spider_param.startswith("lte_neigh_physical_cell_id_"):
-            neigh = True
             table = "lte_neigh_meas"
             earfcn_pci_params = earfcn_pci_params.replace("lte_", "lte_neigh_")
             earfcn_pci_params = earfcn_pci_params.replace("_1", "_{}".format(plot_spider_param[-1]))

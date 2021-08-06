@@ -42,6 +42,14 @@ def test():
     assert caught
     assert df is None
     print("success")
+
+    cell_files = ["../example_logs/4g_cellfile_bad_gps/3G_cellfile.txt"]
+    df = azq_cell_file.read_cellfiles(cell_files, "wcdma", add_cell_lat_lon_sector_distance=0.001)
+    assert len(df)
+    assert 'cell_lat' in df.columns
+    print("df.head()\n", df.head())
+    assert "psc" in df.columns
+    assert "uarfcn" in df.columns
         
 
 

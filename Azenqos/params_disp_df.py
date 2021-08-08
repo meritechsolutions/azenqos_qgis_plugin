@@ -44,8 +44,8 @@ def get(
         time = lh_time_dict["time"]
     else:
         time = lh_time_dict
-    #print("get time:", time)
-    #print("get lh:", log_hash)
+    print("params_disp_df: get time:", time)
+    print("params_disp_df: get lh:", log_hash)
     df_list = []
     for param_set in parameter_to_columns_list:
         param_name = param_set[0]
@@ -79,7 +79,7 @@ def get(
         sqlstr = "select 'param' as param, {} from {} where {} time <= '{}' {} {} order by time desc limit 1".format(
             cols_part, param_table, lh_clause, time, time_after_and, param_where_and
         )
-        #print("params_disp_df sql:", sqlstr)
+        print("params_disp_df sql:", sqlstr)
         df = None
         try:
             df = pd.read_sql(sqlstr, dbcon)

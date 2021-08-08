@@ -132,6 +132,7 @@ class timeSliderThread(QThread):
                             (1 * self.gc.slowDownValue) + timeskip
                         )
                         print("timeslider upper emit: {}".format(value))
+                        self.gc.selected_point_match_dict["log_hash"] = None  # clear selected log_hash has time moved from this play thread
                         self.changeValue.emit(value)
 
                     if x >= self.gc.sliderLength:

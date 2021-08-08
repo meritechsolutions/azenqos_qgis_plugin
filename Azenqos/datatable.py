@@ -433,12 +433,13 @@ class TableWindow(QWidget):
         ):
             try:
                 with sqlite3.connect(self.gc.databasePath) as dbcon:
+                    refresh_dict = {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
                     print(
-                        "datatable refreshTableContents() refresh_data_from_dbcon_and_time_func"
+                        "datatable refreshTableContents() refresh_data_from_dbcon_and_time_func: refresh_dict:", refresh_dict
                     )
                     self.set_pd_df(
                         self.refresh_data_from_dbcon_and_time_func(
-                            dbcon, {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
+                            dbcon, refresh_dict
                         )
                     )
             except:
@@ -640,9 +641,10 @@ class TableWindow(QWidget):
                 df = self.tableModel.df  # self.dataList
                 ts_query = """time <= '{}'""".format(self.find_row_time_string)
                 if self.find_row_log_hash is not None:
-                    ts_query = """time <= '{}' and log_hash = {}""".format(self.find_row_log_hash)
-                print("ts_query:", ts_query)
-                df = df.query(ts_query).reset_index()
+                    ts_query = """time <= '{}' and log_hash == {}""".format(self.find_row_time_string, self.find_row_log_hash)
+                print("datatable findCurrentRow() ts_query:", ts_query)
+                df = df.query(ts_query)
+                print("query done df head:\n", df.head())
                 print("findcurrentrow after query df len: %d", len(df))
                 if len(df):
                     self.currentRow = df.index[-1]

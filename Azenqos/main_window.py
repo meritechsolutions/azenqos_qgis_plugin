@@ -2093,7 +2093,7 @@ Log_hash list: {}""".format(
             qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
             return
         if self.gc.cell_files:
-            from Azenqos.cell_layer_task import CellLayerTask
+            from cell_layer_task import CellLayerTask
             print("starting celllayertask")
             self.cell_layer_task = CellLayerTask(
             "Load cell file", self.gc.cell_files, self.gc, self.task_done_signal

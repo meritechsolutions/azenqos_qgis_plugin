@@ -179,6 +179,6 @@ class login_dialog(QDialog):
             )
             self.ui_login_thread_failed()
         else:
-            qt_utils.msgbox("Login successful", parent=self)
+            #qt_utils.msgbox("Db dump from server success, press OK to continue", parent=self)
             print("on_login_done self.downloaded_zip_fp: %s" % self.downloaded_zip_fp)
             self.done(QtWidgets.QDialog.Accepted)

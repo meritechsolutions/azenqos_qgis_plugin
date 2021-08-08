@@ -45,8 +45,6 @@ class analyzer_vars:
     # these are set from mainwindow directly on clickcanvas match, not from timeslider
     selected_point_match_dict = dict.fromkeys(SELECTED_POINT_MATCH_PARAMS)
 
-
-    clickedLatLon = {"lat": 0, "lon": 0}
     sliderLength = 0
     openedWindows = []
     timeSlider = None

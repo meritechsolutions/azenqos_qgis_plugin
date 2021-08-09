@@ -1166,7 +1166,7 @@ Log_hash list: {}""".format(
             from PyQt5 import QtCore
 
             self.gc.timeSlider.setBaseSize(QtCore.QSize(500, 0))
-            self.gc.timeSlider.setPageStep(1)
+            self.gc.timeSlider.setPageStep(1000)
             self.gc.timeSlider.setSliderPosition(0)
             self.gc.timeSlider.setOrientation(QtCore.Qt.Horizontal)
             self.gc.timeSlider.setObjectName("timeSlider")

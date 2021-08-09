@@ -671,7 +671,7 @@ class TableWindow(QWidget):
                 if self.find_row_log_hash is not None:
                     ts_query = """time <= '{}' and log_hash == {}""".format(self.find_row_time_string, self.find_row_log_hash)
                 print("datatable findCurrentRow() ts_query:", ts_query)
-                df = df[["log_hash", "time"]].query(ts_query).reset_index()  # we need new index as we want the row number, as this df might be a slice of an earlier filter so index wont be correct
+                df = df[["log_hash", "time"]].reset_index().query(ts_query)  # we need new index as we want the row number, as this df might be a slice of an earlier filter so index wont be correct
                 print("query done df head:\n", df.head())
                 print("findcurrentrow after query df len: %d", len(df))
                 if len(df):

@@ -385,7 +385,7 @@ class import_db_dialog(QDialog):
             azq_utils.cleanup_died_processes_tmp_folders()
             assert os.path.isfile(zip_fp)
 
-            if zip_fp.endswith(".azm"):
+            if zip_fp.endswith(".azm") or zip_fp.endswith(".zip"):
                 azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
                 self.databasePath = preprocess_azm.extract_entry_from_zip(
                     zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
@@ -396,7 +396,7 @@ class import_db_dialog(QDialog):
                 shutil.copy(zip_fp, databasePath)
                 self.databasePath = databasePath
             else:
-                raise Exception("unsupported file format: {}".format(zip_fp))
+                raise Exception("unsupported file extension: {}".format(zip_fp))
 
             assert os.path.isfile(self.databasePath)
             ret = self.addDatabase()  # this will create views/tables per param as per specified theme so must check theme before here

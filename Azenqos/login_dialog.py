@@ -13,6 +13,7 @@ from PyQt5.uic import loadUi
 import azq_server_api
 import azq_utils
 
+MAX_LHL_LEN = 300
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
 
@@ -143,6 +144,15 @@ class login_dialog(QDialog):
                 None,
                 "Invalid log_hash list",
                 "Provided log_hash list must be numbers and commas only",
+                QtWidgets.QMessageBox.Ok,
+            )
+            return False
+
+        if len(lhl) > MAX_LHL_LEN:
+            QtWidgets.QMessageBox.critical(
+                None,
+                "Too many logs to dump from server",
+                "Too many logs to dump from server: {} > MAX_LHL_LEN {}".format(len(lhl), MAX_LHL_LEN),
                 QtWidgets.QMessageBox.Ok,
             )
             return False

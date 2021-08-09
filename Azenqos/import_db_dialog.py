@@ -250,6 +250,7 @@ class import_db_dialog(QDialog):
                 azq_cell_file.check_cell_files(cell_files)
             except Exception as e:
                 qt_utils.msgbox("Failed to load the sepcified cellfiles:\n\n{}".format(str(e)), title="Invalid cellfiles", parent=self)
+                self.gc.cell_files = []
                 return
 
         if self.radioButtonServer.isChecked() == False:

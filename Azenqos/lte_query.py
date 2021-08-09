@@ -91,7 +91,8 @@ def get_lte_serv_and_neigh_disp_df(dbcon, time_before):
     )
     pcell_scell_col_prefix_renamed = ["EARFCN", "PCI", "RSRP", "RSRQ", "SINR"]
     parameter_to_columns_list = [
-        ("Time", ["time"]),
+        ("log_hash", ["log_hash"]),
+        ("time", ["time"]),
         (
             ["PCell", "SCell1", "SCell2", "SCell3"],
             list(pcell_scell_col_prefix_sr + "1")

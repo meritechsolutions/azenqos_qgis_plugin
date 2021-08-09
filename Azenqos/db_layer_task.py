@@ -75,7 +75,7 @@ class LayerTask(QgsTask):
 
     def add_layers_from_ui_thread(self):
         try:
-            if True:
+            if self.gc.qgis_iface:
                 # gc.mostFeaturesLayer = None
                 print("db_layer_task.py add_layers_from_ui_thread 0")
 

@@ -1,5 +1,4 @@
 import os
-from collections import namedtuple
 
 from PyQt5.QtCore import QThreadPool
 
@@ -17,6 +16,7 @@ DEFAULT_PREF = {
     "point_to_site_serving_match_cgi": "0",
 
 }
+SELECTED_POINT_MATCH_PARAMS = ("log_hash", "posid", "seqid", "time", "lat", "lon")
 
 
 class analyzer_vars:
@@ -40,15 +40,11 @@ class analyzer_vars:
     currentTimestamp = None
     currentDateTimeString = None
     recentDateTimeString = ""
+    selected_row_log_hash = None
 
     # these are set from mainwindow directly on clickcanvas match, not from timeslider
-    selected_point_match_params = ("log_hash", "posid", "seqid", "time", "lat", "lon")
-    selected_point_match_dict = dict.fromkeys(selected_point_match_params)
-    selected_point_match_tuple_class = namedtuple("single_point_match_tuple", selected_point_match_params)
-    selected_point_match_tuple = None
+    selected_point_match_dict = dict.fromkeys(SELECTED_POINT_MATCH_PARAMS)
 
-
-    clickedLatLon = {"lat": 0, "lon": 0}
     sliderLength = 0
     openedWindows = []
     timeSlider = None

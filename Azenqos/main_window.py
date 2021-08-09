@@ -1,4 +1,5 @@
 import datetime
+import pathlib
 import shutil
 import threading
 import traceback
@@ -1248,10 +1249,21 @@ Log_hash list: {}""".format(
                 "<b>Load layers</b><br>Click to load additional layers from the currently opened log file into the QGIS map."
             )
 
+            # Layer Select Button
+            self.cellsSelect = QToolButton()
+            self.cellsSelect.setIcon(
+                QIcon(QPixmap(os.path.join(dirname, "res", "cells.png")))
+            )
+            self.cellsSelect.setObjectName("cellsBtn")
+            self.cellsSelect.setToolTip(
+                "<b>Load layers</b><br>Click to load cell files..."
+            )
+
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.loadBtn.clicked.connect(self.loadWorkspaceFile)
             self.saveBtn.clicked.connect(self.saveWorkspaceFile)
             self.layerSelect.clicked.connect(self.selectLayer)
+            self.cellsSelect.clicked.connect(self.selectCells)
             self.importDatabaseBtn.clicked.connect(self.open_logs)
             self.maptool.clicked.connect(self.setMapTool)
             self.setupToolBar()
@@ -1273,6 +1285,7 @@ Log_hash list: {}""".format(
         self.toolbar.addWidget(self.maptool)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.layerSelect)
+        self.toolbar.addWidget(self.cellsSelect)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
@@ -1378,6 +1391,32 @@ Log_hash list: {}""".format(
     def selectLayer(self):
         if self.qgis_iface:
             self.add_db_layers()
+
+    def selectCells(self):
+        if not self.gc.db_fp:
+            qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
+            return
+        if self.qgis_iface:
+
+            fileNames, _ = QFileDialog.getOpenFileNames(
+                self, "Select cell files", QtCore.QDir.rootPath(), "*.*"
+            )
+
+            if fileNames:
+                try:
+                    import azq_cell_file
+                    azq_cell_file.check_cell_files(fileNames)
+                    self.gc.cell_files = fileNames
+                except Exception as e:
+                    qt_utils.msgbox("Failed to load the sepcified cellfiles:\n\n{}".format(str(e)),
+                                    title="Invalid cellfiles", parent=self)
+                    self.gc.cell_files = []
+                    return
+            else:
+                return
+            assert self.gc.cell_files
+            self.add_cell_layers()  # this will set cellfiles
+            self.add_spider_layer()
 
     def pauseTime(self):
         self.gc.timeSlider.setEnabled(True)
@@ -1533,7 +1572,6 @@ Log_hash list: {}""".format(
                 "selected_lon": selected_lon,
             }
             self.gc.selected_point_match_dict = single_point_match_dict
-            self.gc.selected_point_match_tuple = self.gc.selected_point_match_tuple_class(log_hash=selected_log_hash, posid=selected_posid, seqid=selected_seqid, time=selected_time, lat=selected_lat, lon=selected_lon)
             # self.canvas.refreshself.gc.tableList()
 
             # draw cell
@@ -2048,7 +2086,7 @@ Log_hash list: {}""".format(
             self.db_layer_task = db_layer_task.LayerTask(u"Add layers", self.gc.db_fp, self.gc, self.task_done_signal)
             self.db_layer_task.run_blocking()
         else:
-            qt_utils.msgbox("No database of log found", title="Please open a log first", parent=self)
+            qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
 
 
     def add_map_layer(self):
@@ -2070,7 +2108,7 @@ Log_hash list: {}""".format(
         if not self.gc.cell_files:
             return
         try:
-            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)
+            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
         except Exception as e:
             qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
             return
@@ -2089,17 +2127,35 @@ Log_hash list: {}""".format(
             return
         import azq_cell_file
         try:
-            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)
+            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
         except Exception as e:
             qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
             return
         if self.gc.cell_files:
-            from Azenqos.cell_layer_task import CellLayerTask
-            print("starting celllayertask")
-            self.cell_layer_task = CellLayerTask(
-            "Load cell file", self.gc.cell_files, self.gc, self.task_done_signal
-            )
-            self.cell_layer_task.run_blocking()
+            import azq_cell_file
+            import azq_utils
+            rrv = azq_cell_file.CELL_FILE_RATS.copy()
+            rrv.reverse()  # by default gsm is biggest so put it at the bottom
+            for rat in rrv:
+                try:
+                    layer_name = rat.upper() + "_cells"
+                    pref_key = "cell_{}_sector_size_meters".format(rat)
+                    sector_size_meters = float(self.gc.pref[pref_key])
+                    df = azq_cell_file.read_cellfiles(self.gc.cell_files, rat, add_sector_polygon_wkt_sector_size_meters=sector_size_meters)
+                    csv_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_" + rat + ".csv")
+                    if len(df):
+                        df.to_csv(csv_fp)
+                        uri = pathlib.Path(csv_fp).as_uri()
+                        uri += "?crs=epsg:4326&wktField={}".format('sector_polygon_wkt')
+                        print("csv uri: {}".format(uri))
+                        layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
+                        QgsProject.instance().addMapLayers([layer])
+                        pass
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: add cell file for rat {} - exception: {}".format(rat, exstr))
+            return
         else:
             qt_utils.msgbox("No cell-files specified", parent=self)
 

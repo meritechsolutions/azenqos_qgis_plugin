@@ -16,29 +16,14 @@ from qgis.core import (
     QgsVectorLayer
 )
 
-from azq_cell_file import read_cell_file, RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT
+from azq_cell_file import read_cell_file, RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT, RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT, CELL_FILE_RATS
 from azq_utils import get_default_color_for_index
 
 MESSAGE_CATEGORY = "RandomIntegerSumTask"
 
-fields = QgsFields()
-fields.append(QgsField("cell_id", QVariant.Int))
-fields.append(QgsField("site", QVariant.String))
-fields.append(QgsField("system", QVariant.String))
-fields.append(QgsField("latitude", QVariant.Double))
-fields.append(QgsField("longitude", QVariant.Double))
-fields.append(QgsField("dir", QVariant.Int))
-fields.append(QgsField("ant_bw", QVariant.Int))
-fields.append(QgsField("mcc", QVariant.Int))
-fields.append(QgsField("mnc", QVariant.Int))
-fields.append(QgsField("mnc", QVariant.Int))
-fields.append(QgsField("PCI", QVariant.Int))
-fields.append(QgsField("PSC", QVariant.Int))
-fields.append(QgsField("BCCH", QVariant.Int))
-fields.append(QgsField("cgi", QVariant.String))
 
-
-def cell_to_polygon(cell, sector_distance=0.001, sector_size_meters=0):
+def cell_to_polygon(cell, fields, channel_col, code_col, sector_distance=0.001, sector_size_meters=0):
+    print("cell_to_polygon: channel_col", channel_col)
     if sector_size_meters:
         import azq_cell_file
         sector_distance = azq_cell_file.METER_IN_WGS84 * sector_size_meters
@@ -50,6 +35,7 @@ def cell_to_polygon(cell, sector_distance=0.001, sector_size_meters=0):
     point2 = point1.project(distance, point2_dir)
     point3 = point1.project(distance, point3_dir)
     points = [point1, point2, point3]
+
     poly.setFields(fields)
     poly["cell_id"] = cell.cell_id
     poly["site"] = cell.site
@@ -58,13 +44,11 @@ def cell_to_polygon(cell, sector_distance=0.001, sector_size_meters=0):
     poly["longitude"] = cell.lon
     poly["dir"] = cell.dir
     poly["ant_bw"] = cell.ant_bw
-    poly["longitude"] = cell.lon
-    poly["longitude"] = cell.lon
     poly["mcc"] = cell.mcc
     poly["mnc"] = cell.mnc
     poly["cgi"] = cell.cgi
-    system = cell.system.lower()
-    poly[RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[system][0].upper()] = cell[RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[system][0]]
+    poly[code_col] = cell[code_col]
+    poly[channel_col] = cell[channel_col]
     poly.setGeometry(QgsGeometry.fromPolygonXY([points]))
     return poly
 
@@ -75,27 +59,31 @@ class CellLayerTask(QgsTask):
     def __init__(self, description, files, gc, task_done_signal):
         super().__init__(description)
         self.files = files
-        self.cells_layers = []
+        self.cell_layers = []
         self.gc = gc
         self.task_done_signal = task_done_signal
         import azq_cell_file
         azq_cell_file.clear_cell_file_cache()
 
 
-    def create_cell_layer(self, df, system, name, color):
-        system = system.lower()
-        import azq_cell_file
-        assert system in azq_cell_file.CELL_FILE_RATS
-        pref_key = "cell_{}_sector_size_meters".format(system)
+    def create_cell_layer(self, df, fields, rat, name, color):
+        print("create_cell_layer rat:", rat)
+        rat = rat.lower()
+        assert rat in CELL_FILE_RATS
+        code_col = RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat][0]
+        channel_col = RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT[rat][0]
+        assert code_col in df.columns
+        assert channel_col in df.columns
+        pref_key = "cell_{}_sector_size_meters".format(rat)
         sector_size_meters = float(self.gc.pref[pref_key])
-        print("create_cell_layer system {} sector_size_meters {}".format(system, sector_size_meters))
+        print("create_cell_layer system {} sector_size_meters {}".format(rat, sector_size_meters))
         features = (
-            df[df["system"].str.lower() == system]
-            .apply(cell_to_polygon, sector_size_meters=sector_size_meters, axis=1)
+            df[df["system"].str.lower() == rat]
+            .apply(cell_to_polygon, fields=fields, channel_col=channel_col, code_col=code_col, sector_size_meters=sector_size_meters,  axis=1)
             .values.tolist()
         )
-
-        layer = QgsVectorLayer("Polygon?system=" + system, name, "memory")
+        layer = QgsVectorLayer("Polygon?system=" + rat, name, "memory")
+        print("system {} n_features: {}".format(rat, len(features)))
         pr = layer.dataProvider()
         pr.addAttributes(fields)
         layer.updateFields()
@@ -105,10 +93,10 @@ class CellLayerTask(QgsTask):
         symbol.setColor(QColor(color))
         return layer
 
+
     def run(self):
         print("cell_layer_task_run() 0")
         frames = []
-
         for path in self.files:
             try:
                 print("read " + path)
@@ -123,29 +111,39 @@ class CellLayerTask(QgsTask):
         print("cell_layer_task_run() 2")
         try:
             df = pd.concat(frames)
+            print("cell_layer_task_run() 2.1 df.columns:", df.columns)
+
+            fields = QgsFields()
+            fields.append(QgsField("latitude", QVariant.Double))
+            fields.append(QgsField("longitude", QVariant.Double))
+            fields.append(QgsField("dir", QVariant.Int))
+            fields.append(QgsField("ant_bw", QVariant.Int))
+            fields.append(QgsField("system", QVariant.String))
+            fields.append(QgsField("mcc", QVariant.Int))
+            fields.append(QgsField("mnc", QVariant.Int))
+            fields.append(QgsField("mnc", QVariant.Int))
+            fields.append(QgsField("cell_id", QVariant.Int))
+            fields.append(QgsField("site", QVariant.String))
+            fields.append(QgsField("cgi", QVariant.String))
+
+            for rat in CELL_FILE_RATS:
+                code_col = RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat][0]
+                channel_col = RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT[rat][0]
+                if code_col in df.columns:
+                    fields.append(QgsField(code_col, QVariant.Int))
+                    if code_col != channel_col:
+                        fields.append(QgsField(channel_col, QVariant.Int))
+
             print("cell_layer_task_run() 3")
-            nr_cells_layer = self.create_cell_layer(
-                df, "nr", "NR cells", get_default_color_for_index(0)
-            )
-            print("cell_layer_task_run() 4")
-            lte_cells_layer = self.create_cell_layer(
-                df, "lte", "LTE cells", get_default_color_for_index(1)
-            )
-            print("cell_layer_task_run() 5")
-            wcdma_cells_layer = self.create_cell_layer(
-                df, "wcdma", "WCDMA cells", get_default_color_for_index(2)
-            )
-            print("cell_layer_task_run() 6")
-            gsm_cells_layer = self.create_cell_layer(
-                df, "gsm", "GSM cells", get_default_color_for_index(3)
-            )
-            print("cell_layer_task_run() 7")
-            self.cells_layers = [
-                nr_cells_layer,
-                lte_cells_layer,
-                wcdma_cells_layer,
-                gsm_cells_layer,
-            ]
+            cell_layers = []
+            i = 0
+            for rat in df.system.unique():
+                rat = rat.lower()
+                cells_layer = self.create_cell_layer(
+                df, fields, rat, "{} cells".format(rat.upper()), get_default_color_for_index(CELL_FILE_RATS.index(rat))
+                )
+                cell_layers.append(cells_layer)
+            self.cell_layers = cell_layers
             print("cell_layer_task_run() 8")
         except:
             type_, value_, traceback_ = sys.exc_info()
@@ -161,7 +159,7 @@ class CellLayerTask(QgsTask):
     def add_layers_from_ui_thread(self):
         try:
             print("add_layers_from_ui_thread() 0")
-            QgsProject.instance().addMapLayers(self.cells_layers)
+            QgsProject.instance().addMapLayers(self.cell_layers)
             print("add_layers_from_ui_thread() 1")
         except:
             type_, value_, traceback_ = sys.exc_info()

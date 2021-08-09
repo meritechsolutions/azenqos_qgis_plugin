@@ -31,12 +31,21 @@ DEFAULT_LOOKBACK_DUR_MILLIS = 2000
 def get(
     dbcon,
     parameter_to_columns_list,
-    time_before,
+    lh_time_dict,
     default_table=None,
     common_param_index_suffix_list=[],
     not_null_first_col=False,
     custom_lookback_dur_millis=None,
 ):
+    log_hash = None
+    time = None
+    if isinstance(lh_time_dict, dict):
+        log_hash = lh_time_dict["log_hash"]
+        time = lh_time_dict["time"]
+    else:
+        time = lh_time_dict
+    print("params_disp_df: get time:", time)
+    print("params_disp_df: get lh:", log_hash)
     df_list = []
     for param_set in parameter_to_columns_list:
         param_name = param_set[0]
@@ -59,17 +68,18 @@ def get(
         time_after_and = ""
         if custom_lookback_dur_millis:
             assert isinstance(custom_lookback_dur_millis, int)
-            dt_before = pd.to_datetime(time_before)
+            dt_before = pd.to_datetime(time)
             # print("dt_before:", dt_before)
             dt_after = dt_before - pd.Timedelta(custom_lookback_dur_millis, "ms")
             # print("dt_after:", dt_after)
             time_after_and = "and time >= '{}'".format(dt_after)
-
-        sqlstr = "select 'param' as param, {} from {} where time <= '{}' {} {} order by time desc limit 1".format(
-            cols_part, param_table, time_before, time_after_and, param_where_and
+        lh_clause = ""
+        if log_hash is not None:
+            lh_clause = "log_hash = {} and".format(log_hash)
+        sqlstr = "select 'param' as param, {} from {} where {} time <= '{}' {} {} order by time desc limit 1".format(
+            cols_part, param_table, lh_clause, time, time_after_and, param_where_and
         )
-
-        # print("params_disp_df sql:", sqlstr)
+        print("params_disp_df sql:", sqlstr)
         df = None
         try:
             df = pd.read_sql(sqlstr, dbcon)

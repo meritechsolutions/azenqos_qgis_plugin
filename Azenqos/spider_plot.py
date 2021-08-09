@@ -120,7 +120,7 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
     if single_point_match_dict is not None:
         assert isinstance(single_point_match_dict, dict)
     print("gen_spider_df freq_code_match_mode: {}".format(freq_code_match_mode))
-    cells_df = azq_cell_file.read_cellfiles(cell_files, rat=rat, add_cell_lat_lon_sector_distance=(float(options_dict["sector_size_meters"])*azq_cell_file.METER_IN_WGS84) if "sector_size_meters" in options_dict else 50.0*azq_cell_file.METER_IN_WGS84)
+    cells_df = azq_cell_file.read_cellfiles(cell_files, rat=rat, add_cell_lat_lon_sector_distance_meters=(float(options_dict["sector_size_meters"])) if "sector_size_meters" in options_dict else 50.0)
     assert 'cell_lat' in cells_df.columns
     assert 'cell_lon' in cells_df.columns
     if len(cells_df) == 0:
@@ -202,7 +202,12 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
             print("merged_df head:", merged_df.head(10))
         else:
             print("len df1.12:", len(df))
-            print("freq_code mode df matched cgi len:", len(df))
+            print("freq_code mode df matched df len:", len(df))
+            print("freq_code mode df matched cells_df len:", len(cells_df))
+            print("freq_code mode df matched df len:", len(df))
+            print("freq_code mode df matched cells_df len:", len(cells_df))
+            df["freq"] = pd.to_numeric(df["freq"])
+            df["code"] = pd.to_numeric(df["code"])
             merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[azq_cell_file.RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT[rat][0], azq_cell_file.RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat][0]], how="inner")
             #merged_df = merged_df[["param_lat", "cell_lat", "param_lon", "cell_lon"]]
 

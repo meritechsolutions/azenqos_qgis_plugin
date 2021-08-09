@@ -1166,11 +1166,14 @@ Log_hash list: {}""".format(
             from PyQt5 import QtCore
 
             self.gc.timeSlider.setBaseSize(QtCore.QSize(500, 0))
-            self.gc.timeSlider.setPageStep(1000)
+            self.gc.timeSlider.setPageStep(1000)  # 1 second for pageup/down
             self.gc.timeSlider.setSliderPosition(0)
             self.gc.timeSlider.setOrientation(QtCore.Qt.Horizontal)
             self.gc.timeSlider.setObjectName("timeSlider")
             self.gc.timeSlider.setTracking(True)
+            self.gc.timeSlider.setToolTip(
+                "Use 'PgUp/PgDn' keys to move 1 second, use arrow keys to move 1 millisecond - when selected."
+            )
 
             # Play Speed Textbox
             self.speedLabel = QLabel(self)

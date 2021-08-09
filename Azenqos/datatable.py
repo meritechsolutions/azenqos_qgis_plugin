@@ -82,6 +82,10 @@ class TableWindow(QWidget):
         self.func_key = func_key
         # self.settings.setValue("func_key",self.func_key)
 
+        self.selected_row_time = None
+        self.selected_row_time_string = None
+        self.selected_row_log_hash = None
+
         try:
             self.gc = parent.gc
         except:
@@ -485,12 +489,25 @@ class TableWindow(QWidget):
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
+
+
         find_row_time_string = str(sampledate)
+        find_row_time = azq_utils.datetimeStringtoTimestamp(find_row_time_string)
         find_row_log_hash = self.gc.selected_point_match_dict["log_hash"]
 
-        if (find_row_time_string is not None and self.find_row_time_string is not None):
-            if find_row_time_string == self.find_row_time_string:
-                return
+        ######### check same timestamp from last select propagate back to us - dont drift to last row with same ts
+        print("hilightRow: find_row_time: {} self.selected_row_time: {}".format(find_row_time, self.selected_row_time))
+        print("hilightRow: find_row_log_hash: {} self.selected_row_log_hash: {}".format(find_row_log_hash, self.selected_row_log_hash))
+        if (find_row_time is not None and self.selected_row_time is not None):
+            if find_row_time == self.selected_row_time:
+                if (find_row_log_hash is None and self.selected_row_log_hash is None) or (find_row_log_hash is not None and self.selected_row_log_hash is not None and find_row_log_hash == self.selected_row_log_hash):
+                    print("find_row_time == self.selected_row_time and same log_hash so omit this hilightrow() call")
+                    return
+
+        # findCurrentRow() will look as these two instance vars
+        self.find_row_log_hash = find_row_log_hash
+        self.find_row_time = find_row_time
+        self.find_row_time_string = find_row_time_string
 
         if not self.time_list_mode:
             # table data mode like measurements of that time needs refresh
@@ -596,6 +613,7 @@ class TableWindow(QWidget):
                 break
 
         selected_row_time = None
+        selected_row_time_string = None
         selected_row_log_hash = None
         try:
             # check maybe current cell is not Time cell
@@ -616,6 +634,7 @@ class TableWindow(QWidget):
                 timeItem = item.sibling(item.row(), col_index)
                 ret_contents.append(str(timeItem.data()))
             print("ret_contents:", ret_contents)
+            selected_row_time_string = ret_contents[0]
             selected_row_time = azq_utils.datetimeStringtoTimestamp(ret_contents[0])
             selected_row_log_hash = np.int64(ret_contents[1])  # in windows somehow int not covering int64 of log_hash in some tests
         except:
@@ -624,15 +643,18 @@ class TableWindow(QWidget):
             print("WARNING: update_selected_log_hash_time exception:", exstr)
         finally:
             if selected_row_time is not None:
+                self.selected_row_time = selected_row_time
+                self.selected_row_time_string = selected_row_time_string
+                self.selected_row_log_hash = selected_row_log_hash
                 try:
                     sliderValue = selected_row_time - self.gc.minTimeValue
                     sliderValue = round(sliderValue, 3)
-                    self.gc.timeSlider.setValue(sliderValue)
                     self.gc.selected_row_time = selected_row_time
                     self.gc.selected_row_log_hash = selected_row_log_hash
                     self.gc.selected_point_match_dict = dict.fromkeys(analyzer_vars.SELECTED_POINT_MATCH_PARAMS)  # new dict with non vals in keys
                     self.gc.selected_point_match_dict["time"] = selected_row_time
                     self.gc.selected_point_match_dict["log_hash"] = selected_row_log_hash
+                    self.gc.timeSlider.setValue(sliderValue)
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))

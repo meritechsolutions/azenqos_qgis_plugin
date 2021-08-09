@@ -1209,15 +1209,6 @@ Log_hash list: {}""".format(
             self.importDatabaseBtn.setToolTip(
                 "<b>Open logs</b><br>Open test logs to analyze/replay its data."
             )
-            # Load Button
-            self.loadBtn = QToolButton()
-            self.loadBtn.setIcon(
-                QIcon(QPixmap(os.path.join(dirname, "res", "folder.png")))
-            )
-            self.loadBtn.setObjectName("loadBtn")
-            self.loadBtn.setToolTip(
-                "<b>Load workspace</b><br>Change the workspace windows from a saved setting"
-            )
 
             # Save Button
             self.saveBtn = QToolButton()
@@ -1226,7 +1217,7 @@ Log_hash list: {}""".format(
             )
             self.saveBtn.setObjectName("saveBtn")
             self.saveBtn.setToolTip(
-                "<b>Save workspace</b><br>Save current workspace windows to a workspace setting file."
+                "<b>Save workspace</b><br>Save current current DB (spatialite) to file..."
             )
 
             # Map tool Button
@@ -1260,8 +1251,7 @@ Log_hash list: {}""".format(
             )
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
-            self.loadBtn.clicked.connect(self.loadWorkspaceFile)
-            self.saveBtn.clicked.connect(self.saveWorkspaceFile)
+            self.saveBtn.clicked.connect(self.saveDbAs)
             self.layerSelect.clicked.connect(self.selectLayer)
             self.cellsSelect.clicked.connect(self.selectCells)
             self.importDatabaseBtn.clicked.connect(self.open_logs)
@@ -1280,7 +1270,6 @@ Log_hash list: {}""".format(
         self.toolbar.setFloatable(False)
         self.toolbar.setMovable(False)
         self.toolbar.addWidget(self.importDatabaseBtn)
-        self.toolbar.addWidget(self.loadBtn)
         self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.maptool)
         self.toolbar.addSeparator()
@@ -1876,6 +1865,19 @@ Log_hash list: {}""".format(
             self._gui_save()
             self.settings.sync()  # save changes
             shutil.copyfile(azq_utils.get_local_fp("ui_settings.ini"), fp)
+
+    def saveDbAs(self):
+        if not self.gc.db_fp:
+            qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
+            return
+        from PyQt5 import QtCore
+        fp, _ = QFileDialog.getSaveFileName(
+            self, "Save current DB file as", QtCore.QDir.rootPath(), "*.db"
+        )
+        if fp:
+            print("saveDbAs:", fp)
+            ret = shutil.copyfile(self.gc.db_fp, fp)
+            qt_utils.msgbox("File saved: {}".format(ret))
 
     def closeEvent(self, event):
         print("analyzer_window: closeEvent:", event)

@@ -1,5 +1,6 @@
 import datetime
 import os
+import shutil
 import sqlite3
 import sys
 # Adding folder path
@@ -210,7 +211,7 @@ class import_db_dialog(QDialog):
 
     def choose_azm(self):
         fileName, _ = QFileDialog.getOpenFileName(
-            self, "Single File", QtCore.QDir.rootPath(), "*.azm"
+            self, "Single File", QtCore.QDir.rootPath(), "AZENQOS azm log (*.azm);; SQLite db from azm (*.db)"
         )
         self.dbPathLineEdit.setText(fileName) if fileName else None
 
@@ -384,11 +385,19 @@ class import_db_dialog(QDialog):
             azq_utils.cleanup_died_processes_tmp_folders()
             assert os.path.isfile(zip_fp)
 
-            azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
-            self.databasePath = preprocess_azm.extract_entry_from_zip(
-                zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
-            )
-            preprocess_azm.extract_all_from_zip(zip_fp, azq_utils.tmp_gen_path())
+            if zip_fp.endswith(".azm"):
+                azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
+                self.databasePath = preprocess_azm.extract_entry_from_zip(
+                    zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
+                )
+                preprocess_azm.extract_all_from_zip(zip_fp, azq_utils.tmp_gen_path())
+            elif zip_fp.endswith(".db"):
+                databasePath = os.path.join(azq_utils.tmp_gen_path(), "azqdata.db")
+                shutil.copy(zip_fp, databasePath)
+                self.databasePath = databasePath
+            else:
+                raise Exception("unsupported file format: {}".format(zip_fp))
+
             assert os.path.isfile(self.databasePath)
             ret = self.addDatabase()  # this will create views/tables per param as per specified theme so must check theme before here
             if not ret:

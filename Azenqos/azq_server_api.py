@@ -293,7 +293,7 @@ def api_py_eval_get_parsed_ret_dict(
                 break
             signal_emit(
                 status_update_signal,
-                "Server process running - loop_count: {}".format(loop_count),
+                "Server dump/calculation process running - loop: {}".format(loop_count),
             )
         signal_emit(status_update_signal, "Server process completed...")
         print('server process complete - resp_dict:', resp_dict)

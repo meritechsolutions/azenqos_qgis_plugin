@@ -120,7 +120,7 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
     if single_point_match_dict is not None:
         assert isinstance(single_point_match_dict, dict)
     print("gen_spider_df freq_code_match_mode: {}".format(freq_code_match_mode))
-    cells_df = azq_cell_file.read_cellfiles(cell_files, rat=rat, add_cell_lat_lon_sector_distance=(float(options_dict["sector_size_meters"])*azq_cell_file.METER_IN_WGS84) if "sector_size_meters" in options_dict else 50.0*azq_cell_file.METER_IN_WGS84)
+    cells_df = azq_cell_file.read_cellfiles(cell_files, rat=rat, add_cell_lat_lon_sector_distance_meters=(float(options_dict["sector_size_meters"])) if "sector_size_meters" in options_dict else 50.0)
     assert 'cell_lat' in cells_df.columns
     assert 'cell_lon' in cells_df.columns
     if len(cells_df) == 0:

@@ -36,7 +36,7 @@ RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["lte"] = ("earfcn", "ch")
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["wcdma"] = ("uarfcn", "ch")
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["gsm"] = RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["gsm"]
 
-CELL_FILE_REQUIRED_COLUMNS = ("dir", "lat", "lon", "ant_bw", "system")
+CELL_FILE_REQUIRED_COLUMNS = ("dir", "lat", "lon", "ant_bw", "system", "site")
 CELL_FILE_NUMERIC_COLUMNS = tuple(["dir", "lat", "lon", "ant_bw"]\
                             + list(itertools.chain.from_iterable(RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT.keys())) \
                             + list(itertools.chain.from_iterable(RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT.keys())))
@@ -525,7 +525,7 @@ def check_cell_files(cell_files):
         read_cell_file(cell_file)
 
 
-def read_cellfiles(cell_files, rat, add_cell_lat_lon_sector_distance=None):
+def read_cellfiles(cell_files, rat, add_cell_lat_lon_sector_distance_meters=None, add_sector_polygon_wkt_sector_size_meters=None):
     global g_cell_file_to_df_dict
     df_list = []
     for cell_file in cell_files:
@@ -540,8 +540,10 @@ def read_cellfiles(cell_files, rat, add_cell_lat_lon_sector_distance=None):
     df = pd.concat(df_list)
     rat = check_rat_alias(rat)
     df = df[df["system"].str.lower() == rat].copy()
-    if add_cell_lat_lon_sector_distance:
-        add_cell_lat_lon_to_cellfile_df(df, distance=add_cell_lat_lon_sector_distance)
+    if add_cell_lat_lon_sector_distance_meters:
+        add_cell_lat_lon_to_cellfile_df(df, distance_meters=add_cell_lat_lon_sector_distance_meters)
+    if add_sector_polygon_wkt_sector_size_meters:
+        add_sector_polygon_wkt_to_cellfile_df(df, add_sector_polygon_wkt_sector_size_meters)
     return df
 
 
@@ -856,18 +858,42 @@ def df_cellfile_check_and_convert(df, fp_for_error_report=None):
     return df
 
 
-def add_cell_lat_lon_to_cellfile_df(df, distance=0.001):
-    print("add_cell_lat_lon_to_cellfile_df start")
+def add_cell_lat_lon_to_cellfile_df(df, distance_meters=30):
+    print("add_cell_lat_lon_to_cellfile_df: distance_meters: {}".format(distance_meters))
     assert 'lat' in df.columns
     assert 'lon' in df.columns
     assert 'dir' in df.columns
-    tmp_cols = ["rads", "dx", "dy"]
+    add_projection(df, distance_meters, "dir", "cell_lat", "cell_lon")
 
+
+def add_projection(df, distance_meters, dir_col, ret_lat_col, ret_lon_col):
+    distance = distance_meters * METER_IN_WGS84  # convert to wgs84
     # using formula inspired by https://qgis.org/api/qgspointxy_8cpp_source.html  QgsPointXY QgsPointXY::project( double distance, double bearing ) const
-    df["rads"] = (df["dir"] * np.pi) / 180.0;
+    df["rads"] = (df[dir_col] * np.pi) / 180.0;
     df["dx"] = distance * np.sin(df["rads"])
     df["dy"] = distance * np.cos(df["rads"])
-    df["cell_lat"] = df["lat"] + df["dy"]
-    df["cell_lon"] = df["lon"] + df["dx"]
+    df[ret_lat_col] = df["lat"] + df["dy"]
+    df[ret_lon_col] = df["lon"] + df["dx"]
+    tmp_cols = ["rads", "dx", "dy"]
     for tmp_col in tmp_cols:
         del df[tmp_col]
+
+
+def add_sector_polygon_wkt_to_cellfile_df(df, add_sector_polygon_wkt_sector_size_meters):
+    print("add_sector_polygon_wkt_to_cellfile_df: distance_meters: {}".format(add_sector_polygon_wkt_sector_size_meters))
+    df["point2"] = df["dir"] + (df.ant_bw / 2)
+    df["point3"] = df["dir"] - (df.ant_bw / 2)
+    tmp_cols = ["point2", "point3"]
+    for tmp_col in tmp_cols:
+        add_projection(df, add_sector_polygon_wkt_sector_size_meters, tmp_col, tmp_col+"_lat", tmp_col+"_lon")
+        del df[tmp_col]
+    df["sector_polygon_wkt"] = "POLYGON(("+\
+                               df.lon.astype(str) + " "+df.lat.astype(str) + ","+\
+                               df.point2_lon.astype(str)+" "+df.point2_lat.astype(str)+","+\
+                               df.point3_lon.astype(str)+" "+df.point3_lat.astype(str)+","+\
+                               df.lon.astype(str) + " " + df.lat.astype(str)+\
+                               "))"
+    for tmp_col in tmp_cols:
+        del df[tmp_col+"_lat"]
+        del df[tmp_col +"_lon"]
+

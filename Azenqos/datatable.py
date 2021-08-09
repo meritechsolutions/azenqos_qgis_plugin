@@ -485,8 +485,13 @@ class TableWindow(QWidget):
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
-        self.find_row_time_string = str(sampledate)
-        self.find_row_log_hash = self.gc.selected_point_match_dict["log_hash"]
+        find_row_time_string = str(sampledate)
+        find_row_log_hash = self.gc.selected_point_match_dict["log_hash"]
+
+        if (find_row_time_string is not None and self.find_row_time_string is not None):
+            if find_row_time_string == self.find_row_time_string:
+                return
+
         if not self.time_list_mode:
             # table data mode like measurements of that time needs refresh
             if threading:
@@ -639,11 +644,12 @@ class TableWindow(QWidget):
         if isinstance(self.dataList, pd.DataFrame):
             if self.find_row_time_string:
                 df = self.tableModel.df  # self.dataList
+                print("findcurrentrow cur df len:", len(df))
                 ts_query = """time <= '{}'""".format(self.find_row_time_string)
                 if self.find_row_log_hash is not None:
                     ts_query = """time <= '{}' and log_hash == {}""".format(self.find_row_time_string, self.find_row_log_hash)
                 print("datatable findCurrentRow() ts_query:", ts_query)
-                df = df.query(ts_query)
+                df = df[["log_hash", "time"]].query(ts_query).reset_index()  # we need new index as we want the row number, as this df might be a slice of an earlier filter so index wont be correct
                 print("query done df head:\n", df.head())
                 print("findcurrentrow after query df len: %d", len(df))
                 if len(df):

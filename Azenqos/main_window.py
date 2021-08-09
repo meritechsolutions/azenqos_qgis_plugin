@@ -1,4 +1,5 @@
 import datetime
+import pathlib
 import shutil
 import threading
 import traceback
@@ -2107,7 +2108,7 @@ Log_hash list: {}""".format(
         if not self.gc.cell_files:
             return
         try:
-            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)
+            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
         except Exception as e:
             qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
             return
@@ -2121,23 +2122,40 @@ Log_hash list: {}""".format(
 
 
     def add_cell_layers(self):
-
         print("add_cell_layers self.gc.cell_files:", self.gc.cell_files)
         if not self.gc.cell_files:
             return
         import azq_cell_file
         try:
-            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance=0.001)
+            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
         except Exception as e:
             qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
             return
         if self.gc.cell_files:
-            from cell_layer_task import CellLayerTask
-            print("starting celllayertask")
-            self.cell_layer_task = CellLayerTask(
-            "Load cell file", self.gc.cell_files, self.gc, self.task_done_signal
-            )
-            self.cell_layer_task.run_blocking()
+            import azq_cell_file
+            import azq_utils
+            rrv = azq_cell_file.CELL_FILE_RATS.copy()
+            rrv.reverse()  # by default gsm is biggest so put it at the bottom
+            for rat in rrv:
+                try:
+                    layer_name = rat.upper() + "_cells"
+                    pref_key = "cell_{}_sector_size_meters".format(rat)
+                    sector_size_meters = float(self.gc.pref[pref_key])
+                    df = azq_cell_file.read_cellfiles(self.gc.cell_files, rat, add_sector_polygon_wkt_sector_size_meters=sector_size_meters)
+                    csv_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_" + rat + ".csv")
+                    if len(df):
+                        df.to_csv(csv_fp)
+                        uri = pathlib.Path(csv_fp).as_uri()
+                        uri += "?crs=epsg:4326&wktField={}".format('sector_polygon_wkt')
+                        print("csv uri: {}".format(uri))
+                        layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
+                        QgsProject.instance().addMapLayers([layer])
+                        pass
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: add cell file for rat {} - exception: {}".format(rat, exstr))
+            return
         else:
             qt_utils.msgbox("No cell-files specified", parent=self)
 

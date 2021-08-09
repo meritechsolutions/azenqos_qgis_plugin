@@ -136,18 +136,18 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
             assert cgi_df is not None
             assert len(cgi_df)
 
-        df = cgi_df
-        df['time'] = pd.to_datetime(df['time'])
-        df = df[['log_hash', 'time', 'cgi']]
-        df = df.set_index('time', drop=True)
-        df = df.groupby('log_hash').resample('1000ms').ffill()
-        df = df[['cgi']]
-        df = df.reset_index()
-        df = df[df.log_hash.notnull()]
-        print("param_df head1", param_df.head())
-        df['log_hash'] = df.log_hash.astype(np.int64)
-        cgi_df = df
-        print("len cgi_df:", len(cgi_df))
+            df = cgi_df
+            df['time'] = pd.to_datetime(df['time'])
+            df = df[['log_hash', 'time', 'cgi']]
+            df = df.set_index('time', drop=True)
+            df = df.groupby('log_hash').resample('1000ms').ffill()
+            df = df[['cgi']]
+            df = df.reset_index()
+            df = df[df.log_hash.notnull()]
+            print("param_df head1", param_df.head())
+            df['log_hash'] = df.log_hash.astype(np.int64)
+            cgi_df = df
+            print("len cgi_df:", len(cgi_df))
         param_df['time'] = pd.to_datetime(param_df['time'])
         param_df['log_hash'] = param_df.log_hash.astype(np.int64)
 
@@ -270,24 +270,24 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
         param_df = pd.read_sql_query(param_sql, dbcon)
         print("lte param df len:", len(param_df), "head()", param_df.head())
     elif rat == "wcdma":
-        asql = "select log_hash, time, mm_characteristics_mcc as mcc, mm_characteristics_mnc as mnc, mm_characteristics_lac as lac from mm_state where mm_characteristics_mcc is not null and mm_characteristics_mnc is not null and mm_characteristics_lac is not null order by time"
-        bsql = "select log_hash, time, wcdma_cellid as cell_id from wcdma_idle_cell_info where wcdma_cellid is not null"
-
-        df_a = pd.read_sql_query(asql, dbcon)
-        df_b = pd.read_sql_query(bsql, dbcon)
-
-        df_a['time'] = pd.to_datetime(df_a['time'])
-        df_a['log_hash'] = df_a.log_hash.astype(np.int64)
-        df_b['time'] = pd.to_datetime(df_b['time'])
-        df_b['log_hash'] = df_b.log_hash.astype(np.int64)
-        df = pd.merge_asof(df_a, df_b, on='time', by='log_hash', direction='nearest',
-                           tolerance=pd.Timedelta('3600000ms'))
-
-        df["cgi"] = df.mcc.astype(int).astype(str) + " " + df.mnc.astype(int).astype(
-            str) + " " + df.lac.astype(int).astype(str) + " " + df.cell_id.astype(int).astype(str)
-        cgi_df = df
-        param_sql = "select log_hash, time, wcdma_aset_sc_1 from wcdma_cell_meas order by time"
+        cgi_df = None 
+        
+        table = "wcdma_cell_meas"
+        uarfcn_psc_params = "wcdma_aset_cellfreq_1 as freq, wcdma_aset_sc_1 as code"
+        if plot_spider_param.startswith("wcdma_mset_"):
+            uarfcn_psc_params = uarfcn_psc_params.replace("wcdma_aset_", "wcdma_mset_")
+            uarfcn_psc_params = uarfcn_psc_params.replace("_1", "_{}".format(plot_spider_param[-1]))
+        if single_point_match_dict is not None:
+            param_sql = None
+        else:
+            param_sql = "select log_hash, time, {}, {} from {} order by time".format(
+                plot_spider_param,
+                uarfcn_psc_params,
+                table,
+            )
+        print("wcdma param_sql:", param_sql)
         param_df = pd.read_sql_query(param_sql, dbcon)
+        print("wcdma param df len:", len(param_df), "head()", param_df.head())
 
     elif rat == "gsm":
         sqlstr = "select log_hash, time, gsm_cgi as cgi, gsm_arfcn_bcch from gsm_cell_meas order by time"
@@ -297,7 +297,6 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
     else:
         raise Exception("unhandled rat: {}".format(rat))
 
-    assert cgi_df is not None
     assert param_df is not None
     return cgi_df, param_df
 

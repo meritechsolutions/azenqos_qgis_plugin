@@ -278,7 +278,16 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
             uarfcn_psc_params = uarfcn_psc_params.replace("wcdma_aset_", "wcdma_mset_")
             uarfcn_psc_params = uarfcn_psc_params.replace("_1", "_{}".format(plot_spider_param[-1]))
         if single_point_match_dict is not None:
-            param_sql = None
+            param_sql = "select log_hash, time, abs({} - seqid) as seqid_diff, {}, {}, {} as lat, {} as lon from {} where log_hash = {} and posid = {} order by seqid_diff limit 1".format(
+                single_point_match_dict["seqid"],
+                plot_spider_param,
+                uarfcn_psc_params,
+                single_point_match_dict["selected_lat"],
+                single_point_match_dict["selected_lon"],
+                table,
+                single_point_match_dict["log_hash"],
+                single_point_match_dict["posid"],
+            )
         else:
             param_sql = "select log_hash, time, {}, {} from {} order by time".format(
                 plot_spider_param,

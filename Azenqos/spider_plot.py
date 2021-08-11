@@ -4,6 +4,7 @@ import traceback
 import sqlite3
 import pandas as pd
 import numpy as np
+import re
 
 import azq_utils
 import azq_cell_file
@@ -136,18 +137,18 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
             assert cgi_df is not None
             assert len(cgi_df)
 
-        df = cgi_df
-        df['time'] = pd.to_datetime(df['time'])
-        df = df[['log_hash', 'time', 'cgi']]
-        df = df.set_index('time', drop=True)
-        df = df.groupby('log_hash').resample('1000ms').ffill()
-        df = df[['cgi']]
-        df = df.reset_index()
-        df = df[df.log_hash.notnull()]
-        print("param_df head1", param_df.head())
-        df['log_hash'] = df.log_hash.astype(np.int64)
-        cgi_df = df
-        print("len cgi_df:", len(cgi_df))
+            df = cgi_df
+            df['time'] = pd.to_datetime(df['time'])
+            df = df[['log_hash', 'time', 'cgi']]
+            df = df.set_index('time', drop=True)
+            df = df.groupby('log_hash').resample('1000ms').ffill()
+            df = df[['cgi']]
+            df = df.reset_index()
+            df = df[df.log_hash.notnull()]
+            print("param_df head1", param_df.head())
+            df['log_hash'] = df.log_hash.astype(np.int64)
+            cgi_df = df
+            print("len cgi_df:", len(cgi_df))
         param_df['time'] = pd.to_datetime(param_df['time'])
         param_df['log_hash'] = param_df.log_hash.astype(np.int64)
 
@@ -207,8 +208,12 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
             print("freq_code mode df matched df len:", len(df))
             print("freq_code mode df matched cells_df len:", len(cells_df))
             df["freq"] = pd.to_numeric(df["freq"])
-            df["code"] = pd.to_numeric(df["code"])
-            merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[azq_cell_file.RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT[rat][0], azq_cell_file.RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat][0]], how="inner")
+            cell_freq = azq_cell_file.RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT[rat][0]
+            cell_code = "bsic"
+            if rat != "gsm":
+                df["code"] = pd.to_numeric(df["code"])
+                cell_code = azq_cell_file.RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat][0]
+            merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[cell_freq, cell_code], how="inner")
             #merged_df = merged_df[["param_lat", "cell_lat", "param_lon", "cell_lon"]]
 
         if "distance_limit_m" in options_dict:
@@ -236,7 +241,36 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
     if single_point_match_dict is not None:
         assert isinstance(single_point_match_dict, dict)
 
-    if rat == "lte":
+    if rat == "nr":
+        cgi_df = None 
+        table = "nr_cell_meas"
+        arfcn_pci_params = "nr_dl_arfcn_1 as freq, nr_servingbeam_pci_1 as code"
+        if plot_spider_param.startswith("nr_detectedbeam"):
+            match = re.search(r"nr_detectedbeam(\d)", plot_spider_param)
+            table = "nr_intra_neighbor"
+            arfcn_pci_params = "nr_detectedbeam{}_dl_arfcn_1 as freq, nr_detectedbeam{}_pci_1 as code".format(match.group(1), match.group(1))
+            arfcn_pci_params = arfcn_pci_params.replace("_1", "_{}".format(plot_spider_param[-1]))
+        if single_point_match_dict is not None:
+            param_sql = "select log_hash, time, abs({} - seqid) as seqid_diff, {}, {}, {} as lat, {} as lon from {} where log_hash = {} and posid = {} order by seqid_diff limit 1".format(
+                single_point_match_dict["seqid"],
+                plot_spider_param,
+                arfcn_pci_params,
+                single_point_match_dict["selected_lat"],
+                single_point_match_dict["selected_lon"],
+                table,
+                single_point_match_dict["log_hash"],
+                single_point_match_dict["posid"],
+            )
+        else:
+            param_sql = "select log_hash, time, {}, {} from {} order by time".format(
+                plot_spider_param,
+                arfcn_pci_params,
+                table,
+            )
+        print("nr param_sql:", param_sql)
+        param_df = pd.read_sql_query(param_sql, dbcon)
+        print("nr param df len:", len(param_df), "head()", param_df.head())
+    elif rat == "lte":
         sqlstr = "select log_hash, time, lte_sib1_mcc as mcc, lte_sib1_mnc as mnc, lte_sib1_tac as lac, lte_sib1_eci as cell_id from lte_sib1_info order by time"
         df = pd.read_sql_query(sqlstr, dbcon)
         df["cgi"] = df.mcc.astype(int).astype(str) + " " + df.mnc.astype(int).astype(
@@ -270,34 +304,65 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
         param_df = pd.read_sql_query(param_sql, dbcon)
         print("lte param df len:", len(param_df), "head()", param_df.head())
     elif rat == "wcdma":
-        asql = "select log_hash, time, mm_characteristics_mcc as mcc, mm_characteristics_mnc as mnc, mm_characteristics_lac as lac from mm_state where mm_characteristics_mcc is not null and mm_characteristics_mnc is not null and mm_characteristics_lac is not null order by time"
-        bsql = "select log_hash, time, wcdma_cellid as cell_id from wcdma_idle_cell_info where wcdma_cellid is not null"
-
-        df_a = pd.read_sql_query(asql, dbcon)
-        df_b = pd.read_sql_query(bsql, dbcon)
-
-        df_a['time'] = pd.to_datetime(df_a['time'])
-        df_a['log_hash'] = df_a.log_hash.astype(np.int64)
-        df_b['time'] = pd.to_datetime(df_b['time'])
-        df_b['log_hash'] = df_b.log_hash.astype(np.int64)
-        df = pd.merge_asof(df_a, df_b, on='time', by='log_hash', direction='nearest',
-                           tolerance=pd.Timedelta('3600000ms'))
-
-        df["cgi"] = df.mcc.astype(int).astype(str) + " " + df.mnc.astype(int).astype(
-            str) + " " + df.lac.astype(int).astype(str) + " " + df.cell_id.astype(int).astype(str)
-        cgi_df = df
-        param_sql = "select log_hash, time, wcdma_aset_sc_1 from wcdma_cell_meas order by time"
+        cgi_df = None 
+        
+        table = "wcdma_cell_meas"
+        uarfcn_psc_params = "wcdma_aset_cellfreq_1 as freq, wcdma_aset_sc_1 as code"
+        if plot_spider_param.startswith("wcdma_mset_"):
+            uarfcn_psc_params = uarfcn_psc_params.replace("wcdma_aset_", "wcdma_mset_")
+            uarfcn_psc_params = uarfcn_psc_params.replace("_1", "_{}".format(plot_spider_param[-1]))
+        if single_point_match_dict is not None:
+            param_sql = "select log_hash, time, abs({} - seqid) as seqid_diff, {}, {}, {} as lat, {} as lon from {} where log_hash = {} and posid = {} order by seqid_diff limit 1".format(
+                single_point_match_dict["seqid"],
+                plot_spider_param,
+                uarfcn_psc_params,
+                single_point_match_dict["selected_lat"],
+                single_point_match_dict["selected_lon"],
+                table,
+                single_point_match_dict["log_hash"],
+                single_point_match_dict["posid"],
+            )
+        else:
+            param_sql = "select log_hash, time, {}, {} from {} order by time".format(
+                plot_spider_param,
+                uarfcn_psc_params,
+                table,
+            )
+        print("wcdma param_sql:", param_sql)
         param_df = pd.read_sql_query(param_sql, dbcon)
-
+        print("wcdma param df len:", len(param_df), "head()", param_df.head())
     elif rat == "gsm":
-        sqlstr = "select log_hash, time, gsm_cgi as cgi, gsm_arfcn_bcch from gsm_cell_meas order by time"
-        df = pd.read_sql_query(sqlstr, dbcon)
-        cgi_df = df
-        param_df = df[['log_hash', 'time', 'gsm_arfcn_bcch']]
+        cgi_df = None 
+        
+        table = "gsm_cell_meas"
+        arfcn_bsic_params = "gsm_arfcn_bcch as freq, gsm_bsic as code"
+        if plot_spider_param.startswith("gsm_neighbor_"):
+            arfcn_bsic_params = "gsm_neighbor_arfcn_1 as freq, gsm_neighbor_bsic_1 as code"
+            arfcn_bsic_params = arfcn_bsic_params.replace("_1", "_{}".format(plot_spider_param[-1]))
+        if single_point_match_dict is not None:
+            param_sql = "select log_hash, time, abs({} - seqid) as seqid_diff, {}, {}, {} as lat, {} as lon from {} where log_hash = {} and posid = {} order by seqid_diff limit 1".format(
+                single_point_match_dict["seqid"],
+                plot_spider_param,
+                arfcn_bsic_params,
+                single_point_match_dict["selected_lat"],
+                single_point_match_dict["selected_lon"],
+                table,
+                single_point_match_dict["log_hash"],
+                single_point_match_dict["posid"],
+            )
+        else:
+            param_sql = "select log_hash, time, {}, {} from {} order by time".format(
+                plot_spider_param,
+                arfcn_bsic_params,
+                table,
+            )
+        print("gsm param_sql:", param_sql)
+        param_df = pd.read_sql_query(param_sql, dbcon)
+        print("gsm param df len:", len(param_df), "head()", param_df.head())
+
     else:
         raise Exception("unhandled rat: {}".format(rat))
 
-    assert cgi_df is not None
     assert param_df is not None
     return cgi_df, param_df
 

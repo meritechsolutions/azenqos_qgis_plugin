@@ -4,6 +4,7 @@ import traceback
 import sqlite3
 import pandas as pd
 import numpy as np
+import re
 
 import azq_utils
 import azq_cell_file
@@ -245,8 +246,10 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
         table = "nr_cell_meas"
         arfcn_pci_params = "nr_dl_arfcn_1 as freq, nr_servingbeam_pci_1 as code"
         if plot_spider_param.startswith("nr_detectedbeam"):
+            match = re.search(r"nr_detectedbeam(\d)", plot_spider_param)
             table = "nr_intra_neighbor"
-            arfcn_pci_params = "nr_detectedbeam1_dl_arfcn_1 as freq, nr_detectedbeam1_pci_1 as code"
+            arfcn_pci_params = "nr_detectedbeam{}_dl_arfcn_1 as freq, nr_detectedbeam{}_pci_1 as code".format(match.group(1), match.group(1))
+            arfcn_pci_params = arfcn_pci_params.replace("_1", "_{}".format(plot_spider_param[-1]))
         if single_point_match_dict is not None:
             param_sql = "select log_hash, time, abs({} - seqid) as seqid_diff, {}, {}, {} as lat, {} as lon from {} where log_hash = {} and posid = {} order by seqid_diff limit 1".format(
                 single_point_match_dict["seqid"],
@@ -335,6 +338,7 @@ def get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_di
         arfcn_bsic_params = "gsm_arfcn_bcch as freq, gsm_bsic as code"
         if plot_spider_param.startswith("gsm_neighbor_"):
             arfcn_bsic_params = "gsm_neighbor_arfcn_1 as freq, gsm_neighbor_bsic_1 as code"
+            arfcn_bsic_params = arfcn_bsic_params.replace("_1", "_{}".format(plot_spider_param[-1]))
         if single_point_match_dict is not None:
             param_sql = "select log_hash, time, abs({} - seqid) as seqid_diff, {}, {}, {} as lat, {} as lon from {} where log_hash = {} and posid = {} order by seqid_diff limit 1".format(
                 single_point_match_dict["seqid"],

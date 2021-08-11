@@ -18,7 +18,6 @@ GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
-import qt_utils
 
 
 class login_dialog(QDialog):

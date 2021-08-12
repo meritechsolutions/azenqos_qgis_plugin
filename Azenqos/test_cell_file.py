@@ -57,6 +57,10 @@ def test():
     print("df.head()\n", df.head())
     assert "psc" in df.columns
     assert "uarfcn" in df.columns
+
+    gsm_cell_file = ["../example_logs/gsm_spider/2G_cellfile.txt"]
+    df = azq_cell_file.read_cellfiles(gsm_cell_file, "gsm")
+    print(df)
         
 
 

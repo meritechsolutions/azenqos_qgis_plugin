@@ -209,10 +209,9 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
             print("freq_code mode df matched cells_df len:", len(cells_df))
             df["freq"] = pd.to_numeric(df["freq"])
             cell_freq = azq_cell_file.RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT[rat][0]
-            cell_code = "bsic"
+            cell_code = azq_cell_file.RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat][0]
             if rat != "gsm":
                 df["code"] = pd.to_numeric(df["code"])
-                cell_code = azq_cell_file.RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT[rat][0]
             merged_df = pd.merge(df, cells_df, left_on=["freq", "code"], right_on=[cell_freq, cell_code], how="inner")
             #merged_df = merged_df[["param_lat", "cell_lat", "param_lon", "cell_lon"]]
 

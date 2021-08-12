@@ -1582,6 +1582,19 @@ Log_hash list: {}""".format(
             pref_key = "cell_{}_sector_size_meters".format("lte")
             sector_size_meters = float(self.gc.pref[pref_key])
             options_dict["sector_size_meters"] = sector_size_meters
+            
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "nr", single_point_match_dict=single_point_match_dict,
+                                        plot_spider_param="nr_servingbeam_pci_1",
+                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
+            for i in range(3):
+                spider_plot.plot_rat_spider(
+                    self.gc.cell_files, self.gc.databasePath, "nr",
+                    single_point_match_dict=single_point_match_dict,
+                    plot_spider_param= "nr_detectedbeam{}_pci_1".format(i+1),
+                    freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
+                    dotted_lines=True,
+                    options_dict=options_dict
+                )
 
             spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_match_dict=single_point_match_dict,
                                         plot_spider_param="lte_physical_cell_id_1",
@@ -1591,6 +1604,32 @@ Log_hash list: {}""".format(
                     self.gc.cell_files, self.gc.databasePath, "lte",
                     single_point_match_dict=single_point_match_dict,
                     plot_spider_param="lte_neigh_physical_cell_id_{}".format(i+1),
+                    freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
+                    dotted_lines=True,
+                    options_dict=options_dict
+                )
+
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "wcdma", single_point_match_dict=single_point_match_dict,
+                                        plot_spider_param="wcdma_aset_sc_1",
+                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
+            for i in range(3):
+                spider_plot.plot_rat_spider(
+                    self.gc.cell_files, self.gc.databasePath, "wcdma",
+                    single_point_match_dict=single_point_match_dict,
+                    plot_spider_param="wcdma_mset_sc_{}".format(i+1),
+                    freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
+                    dotted_lines=True,
+                    options_dict=options_dict
+                )
+
+            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "gsm", single_point_match_dict=single_point_match_dict,
+                                        plot_spider_param="gsm_bsic",
+                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
+            for i in range(3):
+                spider_plot.plot_rat_spider(
+                    self.gc.cell_files, self.gc.databasePath, "gsm",
+                    single_point_match_dict=single_point_match_dict,
+                    plot_spider_param="gsm_neighbor_bsic_{}".format(i+1),
                     freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
                     dotted_lines=True,
                     options_dict=options_dict

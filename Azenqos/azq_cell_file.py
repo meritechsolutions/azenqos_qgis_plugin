@@ -28,13 +28,13 @@ RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT = dict.fromkeys(CELL_FILE_RATS)
 RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["nr"] = ["pci"]
 RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["lte"] = ["pci"]
 RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["wcdma"] = ["psc"]
-RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["gsm"] = ["bcch", "arfcn", "ch"]
+RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["gsm"] = ["bsic"]
 
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT = dict.fromkeys(CELL_FILE_RATS)
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["nr"] = ("arfcn", "ch")
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["lte"] = ("earfcn", "ch")
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["wcdma"] = ("uarfcn", "ch")
-RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["gsm"] = RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT["gsm"]
+RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["gsm"] = ["bcch", "arfcn", "ch"]
 
 CELL_FILE_REQUIRED_COLUMNS = ("dir", "lat", "lon", "ant_bw", "system", "site")
 CELL_FILE_NUMERIC_COLUMNS = tuple(["dir", "lat", "lon", "ant_bw"]\
@@ -590,6 +590,8 @@ def read_cell_file(
         for nc in CELL_FILE_NUMERIC_COLUMNS:
             try:
                 if nc in df.columns:
+                    if nc == "bsic":
+                        continue
                     df[nc] = pd.to_numeric(df[nc])
             except Exception as nne:
                 raise Exception(

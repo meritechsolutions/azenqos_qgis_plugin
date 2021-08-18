@@ -26,7 +26,7 @@ class AddParamDialog(QDialog):
 
     def setupUi(self):
         dirname = os.path.dirname(__file__)
-        self.ui = loadUi(azq_utils.get_local_fp("add_param_dialog.ui"), self)
+        self.ui = loadUi(azq_utils.get_module_fp("add_param_dialog.ui"), self)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         self.setWindowTitle("Add Parameter")
         self.ui.comboBox_2.addItem(self.arg)

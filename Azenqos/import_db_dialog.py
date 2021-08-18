@@ -174,12 +174,12 @@ class import_db_dialog(QDialog):
             _translate("DatabaseDialog", "Choose Cell file...")
         )
 
-        self.dbPathLineEdit.setText(azq_utils.read_local_file("config_prev_azm"))
+        self.dbPathLineEdit.setText(azq_utils.read_settings_file("config_prev_azm"))
         self.cellPathLineEdit.setText(
-            azq_utils.read_local_file("config_prev_cell_file")
+            azq_utils.read_settings_file("config_prev_cell_file")
         )
 
-        tp = azq_utils.read_local_file("config_prev_theme")
+        tp = azq_utils.read_settings_file("config_prev_theme")
         self.themePathLineEdit.setText(tp) if tp else self.themePathLineEdit.setText(
             "Default"
         )
@@ -233,9 +233,9 @@ class import_db_dialog(QDialog):
 
     def save_settings(self):
         import azq_utils
-        azq_utils.write_local_file("config_prev_azm", self.dbPathLineEdit.text())
-        azq_utils.write_local_file("config_prev_theme", self.themePathLineEdit.text())
-        azq_utils.write_local_file("config_prev_cell_file", self.cellPathLineEdit.text())
+        azq_utils.write_settings_file("config_prev_azm", self.dbPathLineEdit.text())
+        azq_utils.write_settings_file("config_prev_theme", self.themePathLineEdit.text())
+        azq_utils.write_settings_file("config_prev_cell_file", self.cellPathLineEdit.text())
 
     def check_and_start_import(self):
         self.save_settings()

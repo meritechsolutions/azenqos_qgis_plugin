@@ -6,7 +6,7 @@ import preprocess_azm
 
 ################################## df get functions
 
-def get_nr_radio_params_disp_df(dbcon, time_before):
+def get_nr_radio_params_disp_df_old(dbcon, time_before):
     if preprocess_azm.is_leg_nr_tables():
         parameter_to_columns_list = get_nr_radio_params_list_old()
     else:
@@ -16,7 +16,7 @@ def get_nr_radio_params_disp_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        not_null_first_col=False,
+        not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
@@ -747,7 +747,7 @@ def get_nr_beams_disp_df(dbcon, time_before):
     return final_df
 
 
-def get_nr_data_disp_df(dbcon, time_before):
+def get_nr_data_disp_df_old(dbcon, time_before):
     if preprocess_azm.is_leg_nr_tables():
         parameter_to_columns_list = get_nr_data_params_list_old()
     else:
@@ -757,7 +757,22 @@ def get_nr_data_disp_df(dbcon, time_before):
         dbcon,
         parameter_to_columns_list,
         time_before,
-        not_null_first_col=False,
+        not_null_first_col=True,
+        custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
+    )
+
+
+def get_nr_data_disp_df_exynos(dbcon, time_before):
+    if preprocess_azm.is_leg_nr_tables():
+        parameter_to_columns_list = get_nr_data_params_list_old()
+    else:
+        parameter_to_columns_list = get_nr_data_params_list()
+
+    return params_disp_df.get(
+        dbcon,
+        parameter_to_columns_list,
+        time_before,
+        not_null_first_col=True,
         custom_lookback_dur_millis=params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS,
     )
 
@@ -858,11 +873,9 @@ def get_nr_data_params_list():
         (
             [
                 "NR CRI",
-                "NR LI",
             ],
             [
                 "nr_cri_1",
-                "nr_li_1",
             ],
             "nr_csi_report",
         ),
@@ -1096,7 +1109,7 @@ def get_nr_data_params_list_old():
             [
                 "NR CQI",
                 "NR CRI",
-                "NR LI",
+
                 "NR RI",
                 "NR PMI I1 1",
                 "NR PMI I1 2",
@@ -1106,7 +1119,7 @@ def get_nr_data_params_list_old():
             [
                 "nr_cqi",
                 "nr_cri_1",
-                "nr_li_1",
+
                 "nr_ri_1",
                 "nr_wb_pmi_i1_1_1",
                 "nr_wb_pmi_i1_2_1",

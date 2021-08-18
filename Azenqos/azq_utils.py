@@ -7,6 +7,7 @@ import shutil
 import sys
 import traceback
 import uuid
+from pathlib import Path
 
 import requests
 
@@ -23,15 +24,29 @@ def get_module_path():
     return os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
-def get_local_fp(fn):
+def get_module_fp(fn):
     return os.path.join(get_module_path(), fn)
 
 
-def write_local_file(fname, contents, auto_encode=True):
+def get_settings_dp():
+    dp = os.path.join(get_module_parent_path(), "Azenqos_settings")
+    if not os.path.isdir(dp):
+        os.makedirs(dp)
+    assert os.path.isdir(dp)
+    return dp
+
+
+def get_settings_fp(fn):
+    dp = get_settings_dp()
+    fp = os.path.join(dp, fn)
+    return fp
+
+
+def write_settings_file(fname, contents, auto_encode=True):
     try:
         if auto_encode and isinstance(contents, str):
             contents = contents.encode()  # conv to bytes for write
-        with open(os.path.join(get_module_path(), fname), "wb") as f:
+        with open(get_settings_fp(fname), "wb") as f:
             f.write(contents)
     except:
         type_, value_, traceback_ = sys.exc_info()
@@ -39,9 +54,9 @@ def write_local_file(fname, contents, auto_encode=True):
         print("WARNING: write_local_file - exception: {}".format(exstr))
 
 
-def read_local_file(fname, auto_decode=True):
+def read_settings_file(fname, auto_decode=True):
     try:
-        with open(os.path.join(get_module_path(), fname), "rb") as f:
+        with open(get_settings_fp(fname), "rb") as f:
             ret = f.read()
             if auto_decode:
                 ret = ret.decode()
@@ -1366,7 +1381,6 @@ def get_default_color_for_index(i):
 
 
 def get_module_parent_path():
-    from pathlib import Path
     return str(Path(get_module_path()).parent)
 
 

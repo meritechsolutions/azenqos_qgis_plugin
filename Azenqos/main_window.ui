@@ -90,16 +90,21 @@
      <addaction name="actionLTE_RLC"/>
      <addaction name="actionLTE_VoLTE"/>
      <addaction name="actionLTE_Line_Chart"/>
+     <addaction name="actionExynos_LTE_Summary"/>
     </widget>
     <widget class="QMenu" name="menuNR">
      <property name="title">
       <string>NR</string>
      </property>
-     <addaction name="action5GNR_Radio_Parameters"/>
+     <addaction name="action5GNR_Radio"/>
+     <addaction name="action5GNR_Data"/>
      <addaction name="action5GNR_Serving_Neighbors"/>
-     <addaction name="action5GNR_Data_Params"/>
      <addaction name="action5GNR_Beams"/>
      <addaction name="actionNR_Line_Chart"/>
+     <addaction name="actionExynos_NR_summary"/>
+     <addaction name="separator"/>
+     <addaction name="action5GNR_Radio_Parameters"/>
+     <addaction name="action5GNR_Data_Params"/>
     </widget>
     <widget class="QMenu" name="menuSignalling">
      <property name="title">
@@ -262,12 +267,12 @@
   </action>
   <action name="action5GNR_Radio_Parameters">
    <property name="text">
-    <string>5GNR Physical Parameters</string>
+    <string>NR Radio (old view)</string>
    </property>
   </action>
   <action name="action5GNR_Serving_Neighbors">
    <property name="text">
-    <string>5GNR Serving + Neighbors</string>
+    <string>NR Serving + Neighbors</string>
    </property>
   </action>
   <action name="actionWCDMA_Active_Monitored_sets">
@@ -447,12 +452,12 @@
   </action>
   <action name="action5GNR_Beams">
    <property name="text">
-    <string>5GNR Beams</string>
+    <string>NR Beams</string>
    </property>
   </action>
   <action name="action5GNR_Data_Params">
    <property name="text">
-    <string>5GNR Data Params</string>
+    <string>NR Data (old view)</string>
    </property>
   </action>
   <action name="actionSupport">
@@ -498,6 +503,31 @@
   <action name="actionLoad_settings">
    <property name="text">
     <string>Load settings</string>
+   </property>
+  </action>
+  <action name="action5GNR_Radio">
+   <property name="text">
+    <string>NR Radio</string>
+   </property>
+  </action>
+  <action name="action5GNR_Data">
+   <property name="text">
+    <string>NR Data</string>
+   </property>
+  </action>
+  <action name="actionExynos_NR_SA_summary">
+   <property name="text">
+    <string>Exynos NR-SA summary</string>
+   </property>
+  </action>
+  <action name="actionExynos_NR_summary">
+   <property name="text">
+    <string>Exynos NR summary</string>
+   </property>
+  </action>
+  <action name="actionExynos_LTE_Summary">
+   <property name="text">
+    <string>Exynos LTE Summary</string>
    </property>
   </action>
  </widget>

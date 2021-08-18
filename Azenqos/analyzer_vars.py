@@ -97,4 +97,4 @@ class analyzer_vars:
 
 def get_pref_fp():
     import azq_utils
-    return azq_utils.get_local_fp("preferences.ini")
+    return azq_utils.get_settings_fp("preferences.ini")

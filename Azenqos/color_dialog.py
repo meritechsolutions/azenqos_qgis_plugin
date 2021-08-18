@@ -18,7 +18,7 @@ class ColorDialog(QDialog):
 
     def setupUi(self):
         dirname = os.path.dirname(__file__)
-        self.ui = loadUi(azq_utils.get_local_fp("color_dialog.ui"), self)
+        self.ui = loadUi(azq_utils.get_module_fp("color_dialog.ui"), self)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         self.setWindowTitle("Change Line Color")
         self.ui.label.setText(self._name)

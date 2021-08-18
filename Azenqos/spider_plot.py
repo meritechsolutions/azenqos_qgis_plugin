@@ -16,7 +16,7 @@ rat_to_spider_param_dict['nr'] = ["nr_servingbeam_pci_1"]
 rat_to_spider_param_dict['lte'] = ["lte_physical_cell_id_1", "lte_neigh_physical_cell_id_1",
                                       "lte_neigh_physical_cell_id_2", "lte_neigh_physical_cell_id_3"]
 rat_to_spider_param_dict['wcdma'] = ["wcdma_aset_sc_1", "wcdma_aset_sc_2", "wcdma_aset_sc_3"]
-rat_to_spider_param_dict['2G'] = ["gsm_arfcn_bcch"]
+rat_to_spider_param_dict['gsm'] = ["gsm_arfcn_bcch"]
 
 cellfile_att_param = dict()
 cellfile_att_param['nr'] = 'pci'
@@ -101,6 +101,7 @@ def gen_wkt_lines_plot_rat_spider(cell_files, dbfp, rat, plot_spider_param, sing
     print("rat {} handle plot_spider_param: {}".format(rat, plot_spider_param))
     wkt_lines = gen_spider_wkt_lines(cell_files, dbfp, rat, plot_spider_param, single_point_match_dict, freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
     assert wkt_lines is not None
+    print("len(wkt_lines) :", len(wkt_lines))
     assert len(wkt_lines)
     wkt_multiline_string = gen_wkt_multiline_string(wkt_lines)
     assert wkt_multiline_string.startswith("MULTILINESTRING((")

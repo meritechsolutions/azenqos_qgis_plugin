@@ -18,7 +18,6 @@ GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
-import qt_utils
 
 
 class login_dialog(QDialog):
@@ -49,15 +48,15 @@ class login_dialog(QDialog):
     def setupUi(self):
         dirname = os.path.dirname(__file__)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
-        self.ui = loadUi(azq_utils.get_local_fp("login_dialog.ui"), self)
+        self.ui = loadUi(azq_utils.get_module_fp("login_dialog.ui"), self)
         self.ui.pass_le.setEchoMode(QLineEdit.Password)
         self.ui.progressbar.setVisible(False)
         self.setWindowTitle("AZENQOS Server login")
         self.ui.server_url_le.setText(
-            azq_utils.read_local_file("prev_login_dialog_server")
+            azq_utils.read_settings_file("prev_login_dialog_server")
         )
-        self.ui.login_le.setText(azq_utils.read_local_file("prev_login_dialog_user"))
-        self.ui.lhl_le.setText(azq_utils.read_local_file("prev_login_dialog_lhl"))
+        self.ui.login_le.setText(azq_utils.read_settings_file("prev_login_dialog_user"))
+        self.ui.lhl_le.setText(azq_utils.read_settings_file("prev_login_dialog_lhl"))
 
     def read_ui_input_to_vars(self):
         self.server = self.ui.server_url_le.text().strip()
@@ -126,10 +125,10 @@ class login_dialog(QDialog):
                 )
                 return False
 
-        azq_utils.write_local_file("prev_login_dialog_server", self.server)
+        azq_utils.write_settings_file("prev_login_dialog_server", self.server)
         print("self.user", self.user)
-        azq_utils.write_local_file("prev_login_dialog_user", self.user)
-        azq_utils.write_local_file("prev_login_dialog_lhl", self.lhl)
+        azq_utils.write_settings_file("prev_login_dialog_user", self.user)
+        azq_utils.write_settings_file("prev_login_dialog_lhl", self.lhl)
 
         ###### check lhl
         lhl = self.lhl

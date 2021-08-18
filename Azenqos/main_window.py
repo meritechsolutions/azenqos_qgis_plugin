@@ -4,7 +4,7 @@ import shutil
 import threading
 import traceback
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QSettings, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator, QPixmap, QIcon
 from PyQt5.QtWidgets import (
@@ -21,7 +21,8 @@ from PyQt5.QtWidgets import (
     QWidget,
     QStyle,
     QMessageBox,
-    QPushButton, QHeaderView,
+    QPushButton,
+    QHeaderView,
 )
 from PyQt5.uic import loadUi
 
@@ -89,7 +90,7 @@ import sqlite3
 
 TIME_COL_DEFAULT_WIDTH = 150
 NAME_COL_DEFAULT_WIDTH = 180
-
+CURRENT_WORKSPACE_FN = "last_workspace.ini"
 
 class main_window(QMainWindow):
 
@@ -124,8 +125,8 @@ class main_window(QMainWindow):
         self.dbfp = None
         self.qgis_iface = qgis_iface
         self.timeSliderThread = timeSliderThread(self.gc)
-        self.settings = QSettings(
-            azq_utils.get_local_fp("ui_settings.ini"), QSettings.IniFormat
+        self.current_workspace_settings = QSettings(
+            azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN), QSettings.IniFormat
         )
         ########################
 
@@ -470,16 +471,75 @@ Log_hash list: {}""".format(
 
     ############# NR menu slots
 
+
     @pyqtSlot()
-    def on_action5GNR_Radio_Parameters_triggered(self):
+    def on_action5GNR_Radio_triggered(self):
         print("action nr radio params")
-        import nr_query
+        import nr_radio_query
 
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(
             swa,
-            "5GNR Radio Parameters",
-            nr_query.get_nr_radio_params_disp_df,
+            "NR Radio",
+            nr_radio_query.get_nr_radio_params_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    @pyqtSlot()
+    def on_action5GNR_Data_triggered(self):
+        print("action nr data params")
+        import nr_data_query
+
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "NR Data",
+            nr_data_query.get_nr_data_params_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    @pyqtSlot()
+    def on_actionExynos_NR_summary_triggered(self):
+        print("action Exynos_NR_summary")
+        import exynos_nr_summary
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Exynos NR Summary",
+            exynos_nr_summary.get_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    @pyqtSlot()
+    def on_actionExynos_LTE_Summary_triggered(self):
+        print("action Exynos_LTE_summary")
+        import exynos_lte_summary
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "Exynos LTE Summary",
+            exynos_lte_summary.get_disp_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        pass
+
+    @pyqtSlot()
+    def on_action5GNR_Radio_Parameters_triggered(self):
+        print("action old nr radio params")
+        import nr_query
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = TableWindow(
+            swa,
+            "NR Radio Parameters",
+            nr_query.get_nr_radio_params_disp_df_old,
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
@@ -493,7 +553,7 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(
             swa,
-            "5GNR Serving + Neighbors",
+            "NR Serving + Neighbors",
             nr_query.get_nr_serv_and_neigh_disp_df,
             func_key=inspect.currentframe().f_code.co_name,
         )
@@ -507,7 +567,7 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(
             swa,
-            "5GNR Beams",
+            "NR Beams",
             nr_query.get_nr_beams_disp_df,
             func_key=inspect.currentframe().f_code.co_name,
         )
@@ -515,14 +575,14 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_action5GNR_Data_Params_triggered(self):
-        print("action nr data")
+        print("action old nr data")
         import nr_query
 
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(
             swa,
-            "5GNR Data",
-            nr_query.get_nr_data_disp_df,
+            "NR Data",
+            nr_query.get_nr_data_disp_df_old,
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
@@ -1140,7 +1200,7 @@ Log_hash list: {}""".format(
 
 
     def setupUi(self):
-        self.ui = loadUi(azq_utils.get_local_fp("main_window.ui"), self)
+        self.ui = loadUi(azq_utils.get_module_fp("main_window.ui"), self)
         self.toolbar = self.ui.toolBar
         self.ui.statusbar.showMessage("Please open a log to start...")
         try:
@@ -1166,13 +1226,15 @@ Log_hash list: {}""".format(
             from PyQt5 import QtCore
 
             self.gc.timeSlider.setBaseSize(QtCore.QSize(500, 0))
-            self.gc.timeSlider.setPageStep(1000)  # 1 second for pageup/down
+            self.gc.timeSlider.setPageStep(1000)  # 1 second for pageup/down, use neg for pgup to go backwards
+            self.gc.timeSlider.setSingleStep(100)  # 1 second for pageup/down
+            self.gc.timeSlider.setInvertedControls(True)  # so pageup would go to past, pagedown would go to future time
             self.gc.timeSlider.setSliderPosition(0)
             self.gc.timeSlider.setOrientation(QtCore.Qt.Horizontal)
             self.gc.timeSlider.setObjectName("timeSlider")
             self.gc.timeSlider.setTracking(True)
             self.gc.timeSlider.setToolTip(
-                "Use 'PgUp/PgDn' keys to move 1 second, use arrow keys to move 1 millisecond - when selected."
+                "Use 'PgUp/PgDn' keys to move 1 second, use arrow keys to move 100 milliseconds - when selected."
             )
 
             # Play Speed Textbox
@@ -1194,6 +1256,7 @@ Log_hash list: {}""".format(
             self.timeEdit.setGeometry(QtCore.QRect(480, 56, 140, 22))
             self.timeEdit.setObjectName("timeEdit")
             self.timeEdit.setDisplayFormat("hh:mm:ss.zzz")
+            self.timeEdit.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
             self.timeEdit.setReadOnly(True)
 
             # Time label
@@ -1891,10 +1954,10 @@ Log_hash list: {}""".format(
                 for mdiwindow in self.mdi.subWindowList():
                     mdiwindow.close()
                 self.gc.openedWindows = []
-            shutil.copyfile(fp, azq_utils.get_local_fp("ui_settings.ini"))
-            self.settings.sync()  # load changes
+            shutil.copyfile(fp, azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN))
+            self.current_workspace_settings.sync()  # load changes
             self._gui_restore()
-            self.settings.sync()
+            self.current_workspace_settings.sync()
 
     def saveWorkspaceFile(self):
         from PyQt5 import QtCore
@@ -1905,8 +1968,9 @@ Log_hash list: {}""".format(
         if fp:
             print("saveWorkspaceFile:", fp)
             self._gui_save()
-            self.settings.sync()  # save changes
-            shutil.copyfile(azq_utils.get_local_fp("ui_settings.ini"), fp)
+            self.current_workspace_settings.sync()  # save changes
+            shutil.copyfile(azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN), fp)
+
 
     def saveDbAs(self):
         if not self.gc.db_fp:
@@ -1984,7 +2048,7 @@ Log_hash list: {}""".format(
                 print("mdiwindow close ", mdiwindow)
                 mdiwindow.close()
             self.mdi.close()
-            self.settings.clear()
+            self.current_workspace_settings.clear()
             print("Close App")
             try:
                 self.gc.close_db()
@@ -2077,11 +2141,11 @@ Log_hash list: {}""".format(
         try:
             print("_gui_save() START")
             print("_gui_save() geom")
-            self.settings.setValue(
+            self.current_workspace_settings.setValue(
                 GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry()
             )
             print("_gui_save() state")
-            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
+            self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
 
             swl = self.mdi.subWindowList()
             swl = [w for w in swl if (w is not None and w.widget() is not None)]
@@ -2091,9 +2155,9 @@ Log_hash list: {}""".format(
                 "len(gc.openedWindows)",
                 len(self.gc.openedWindows),
             )
-            self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+            self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
             if swl:
-                self.settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+                self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
                 i = -1
                 for window in swl:
                     # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
@@ -2103,21 +2167,21 @@ Log_hash list: {}""".format(
                         "_gui_save() window_{}_title".format(i), window.widget().title
                     )
                     i += 1
-                    self.settings.setValue(
+                    self.current_workspace_settings.setValue(
                         GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i),
                         window.widget().title,
                     )
-                    self.settings.setValue(
+                    self.current_workspace_settings.setValue(
                         GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i),
                         window.widget().func_key,
                     )
-                    self.settings.setValue(
+                    self.current_workspace_settings.setValue(
                         GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
                         window.saveGeometry(),
                     )
                     # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
 
-            self.settings.sync()  # save to disk
+            self.current_workspace_settings.sync()  # save to disk
             print("_gui_save() DONE")
         except:
             type_, value_, traceback_ = sys.exc_info()
@@ -2211,8 +2275,8 @@ Log_hash list: {}""".format(
         """
         try:
             print("_gui_restore() START")
-            self.settings.sync()  # load from disk
-            window_geom = self.settings.value(GUI_SETTING_NAME_PREFIX + "geom")
+            self.current_workspace_settings.sync()  # load from disk
+            window_geom = self.current_workspace_settings.value(GUI_SETTING_NAME_PREFIX + "geom")
             if window_geom:
                 print("_gui_restore() geom")
                 self.restoreGeometry(window_geom)
@@ -2222,17 +2286,17 @@ Log_hash list: {}""".format(
                 print("_gui_restore() state")
                 self.restoreState(state_value)
             """
-            n_windows = self.settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
+            n_windows = self.current_workspace_settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
             if n_windows:
                 n_windows = int(n_windows)
                 for i in range(n_windows):
-                    title = self.settings.value(
+                    title = self.current_workspace_settings.value(
                         GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i)
                     )
-                    geom = self.settings.value(
+                    geom = self.current_workspace_settings.value(
                         GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i)
                     )
-                    func = self.settings.value(
+                    func = self.current_workspace_settings.value(
                         GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
                     )
                     print("_gui_restore() window i {} title {}".format(i, title))
@@ -2259,7 +2323,7 @@ Log_hash list: {}""".format(
             print("WARNING: _gui_restore() - exception: {}".format(exstr))
             try:
                 print("doing qsettings clear()")
-                self.settings.clear()
+                self.current_workspace_settings.clear()
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))

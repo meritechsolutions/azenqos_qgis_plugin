@@ -68,7 +68,7 @@ class LineChart(QtWidgets.QDialog):
         self.maxY = None
         self.mousecoordinatesdisplay = None
         self.moveFromChart = False
-        self.ui = loadUi(azq_utils.get_local_fp("linechart3.ui"), self)
+        self.ui = loadUi(azq_utils.get_module_fp("linechart3.ui"), self)
         self.lineDict = {}
         self.graphWidget = None
         self.graphWidget = pg.GraphicsWindow()

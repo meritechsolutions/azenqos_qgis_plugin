@@ -121,7 +121,7 @@ def tshark_decode_gsm_l3_ota_hexdump(hexdump):
     )  # call this only once at start of program! otherwise will be very slow extracting .so in gnu/linux everytime...
 
     # call text2pcap -l 161 assgn.txt assgn.pcap
-    cmd = azq_utils.get_local_fp(
+    cmd = azq_utils.get_module_fp(
         os.path.join(
             "wireshark_" + os.name, "text2pcap" + ("" if os.name == "posix" else ".exe")
         )
@@ -134,7 +134,7 @@ def tshark_decode_gsm_l3_ota_hexdump(hexdump):
         print("text2pcap failed - abort")
     else:
         # tshark -o "uat:user_dlts:\"User 14 (DLT=161)\",\"gsm_a_dtap\",\"0\",\"\",\"0\",\"\"" -r assgn.pcap -V
-        cmd = azq_utils.get_local_fp(
+        cmd = azq_utils.get_module_fp(
             os.path.join(
                 "wireshark_" + os.name,
                 "tshark" + ("" if os.name == "posix" else ".exe"),
@@ -158,7 +158,7 @@ def prepare_env_and_libs():
     global g_extract_so_tar_gz_done
 
     env = os.environ.copy()
-    ws_bin_dir = azq_utils.get_local_fp("wireshark_" + os.name)
+    ws_bin_dir = azq_utils.get_module_fp("wireshark_" + os.name)
     env["LD_LIBRARY_PATH"] = ws_bin_dir
     if os.name == "posix" and not g_extract_so_tar_gz_done:
         extract_so_ret = os.system(

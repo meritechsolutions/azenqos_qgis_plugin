@@ -1,7 +1,3 @@
-import sqlite3
-
-import pandas as pd
-
 import integration_test_helpers
 import spider_plot
 

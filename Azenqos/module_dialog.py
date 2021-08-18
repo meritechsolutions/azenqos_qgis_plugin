@@ -26,7 +26,7 @@ class module_dialog(QDialog):
 
     def setupUi(self):
         dirname = os.path.dirname(__file__)
-        self.ui = loadUi(azq_utils.get_local_fp("module_dialog.ui"), self)
+        self.ui = loadUi(azq_utils.get_module_fp("module_dialog.ui"), self)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         self.setWindowTitle("AZENQOS Server module")
         self.ui.module_le.setText(self.row_sr["module"])

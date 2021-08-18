@@ -212,7 +212,7 @@ class azenqos_qgis_plugin:
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        debug_exec_str = azq_utils.read_local_file("debug_qgis_pyexec")
+        debug_exec_str = azq_utils.read_settings_file("debug_qgis_pyexec")
         if debug_exec_str is None or debug_exec_str.strip() == "":
             pass
         else:

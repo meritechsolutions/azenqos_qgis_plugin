@@ -136,7 +136,6 @@ class CellLayerTask(QgsTask):
 
             print("cell_layer_task_run() 3")
             cell_layers = []
-            i = 0
             for rat in df.system.unique():
                 rat = rat.lower()
                 cells_layer = self.create_cell_layer(

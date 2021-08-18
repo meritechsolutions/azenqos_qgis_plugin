@@ -57,7 +57,7 @@ def get(
         param_table = default_table
         param_where_and = ""
         if not_null_first_col:
-            param_where_and = "and {} is not null".format(param_cols[0])
+            param_where_and = "and {} is not null".format(param_cols[0] if " as " not in param_cols[0] else param_cols[1])
         if len(param_set) >= 3:
             if param_set[2]:
                 param_table = param_set[2]

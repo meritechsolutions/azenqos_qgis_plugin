@@ -8,8 +8,8 @@ def test():
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
     with integration_test_helpers.get_dbcon(dbfp) as dbcon:
-        df = nr_query.get_nr_data_disp_df(dbcon, "2021-05-14 18:55:51.710")
-        print("df.head():\n %s" % df.head(20))
+        df = nr_query.get_nr_data_disp_df_old(dbcon, "2021-05-14 18:55:51.710")
+        print("df.head():\n %s" % df.head(200))
         assert df.iloc[1, 1] == 0.778
 
 

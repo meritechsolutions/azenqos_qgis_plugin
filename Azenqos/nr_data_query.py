@@ -104,12 +104,30 @@ def get_nr_data_params_disp_df(dbcon, time_before):
         ),
         (
             [
-                "NR UL RB",
+                "NR DL Assign count",
             ],
             [
-                "nr_ul_rb_1",
+                "nr_pdsch_assign_num_1",
             ],
-            "nr_ul_rb",
+            "nr_cell_meas",
+        ),
+        (
+            [
+                "NR DL Grant util %",
+            ],
+            [
+                "nr_pdcch_dl_grant_percent_avg_1",
+            ],
+            "nr_pdcch_stat",
+        ),
+        (
+            [
+                "NR DL MCS",
+            ],
+            [
+                "nr_dl_mcs_mode_1",
+            ],
+            "nr_cell_meas",
         ),
         (
             [
@@ -122,12 +140,30 @@ def get_nr_data_params_disp_df(dbcon, time_before):
         ),
         (
             [
-                "NR DL MCS",
+                "NR UL RB",
             ],
             [
-                "nr_dl_mcs_mode_1",
+                "nr_ul_rb_1",
+            ],
+            "nr_ul_rb",
+        ),
+        (
+            [
+                "NR UL Assign count",
+            ],
+            [
+                "nr_pusch_assign_num_1",
             ],
             "nr_cell_meas",
+        ),
+        (
+            [
+                "NR UL Grant util %",
+            ],
+            [
+                "nr_pdcch_ul_grant_percent_avg_1",
+            ],
+            "nr_pdcch_stat",
         ),
         (
             [

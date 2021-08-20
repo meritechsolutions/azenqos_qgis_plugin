@@ -7,6 +7,7 @@ import traceback
 
 import pandas as pd
 import numpy as np
+
 from PyQt5.QtCore import (
     pyqtSignal,
     Qt,
@@ -31,6 +32,7 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QPushButton,
     QFileDialog,
+    QSizePolicy
 )
 
 import azq_server_api
@@ -45,6 +47,7 @@ from tsharkworker import TsharkDecodeWorker
 import azq_utils
 import qt_utils
 import qgis_layers_gen
+import sql_utils
 
 
 class TableWindow(QWidget):
@@ -59,7 +62,7 @@ class TableWindow(QWidget):
         self,
         parent,
         title,
-        refresh_data_from_dbcon_and_time_func=None,
+        refresh_df_func_or_py_eval_str=None,
         tableHeader=None,
         custom_df=None,
         time_list_mode=False,
@@ -70,6 +73,7 @@ class TableWindow(QWidget):
         skip_setup_ui=False,
         mdi=None,
         func_key=None,
+            stretch_last_row=False,
     ):
         super().__init__(parent)
         self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
@@ -80,6 +84,7 @@ class TableWindow(QWidget):
         self.skip_setup_ui = skip_setup_ui
         self.mdi = mdi
         self.func_key = func_key
+        self.stretch_last_row = stretch_last_row
         # self.settings.setValue("func_key",self.func_key)
 
         self.selected_row_time = None
@@ -93,9 +98,7 @@ class TableWindow(QWidget):
         assert self.gc is not None
 
         self.title = title
-        self.refresh_data_from_dbcon_and_time_func = (
-            refresh_data_from_dbcon_and_time_func
-        )
+        self.refresh_data_from_dbcon_and_time_func = refresh_df_func_or_py_eval_str
         self.custom_df = custom_df
         self.tableHeader = tableHeader
         self.rows = 0
@@ -133,6 +136,8 @@ class TableWindow(QWidget):
             self.setupUi()
         else:
             self.setupUiDry()
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.setContextMenuPolicy(Qt.CustomContextMenu)
         # self.customContextMenuRequested.connect(self.generateMenu)
         # self.properties_window = PropertiesWindow(
@@ -229,7 +234,8 @@ class TableWindow(QWidget):
 
         # self.tableView.verticalHeader().setMinimumSectionSize(12)
         self.tableView.verticalHeader().setDefaultSectionSize(14)
-
+        self.tableView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.tableView.verticalHeader().setStretchLastSection(self.stretch_last_row)
         # flayout = QFormLayout()
         # layout.addLayout(flayout)
         # for i in range(len(self.tableHeader)):
@@ -441,11 +447,27 @@ class TableWindow(QWidget):
                     print(
                         "datatable refreshTableContents() refresh_data_from_dbcon_and_time_func: refresh_dict:", refresh_dict
                     )
-                    self.set_pd_df(
-                        self.refresh_data_from_dbcon_and_time_func(
-                            dbcon, refresh_dict
-                        )
-                    )
+                    df = None
+                    if isinstance(self.refresh_data_from_dbcon_and_time_func, str):
+                        time = refresh_dict["time"]
+                        log_hash = refresh_dict["log_hash"]
+                        eval_str = self.refresh_data_from_dbcon_and_time_func
+                        if eval_str.strip().lower().startswith("select "):
+                            sql_str = eval_str
+                            print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
+                            df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time)
+                        else:
+                            print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
+                            df = eval(eval_str)
+                            if not isinstance(df, pd.DataFrame):
+                                df = pd.DataFrame({"py_eval_result":[df]})
+                    else:
+                        print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))
+                        df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
+                    assert df is not None
+                    assert isinstance(df, pd.DataFrame)
+                    print("datatable refersh param view got df:\n", df.head())
+                    self.set_pd_df(df)
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))

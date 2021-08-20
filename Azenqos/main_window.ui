@@ -90,7 +90,9 @@
      <addaction name="actionLTE_RLC"/>
      <addaction name="actionLTE_VoLTE"/>
      <addaction name="actionLTE_Line_Chart"/>
-     <addaction name="actionExynos_LTE_Summary"/>
+     <addaction name="actionExynos_LTE_Radio"/>
+     <addaction name="actionExynosServiceMode_LTE_Data"/>
+     <addaction name="actionExynosServiceMode_LTE_Reg"/>
     </widget>
     <widget class="QMenu" name="menuNR">
      <property name="title">
@@ -101,10 +103,13 @@
      <addaction name="action5GNR_Serving_Neighbors"/>
      <addaction name="action5GNR_Beams"/>
      <addaction name="actionNR_Line_Chart"/>
-     <addaction name="actionExynos_NR_summary"/>
+     <addaction name="actionExynosServiceMode_NR_Radio"/>
+     <addaction name="actionExynosServiceMode_NR_Data"/>
+     <addaction name="actionExynosServiceMode_NR_Reg"/>
      <addaction name="separator"/>
      <addaction name="action5GNR_Radio_Parameters"/>
      <addaction name="action5GNR_Data_Params"/>
+     <addaction name="separator"/>
     </widget>
     <widget class="QMenu" name="menuSignalling">
      <property name="title">
@@ -162,6 +167,19 @@
      <addaction name="actionLog_Info"/>
      <addaction name="actionLogs"/>
     </widget>
+    <widget class="QMenu" name="menuCustom_Windows">
+     <property name="title">
+      <string>Custom Windows</string>
+     </property>
+     <addaction name="actionCustom_Instant_View"/>
+     <addaction name="actionCustom_Table_View"/>
+    </widget>
+    <widget class="QMenu" name="menuMisc">
+     <property name="title">
+      <string>Misc</string>
+     </property>
+     <addaction name="actionExynosServiceMode_BasicInfo_2"/>
+    </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
@@ -171,6 +189,8 @@
     <addaction name="menuSystem"/>
     <addaction name="menuLog"/>
     <addaction name="actionPCAP"/>
+    <addaction name="menuCustom_Windows"/>
+    <addaction name="menuMisc"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -525,9 +545,54 @@
     <string>Exynos NR summary</string>
    </property>
   </action>
-  <action name="actionExynos_LTE_Summary">
+  <action name="actionExynos_LTE_Radio">
    <property name="text">
-    <string>Exynos LTE Summary</string>
+    <string>ExynosServiceMode LTE Radio</string>
+   </property>
+  </action>
+  <action name="actionCustom_Instant_View">
+   <property name="text">
+    <string>Custom Instant View (SQL/Python)</string>
+   </property>
+  </action>
+  <action name="actionCustom_Table_View">
+   <property name="text">
+    <string>Custom Table View (SQL/Python)</string>
+   </property>
+  </action>
+  <action name="actionExynosServiceMode_NR_Radio">
+   <property name="text">
+    <string>ExynosServiceMode NR Radio</string>
+   </property>
+  </action>
+  <action name="actionExynosServiceMode_NR_Data">
+   <property name="text">
+    <string>ExynosServiceMode NR Data</string>
+   </property>
+  </action>
+  <action name="actionExynosServiceMode_NR_Reg">
+   <property name="text">
+    <string>ExynosServiceMode NR Reg</string>
+   </property>
+  </action>
+  <action name="actionExynosServiceMode_LTE_Data">
+   <property name="text">
+    <string>ExynosServiceMode LTE Data</string>
+   </property>
+  </action>
+  <action name="actionExynosServiceMode_LTE_Reg">
+   <property name="text">
+    <string>ExynosServiceMode LTE Reg</string>
+   </property>
+  </action>
+  <action name="actionExynosServiceMode_BasicInfo">
+   <property name="text">
+    <string>ExynosServiceMode BasicInfo</string>
+   </property>
+  </action>
+  <action name="actionExynosServiceMode_BasicInfo_2">
+   <property name="text">
+    <string>ExynosServiceMode BasicInfo</string>
    </property>
   </action>
  </widget>

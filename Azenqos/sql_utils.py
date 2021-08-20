@@ -1,0 +1,56 @@
+import pandas as pd
+
+
+LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_PREFIX = '''pd.read_sql(
+'''
+
+LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SELECT_FROM_PART = '''
+select log_hash, time,
+exynos_basic_info_nr_mode_sa as 'SA Status',
+exynos_basic_info_nr_endc_status as 'NSA ENDC Status',
+exynos_basic_info_nr_band as 'NR Band',
+exynos_basic_info_nr_arfcn as 'NR ARFCN',
+exynos_basic_info_nr_pci as 'NR PCI',
+exynos_basic_info_nr_ch_bw as 'NR Bandwidth (MHz)'
+from exynos_basic_info_nr
+'''
+
+LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART = '''
+where {log_hash_filt_part} time between DATETIME('{time}','-2 seconds') and '{time}'
+order by time desc limit 1
+'''
+
+LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SUFFIX = '''.format(
+log_hash_filt_part='log_hash = {} and '.format(log_hash) if log_hash is not None else '',
+time=time),
+dbcon).transpose().reset_index()
+'''
+
+
+def get_ex_eval_str_for_select_from_part(select_from_part):
+    return LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_PREFIX+'"""'+\
+    select_from_part+\
+    LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART+'"""'+\
+    LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SUFFIX
+
+
+def sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time):
+    return select_from_part+LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART.format(
+        log_hash_filt_part='log_hash = {} and '.format(log_hash) if log_hash is not None else '',
+        time=time
+    )
+
+
+def get_lh_time_match_df(dbcon, sql, trasposed=True):
+    df = pd.read_sql(sql, dbcon)
+    if trasposed:
+        if len(df) == 0:
+            df.loc[0] = None  # add new row so wont be empty df when transpose (otherwise datatable.py show would be different n columns and wont get refreshed when n columns increased)
+        df = df.T.reset_index()  # pop out as column
+    return df
+
+
+def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash, time, trasposed=True):
+    sql = sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time)
+    return get_lh_time_match_df(dbcon, sql, trasposed=trasposed)
+

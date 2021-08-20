@@ -502,34 +502,76 @@ Log_hash list: {}""".format(
         self.add_subwindow_with_widget(swa, widget)
         widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
-    @pyqtSlot()
-    def on_actionExynos_NR_summary_triggered(self):
-        print("action Exynos_NR_summary")
-        import exynos_nr_summary
+
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False):
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(
             swa,
-            "Exynos NR Summary",
-            exynos_nr_summary.get_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
+            title,
+            refresh_func_or_py_eval_str_or_sql_str,
+            time_list_mode=time_list_mode,
+            stretch_last_row=stretch_last_row
         )
         self.add_subwindow_with_widget(swa, widget)
         widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
+
     @pyqtSlot()
-    def on_actionExynos_LTE_Summary_triggered(self):
-        print("action Exynos_LTE_summary")
-        import exynos_lte_summary
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "Exynos LTE Summary",
-            exynos_lte_summary.get_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        pass
+    def on_actionCustom_Instant_View_triggered(self):
+        title = "Custom instant view"
+        expression = qt_utils.ask_text(self, title=title, msg="Enter SQL select or Python expression")
+        self.add_param_window(expression, title=title)
+
+
+    @pyqtSlot()
+    def on_actionCustom_Table_View_triggered(self):
+        title = "Custom table view"
+        expression = qt_utils.ask_text(self, title=title, msg="Enter SQL select or Python expression")
+        if expression.strip().lower().startswith("select "):
+            expression = "pd.read_sql('''{}''',dbcon)".format(expression)
+        self.add_param_window(expression, title=title, time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionExynosServiceMode_BasicInfo_2_triggered(self):
+        self.add_param_window("select log_hash, time, exynos_basic_info from exynos_basic_info", title="ExynosServiceMode BasicInfo", stretch_last_row=True)
+
+
+    @pyqtSlot()
+    def on_actionExynosServiceMode_NR_Radio_triggered(self):
+        import exynos_service_mode_nr_query
+        self.add_param_window(exynos_service_mode_nr_query.RADIO_SELECT_FROM_PART, title="ExynosServiceMode NR Radio")
+
+
+    @pyqtSlot()
+    def on_actionExynosServiceMode_NR_Data_triggered(self):
+        import exynos_service_mode_nr_query
+        self.add_param_window(exynos_service_mode_nr_query.DATA_SELECT_FROM_PART, title="ExynosServiceMode NR Data")
+
+
+    @pyqtSlot()
+    def on_actionExynosServiceMode_NR_Reg_triggered(self):
+        import exynos_service_mode_nr_query
+        self.add_param_window(exynos_service_mode_nr_query.REG_SELECT_FROM_PART, title="ExynosServiceMode NR Reg")
+
+
+    @pyqtSlot()
+    def on_actionExynos_LTE_Radio_triggered(self):
+        import exynos_service_mode_lte_query
+        self.add_param_window(exynos_service_mode_lte_query.RADIO_SELECT_FROM_PART, title="ExynosServiceMode LTE Radio")
+
+
+    @pyqtSlot()
+    def on_actionExynosServiceMode_LTE_Data_triggered(self):
+        import exynos_service_mode_lte_query
+        self.add_param_window(exynos_service_mode_lte_query.DATA_SELECT_FROM_PART, title="ExynosServiceMode LTE Data")
+
+
+    @pyqtSlot()
+    def on_actionExynosServiceMode_LTE_Reg_triggered(self):
+        import exynos_service_mode_lte_query
+        self.add_param_window(exynos_service_mode_lte_query.REG_SELECT_FROM_PART, title="ExynosServiceMode LTE Reg")
+
 
     @pyqtSlot()
     def on_action5GNR_Radio_Parameters_triggered(self):

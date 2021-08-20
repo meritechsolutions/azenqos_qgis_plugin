@@ -1184,7 +1184,9 @@ def get_elm_df_from_csv():
     cols = ["id","var_name","csharp_oldname","db_table","var_type","db_type","val_min","val_max","n_arg_max","name","expiry","definition"]
     
     g_azq_global_elm_info_df_elm_csv_fn = AZQ_ELM_CSV
-    g_azq_global_elm_info_df = pd.read_csv(os.path.join(azq_utils.get_module_path(), AZQ_ELM_CSV ),names=cols).iloc[3:]  # first two rows are comments
+    g_azq_global_elm_info_df = pd.read_csv(os.path.join(azq_utils.get_module_path(), AZQ_ELM_CSV )).iloc[3:]  # first two rows are comments
+    g_azq_global_elm_info_df = g_azq_global_elm_info_df.iloc[: , :len(cols)].copy()  # get only columns we need
+    g_azq_global_elm_info_df.columns = cols  # set col names
 
     g_azq_global_elm_info_df["n_arg_max"].fillna(value="1", inplace=True)
 

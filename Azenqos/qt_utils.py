@@ -10,7 +10,7 @@ def msgbox(msg, title="Message", parent=None):
     return reply
 
 
-def ask_text(parent, title, msg):
+def ask_text(parent, title="Input text", msg="Input text"):
     text, okPressed = QInputDialog.getText(parent, title, msg, QLineEdit.Normal, "")
     if okPressed:
         return text

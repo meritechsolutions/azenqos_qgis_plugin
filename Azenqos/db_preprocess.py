@@ -89,7 +89,6 @@ def prepare_spatialite_views(dbcon):
         posid = df_location_posid_time.loc[(df_location_posid_time.log_hash == row.log_hash) & (df_location_posid_time.time <= row.time), "posid"].max()
         df_location_posid_time = df_location_posid_time.loc[df_location_posid_time.posid != posid]
         gps_cancel_list.append((row.log_hash, posid+1))
-    print("aaaaaaaaaaaaaaaaaaaaaaa", gps_cancel_list)
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml

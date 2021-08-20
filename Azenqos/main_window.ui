@@ -552,7 +552,7 @@
   </action>
   <action name="actionCustom_Instant_View">
    <property name="text">
-    <string>Custom Instant View (SQL/Python)</string>
+    <string>Custom Last-instant time-sync View (SQL/Python)</string>
    </property>
   </action>
   <action name="actionCustom_Table_View">

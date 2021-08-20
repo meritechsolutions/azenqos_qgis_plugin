@@ -251,12 +251,21 @@ class TableWindow(QWidget):
         self.show()
 
     def contextMenuEvent(self, event):
-        if not self.time_list_mode:
-            return
         menu = QMenu(self)
-        create_qgis_layer_action = menu.addAction("Create QGIS Map layer...")
+        actions_dict = {"create_qgis_layer": None, "custom_expression": None}
+        if self.time_list_mode and self.df is not None and 'log_hash' in self.df.columns and 'time' in self.df.columns:
+            actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
+        if isinstance(self.refresh_data_from_dbcon_and_time_func, str):
+            actions_dict["custom_expression"] = menu.addAction("Customize SQL/Python expression...")
         action = menu.exec_(self.mapToGlobal(event.pos()))
-        if action == create_qgis_layer_action:
+        if action is None:
+            return
+        if action == actions_dict["custom_expression"]:
+            expression = azq_utils.ask_custom_sql_or_py_expression(self, table_view_mode=self.time_list_mode, existing_content=self.refresh_data_from_dbcon_and_time_func)
+            if expression:
+                self.refresh_data_from_dbcon_and_time_func = expression
+                self.refreshTableContents()
+        elif action == actions_dict["create_qgis_layer"]:
             if self.gc.qgis_iface is None:
                 qt_utils.msgbox("Not running in QGIS-plugin mode...")
                 return

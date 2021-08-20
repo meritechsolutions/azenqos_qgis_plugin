@@ -518,18 +518,22 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionCustom_Instant_View_triggered(self):
-        title = "Custom instant view"
-        expression = qt_utils.ask_text(self, title=title, msg="Enter SQL select or Python expression")
-        self.add_param_window(expression, title=title)
+        expression = azq_utils.ask_custom_sql_or_py_expression(self, table_view_mode=False, msg="Enter SQL select (must have log_hash,time columns) or Python expression")
+        print("on_actionCustom_Instant_View_triggered new expression:", expression)
+        if expression:
+            title = qt_utils.ask_text(self, title="New window title", msg="Please enter desired title of new window",
+                                      existing_content="Custom instant view")
+            self.add_param_window(expression, title=title, time_list_mode=False)
 
 
     @pyqtSlot()
     def on_actionCustom_Table_View_triggered(self):
-        title = "Custom table view"
-        expression = qt_utils.ask_text(self, title=title, msg="Enter SQL select or Python expression")
-        if expression.strip().lower().startswith("select "):
-            expression = "pd.read_sql('''{}''',dbcon)".format(expression)
-        self.add_param_window(expression, title=title, time_list_mode=True)
+        expression = azq_utils.ask_custom_sql_or_py_expression(self, table_view_mode=True)
+        print("on_actionCustom_Table_View_triggered new expression:", expression)
+        if expression:
+            title = qt_utils.ask_text(self, title="New window title", msg="Please enter desired title of new window",
+                                      existing_content="Custom table view")
+            self.add_param_window(expression, title=title, time_list_mode=True)
 
 
     @pyqtSlot()

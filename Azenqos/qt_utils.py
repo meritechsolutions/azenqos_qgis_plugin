@@ -10,8 +10,13 @@ def msgbox(msg, title="Message", parent=None):
     return reply
 
 
-def ask_text(parent, title="Input text", msg="Input text"):
-    text, okPressed = QInputDialog.getText(parent, title, msg, QLineEdit.Normal, "")
+def ask_text(parent, title="Input text", msg="Input text", existing_content="", multiline=False):
+    text = None
+    okPressed = None
+    if multiline:
+        text, okPressed = QInputDialog.getMultiLineText(parent, title, msg, existing_content)
+    else:
+        text, okPressed = QInputDialog.getText(parent, title, msg, QLineEdit.Normal, existing_content)
     if okPressed:
         return text
     return None

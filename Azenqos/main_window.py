@@ -1781,6 +1781,7 @@ Log_hash list: {}""".format(
             print("starting layertask")
             self.add_map_layer()
             self.add_spider_layer()
+            self.add_indoor_map_layers()
             self.add_cell_layers()
             self.add_db_layers()
         else:
@@ -2270,6 +2271,44 @@ Log_hash list: {}""".format(
             freq_code_match_mode = self.gc.pref["spider_match_cgi"] == "0"
             spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, rat, options_dict=options_dict, freq_code_match_mode=freq_code_match_mode)
 
+    def add_indoor_map_layers(self):
+        rotate_indoor_map_path = os.path.join(self.gc.logPath, "map_rotated.png")
+        indoor_map_path = os.path.join(self.gc.logPath, "map.jpg")
+        tif_map_path = os.path.join(self.gc.logPath, "map_rotated.tif")
+        from PIL import Image
+        is_rotate_indoor_map = False
+        if os.path.isfile(rotate_indoor_map_path):
+            indoor_map_path = rotate_indoor_map_path
+            is_rotate_indoor_map = True
+        if os.path.isfile(indoor_map_path):
+            indoor_map_image = Image.open(indoor_map_path)
+            w, h = indoor_map_image.size
+            nw_lon = 0
+            nw_lat = 1
+            ne_lon = 1
+            ne_lat = 1
+            se_lon = 1
+            se_lat = 0
+            with sqlite3.connect(self.gc.databasePath) as dbcon:
+                try:
+                    indoor_bg_df = pd.read_sql("select * from indoor_background_img", dbcon)
+                    if len(indoor_bg_df) > 0:
+                        map_type = "ori"
+                        if is_rotate_indoor_map:
+                            map_type = "rotated"
+                        nw_lon = indoor_bg_df["indoor_{}_img_north_west_lon".format(map_type)][0]
+                        nw_lat = indoor_bg_df["indoor_{}_img_north_west_lat".format(map_type)][0]
+                        ne_lon = indoor_bg_df["indoor_{}_img_north_east_lon".format(map_type)][0]
+                        ne_lat = indoor_bg_df["indoor_{}_img_north_east_lat".format(map_type)][0]
+                        se_lon = indoor_bg_df["indoor_{}_img_south_east_lon".format(map_type)][0]
+                        se_lat = indoor_bg_df["indoor_{}_img_south_east_lat".format(map_type)][0]
+                except:
+                    pass
+
+            os.system("gdal_translate -of GTiff -a_srs EPSG:4326 -gcp 0 0 {nw_lon} {nw_lat} -gcp {width} 0 {ne_lon} {ne_lat} -gcp {width} {height} {se_lon} {se_lat} {jpg_path} {tif_path}".format(width=w, height=h, jpg_path=indoor_map_path, tif_path=tif_map_path, nw_lon=nw_lon, nw_lat=nw_lat, ne_lon=ne_lon, ne_lat=ne_lat, se_lon=se_lon, se_lat=se_lat))
+            self.qgis_iface.addRasterLayer(tif_map_path, "indoor_map")
+            
+        return
 
     def add_cell_layers(self):
         print("add_cell_layers self.gc.cell_files:", self.gc.cell_files)

@@ -1633,7 +1633,7 @@ def extract_entry_from_zip(zip_fp, entry_name, target_folder, try_7za_first=Fals
 
 
 def extract_all_from_zip(zip_fp, target_folder):
-    extensions = (".csv", ".pcap", ".wav", ".txt")
+    extensions = (".csv", ".pcap", ".wav", ".txt", ".jpg", ".png", ".json")
     with zipfile.ZipFile(zip_fp, "r") as zip_file:
         [
             zip_file.extract(file, target_folder)

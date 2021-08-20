@@ -479,6 +479,7 @@ class import_db_dialog(QDialog):
 
             assert self.databasePath
             self.gc.databasePath = self.databasePath
+            self.gc.logPath = azq_utils.tmp_gen_path()
             self.gc.db_fp = self.gc.databasePath
 
         finally:

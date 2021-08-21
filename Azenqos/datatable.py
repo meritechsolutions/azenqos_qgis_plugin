@@ -38,6 +38,7 @@ from PyQt5.QtWidgets import (
 import azq_server_api
 # Adding folder path
 import analyzer_vars
+
 from filter_header import FilterHeader, SortFilterProxyModel
 from worker import Worker
 
@@ -209,7 +210,7 @@ class TableWindow(QWidget):
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
             """
         )
-        self.refreshTableContents(create_table_model=True)
+        self.refreshTableContents()
 
         # Attach header to table, create text filter
         self.tableView.setHorizontalHeader(self.filterHeader)
@@ -360,41 +361,6 @@ class TableWindow(QWidget):
 
     def setTableModel(self, dataList):
         print("setTableModel() dataList len: {}".format(len(dataList)))
-        if isinstance(dataList, list):
-            if self.rows and self.columns:
-
-                if len(dataList) >= self.rows:
-                    if self.rows < self.fetchRows:
-                        self.fetchRows = self.rows
-
-                    dataList = dataList[: self.fetchRows]
-
-                while len(dataList) < self.rows:
-                    dataList.append([])
-
-                for dataRow in dataList:
-                    if len(dataRow) >= self.columns:
-                        if self.columns < self.fetchColumns:
-                            self.fetchColumns = self.columns
-                        dataRow = dataRow[: self.fetchColumns]
-                    while len(dataRow) < self.columns:
-                        dataRow.append("")
-
-                if len(self.tableHeader) >= self.columns:
-                    self.tableHeader = self.tableHeader[: self.columns]
-                else:
-                    while len(self.tableHeader) < self.columns:
-                        self.tableHeader.append("")
-                    # self.filterHeader.setFilterBoxes(len(self.tableHeader), self)
-
-            for customItem in self.customData:
-                try:
-                    dataList[customItem["row"]][customItem["column"]] = customItem[
-                        "text"
-                    ]
-                except:
-                    self.customData.remove(customItem)
-
         if self.customHeader:
             self.tableHeader = self.customHeader
 
@@ -426,8 +392,14 @@ class TableWindow(QWidget):
     def set_pd_df(self, dataList):
         self.dataList = dataList
         if isinstance(dataList, pd.DataFrame):
-            self.df = dataList
+            df = dataList
+            self.df = df
             self.df_str = self.df.astype(str)
+            self.tableHeader = df.columns.values.tolist()
+            self.rows = len(df)
+            self.fetchRows = self.rows
+            self.columns = len(df.columns)
+            self.fetchColumns = self.columns
         else:
             self.df = None
             self.df_str = None
@@ -440,8 +412,9 @@ class TableWindow(QWidget):
             self.rowCount = sizelist[0]
             self.columnCount = sizelist[1]
 
-    def refreshTableContents(self, create_table_model=False):
+    def refreshTableContents(self):
         print("datatable refreshTableContents()")
+        create_table_model = True  # always recreate tablemodel for non
         self.setMinimumSize(0, 0)
         if self.custom_df is not None:
             print("datatable refreshTableContents() custom_df")
@@ -461,7 +434,7 @@ class TableWindow(QWidget):
                         time = refresh_dict["time"]
                         log_hash = refresh_dict["log_hash"]
                         eval_str = self.refresh_data_from_dbcon_and_time_func
-                        if eval_str.strip().lower().startswith("select "):
+                        if sql_utils.is_sql_select(eval_str):
                             sql_str = eval_str
                             print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
                             df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time)
@@ -485,7 +458,7 @@ class TableWindow(QWidget):
                         self.title, exstr
                     )
                 )
-                self.set_pd_df(pd.DataFrame({"status", exstr}))
+                self.set_pd_df(pd.DataFrame({"Failed": [exstr]}))
 
         if self.dataList is not None:
             if create_table_model:
@@ -629,8 +602,8 @@ class TableWindow(QWidget):
             )
             return
         # get selected row time for signalling and events table
-
         if not self.tableHeader:
+            print("update_selected_log_hash_time: not self.tableHeader so return")
             return
 
         if isinstance(item, QItemSelection):

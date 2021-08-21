@@ -1613,7 +1613,8 @@ def launch_file(fp):
 
 def ask_custom_sql_or_py_expression(parent, title="Custom SQL/Python expression", existing_content="", table_view_mode=False, msg="Enter SQL select or Python expression"):
     import qt_utils
+    import sql_utils
     expression = qt_utils.ask_text(parent, title=title, msg=msg, existing_content=existing_content, multiline=True)
-    if expression is not None and table_view_mode and expression.strip().lower().startswith("select "):
+    if expression is not None and table_view_mode and sql_utils.is_sql_select(expression):
         expression = "pd.read_sql('''{}''',dbcon)".format(expression)
     return expression

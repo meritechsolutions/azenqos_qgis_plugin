@@ -54,3 +54,6 @@ def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash,
     sql = sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time)
     return get_lh_time_match_df(dbcon, sql, trasposed=trasposed)
 
+
+def is_sql_select(eval_str):
+    return eval_str.strip().lower().strip().startswith("select")

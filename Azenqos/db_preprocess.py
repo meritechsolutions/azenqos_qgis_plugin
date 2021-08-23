@@ -11,6 +11,22 @@ import azq_theme_manager
 import azq_utils
 import preprocess_azm
 
+elm_table_main_col_types = {
+    "log_hash": "BIGINT",
+    "time": "DATETIME",
+    "seqid": "INT",
+    "posid": "INT",
+    "geom": "BLOB",
+    "event_id": "INT",
+    "msg_id": "INT",
+    "name": "TEXT",
+    "symbol": "TEXT",
+    "protocol": "TEXT",    
+    "info": "TEXT",
+    "detail": "TEXT",
+    "detail_hex": "TEXT",
+    "detail_str": "TEXT",
+}
 
 def prepare_spatialite_views(dbcon):
     assert dbcon is not None
@@ -368,7 +384,7 @@ def prepare_spatialite_views(dbcon):
                 view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
                 view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
                 view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
-                view_df.to_sql(view, dbcon, index=False, if_exists="replace")
+                view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
     
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
 

@@ -497,7 +497,7 @@ class TableWindow(QWidget):
 
         find_row_time_string = str(sampledate)
         find_row_time = azq_utils.datetimeStringtoTimestamp(find_row_time_string)
-        find_row_log_hash = np.int64(self.gc.selected_point_match_dict["log_hash"])
+        find_row_log_hash = self.gc.selected_point_match_dict["log_hash"]
 
         ######### check same timestamp from last select propagate back to us - dont drift to last row with same ts
         print("hilightRow: find_row_time: {} self.selected_row_time: {}".format(find_row_time, self.selected_row_time))

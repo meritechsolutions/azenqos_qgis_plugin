@@ -40,6 +40,7 @@ class analyzer_vars:
     currentTimestamp = None
     currentDateTimeString = None
     recentDateTimeString = ""
+    selected_row_time = None
     selected_row_log_hash = None
 
     # these are set from mainwindow directly on clickcanvas match, not from timeslider

@@ -28,6 +28,14 @@ Installation instructions
 
 - Repeat the same steps above when you want to upgrade the plugin to a new version (version is shown at top-right of analyzer window).
 
+- Installation video guide (in Thai)
+  - https://youtu.be/iVAxRmVwomw
+
+- Example usage videos (in Thai)
+  - Part 1 Open local log + Cell line + Setting: https://youtu.be/xt5J_LS_cNQ
+  - Part 2 Open multiple log + Change theme: https://youtu.be/uTPSs6Hbf7w
+  - Part 3 Analyze sample + Create layer from events + Run server modules: https://youtu.be/Zh4H30rijog
+
 
 Using Standlone mode to replay/analyze logs without QGIS (Developer mode)
 ------------------------------------------------------------

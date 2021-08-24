@@ -183,6 +183,7 @@ def prepare_spatialite_views(dbcon):
 
             # get theme df for this param
             theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
+            print("db_preprocess theme_df:\n", theme_df)
             if 'match_value' in theme_df.columns:
                 # id columns like pci, earfcn
                 theme_df.Lower = theme_df.match_value

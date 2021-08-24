@@ -557,14 +557,20 @@ def get_theme_df_for_column(
         # print "get col df"
         col_to_select = preprocess_azm.get_elm_name_from_param_col_with_arg(param_col)
         if elm_info is not None:
-            # print "elm_info:", elm_info
+            print("elm_info:", elm_info)
             try:
-                if elm_info.n_arg_max.strip() == "1":
+                if str(elm_info.n_arg_max).strip() == "1":
                     pass
                 else:
                     col_to_select += "_1"
             except:
-                pass
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(
+                    traceback.format_exception(
+                        type_, value_, traceback_
+                    )
+                )
+                print("WARNING: gen colname from nargmax check exception: " + exstr)
 
         datadfsql = "select {} from {}".format(col_to_select, table_name)
         print("col_to_select:", col_to_select, "start sql:", datadfsql)

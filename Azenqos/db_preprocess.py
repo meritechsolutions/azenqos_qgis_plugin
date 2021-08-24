@@ -2,13 +2,31 @@ import os
 import sys
 import traceback
 import xml.etree.ElementTree as xet
+import struct
 
 import pandas as pd
+import numpy as np
 
 import azq_theme_manager
 import azq_utils
 import preprocess_azm
 
+elm_table_main_col_types = {
+    "log_hash": "BIGINT",
+    "time": "DATETIME",
+    "seqid": "INT",
+    "posid": "INT",
+    "geom": "BLOB",
+    "event_id": "INT",
+    "msg_id": "INT",
+    "name": "TEXT",
+    "symbol": "TEXT",
+    "protocol": "TEXT",    
+    "info": "TEXT",
+    "detail": "TEXT",
+    "detail_hex": "TEXT",
+    "detail_str": "TEXT",
+}
 
 def prepare_spatialite_views(dbcon):
     assert dbcon is not None
@@ -272,7 +290,40 @@ def prepare_spatialite_views(dbcon):
                 continue
             print("WARNING: prepare_spatialte_views exception:", exstr)
 
-
+    def lat_lon_to_geom(lat, lon):
+        if lat is None or lon is None:
+            return None
+        geomBlob = bytearray(60)
+        geomBlob[0] = 0
+        geomBlob[1] = 1
+        geomBlob[2] = 0xe6
+        geomBlob[3] = 0x10
+        geomBlob[4] = 0
+        geomBlob[5] = 0
+        bx = bytearray(struct.pack("d", lon)) 
+        by = bytearray(struct.pack("d", lat)) 
+        geomBlob[6:6+8] = bx
+        geomBlob[14:14+8] = by 
+        geomBlob[22:22+8] = bx
+        geomBlob[30:30+8] = by
+        geomBlob[38] = 0x7c
+        geomBlob[39] = 1
+        geomBlob[40] = 0
+        geomBlob[41] = 0
+        geomBlob[42] = 0
+        geomBlob[43:43+8] = bx
+        geomBlob[51:51+8] = by 
+        geomBlob[59] = 0xfe
+        return geomBlob
+        
+    df_location = pd.read_sql_query("select time as time_datetime, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null and positioning_lat >= 0 and positioning_lon >= 0 and positioning_lat <= 1 and positioning_lon <= 1", dbcon)
+    try:
+        df_indoor_location = pd.read_sql_query("select time as time_datetime, log_hash, indoor_location_lat as positioning_lat, indoor_location_lon as positioning_lon from indoor_location ", dbcon)
+        if len(df_indoor_location) > 0:
+            df_location = df_indoor_location
+    except:
+        pass
+    df_location["time_datetime"] = pd.to_datetime(df_location["time_datetime"])
 
     # remove stray -1 -1 rows
     for view in tables_to_rm_stray_neg1_rows:
@@ -309,6 +360,31 @@ def prepare_spatialite_views(dbcon):
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: remove gps cancel rows exception:", exstr)
+        if len(df_posids_indoor_start) > 0:
+            view_df = pd.read_sql("select * from {} where geom is not null".format(view), dbcon)
+            if len(view_df) > 0:
+                by = None
+                if "log_hash" in view_df.columns and "log_hash" in df_location.columns:
+                    print("indoor merge df_location using by log_hash")
+                    by = "log_hash"
+                    view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
+                    df_location["log_hash"] = df_location["log_hash"].astype(np.int64)
+                view_df["time_datetime"] = pd.to_datetime(view_df["time"])
+
+                view_df = pd.merge_asof(view_df.sort_values('time_datetime'), df_location.sort_values('time_datetime'), on="time_datetime", by=by, direction="backward", allow_exact_matches=True)
+                view_df = view_df.drop(columns=['time_datetime'])
+                view_df.loc[view_df.duplicated(["positioning_lat", "positioning_lon"]), ["positioning_lat", "positioning_lon"]] = np.nan
+                idf = view_df[["log_hash", "time", "positioning_lat", "positioning_lon"]]
+                idf = idf.dropna(subset=["time"])
+                idf = idf.drop_duplicates(subset='time').set_index('time')
+                idf = idf.groupby('log_hash').apply(lambda sdf: sdf.interpolate())
+                idf = idf.reset_index() 
+                view_df["positioning_lat"] = idf["positioning_lat"]
+                view_df["positioning_lon"] = idf["positioning_lon"]
+                view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
+                view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
+                view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
+                view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
     
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
 

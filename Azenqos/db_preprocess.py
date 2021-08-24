@@ -361,6 +361,7 @@ def prepare_spatialite_views(dbcon):
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: remove gps cancel rows exception:", exstr)
         if len(df_posids_indoor_start) > 0:
+            view_null_df = pd.read_sql("select * from {} where geom is null".format(view), dbcon)
             view_df = pd.read_sql("select * from {} where geom is not null".format(view), dbcon)
             if len(view_df) > 0:
                 by = None
@@ -383,6 +384,8 @@ def prepare_spatialite_views(dbcon):
                 view_df["positioning_lon"] = idf["positioning_lon"]
                 view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
                 view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
+                view_df = pd.concat([view_df, view_null_df], ignore_index=True)
+                view_df = view_df.sort_values(by="time").reset_index(drop=True)
                 view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
                 view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
     

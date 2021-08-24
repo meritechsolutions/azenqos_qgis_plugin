@@ -17,6 +17,7 @@ if debug:
 else:
     print("### run tests")
     assert 0 == os.system("cd Azenqos && make clean && ./test.sh")
+    os.system(''' git commit -a -m "[auto-build] tests passed" ''')
 
 print("### delete old release zips")
 # delete old zip release files

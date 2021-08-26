@@ -13,7 +13,7 @@ from PyQt5.uic import loadUi
 import azq_server_api
 import azq_utils
 
-MAX_LHL_LEN = 300
+MAX_LHL_LEN = 500
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 import signal
 

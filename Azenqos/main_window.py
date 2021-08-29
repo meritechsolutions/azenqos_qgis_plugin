@@ -1,4 +1,5 @@
 import datetime
+import json
 import pathlib
 import shutil
 import threading
@@ -503,14 +504,16 @@ Log_hash list: {}""".format(
         widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None):
         swa = SubWindowArea(self.mdi, self.gc)
+        print("add_param_window: time_list_mode:", time_list_mode)
         widget = TableWindow(
             swa,
             title,
             refresh_func_or_py_eval_str_or_sql_str,
             time_list_mode=time_list_mode,
-            stretch_last_row=stretch_last_row
+            stretch_last_row=stretch_last_row,
+            options=options
         )
         self.add_subwindow_with_widget(swa, widget)
         widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -536,7 +539,7 @@ Log_hash list: {}""".format(
             """.format(
             log_hash_filt_part='log_hash = {} and '.format(log_hash) if log_hash is not None else '',
             time=time),
-            dbcon).transpose()
+            dbcon).transpose().reset_index()
             '''.strip()
             ).strip()
         )
@@ -1960,7 +1963,13 @@ Log_hash list: {}""".format(
         try:
             self.selectFeatureOnLayersByTime()
         except:
-            pass
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print(
+                "WARNING: selectFeatureOnLayersByTime from hilightFeature exception: {}".format(
+                    exstr
+                )
+            )
 
 
     def selectFeatureOnLayersByTime(self):
@@ -2133,7 +2142,6 @@ Log_hash list: {}""".format(
                 print("mdiwindow close ", mdiwindow)
                 mdiwindow.close()
             self.mdi.close()
-            self.current_workspace_settings.clear()
             print("Close App")
             try:
                 self.gc.close_db()
@@ -2240,30 +2248,45 @@ Log_hash list: {}""".format(
                 "len(gc.openedWindows)",
                 len(self.gc.openedWindows),
             )
-            self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
+
             if swl:
                 self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", len(swl))
-                i = -1
+                i = 0
                 for window in swl:
                     # window here is a subwindow: class SubWindowArea(QMdiSubWindow)
-                    if not window.widget():
-                        continue
-                    print(
-                        "_gui_save() window_{}_title".format(i), window.widget().title
-                    )
-                    i += 1
-                    self.current_workspace_settings.setValue(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i),
-                        window.widget().title,
-                    )
-                    self.current_workspace_settings.setValue(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i),
-                        window.widget().func_key,
-                    )
-                    self.current_workspace_settings.setValue(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
-                        window.saveGeometry(),
-                    )
+                    try:
+                        if not window.widget():
+                            continue
+                        print(
+                            "_gui_save() window_{}_title".format(i), window.widget().title
+                        )
+
+                        self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i),
+                            window.widget().title,
+                        )
+                        self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i),
+                            window.widget().func_key,
+                        )
+                        self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
+                            window.saveGeometry(),
+                        )
+                        self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_refresh_df_func_or_py_eval_str".format(i),
+                            window.widget().refresh_data_from_dbcon_and_time_func,
+                        )
+                        self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i),
+                            json.dumps(window.widget().options),
+                        )
+                        i += 1
+                        self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", i)
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print("WARNING: _gui_save() for window exception: {}".format(exstr))
                     # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
 
             self.current_workspace_settings.sync()  # save to disk
@@ -2413,31 +2436,52 @@ Log_hash list: {}""".format(
             if n_windows:
                 n_windows = int(n_windows)
                 for i in range(n_windows):
-                    title = self.current_workspace_settings.value(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i)
-                    )
-                    geom = self.current_workspace_settings.value(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i)
-                    )
-                    func = self.current_workspace_settings.value(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
-                    )
-                    print("_gui_restore() window i {} title {}".format(i, title))
-                    func_key = "self." + func + "()"
-                    print(func_key)
-                    eval(func_key)
-                    if geom:
-                        for window in self.mdi.subWindowList():
-                            if not window.widget():
-                                continue
-                            if window.widget().title == title:
-                                print(
-                                    "_gui_restore() window i {} title {} setgeom".format(
-                                        i, title
+                    try:
+                        title = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_title".format(i)
+                        )
+                        geom = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i)
+                        )
+                        func = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
+                        )
+
+                        refresh_df_func_or_py_eval_str = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_refresh_df_func_or_py_eval_str".format(i)
+                        )
+
+                        options = json.loads(self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i)
+                        ))
+
+                        print("_gui_restore() window i: {} title: {} options: {}".format(i, title,
+                                                                                                             options))
+                        if func is not None:
+                            # on..._triggered func like on L3 triggered etc
+                            func_key = "self." + func + "()"
+                            print(func_key)
+                            eval(func_key)
+                        else:
+                            # like for custom windows - newer style
+                            self.add_param_window(refresh_df_func_or_py_eval_str, title=title, options=options)
+
+                        if geom:
+                            for window in self.mdi.subWindowList():
+                                if not window.widget():
+                                    continue
+                                if window.widget().title == title:
+                                    print(
+                                        "_gui_restore() window i {} title {} setgeom".format(
+                                            i, title
+                                        )
                                     )
-                                )
-                                window.restoreGeometry(geom)
-                                break
+                                    window.restoreGeometry(geom)
+                                    break
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print("WARNING: _gui_restore() window i: {} - exception: {}".format(i, exstr))
 
             print("_gui_restore() DONE")
         except:

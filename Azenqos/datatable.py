@@ -50,9 +50,17 @@ import qt_utils
 import qgis_layers_gen
 import sql_utils
 
+DEFAULT_TABLE_WINDOW_OPTIONS_DICT_KEYS = (
+    "time_list_mode",
+    "l3_alt_wireshark_decode",
+    "event_mos_score",
+    "list_module",
+    "stretch_last_row",
+)
 
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
+    signal_ui_thread_emit_new_model = pyqtSignal()
     signal_ui_thread_setup_ui = pyqtSignal()  # use with skip_setup_ui in ctor
     signal_ui_thread_emit_select_row = pyqtSignal(int)
 
@@ -66,28 +74,54 @@ class TableWindow(QWidget):
         refresh_df_func_or_py_eval_str=None,
         tableHeader=None,
         custom_df=None,
-        time_list_mode=False,
-        l3_alt_wireshark_decode=False,
-        event_mos_score=False,
-        list_module=False,
         gc=None,
         skip_setup_ui=False,
         mdi=None,
         func_key=None,
-            stretch_last_row=False,
+
+        # these params will be written to options_dict
+        time_list_mode=False,
+        l3_alt_wireshark_decode=False,
+        event_mos_score=False,
+        list_module=False,
+        stretch_last_row=False,
+        options=None,
     ):
         super().__init__(parent)
-        self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
-        self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
-        self.event_mos_score = event_mos_score
-        self.list_module = list_module
+        if options is None:
+            options = {}
         self.tableModel = None
         self.skip_setup_ui = skip_setup_ui
         self.mdi = mdi
         self.func_key = func_key
-        self.stretch_last_row = stretch_last_row
-        # self.settings.setValue("func_key",self.func_key)
 
+        ################ support old params not put in options dict
+        print("options0:", options)
+        if time_list_mode:
+            options["time_list_mode"] = time_list_mode
+        print("options1:", options)
+        if l3_alt_wireshark_decode:
+            options["l3_alt_wireshark_decode"] = l3_alt_wireshark_decode
+        if event_mos_score:
+            options["event_mos_score"] = event_mos_score
+        if list_module:
+            options["list_module"] = list_module
+        if stretch_last_row:
+            options["stretch_last_row"] = stretch_last_row
+        print("options2:", options)
+        for key in DEFAULT_TABLE_WINDOW_OPTIONS_DICT_KEYS:
+            if key not in options.keys():
+                options[key] = False
+        print("options3:", options)
+        self.time_list_mode = options["time_list_mode"]  # True for windows like signalling, events where it shows data as a time list
+        self.l3_alt_wireshark_decode = options["l3_alt_wireshark_decode"]  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
+        self.event_mos_score = options["event_mos_score"]
+        self.list_module = options["list_module"]
+        self.stretch_last_row = options["stretch_last_row"]
+        self.options = options
+        ################
+
+        # self.settings.setValue("func_key",self.func_key)
         self.selected_row_time = None
         self.selected_row_time_string = None
         self.selected_row_log_hash = None
@@ -100,6 +134,9 @@ class TableWindow(QWidget):
 
         self.title = title
         self.refresh_data_from_dbcon_and_time_func = refresh_df_func_or_py_eval_str
+
+        print("datatable.tablewindow title: {} time_list_mode: {} self.time_list_mode: {} options: {}".format(self.title, time_list_mode, self.time_list_mode,  self.options))
+
         self.custom_df = custom_df
         self.tableHeader = tableHeader
         self.rows = 0
@@ -126,6 +163,9 @@ class TableWindow(QWidget):
         self.filterMenu = None
         self.signal_ui_thread_emit_model_datachanged.connect(
             self.ui_thread_model_datachanged
+        )
+        self.signal_ui_thread_emit_new_model.connect(
+            self.ui_thread_new_model
         )
         self.signal_ui_thread_setup_ui.connect(self.ui_thread_sutup_ui)
         self.ui_thread_selecting_row_dont_trigger_timechanged = False
@@ -236,6 +276,7 @@ class TableWindow(QWidget):
         # self.tableView.verticalHeader().setMinimumSectionSize(12)
         self.tableView.verticalHeader().setDefaultSectionSize(14)
         self.tableView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.tableView.horizontalHeader().setStretchLastSection(True)
         self.tableView.verticalHeader().setStretchLastSection(self.stretch_last_row)
         # flayout = QFormLayout()
         # layout.addLayout(flayout)
@@ -325,6 +366,9 @@ class TableWindow(QWidget):
         )
         self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
         self.proxyModel.invalidateFilter()
+
+    def ui_thread_new_model(self):
+        self.setTableModel(self.dataList)
 
     def ui_thread_model_datachanged(self):
         print("ui_thread_model_datachanged")
@@ -463,7 +507,7 @@ class TableWindow(QWidget):
         if self.dataList is not None:
             if create_table_model:
                 print("datatable refreshTableContents() settablemodel")
-                self.setTableModel(self.dataList)
+                self.signal_ui_thread_emit_new_model.emit()
             else:
                 print("datatable refreshTableContents() updatetablemodeldata")
                 self.updateTableModelData(self.dataList)  # applies new self.dataList

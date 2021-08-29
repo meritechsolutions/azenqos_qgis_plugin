@@ -247,8 +247,11 @@ class azenqos_qgis_plugin:
             print("reply: {}".format(reply))
             if reply == QMessageBox.Yes:
                 print("close prev main_window start")
-                self.main_window.close()
-                self.main_window = None
+                try:
+                    self.main_window.close()
+                    self.main_window = None
+                except:
+                    pass
                 print("close prev main_window done")
             else:
                 return

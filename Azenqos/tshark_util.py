@@ -217,13 +217,19 @@ def tshark_decode_hex(side, name, protocol, detail):
 
     channelType = None
     print("name %s type %s" % (name, type(name)))
-    match = re.search(r"\((.*)\)", name)
-    if match is not None:
-        channelType = match.group(1)
+    chan_type_regexs = [
+    r"\((.*)\)",
+    r"NR (?:DL|UL) (\w+) ",
+    ]
+    for ctr in chan_type_regexs:
+        match = re.search(ctr, name)
+        if match is not None:
+            channelType = match.group(1)
+            break
 
     print("channelType", channelType)
 
-    dissector = protocolToDissector(protocol, channelType)
+    dissector = protocolToDissector(protocol, channelType, side)
     cmd = (
             tsharkPath
             + ' -o "uat:user_dlts:\\"User 14 (DLT=161)\\",\\"{}\\",\\"0\\",\\"\\",\\"0\\",\\"\\"" -r {} -V'.format(
@@ -241,7 +247,7 @@ def tshark_decode_hex(side, name, protocol, detail):
     return result
 
 
-def protocolToDissector(protocol, channelType):
+def protocolToDissector(protocol, channelType, side):
     if protocol in ["RR", "MM", "CC", "GMM", "SM"]:
         return "gsm_a_dtap"
     elif protocol in ["EMM", "ESM"]:
@@ -250,6 +256,8 @@ def protocolToDissector(protocol, channelType):
         return "rrc." + str(getWcdmaSubdissector(channelType))
     elif protocol in ["ERRC"]:
         return "lte_rrc." + str(getLteSubdissector(channelType))
+    elif protocol in ["NR-RRC"]:
+        return "nr-rrc." + str(getNrSubdissector(side, channelType))
     raise Exception("unhandled/unknown protocl: {} chan: {}".format(protocol, channelType))
 
 
@@ -305,3 +313,9 @@ def getLteSubdissector(channelType):
     elif channelType in ["UL-DCCH-Message-NB"]:
         return "ul_dcch.nb"
     return None
+
+
+def getNrSubdissector(side, channelType):
+    direction = "DL" if side == "recv" else "UL"
+    #TODO search message_element in https://www.wireshark.org/docs/dfref/n/nr-rrc.html and map all, raise if unmatched
+    return ""

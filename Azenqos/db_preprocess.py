@@ -389,6 +389,14 @@ def prepare_spatialite_views(dbcon):
                 view_df = view_df.sort_values(by="time").reset_index(drop=True)
                 view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
                 view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
+    if len(df_posids_indoor_start) > 0:
+        try:
+            sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
+            print("copy indoor_location lat lon to location: %s" % sqlstr)
+            dbcon.execute(sqlstr)
+            dbcon.commit()
+        except:
+            pass
     
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
 

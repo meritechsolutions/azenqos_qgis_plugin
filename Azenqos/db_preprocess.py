@@ -163,7 +163,7 @@ def prepare_spatialite_views(dbcon):
                 if "cell_meas" in table:
                     sqlstr = "create table {col} as select * from {table};".format(col=view, table=table)
                 else:
-                    sqlstr = "create table {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} ;".format(
+                    sqlstr = "create table {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null;".format(
                         col=view, table=table,
                         modem_time_part="modem_time" if table_has_modem_time else "null as modem_time"
                     )
@@ -172,6 +172,9 @@ def prepare_spatialite_views(dbcon):
             view_cols = pd.read_sql("select * from {} where false".format(view), dbcon).columns
             assert "geom" in view_cols
             assert param in view_cols
+            view_len = pd.read_sql("select count(*) from {}".format(view), dbcon).iloc[0,0]
+            if not view_len:
+                continue
             tables_to_rm_stray_neg1_rows.append(view)
 
             sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
@@ -193,9 +196,32 @@ def prepare_spatialite_views(dbcon):
             print("param: {} got theme_df:\n{}".format(param, theme_df))
 
             ranges_xml = "<ranges>\n"
+            try:
+                # QGIS ranges count (right click > show layer count) wont match sql counts below if we dont sort this way
+                theme_df["Upper"] = pd.to_numeric(theme_df["Upper"])
+                theme_df.sort_values("Upper", ascending=False, inplace=True)
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: theme_df.sort_values exception:", exstr)
+
             for index, row in theme_df.iterrows():
-                ranges_xml += """<range symbol="{index}" label="{lower} to {upper}" render="true" lower="{lower}" upper="{upper}"/>\n""".format(
-                    index=index, lower=row.Lower, upper=row.Upper
+                percent_part = ""
+                try:
+                    rsql = "select count(*) from {view} where {view} >= {lower} and {view} < {upper}".format(view=view, lower=row.Lower, upper=row.Upper)
+                    print("range rsql:", rsql)
+                    count = pd.read_sql(
+                        rsql,
+                        dbcon).iloc[0, 0]
+                    print("view_len: {} count: {}".format(view_len, count))
+                    percent_part = " (%d: %.02f%%)" % (count, ((count*100.0)/view_len))
+                    print("range percent_part:", percent_part)
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: calc range percent exception:", exstr)
+                ranges_xml += """<range symbol="{index}" label="{lower} to {upper}{percent}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
+                    index=index, lower=row.Lower, upper=row.Upper, percent=percent_part
                 )
             ranges_xml += "</ranges>\n"
 

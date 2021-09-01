@@ -42,8 +42,7 @@ def test():
         print("df.head() %s" % df)
 
         if not alt_mos_azm:
-            pass
-            # assert len(df[df.f_table_name == "nr_cqi"]) == 1
+            assert len(df[df.f_table_name == "nr_cqi"]) == 1
 
         assert (
             df.f_table_catalog.notnull().all()

@@ -429,47 +429,22 @@ Log_hash list: {}""".format(
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):
-        print("action l3")
-        import signalling_query
-
-        headers = ["log_hash", "time", "name", "dir", "protocol", "detail"]
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "Layer-3 Messages",
-            signalling_query.get_signalling,
-            tableHeader=headers,
-            time_list_mode=True,
-            l3_alt_wireshark_decode=True,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.setColumnWidth(1, TIME_COL_DEFAULT_WIDTH);
-        widget.tableView.setColumnWidth(2, NAME_COL_DEFAULT_WIDTH);
-        widget.tableView.setSortingEnabled(True)
+        self.add_param_window("pd.read_sql('''select log_hash, time, name, symbol as dir, protocol, detail_str from signalling''',dbcon)", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):
-        print("action events")
-        import signalling_query
-
-        headers = ["log_hash", "time", "name", "info"]
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "Events",
-            signalling_query.get_events,
-            tableHeader=headers,
-            time_list_mode=True,
-            event_mos_score=True,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.setColumnWidth(1, TIME_COL_DEFAULT_WIDTH);
-        widget.tableView.setColumnWidth(2, NAME_COL_DEFAULT_WIDTH);
-        widget.tableView.setColumnWidth(3, NAME_COL_DEFAULT_WIDTH);
-        widget.tableView.setSortingEnabled(True)
-
+        has_wave_file = False
+        with sqlite3.connect(self.gc.databasePath) as dbcon:
+            try:
+                mos_df = pd.read_sql("select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos", dbcon)
+                if len(mos_df) > 0 and "wave_file" in mos_df.columns:
+                    has_wave_file = True
+            except:
+                pass
+        if has_wave_file:
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
+        else:
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
 
     ############# NR menu slots
 

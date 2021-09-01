@@ -20,6 +20,8 @@ def test():
         azmfp = alt_azmfp
         alt_mos_azm = True
 
+
+
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
     with sqlite3.connect(dbfp) as dbcon:
@@ -40,9 +42,6 @@ def test():
 
         df = pd.read_sql("select * from layer_styles", dbcon)
         print("df.head() %s" % df)
-
-        if not alt_mos_azm:
-            assert len(df[df.f_table_name == "nr_cqi"]) == 1
 
         assert (
             df.f_table_catalog.notnull().all()

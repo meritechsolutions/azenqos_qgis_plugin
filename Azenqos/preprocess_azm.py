@@ -7,6 +7,8 @@ import sys
 import traceback
 import zipfile
 from datetime import datetime
+import sqlite3
+import contextlib
 
 import numpy as np
 import pandas as pd
@@ -1888,11 +1890,16 @@ def get_azqdata_max_sip_and_qmdl_flush_ts_diff_millis():
         )
     return ret
 
+
 def get_azm_apk_ver(dbcon):
     ver = pd.read_sql("select max(log_app_version) from logs", dbcon).iloc[0,0]
     ret = apk_verstr_to_ver_int(ver)
-
     return ret
+
+
+def get_azm_apk_ver_for_dbfp(dbfp):
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+        return get_azm_apk_ver(dbcon)
 
 
 def is_leg_nr_tables():

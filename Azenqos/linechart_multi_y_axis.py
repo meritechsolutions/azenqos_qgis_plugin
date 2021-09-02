@@ -7,8 +7,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QMenu, QHeaderView, QFont
-
+from PyQt5.QtGui import QMenu, QFont
 # from qgis.gui import QgsColorButton
 from PyQt5.uic import loadUi
 

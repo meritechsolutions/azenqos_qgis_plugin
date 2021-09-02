@@ -7,9 +7,8 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
-
 # from qgis.gui import QgsColorButton
-from PyQt5.QtWidgets import QMenu, QHeaderView
+from PyQt5.QtWidgets import QMenu
 from PyQt5.uic import loadUi
 
 import add_param_dialog

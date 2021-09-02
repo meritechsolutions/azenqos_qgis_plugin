@@ -23,7 +23,6 @@ from PyQt5.QtWidgets import (
     QStyle,
     QMessageBox,
     QPushButton,
-    QHeaderView,
 )
 from PyQt5.uic import loadUi
 

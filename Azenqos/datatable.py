@@ -21,7 +21,6 @@ from PyQt5.QtWidgets import (
     QTableView,
     QAbstractItemView,
     QVBoxLayout,
-    QHeaderView,
     QMenu,
     QLineEdit,
     QTreeView,

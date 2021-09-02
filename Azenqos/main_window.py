@@ -113,6 +113,7 @@ class main_window(QMainWindow):
         self.gc = analyzer_vars.analyzer_vars()
         self.gc.qgis_iface = qgis_iface
         self.timechange_service_thread = None
+        self.is_legacy_indoor = False
         self.timechange_to_service_counter = atomic_int(0)
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
@@ -428,47 +429,22 @@ Log_hash list: {}""".format(
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):
-        print("action l3")
-        import signalling_query
-
-        headers = ["log_hash", "time", "name", "dir", "protocol", "detail"]
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "Layer-3 Messages",
-            signalling_query.get_signalling,
-            tableHeader=headers,
-            time_list_mode=True,
-            l3_alt_wireshark_decode=True,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.setColumnWidth(1, TIME_COL_DEFAULT_WIDTH);
-        widget.tableView.setColumnWidth(2, NAME_COL_DEFAULT_WIDTH);
-        widget.tableView.setSortingEnabled(True)
+        self.add_param_window("pd.read_sql('''select log_hash, time, name, symbol as dir, protocol, detail_str from signalling''',dbcon)", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):
-        print("action events")
-        import signalling_query
-
-        headers = ["log_hash", "time", "name", "info"]
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "Events",
-            signalling_query.get_events,
-            tableHeader=headers,
-            time_list_mode=True,
-            event_mos_score=True,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.setColumnWidth(1, TIME_COL_DEFAULT_WIDTH);
-        widget.tableView.setColumnWidth(2, NAME_COL_DEFAULT_WIDTH);
-        widget.tableView.setColumnWidth(3, NAME_COL_DEFAULT_WIDTH);
-        widget.tableView.setSortingEnabled(True)
-
+        has_wave_file = False
+        with sqlite3.connect(self.gc.databasePath) as dbcon:
+            try:
+                mos_df = pd.read_sql("select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos", dbcon)
+                if len(mos_df) > 0 and "wave_file" in mos_df.columns:
+                    has_wave_file = True
+            except:
+                pass
+        if has_wave_file:
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
+        else:
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
 
     ############# NR menu slots
 
@@ -1618,6 +1594,10 @@ Log_hash list: {}""".format(
 
                 # Loop through all features in a rect near point xy
                 offset = 0.000180
+                distance_offset = 0.001
+                if self.is_legacy_indoor:
+                    offset = 0.1
+                    distance_offset = 0.05
                 p1 = QgsPointXY(point.x() - offset, point.y() - offset)
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
@@ -1626,7 +1606,7 @@ Log_hash list: {}""".format(
                 for f in nearby_features:
                     distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
                     #print("p distance:", distance)
-                    if distance != -1.0 and distance <= 0.001:
+                    if distance != -1.0 and distance <= distance_offset:
                         #print("p distance enter:", distance)
                         closestFeatureId = f.id()
                         # print(layer.getFeature(closestFeatureId).attributes())
@@ -2368,7 +2348,7 @@ Log_hash list: {}""".format(
                         se_lon = indoor_bg_df["indoor_{}_img_south_east_lon".format(map_type)][0]
                         se_lat = indoor_bg_df["indoor_{}_img_south_east_lat".format(map_type)][0]
                 except:
-                    pass
+                    self.is_legacy_indoor = True
 
             os.system("gdal_translate -of GTiff -a_srs EPSG:4326 -gcp 0 0 {nw_lon} {nw_lat} -gcp {width} 0 {ne_lon} {ne_lat} -gcp {width} {height} {se_lon} {se_lat} {jpg_path} {tif_path}".format(width=w, height=h, jpg_path=indoor_map_path, tif_path=tif_map_path, nw_lon=nw_lon, nw_lat=nw_lat, ne_lon=ne_lon, ne_lat=ne_lat, se_lon=se_lon, se_lat=se_lat))
             self.qgis_iface.addRasterLayer(tif_map_path, "indoor_map")

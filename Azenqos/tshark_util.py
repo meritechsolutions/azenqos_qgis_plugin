@@ -219,17 +219,20 @@ def tshark_decode_hex(side, name, protocol, detail):
     print("name %s type %s" % (name, type(name)))
     chan_type_regexs = [
     r"\((.*)\)",
-    r"NR (?:DL|UL) (\w+) ",
     ]
     for ctr in chan_type_regexs:
         match = re.search(ctr, name)
         if match is not None:
             channelType = match.group(1)
             break
+    if name.startswith("NR "):
+        name_parts = name.split(" ")
+        channelType = " ".join(name_parts[1:-1])
+        #print("nr channeltype:", channelType)
 
     print("channelType", channelType)
 
-    dissector = protocolToDissector(protocol, channelType, side)
+    dissector = protocolToDissector(protocol, channelType)
     cmd = (
             tsharkPath
             + ' -o "uat:user_dlts:\\"User 14 (DLT=161)\\",\\"{}\\",\\"0\\",\\"\\",\\"0\\",\\"\\"" -r {} -V'.format(
@@ -247,17 +250,20 @@ def tshark_decode_hex(side, name, protocol, detail):
     return result
 
 
-def protocolToDissector(protocol, channelType, side):
+def protocolToDissector(protocol, channelType):
     if protocol in ["RR", "MM", "CC", "GMM", "SM"]:
         return "gsm_a_dtap"
     elif protocol in ["EMM", "ESM"]:
         return "nas-eps_plain"
     elif protocol in ["RRC"]:
+        assert channelType
         return "rrc." + str(getWcdmaSubdissector(channelType))
     elif protocol in ["ERRC"]:
+        assert channelType
         return "lte_rrc." + str(getLteSubdissector(channelType))
     elif protocol in ["NR-RRC"]:
-        return "nr-rrc." + str(getNrSubdissector(side, channelType))
+        assert channelType
+        return "nr-rrc." + str(getNrSubdissector(channelType))
     raise Exception("unhandled/unknown protocl: {} chan: {}".format(protocol, channelType))
 
 
@@ -315,7 +321,22 @@ def getLteSubdissector(channelType):
     return None
 
 
-def getNrSubdissector(side, channelType):
-    direction = "DL" if side == "recv" else "UL"
-    #TODO search message_element in https://www.wireshark.org/docs/dfref/n/nr-rrc.html and map all, raise if unmatched
-    return ""
+# search message_element in https://www.wireshark.org/docs/dfref/n/nr-rrc.html
+NR_CHANTYPE_TO_SUBDISSECTOR_DICT = {
+"BCCH BCH":"BCCH_BCH_Message_element",
+"BCCH DL SCH":"BCCH_DL_SCH_Message_element",
+"DL CCCH":"DL_CCCH_Message_element",
+"DL DCCH":"DL_DCCH_Message_element",
+"PCCH":"PCCH_Message_element",
+"SBCCH SL BCH":"SBCCH_SL_BCH_Message_element",
+"SCCH":"SCCH_Message_element",
+"UL CCCH1":"UL_CCCH1_Message_element",
+"UL CCCH":"UL_CCCH_Message_element",
+"UL DCCH":"UL_DCCH_Message_element"
+}
+
+
+def getNrSubdissector(channelType):
+    if channelType not in NR_CHANTYPE_TO_SUBDISSECTOR_DICT.keys():
+        raise Exception("unhandled/unknown channeltype: {}".format(channelType))
+    return NR_CHANTYPE_TO_SUBDISSECTOR_DICT[channelType]

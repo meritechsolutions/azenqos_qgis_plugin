@@ -20,6 +20,8 @@ def test():
         azmfp = alt_azmfp
         alt_mos_azm = True
 
+
+
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
     with sqlite3.connect(dbfp) as dbcon:
@@ -41,9 +43,6 @@ def test():
         df = pd.read_sql("select * from layer_styles", dbcon)
         print("df.head() %s" % df)
 
-        if not alt_mos_azm:
-            assert len(df[df.f_table_name == "nr_cqi"]) == 1
-
         assert (
             df.f_table_catalog.notnull().all()
         )  # required for qgis to apply theme autmomatically by default
@@ -55,6 +54,10 @@ def test():
         assert "lte_inst_rsrp_1" in db_preprocess.get_geom_cols_df(dbcon).f_table_name.values
         assert "lte_cell_meas" not in db_preprocess.get_geom_cols_df(dbcon).f_table_name.values
 
+        ls = pd.read_sql("select styleqml from layer_styles where f_table_name = 'lte_inst_rsrp_1'", dbcon).iloc[0,0]
+        print("rsrp ls:", ls)
+        assert '''<range symbol="7" label="-80 to 0 (4224: 44.15%)" render="true" lower="-80" upper="0" includeLower="true" includeUpper="false" />
+<range symbol="6" label="-90 to -80 (2378: 24.86%)" render="true" lower="-90" upper="-80" includeLower="true" includeUpper="false" />''' in ls
 
 
 

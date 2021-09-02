@@ -417,12 +417,30 @@ def prepare_spatialite_views(dbcon):
                 view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
     if len(df_posids_indoor_start) > 0:
         try:
+            sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"
+            dbcon.execute(sqlstr)
+            dbcon.commit()
+        except:
+            pass
+        try:
             sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
             print("copy indoor_location lat lon to location: %s" % sqlstr)
             dbcon.execute(sqlstr)
             dbcon.commit()
         except:
             pass
+        for log_hash, posid in gps_cancel_list:
+            try:
+                sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where log_hash = {} and posid = {};".format(
+                    log_hash, posid-1
+                )
+                print("delete gps cancel sqlstr: %s" % sqlstr)
+                dbcon.execute(sqlstr)
+                dbcon.commit()
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: remove gps cancel rows exception:", exstr)
     
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
 

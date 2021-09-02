@@ -52,8 +52,6 @@ import sql_utils
 
 DEFAULT_TABLE_WINDOW_OPTIONS_DICT_KEYS = (
     "time_list_mode",
-    "l3_alt_wireshark_decode",
-    "event_mos_score",
     "list_module",
     "stretch_last_row",
 )
@@ -81,8 +79,6 @@ class TableWindow(QWidget):
 
         # these params will be written to options_dict
         time_list_mode=False,
-        l3_alt_wireshark_decode=False,
-        event_mos_score=False,
         list_module=False,
         stretch_last_row=False,
         options=None,
@@ -100,10 +96,6 @@ class TableWindow(QWidget):
         if time_list_mode:
             options["time_list_mode"] = time_list_mode
         print("options1:", options)
-        if l3_alt_wireshark_decode:
-            options["l3_alt_wireshark_decode"] = l3_alt_wireshark_decode
-        if event_mos_score:
-            options["event_mos_score"] = event_mos_score
         if list_module:
             options["list_module"] = list_module
         if stretch_last_row:
@@ -114,8 +106,6 @@ class TableWindow(QWidget):
                 options[key] = False
         print("options3:", options)
         self.time_list_mode = options["time_list_mode"]  # True for windows like signalling, events where it shows data as a time list
-        self.l3_alt_wireshark_decode = options["l3_alt_wireshark_decode"]  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
-        self.event_mos_score = options["event_mos_score"]
         self.list_module = options["list_module"]
         self.stretch_last_row = options["stretch_last_row"]
         self.options = options
@@ -271,7 +261,7 @@ class TableWindow(QWidget):
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.horizontalHeader().setMinimumSectionSize(40)
         self.tableView.horizontalHeader().setDefaultSectionSize(60)
-        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
 
         # self.tableView.verticalHeader().setMinimumSectionSize(12)
         self.tableView.verticalHeader().setDefaultSectionSize(14)
@@ -592,14 +582,14 @@ class TableWindow(QWidget):
             self.parentWindow.parentWidget()
         else:
             parentWindow = self
-        if self.l3_alt_wireshark_decode:
+        if 'name' in row_sr.index and 'dir' in row_sr.index and 'protocol' in row_sr.index:
             name = row_sr["name"]
             side = row_sr["dir"]
             protocol = row_sr["protocol"]
             self.detailWidget = DetailWidget(
                 self.gc, parentWindow, cellContent, name, side, protocol
             )
-        elif self.event_mos_score and row_sr["name"].find("MOS Score") != -1:
+        elif 'name' in row_sr.index and row_sr["name"].find("MOS Score") != -1:
             name = row_sr["name"]
             side = {}
             side["wav_file"] = os.path.join(
@@ -775,7 +765,7 @@ class FilterMenuWidget(QWidget):
         self.model.setHorizontalHeaderLabels(["Name"])
 
         self.retranslateUi()
-        QtCore.QMetaObject.connectSlotsByName(self)
+        #QtCore.QMetaObject.connectSlotsByName(self)
         self.setFocus()
 
         # self.searchBox.textChanged.connect(self.completer.setCompletionPrefix)
@@ -879,6 +869,14 @@ class DetailWidget(QDialog):
         self.textEdit = QTextEdit()
         self.textEdit.setPlainText(self.detailText)
         self.textEdit.setReadOnly(True)
+        self.textEdit.setStyleSheet(
+            """
+            * {
+            font-size: 11px;
+            }
+            QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
+            """
+        )
         layout = QVBoxLayout(self)
         layout.addWidget(self.textEdit)
         self.setLayout(layout)
@@ -908,7 +906,7 @@ class DetailWidget(QDialog):
         if self.closed == False:
             self.textEdit.setPlainText(
                 self.detailText
-                + "\n\n------\nALTERNATIVE WIRESHARK DECODE OF SAME PACKET BELOW\n------\n"
+                + "\n------\nALTERNATIVE WIRESHARK DECODE OF SAME PACKET BELOW\n------\n"
                 + str(detail)
             )
 

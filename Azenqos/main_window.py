@@ -375,7 +375,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         widget.tableView.setSortingEnabled(True)
         
     ############# system menu slots
@@ -395,7 +395,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         widget.tableView.setSortingEnabled(True)
         
     @pyqtSlot()
@@ -410,7 +410,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_System_Info_triggered(self):
@@ -424,7 +424,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     ############# signalling menu slots
     @pyqtSlot()
@@ -462,7 +462,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_action5GNR_Data_triggered(self):
@@ -477,7 +477,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
     def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None):
@@ -492,7 +492,7 @@ Log_hash list: {}""".format(
             options=options
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
     @pyqtSlot()
@@ -606,7 +606,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
@@ -649,7 +649,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
     ############# LTE menu slots
@@ -666,7 +666,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_Serving_Neighbors_triggered(self):
@@ -695,7 +695,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_PUCCH_PDSCH_Params_triggered(self):
@@ -710,7 +710,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_RRC_SIB_States_triggered(self):
@@ -725,7 +725,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_RLC_triggered(self):
@@ -740,7 +740,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionLTE_VoLTE_triggered(self):
@@ -755,7 +755,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     ############# WCDMA menu slots
 
@@ -772,7 +772,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionWCDMA_Active_Monitored_sets_triggered(self):
@@ -801,7 +801,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionWCDMA_Bearers_triggered(self):
@@ -832,7 +832,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionGSM_Serving_Neighbors_triggered(self):
@@ -861,7 +861,7 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_actionGSM_C_I_triggered(self):
@@ -1953,6 +1953,8 @@ Log_hash list: {}""".format(
 
 
     def selectFeatureOnLayersByTime(self):
+        if self.qgis_iface is None:
+            return
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         for layer in qgis_selected_layers:
             try:

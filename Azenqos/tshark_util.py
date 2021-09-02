@@ -4,7 +4,7 @@ import uuid
 import subprocess
 import azq_utils
 
-
+CREATE_NO_WINDOW = 0x08000000
 g_extract_so_tar_gz_done = False
 # call this only once at start of program! otherwise will be very slow extracting .so in gnu/linux everytime...
 def prepare_env_and_libs():
@@ -61,7 +61,12 @@ def tshark_decode_hex(side, name, protocol, detail):
 
     cmd = (text2pcapPath, '-l', '161', tempHexPath, tempPcapPath)
     print("text2pcap cmd:", cmd)
-    cmdret = subprocess.call(cmd, shell=False, env=env)
+
+    cmdret = None
+    if os.name == "nt":
+        cmdret = subprocess.call(cmd, shell=False, env=env, creationflags=CREATE_NO_WINDOW)
+    else:
+        cmdret = subprocess.call(cmd, shell=False, env=env)
     print("text2pcap ret:", cmdret)
 
     if cmdret != 0:
@@ -94,7 +99,11 @@ def tshark_decode_hex(side, name, protocol, detail):
             '-V'
     )
     print("tshark cmd:", cmd)
-    decodeResult = subprocess.check_output(cmd, shell=False, env=env)
+    decodeResult = None
+    if os.name == "nt":
+        decodeResult = subprocess.check_output(cmd, shell=False, env=env, creationflags=CREATE_NO_WINDOW)
+    else:
+        decodeResult = subprocess.check_output(cmd, shell=False, env=env)
     decodeResult = decodeResult.decode("utf-8")
     # print("decodeResult", decodeResult)
     result = decodeResult

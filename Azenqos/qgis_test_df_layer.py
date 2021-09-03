@@ -12,6 +12,5 @@ dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
 with sqlite3.connect(dbfp) as dbcon:
     df = pd.read_sql("select log_hash, time from location", dbcon)
-    import qgis_layers_gen
-
-    qgis_layers_gen.create_qgis_layer_df(df, dbcon)
+import qgis_layers_gen
+qgis_layers_gen.create_qgis_layer_df(df, dbfp)

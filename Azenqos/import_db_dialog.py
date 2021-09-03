@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import os
 import shutil
@@ -33,6 +34,7 @@ import login_dialog
 
 class import_db_dialog(QDialog):
     import_done_signal = pyqtSignal(str)
+    import_status_signal = pyqtSignal(str)
 
     def __init__(self, parent_window, gc):
         super(import_db_dialog, self).__init__(parent=parent_window)
@@ -41,6 +43,7 @@ class import_db_dialog(QDialog):
         self.parent_window = parent_window
         self.import_thread = None
         self.import_done_signal.connect(self.ui_handler_import_done)
+        self.import_status_signal.connect(self.ui_handler_import_status)
         self.setupUi(self)
 
     def setupUi(self, DatabaseDialog):
@@ -141,7 +144,11 @@ class import_db_dialog(QDialog):
         tmp_box.addWidget(self.browseButtonCell)
         ##################################
 
-        ################ config/connect
+        vbox.addStretch()
+        self.statusLabel = QtWidgets.QLabel()
+        vbox.addWidget(self.statusLabel)
+
+        ################ config/connect signals
         self.retranslateUi(DatabaseDialog)
 
         QtCore.QMetaObject.connectSlotsByName(DatabaseDialog)
@@ -166,12 +173,12 @@ class import_db_dialog(QDialog):
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
         DatabaseDialog.setWindowTitle(
-            _translate("DatabaseDialog", "Choose log file to replay...")
+            _translate("DatabaseDialog", "Select log files to open...")
         )
-        self.browseButton.setText(_translate("DatabaseDialog", "Choose Log..."))
-        self.browseButtonTheme.setText(_translate("DatabaseDialog", "Choose Theme..."))
+        self.browseButton.setText(_translate("DatabaseDialog", "Select Logs..."))
+        self.browseButtonTheme.setText(_translate("DatabaseDialog", "Select Theme..."))
         self.browseButtonCell.setText(
-            _translate("DatabaseDialog", "Choose Cell file...")
+            _translate("DatabaseDialog", "Select Cell-files...")
         )
 
         self.dbPathLineEdit.setText(azq_utils.read_settings_file("config_prev_azm"))
@@ -210,10 +217,10 @@ class import_db_dialog(QDialog):
         self.gc.tableList = []
 
     def choose_azm(self):
-        fileName, _ = QFileDialog.getOpenFileName(
-            self, "Single File", QtCore.QDir.rootPath(), "AZENQOS azm log (*.azm);; SQLite db from azm (*.db)"
+        fps, _ = QFileDialog.getOpenFileNames(
+            self, "Single File", QtCore.QDir.rootPath(), "AZENQOS azm logs (*.azm);; SQLite db from azm (*.db)"
         )
-        self.dbPathLineEdit.setText(fileName) if fileName else None
+        self.dbPathLineEdit.setText(",".join(fps)) if fps else None
 
     def choose_theme(self):
         fileName, _ = QFileDialog.getOpenFileName(
@@ -253,7 +260,7 @@ class import_db_dialog(QDialog):
                 qt_utils.msgbox("Failed to load the sepcified cellfiles:\n\n{}".format(str(e)), title="Invalid cellfiles", parent=self)
                 self.gc.cell_files = []
                 return
-
+        logs = []
         if self.radioButtonServer.isChecked() == False:
             if not self.dbPathLineEdit.text():
                 QtWidgets.QMessageBox.critical(
@@ -264,14 +271,22 @@ class import_db_dialog(QDialog):
                 )
                 return False
 
-            if not os.path.isfile(self.dbPathLineEdit.text()):
-                QtWidgets.QMessageBox.critical(
-                    None,
-                    "File not found",
-                    "Failed to find specified azm file...",
-                    QtWidgets.QMessageBox.Cancel,
-                )
-                return False
+
+            logs = self.dbPathLineEdit.text()
+            if "," in logs:
+                logs = logs.split(",")
+            else:
+                logs = [logs]
+            for file in logs:
+                if not os.path.isfile(file):
+                    QtWidgets.QMessageBox.critical(
+                        None,
+                        "File not found",
+                        "Failed to find the specified file: {}".format(file),
+                        QtWidgets.QMessageBox.Cancel,
+                    )
+                    return False
+        assert logs
 
         if not self.themePathLineEdit.text():
             QtWidgets.QMessageBox.critical(
@@ -309,6 +324,7 @@ class import_db_dialog(QDialog):
             zip_fp = self.dbPathLineEdit.text()
             self.gc.login_ret_dict = None
             if self.radioButtonServer.isChecked():
+                # server logs mode
                 dlg = login_dialog.login_dialog(self, self.gc)
                 dlg.show()
                 dlg.raise_()
@@ -322,6 +338,9 @@ class import_db_dialog(QDialog):
                         "Failed to get downloaded data from server login process..."
                     )
                 self.gc.login_dialog = dlg  # so others can access server/token when needed for other api calls
+            else:
+                # local azm log mode
+                zip_fp = logs
 
             if self.import_thread is None or (self.import_thread.is_alive() == False):
                 self.zip_fp = zip_fp
@@ -362,7 +381,6 @@ class import_db_dialog(QDialog):
 
 
     def ui_handler_import_done(self, error):
-
         if error:
             print("ui_handler_import_done() error: %s" % error)
             QtWidgets.QMessageBox.critical(
@@ -376,15 +394,36 @@ class import_db_dialog(QDialog):
             print("getTimeForSlider() done")
             self.close()
 
+
+    def ui_handler_import_status(self, status):
+        try:
+            self.statusLabel.setText(status)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: ui_handler_import_status() failed exception:", exstr)
+
     def import_selection(self):
+        self.import_status_signal.emit("Import logs - START")
         zip_fp = self.zip_fp
+        success = False
         try:
             import preprocess_azm
-
-            assert os.path.isfile(zip_fp)
             azq_utils.cleanup_died_processes_tmp_folders()
-            assert os.path.isfile(zip_fp)
 
+            if isinstance(zip_fp, list):
+                if len(zip_fp) == 1:
+                    zip_fp = zip_fp[0]
+                else:
+                    print("zip_fp is list - merging them into one db first...")
+                    import azm_sqlite_merge
+                    self.import_status_signal.emit("Multiple logs specified - trying to merge them...")
+                    zip_fp = azm_sqlite_merge.merge(zip_fp)  # zip_fp will now be assigned with the merged db file path
+                    self.import_status_signal.emit("Multiple logs specified - trying to merge them... done")
+
+            print("using log:", zip_fp)
+            assert isinstance(zip_fp, str)
+            assert os.path.isfile(zip_fp)
             if zip_fp.endswith(".azm") or zip_fp.endswith(".zip"):
                 azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
                 self.databasePath = preprocess_azm.extract_entry_from_zip(
@@ -399,18 +438,23 @@ class import_db_dialog(QDialog):
                 raise Exception("unsupported file extension: {}".format(zip_fp))
 
             assert os.path.isfile(self.databasePath)
+            self.import_status_signal.emit("Preparing database... creating layers as per theme")
             ret = self.addDatabase()  # this will create views/tables per param as per specified theme so must check theme before here
             if not ret:
+                self.import_status_signal.emit("Preparing database... FAILED")
                 raise Exception(
                     "Failed to open azqdata.db file inside the unzipped supplied azm file"
                 )
             else:
+                self.import_status_signal.emit("Preparing database... done")
                 self.import_done_signal.emit("")
+                success = True
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: import_selection() failed exception:", exstr)
             self.import_done_signal.emit(exstr)
+        self.import_status_signal.emit("Import logs - "+("SUCCESS" if success else "FAILED"))
 
 
     def getTimeForSlider(self):
@@ -447,47 +491,49 @@ class import_db_dialog(QDialog):
         self.setIncrementValue()
         return True
 
+
     def addDatabase(self):
         # check db
         assert os.path.isfile(self.databasePath)
-        try:
-            dbcon = sqlite3.connect(self.databasePath)
-            logs_df = pd.read_sql("select * from logs limit 1", dbcon)
-            if not len(logs_df):
-                raise Exception("invalid log database - cant read log metadata")
-            log_hash = logs_df.iloc[0].log_hash
-            if not log_hash:
-                raise Exception("invalid log database - cant read log_hash")
-
-            # check theme
-            theme_fp = self.themePathLineEdit.text()
-            if theme_fp == "Default":
-                theme_fp = azq_theme_manager.get_ori_default_theme()
-            azq_theme_manager.set_default_theme_file(theme_fp)
-            params_in_theme = (
-                azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
-            )
-            if not params_in_theme:
-                raise Exception(
-                    "Invalid theme file: failed to read any params from theme file: {}".format(
-                        theme_fp
-                    )
-                )
-            print("params_in_theme:", params_in_theme)
-            db_preprocess.prepare_spatialite_views(dbcon)
-            dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
-
-            assert self.databasePath
-            self.gc.databasePath = self.databasePath
-            self.gc.logPath = azq_utils.tmp_gen_path()
-            self.gc.db_fp = self.gc.databasePath
-
-        finally:
+        with contextlib.closing(sqlite3.connect(self.databasePath)) as dbcon:
             try:
-                dbcon.close()
-            except:
-                pass
-        return True
+                logs_df = pd.read_sql("select * from logs limit 1", dbcon)
+                if not len(logs_df):
+                    raise Exception("invalid log database - cant read log metadata")
+                log_hash = logs_df.iloc[0].log_hash
+                if not log_hash:
+                    raise Exception("invalid log database - cant read log_hash")
+
+                # check theme
+                theme_fp = self.themePathLineEdit.text()
+                if theme_fp == "Default":
+                    theme_fp = azq_theme_manager.get_ori_default_theme()
+                azq_theme_manager.set_default_theme_file(theme_fp)
+                params_in_theme = (
+                    azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
+                )
+                if not params_in_theme:
+                    raise Exception(
+                        "Invalid theme file: failed to read any params from theme file: {}".format(
+                            theme_fp
+                        )
+                    )
+                print("params_in_theme:", params_in_theme)
+                db_preprocess.prepare_spatialite_views(dbcon)
+                dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
+
+                assert self.databasePath
+                self.gc.databasePath = self.databasePath
+                self.gc.logPath = azq_utils.tmp_gen_path()
+                self.gc.db_fp = self.gc.databasePath
+
+            finally:
+                try:
+                    dbcon.close()
+                except:
+                    pass
+            return True
+
 
     def setIncrementValue(self):
         self.gc.sliderLength = self.gc.maxTimeValue - self.gc.minTimeValue

@@ -1,3 +1,4 @@
+import shutil
 import sqlite3
 import subprocess
 
@@ -40,9 +41,15 @@ def merge(in_azm_list):
             assert os.path.isdir(tmp_dir)
             azm = in_azm_list[i]
             print("=== extracting db from azm: "+azm+" [{}/{}] ===".format(i, n))
-            preprocess_azm.extract_entry_from_zip(azm, "azqdata.db", tmp_dir)
-            tmp_dirs.append(tmp_dir)
             new_dbfp = os.path.join(tmp_dir, "azqdata.db")
+            assert not os.path.isfile(new_dbfp)
+            if azm.endswith(".azm") or azm.endswith(".zip"):
+                preprocess_azm.extract_entry_from_zip(azm, "azqdata.db", tmp_dir)
+            elif azm.endswith(".db"):
+                shutil.copy(azm, new_dbfp)
+            else:
+                raise Exception("unsupported merge file extension: {}".format(azm))
+            tmp_dirs.append(tmp_dir)
             assert os.path.isfile(new_dbfp)
             dbfps.append(new_dbfp)
 
@@ -80,6 +87,14 @@ def merge(in_azm_list):
 
         # commit new db conn
         out_dbcon.commit()
+
+    # test merged dbfp
+    with contextlib.closing(sqlite3.connect(out_db_fp)) as dbcon:
+        df = pd.read_sql(
+            "select count(distinct(log_hash)) from logs",
+            dbcon
+        );
+        assert df.iloc[0, 0] == len(in_azm_list)
 
     return out_db_fp
 

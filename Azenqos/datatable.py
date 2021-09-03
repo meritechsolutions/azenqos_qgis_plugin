@@ -4,6 +4,7 @@ import sqlite3
 import sys
 import threading
 import traceback
+import fill_geom_in_location_df
 
 import pandas as pd
 import numpy as np
@@ -317,18 +318,30 @@ class TableWindow(QWidget):
                 )
             ):
                 qt_utils.msgbox(
-                    "This table doesn't contain required columns to add lat/lon: log_hash, time"
+                    "This table doesn't contain 'lat' and 'lon' columns, and alson doesn't contain the required columns to auto match/add lat/lon from logs: 'log_hash' and 'time'"
                 )
             else:
                 layer_name = qt_utils.ask_text(
                     self, "New layer", "Please specify layer name:"
                 )
                 if layer_name:
-                    with sqlite3.connect(self.gc.databasePath) as dbcon:
-                        # load it into qgis as new layer
-                        qgis_layers_gen.create_qgis_layer_df(
-                            self.tableModel.df, dbcon, layer_name=layer_name
+                    # load it into qgis as new layer
+                    try:
+                        qgis_layers_gen.dump_df_to_spatialite_db(
+                            self.tableModel.df, self.gc.databasePath, layer_name
                         )
+                        qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+                            self.gc.databasePath, layer_name, label_col="name" if "name" in self.tableModel.df.columns else None
+                        )
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print(
+                            "WARNING: create_qgis_layer_df exception title {} refreshTableContents() failed exception: {}".format(
+                                self.title, exstr
+                            )
+                        )
+                        qt_utils.msgbox("create layer failed: "+exstr, title="Failed")
 
     def headerMenu(self, pos):
         globalPos = self.mapToGlobal(pos)

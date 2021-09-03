@@ -15,9 +15,8 @@ def test():
     out_dbfp = azm_sqlite_merge.merge(azm_list)
     assert os.path.isfile(out_dbfp)
     with contextlib.closing(sqlite3.connect(out_dbfp)) as dbcon:
-        n_lh = pd.read_sql("select count(distinct(log_hash)) from logs", dbcon).iloc[0, 0];
-        print("n_lh:", n_lh)
-        assert n_lh == len(azm_list)
+        df = pd.read_sql("select count(distinct(log_hash)) from logs union select count(distinct(log_hash)) from signalling union select count(distinct(log_hash)) from events", dbcon);
+        assert (df.iloc[:, 0] == len(azm_list)).all()  # all rows of first col equal n logs: having distinct log_hashes per log merged in successfully
     
 
 if __name__ == "__main__":

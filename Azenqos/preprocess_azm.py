@@ -7,6 +7,8 @@ import sys
 import traceback
 import zipfile
 from datetime import datetime
+import sqlite3
+import contextlib
 
 import numpy as np
 import pandas as pd
@@ -1765,7 +1767,7 @@ def merge_lat_lon_into_df(
     if debug_file_flag:
         df.to_csv("tmp/merge_lat_lon_into_df_df.csv", quoting=csv.QUOTE_ALL)
 
-    location_df = get_dbcon_location_df(dbcon, is_indoor=is_indoor)
+    location_df = get_dbcon_location_df(dbcon, is_indoor=is_indoor)[['log_hash', 'time', 'positioning_lat', 'positioning_lon']]
     location_df = location_df.sort_values("time")
     print("location_df.head()", location_df.head())
     print("df.head()", df.head())
@@ -1888,11 +1890,16 @@ def get_azqdata_max_sip_and_qmdl_flush_ts_diff_millis():
         )
     return ret
 
+
 def get_azm_apk_ver(dbcon):
     ver = pd.read_sql("select max(log_app_version) from logs", dbcon).iloc[0,0]
     ret = apk_verstr_to_ver_int(ver)
-
     return ret
+
+
+def get_azm_apk_ver_for_dbfp(dbfp):
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+        return get_azm_apk_ver(dbcon)
 
 
 def is_leg_nr_tables():
@@ -1926,7 +1933,7 @@ def get_azqdata_dat_apk_ver(ret_ori_str=False):
             raise ve
         else:
             raise Exception("invalid state with sqlite3")
-            # with sqlite3.connect(db_path) as dbcon:
+
             #     return get_sqlite_apk_ver(dbcon)
             
     raise Exception("invalid state")

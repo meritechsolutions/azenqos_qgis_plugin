@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import json
 import pathlib
@@ -5,6 +6,7 @@ import shutil
 import threading
 import traceback
 
+import PyQt5
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QSettings, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator, QPixmap, QIcon
@@ -433,7 +435,7 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionEvents_triggered(self):
         has_wave_file = False
-        with sqlite3.connect(self.gc.databasePath) as dbcon:
+        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
             try:
                 mos_df = pd.read_sql("select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos", dbcon)
                 if len(mos_df) > 0 and "wave_file" in mos_df.columns:
@@ -1507,7 +1509,7 @@ Log_hash list: {}""".format(
 
     def selectLayer(self):
         if self.qgis_iface:
-            self.add_db_layers()
+            self.add_db_layers(select=True)
 
     def selectCells(self):
         if not self.gc.db_fp:
@@ -1559,12 +1561,13 @@ Log_hash list: {}""".format(
         elif msg == "db_layer_task.py":
             self.db_layer_task.add_layers_from_ui_thread()
 
+
     def ui_thread_emit_time_slider_updated(self, timestamp):
         print("ui_thread_emit_time_slider_updated")
         import datetime
-
         sampledate = datetime.datetime.fromtimestamp(timestamp)
         self.timeEdit.setDateTime(sampledate)
+
 
     def clickCanvas(self, point, button):
         print("clickCanvas start")
@@ -1601,66 +1604,65 @@ Log_hash list: {}""".format(
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
                 nearby_features = layer.getFeatures(rect)
+                layer_fields = layer.fields()
+                has_seqid = "seqid" in layer_fields
+                has_posid = "posid" in layer_fields
+                has_log_hash = "log_hash" in layer_fields
 
+                ########## fitler for one nearest feature only - faster way
+                from qgis._core import QgsSpatialIndex
+                spIndex = QgsSpatialIndex()  # create spatial index object
+                feat = QgsFeature()
+                # insert features to index
                 for f in nearby_features:
-                    distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
-                    #print("p distance:", distance)
-                    if distance != -1.0 and distance <= distance_offset:
-                        #print("p distance enter:", distance)
-                        closestFeatureId = f.id()
-                        # print(layer.getFeature(closestFeatureId).attributes())
-                        try:
-                            time = layer.getFeature(closestFeatureId).attribute("time")
-                            log_hash = None
-                            posid = None
-                            seqid = None
-                            lat = None
-                            lon = None
-                            try:
-                                log_hash = layer.getFeature(closestFeatureId).attribute("log_hash")
-                                posid = layer.getFeature(closestFeatureId).attribute("posid")
-                                seqid = layer.getFeature(closestFeatureId).attribute("seqid")
-                                fpoint = layer.getFeature(closestFeatureId).geometry().asPoint()
-                                lat = fpoint.y()
-                                lon = fpoint.x()
-                            except:
-                                # in case this layer added by user and no 'log_hash' col
-                                type_, value_, traceback_ = sys.exc_info()
-                                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                                print("WARNING: clickoncanvas get attribute exception: {}".format(exstr))
-                            info = (layer, closestFeatureId, distance, time, log_hash, posid, seqid, lat, lon)
-                            layerData.append(info)
-                        except:
-                            type_, value_, traceback_ = sys.exc_info()
-                            exstr = str(traceback.format_exception(type_, value_, traceback_))
-                            print("WARNING: clickoncanvas handle exception: {}".format(exstr))
-                    else:
-                        pass
-                        #print("p distance not enter:", distance)
+                    spIndex.insertFeature(f)
+                # QgsSpatialIndex.nearestNeighbor (QgsPoint point, int neighbors)
+                nearestIds = spIndex.nearestNeighbor(point, 1)  # we need only one neighbour
+                if not len(nearestIds):
+                    continue
+                featureId = nearestIds[0]
+                fit2 = layer.getFeatures(QgsFeatureRequest().setFilterFid(featureId))
+                ftr = QgsFeature()
+                fit2.nextFeature(ftr)
+                closestFeatureId = featureId
+                #############################
 
-                """
-                # Loop through all features in the layer
-                for f in layer.getFeatures():
-                    distance = f.geometry().distance(QgsGeometry.fromPointXY(point))
-                    if distance != -1.0 and distance <= 0.001:
-                        closestFeatureId = f.id()
-                        cf = layer.getFeature(closestFeatureId)
-                        print("cf.attributes:", cf.attributes())
-                        print("cf.fields:", cf.fields().toList())
-                        time = cf.attribute("time")
-                        info = (layer, closestFeatureId, distance, time)
-                        layerData.append(info)
-                """
+                try:
+                    time = layer.getFeature(closestFeatureId).attribute("time")
+                    log_hash = None
+                    posid = None
+                    seqid = None
+                    lat = None
+                    lon = None
+                    try:
+                        fpoint = layer.getFeature(closestFeatureId).geometry().asPoint()
+                        lat = fpoint.y()
+                        lon = fpoint.x()
+                        if has_log_hash:
+                            log_hash = layer.getFeature(closestFeatureId).attribute("log_hash")
+                        if has_posid:
+                            posid = layer.getFeature(closestFeatureId).attribute("posid")
+                        if has_seqid:
+                            seqid = layer.getFeature(closestFeatureId).attribute("seqid")
+                    except:
+                        # in case this layer added by user and no 'log_hash' col
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print("WARNING: clickoncanvas closestFeatureId inner attribute exception: {}".format(exstr))
+                    info = (layer, closestFeatureId, time, log_hash, posid, seqid, lat, lon)
+                    layerData.append(info)
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: clickoncanvas closestFeatureId attribute exception: {}".format(exstr))
+
 
         print("len(layerData) n nearest features:", len(layerData))
         if not len(layerData) > 0:
             # Looks like no vector layers were found - do nothing
             return
 
-        # Sort the layer information by shortest distance
-        layerData.sort(key=lambda element: element[2])
-
-        for (layer, closestFeatureId, distance, time, log_hash, posid, seqid, lat, lon) in layerData:
+        for (layer, closestFeatureId, time, log_hash, posid, seqid, lat, lon) in layerData:
             layer.select(closestFeatureId)
             selected_time = time
             selected_log_hash = log_hash
@@ -1702,73 +1704,73 @@ Log_hash list: {}""".format(
             except:
                 pass
 
+            if self.gc.cell_files:
+                print("single_point_match_dict:", single_point_match_dict)
+                options_dict = {"distance_limit_m": int(self.gc.pref["point_to_site_match_max_distance_meters"])}
+                freq_code_match_mode = self.gc.pref["point_to_site_serving_match_cgi"] == "0"
 
-            print("single_point_match_dict:", single_point_match_dict)
-            options_dict = {"distance_limit_m": int(self.gc.pref["point_to_site_match_max_distance_meters"])}
-            freq_code_match_mode = self.gc.pref["point_to_site_serving_match_cgi"] == "0"
+                options_dict = {"distance_limit_m": int(self.gc.pref["spider_match_max_distance_meters"])}
+                pref_key = "cell_{}_sector_size_meters".format("lte")
+                sector_size_meters = float(self.gc.pref[pref_key])
+                options_dict["sector_size_meters"] = sector_size_meters
 
-            options_dict = {"distance_limit_m": int(self.gc.pref["spider_match_max_distance_meters"])}
-            pref_key = "cell_{}_sector_size_meters".format("lte")
-            sector_size_meters = float(self.gc.pref[pref_key])
-            options_dict["sector_size_meters"] = sector_size_meters
-            
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "nr", single_point_match_dict=single_point_match_dict,
-                                        plot_spider_param="nr_servingbeam_pci_1",
-                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
-            for i in range(3):
-                spider_plot.plot_rat_spider(
-                    self.gc.cell_files, self.gc.databasePath, "nr",
-                    single_point_match_dict=single_point_match_dict,
-                    plot_spider_param= "nr_detectedbeam{}_pci_1".format(i+1),
-                    freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
-                    dotted_lines=True,
-                    options_dict=options_dict
-                )
+                spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "nr", single_point_match_dict=single_point_match_dict,
+                                            plot_spider_param="nr_servingbeam_pci_1",
+                                            freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
+                for i in range(3):
+                    spider_plot.plot_rat_spider(
+                        self.gc.cell_files, self.gc.databasePath, "nr",
+                        single_point_match_dict=single_point_match_dict,
+                        plot_spider_param= "nr_detectedbeam{}_pci_1".format(i+1),
+                        freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
+                        dotted_lines=True,
+                        options_dict=options_dict
+                    )
 
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_match_dict=single_point_match_dict,
-                                        plot_spider_param="lte_physical_cell_id_1",
-                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
-            for i in range(3):
-                spider_plot.plot_rat_spider(
-                    self.gc.cell_files, self.gc.databasePath, "lte",
-                    single_point_match_dict=single_point_match_dict,
-                    plot_spider_param="lte_neigh_physical_cell_id_{}".format(i+1),
-                    freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
-                    dotted_lines=True,
-                    options_dict=options_dict
-                )
+                spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "lte", single_point_match_dict=single_point_match_dict,
+                                            plot_spider_param="lte_physical_cell_id_1",
+                                            freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
+                for i in range(3):
+                    spider_plot.plot_rat_spider(
+                        self.gc.cell_files, self.gc.databasePath, "lte",
+                        single_point_match_dict=single_point_match_dict,
+                        plot_spider_param="lte_neigh_physical_cell_id_{}".format(i+1),
+                        freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
+                        dotted_lines=True,
+                        options_dict=options_dict
+                    )
 
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "wcdma", single_point_match_dict=single_point_match_dict,
-                                        plot_spider_param="wcdma_aset_sc_1",
-                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
-            for i in range(3):
-                spider_plot.plot_rat_spider(
-                    self.gc.cell_files, self.gc.databasePath, "wcdma",
-                    single_point_match_dict=single_point_match_dict,
-                    plot_spider_param="wcdma_mset_sc_{}".format(i+1),
-                    freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
-                    dotted_lines=True,
-                    options_dict=options_dict
-                )
+                spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "wcdma", single_point_match_dict=single_point_match_dict,
+                                            plot_spider_param="wcdma_aset_sc_1",
+                                            freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
+                for i in range(3):
+                    spider_plot.plot_rat_spider(
+                        self.gc.cell_files, self.gc.databasePath, "wcdma",
+                        single_point_match_dict=single_point_match_dict,
+                        plot_spider_param="wcdma_mset_sc_{}".format(i+1),
+                        freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
+                        dotted_lines=True,
+                        options_dict=options_dict
+                    )
 
-            spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "gsm", single_point_match_dict=single_point_match_dict,
-                                        plot_spider_param="gsm_bsic",
-                                        freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
-            for i in range(3):
-                spider_plot.plot_rat_spider(
-                    self.gc.cell_files, self.gc.databasePath, "gsm",
-                    single_point_match_dict=single_point_match_dict,
-                    plot_spider_param="gsm_neighbor_bsic_{}".format(i+1),
-                    freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
-                    dotted_lines=True,
-                    options_dict=options_dict
-                )
+                spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, "gsm", single_point_match_dict=single_point_match_dict,
+                                            plot_spider_param="gsm_bsic",
+                                            freq_code_match_mode=freq_code_match_mode, options_dict=options_dict)
+                for i in range(3):
+                    spider_plot.plot_rat_spider(
+                        self.gc.cell_files, self.gc.databasePath, "gsm",
+                        single_point_match_dict=single_point_match_dict,
+                        plot_spider_param="gsm_neighbor_bsic_{}".format(i+1),
+                        freq_code_match_mode=True,  # neigh cant use cgi mode as cgi in sib1 is of serving
+                        dotted_lines=True,
+                        options_dict=options_dict
+                    )
 
             if ori_active_layer is not None:
                 self.gc.qgis_iface.setActiveLayer(ori_active_layer)
 
-            
         print("clickCanvas done")
+
 
 
     def useCustomMapTool(self):
@@ -1957,22 +1959,16 @@ Log_hash list: {}""".format(
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         for layer in qgis_selected_layers:
             try:
-                # print("selectFeatureOnLayersByTime layer: %s" % layer.name())
+                print("selectFeatureOnLayersByTime layer: %s" % layer.name())
                 end_dt = datetime.datetime.fromtimestamp(self.gc.currentTimestamp)
                 start_dt = end_dt - datetime.timedelta(
                     seconds=(params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS / 1000.0)
                 )
                 # 2020-10-08 15:35:55.431000
                 filt_expr = "time >= '%s' and time <= '%s'" % (start_dt, end_dt)
-                # print("filt_expr:", filt_expr)
-                request = (
-                    QgsFeatureRequest()
-                    .setFilterExpression(filt_expr)
-                    .setFlags(QgsFeatureRequest.NoGeometry)
-                )
-
-                layerFeatures = layer.getFeatures(request)
-                # print("filt request ret:", layerFeatures)
+                print("filt_expr:", filt_expr)
+                layerFeatures = list(layer.getFeatures(QgsFeatureRequest().setFilterExpression(filt_expr).setFlags(QgsFeatureRequest.NoGeometry)))
+                print("filt request ret len:", len(layerFeatures))
                 lc = 0
                 fids = []
                 time_list = []
@@ -1980,16 +1976,21 @@ Log_hash list: {}""".format(
                     lc += 1
                     fids.append(lf.id())
                     lft = lf.attribute("time")
+                    print("ltf0: {} type: {}".format(lft, type(lft)))  # - sometimes comes as qdatetime we cant add
                     if isinstance(lft, str):
-                        #print("ltf: {} type: {}".format(lft, type(lft)))  - sometimes comes as qdatetime we cant add
+                        print("ltf1: {} type: {}".format(lft, type(lft)))#  - sometimes comes as qdatetime we cant add
                         time_list.append(lft)
+                    if isinstance(lft, PyQt5.QtCore.QDateTime):
+                        print("ltf2: {} type: {}".format(lft, type(lft)))  # - sometimes comes as qdatetime we cant add
+                        time_list.append(lft.toMSecsSinceEpoch())
+
 
                 if len(fids) and len(time_list):
-                    #print("time_list: {}".format(time_list))
+                    print("time_list: {}".format(time_list))
                     sr = pd.Series(time_list, index=fids, dtype="datetime64[ns]")
                     sids = [sr.idxmax()]
-                    # print("sr:", sr)
-                    # print("select ids:", sids)
+                    print("sr:", sr)
+                    print("select ids:", sids)
                     layer.selectByIds(sids)
             except:
                 type_, value_, traceback_ = sys.exc_info()
@@ -2278,10 +2279,10 @@ Log_hash list: {}""".format(
             print("WARNING: _gui_save() - exception: {}".format(exstr))
 
 
-    def add_db_layers(self):
+    def add_db_layers(self, select=False):
         if self.gc.db_fp:
             self.db_layer_task = db_layer_task.LayerTask(u"Add layers", self.gc.db_fp, self.gc, self.task_done_signal)
-            self.db_layer_task.run_blocking()
+            self.db_layer_task.run_blocking(select=select)
         else:
             qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
 
@@ -2335,7 +2336,7 @@ Log_hash list: {}""".format(
             ne_lat = 1
             se_lon = 1
             se_lat = 0
-            with sqlite3.connect(self.gc.databasePath) as dbcon:
+            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                 try:
                     indoor_bg_df = pd.read_sql("select * from indoor_background_img", dbcon)
                     if len(indoor_bg_df) > 0:

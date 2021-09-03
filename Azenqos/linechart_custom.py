@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import sqlite3
 import sys
@@ -209,7 +210,7 @@ class LineChart(QtWidgets.QDialog):
         print("updateInternal")
         time = self.newTime
         if self.gc.databasePath is not None:
-            with sqlite3.connect(self.gc.databasePath) as dbcon:
+            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                 self.reQueryChartData(dbcon)
                 self.reQueryTableData(dbcon, time)
 

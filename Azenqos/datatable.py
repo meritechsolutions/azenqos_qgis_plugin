@@ -1,9 +1,11 @@
 import os
 import shutil
 import sqlite3
+import contextlib
 import sys
 import threading
 import traceback
+import uuid
 
 import pandas as pd
 import numpy as np
@@ -48,6 +50,8 @@ import azq_utils
 import qt_utils
 import qgis_layers_gen
 import sql_utils
+import preprocess_azm
+
 
 DEFAULT_TABLE_WINDOW_OPTIONS_DICT_KEYS = (
     "time_list_mode",
@@ -317,18 +321,42 @@ class TableWindow(QWidget):
                 )
             ):
                 qt_utils.msgbox(
-                    "This table doesn't contain required columns to add lat/lon: log_hash, time"
+                    "This table doesn't contain 'lat' and 'lon' columns, and alson doesn't contain the required columns to auto match/add lat/lon from logs: 'log_hash' and 'time'"
                 )
             else:
                 layer_name = qt_utils.ask_text(
                     self, "New layer", "Please specify layer name:"
                 )
                 if layer_name:
-                    with sqlite3.connect(self.gc.databasePath) as dbcon:
-                        # load it into qgis as new layer
-                        qgis_layers_gen.create_qgis_layer_df(
-                            self.tableModel.df, dbcon, layer_name=layer_name
+                    # load it into qgis as new layer
+                    try:
+                        tmpdbfp = self.gc.databasePath
+                        tmpdbfp +=  "_{}.db".format(uuid.uuid4())
+
+                        df = self.tableModel.df
+
+                        if ("lat" not in df.columns) or ("lon" not in df.columns):
+                            print("need to merge lat and lon")
+                            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                            )
+                        qgis_layers_gen.dump_df_to_spatialite_db(
+                        df, tmpdbfp, layer_name
                         )
+                        assert os.path.isfile(tmpdbfp)
+                        qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+                            tmpdbfp, layer_name, label_col="name" if "name" in self.tableModel.df.columns else None
+                        )
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print(
+                            "WARNING: create_qgis_layer_df exception title {} refreshTableContents() failed exception: {}".format(
+                                self.title, exstr
+                            )
+                        )
+                        qt_utils.msgbox("create layer failed: "+exstr, title="Failed")
 
     def headerMenu(self, pos):
         globalPos = self.mapToGlobal(pos)
@@ -457,7 +485,7 @@ class TableWindow(QWidget):
             and self.refresh_data_from_dbcon_and_time_func is not None
         ):
             try:
-                with sqlite3.connect(self.gc.databasePath) as dbcon:
+                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                     refresh_dict = {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
                     print(
                         "datatable refreshTableContents() refresh_data_from_dbcon_and_time_func: refresh_dict:", refresh_dict

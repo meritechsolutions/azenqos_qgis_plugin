@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import traceback
 
@@ -127,7 +128,7 @@ def gen_spider_df(cell_files, dbfp, rat, plot_spider_param, single_point_match_d
     assert 'cell_lon' in cells_df.columns
     if len(cells_df) == 0:
         raise Exception("len(cells_df) == 0")
-    with sqlite3.connect(dbfp) as dbcon:
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         cgi_df = None
         param_df = None
         cgi_df, param_df = get_cgi_df_and_param_df(dbcon, rat, plot_spider_param, single_point_match_dict=single_point_match_dict)

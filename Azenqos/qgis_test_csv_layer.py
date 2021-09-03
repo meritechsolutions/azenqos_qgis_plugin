@@ -1,3 +1,5 @@
+import contextlib
+
 import integration_test_helpers
 import azq_utils
 import pandas as pd
@@ -10,7 +12,7 @@ azmfp = os.path.join(
 )
 dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
-with sqlite3.connect(dbfp) as dbcon:
+with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
     df = pd.read_sql(
         "select log_hash, time, positioning_lat, positioning_lon from location", dbcon
     )

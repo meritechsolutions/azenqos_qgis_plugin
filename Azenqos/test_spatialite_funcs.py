@@ -1,13 +1,13 @@
 import pandas as pd
 import spatialite as sqlite
-
+import contextlib
 import integration_test_helpers
 
 
 def test():
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp("../example_logs/4g_cellfile_bad_gps/354569110523269 30_7_2021 14.52.10.azm")
 
-    with sqlite.connect(dbfp) as dbcon:
+    with contextlib.closing(sqlite.connect(dbfp)) as dbcon:
         df = pd.read_sql("select st_x(geom) as lon, st_y(geom) as lat from lte_cell_meas where geom is not null", dbcon)
         print("df.head():\n", df.head())
         assert abs(df.lat.iloc[0] - 13.669310) < 0.000001

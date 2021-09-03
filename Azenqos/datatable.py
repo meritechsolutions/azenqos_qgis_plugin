@@ -327,7 +327,7 @@ class TableWindow(QWidget):
                     with sqlite3.connect(self.gc.databasePath) as dbcon:
                         # load it into qgis as new layer
                         qgis_layers_gen.create_qgis_layer_df(
-                            self.tableModel.df, dbcon, layer_name=layer_name
+                            self.tableModel.df, dbcon, layer_name=layer_name, is_indoor=self.gc.is_indoor
                         )
 
     def headerMenu(self, pos):

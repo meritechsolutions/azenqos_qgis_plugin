@@ -18,9 +18,10 @@ import preprocess_azm
 import azq_utils
 import uuid
 import pathlib
+import pandas as pd
 
 
-def create_qgis_layer_df(df, dbcon, layer_name="layer", auto_add_lat_lon=True):
+def create_qgis_layer_df(df, dbcon, layer_name="layer", auto_add_lat_lon=True, is_indoor=False):
     assert df is not None
     assert "log_hash" in df.columns
     assert "time" in df.columns
@@ -43,6 +44,14 @@ def create_qgis_layer_df(df, dbcon, layer_name="layer", auto_add_lat_lon=True):
     tmp_csv_fp = os.path.join(
         azq_utils.tmp_gen_path(), "tmp_csv_{}.csv".format(uuid.uuid4())
     )
+    if is_indoor:
+        idf = df[["log_hash", "time", "lat", "lon"]]
+        idf = idf.dropna(subset=["time"])
+        idf = idf.drop_duplicates(subset='time').set_index('time')
+        idf = idf.groupby('log_hash').apply(lambda sdf: sdf.interpolate())
+        idf = idf.reset_index() 
+        df["lat"] = idf["lat"]
+        df["lon"] = idf["lon"]
     df.to_csv(tmp_csv_fp, index=False)
     create_qgis_layer_csv(tmp_csv_fp, layer_name=layer_name)
 

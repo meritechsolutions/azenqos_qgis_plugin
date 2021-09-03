@@ -50,6 +50,7 @@ class analyzer_vars:
     openedWindows = []
     timeSlider = None
     isSliderPlay = False
+    is_indoor = False
     allLayers = []
     # tableList = []
     h_list = []

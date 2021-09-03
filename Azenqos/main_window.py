@@ -1965,7 +1965,10 @@ Log_hash list: {}""".format(
                     seconds=(params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS / 1000.0)
                 )
                 # 2020-10-08 15:35:55.431000
-                filt_expr = "time >= '%s' and time <= '%s'" % (start_dt, end_dt)
+                filt_expr = ""
+                if self.gc.selected_row_log_hash:
+                    filt_expr = "log_hash = {} and ".format(self.gc.selected_row_log_hash)
+                filt_expr += "time >= '%s' and time <= '%s'" % (start_dt, end_dt)
                 print("filt_expr:", filt_expr)
                 layerFeatures = list(layer.getFeatures(QgsFeatureRequest().setFilterExpression(filt_expr).setFlags(QgsFeatureRequest.NoGeometry)))
                 print("filt request ret len:", len(layerFeatures))

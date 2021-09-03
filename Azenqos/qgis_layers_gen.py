@@ -18,7 +18,6 @@ import preprocess_azm
 import azq_utils
 import uuid
 import pathlib
-import pandas as pd
 
 
 def create_qgis_layer_df(df, dbcon, layer_name="layer", auto_add_lat_lon=True, is_indoor=False):

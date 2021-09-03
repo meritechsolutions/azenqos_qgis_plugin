@@ -1,10 +1,11 @@
 import os
 import shutil
 import sqlite3
+import contextlib
 import sys
 import threading
 import traceback
-import fill_geom_in_location_df
+import uuid
 
 import pandas as pd
 import numpy as np
@@ -49,6 +50,8 @@ import azq_utils
 import qt_utils
 import qgis_layers_gen
 import sql_utils
+import preprocess_azm
+
 
 DEFAULT_TABLE_WINDOW_OPTIONS_DICT_KEYS = (
     "time_list_mode",
@@ -327,11 +330,23 @@ class TableWindow(QWidget):
                 if layer_name:
                     # load it into qgis as new layer
                     try:
+                        tmpdbfp = self.gc.databasePath
+                        tmpdbfp +=  "_{}.db".format(uuid.uuid4())
+
+                        df = self.tableModel.df
+
+                        if ("lat" not in df.columns) or ("lon" not in df.columns):
+                            print("need to merge lat and lon")
+                            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                            )
                         qgis_layers_gen.dump_df_to_spatialite_db(
-                            self.tableModel.df, self.gc.databasePath, layer_name
+                        df, tmpdbfp, layer_name
                         )
+                        assert os.path.isfile(tmpdbfp)
                         qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-                            self.gc.databasePath, layer_name, label_col="name" if "name" in self.tableModel.df.columns else None
+                            tmpdbfp, layer_name, label_col="name" if "name" in self.tableModel.df.columns else None
                         )
                     except:
                         type_, value_, traceback_ = sys.exc_info()
@@ -470,7 +485,7 @@ class TableWindow(QWidget):
             and self.refresh_data_from_dbcon_and_time_func is not None
         ):
             try:
-                with sqlite3.connect(self.gc.databasePath) as dbcon:
+                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                     refresh_dict = {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
                     print(
                         "datatable refreshTableContents() refresh_data_from_dbcon_and_time_func: refresh_dict:", refresh_dict

@@ -460,7 +460,7 @@ class import_db_dialog(QDialog):
     def getTimeForSlider(self):
         startTime = None
         endTime = None
-        with sqlite3.connect(self.databasePath) as dbcon:
+        with contextlib.closing(sqlite3.connect(self.databasePath)) as dbcon:
             df = pd.read_sql(
                 "select min(log_start_time) as startTime, max(log_end_time) as endTime from logs",
                 dbcon,

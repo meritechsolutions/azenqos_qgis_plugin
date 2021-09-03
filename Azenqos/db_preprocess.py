@@ -28,9 +28,7 @@ elm_table_main_col_types = {
     "detail_str": "TEXT",
 }
 
-def prepare_spatialite_views(dbcon):
-    assert dbcon is not None
-
+def prepare_spatialite_required_tables(dbcon):
     dbcon.execute(
         """
         CREATE TABLE IF NOT EXISTS spatial_ref_sys (srid INTEGER NOT NULL PRIMARY KEY,auth_name VARCHAR(256) NOT NULL,auth_srid INTEGER NOT NULL,ref_sys_name VARCHAR(256),proj4text VARCHAR(2048) NOT NULL);
@@ -68,6 +66,11 @@ def prepare_spatialite_views(dbcon):
         """CREATE TABLE IF NOT EXISTS 'layer_styles' ( "id" INTEGER PRIMARY KEY AUTOINCREMENT, 'f_table_catalog' VARCHAR(256), 'f_table_schema' VARCHAR(256), 'f_table_name' VARCHAR(256), 'f_geometry_column' VARCHAR(256), 'stylename' VARCHAR(30), 'styleqml' VARCHAR, 'stylesld' VARCHAR, 'useasdefault' INTEGER_BOOLEAN, 'description' VARCHAR, 'owner' VARCHAR(30), 'ui' VARCHAR(30), 'update_time' TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"""
     )
     dbcon.execute("delete from layer_styles;")
+
+
+def prepare_spatialite_views(dbcon):
+    assert dbcon is not None
+    prepare_spatialite_required_tables(dbcon)
 
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geometry_columns df:\n{}".format(df.head()))

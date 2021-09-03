@@ -18,15 +18,12 @@ try:
 except:
     pass
 import preprocess_azm
-import azq_utils
-import uuid
 import pathlib
 import db_preprocess
-import csv
 import fill_geom_in_location_df
 
 
-def dump_df_to_spatialite_db(df, dbfp, table, auto_add_lat_lon=True):
+def dump_df_to_spatialite_db(df, dbfp, table):
     assert df is not None
     assert "log_hash" in df.columns
     assert "time" in df.columns
@@ -39,21 +36,23 @@ def dump_df_to_spatialite_db(df, dbfp, table, auto_add_lat_lon=True):
             df["lon"] = df["positioning_lon"]
 
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-        if auto_add_lat_lon:
-            if ("lat" not in df.columns) and ("lon" not in df.columns):
-                assert dbcon is not None
-                print("need to merge lat and lon")
-                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
-                    columns={"positioning_lat": "lat", "positioning_lon": "lon"}
-                )
         assert "lat" in df.columns and "lon" in df.columns
         if 'geom' not in df.columns:
             df = fill_geom_in_location_df.fill_geom_in_location_df(df)
         assert 'geom' in df
+        print("to_sql dbfp:", dbfp)
         df.to_sql(table, dbcon, dtype=db_preprocess.elm_table_main_col_types)
+        sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
+            table
+        )
+        db_preprocess.prepare_spatialite_required_tables(dbcon)
+        print("insert into geometry_columns view {} sqlstr: {}".format(table, sqlstr))
+        dbcon.execute(sqlstr)
+        dbcon.commit()
+    assert os.path.isfile(dbfp)
 
 
-def create_qgis_layer_from_spatialite_db(dbfp, table, label_name=None):
+def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None):
     '''
     # now we create from spatialite dbcon instead
     tmp_csv_fp = os.path.join(

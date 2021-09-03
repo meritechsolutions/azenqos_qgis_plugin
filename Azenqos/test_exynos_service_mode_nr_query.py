@@ -1,3 +1,5 @@
+import contextlib
+
 import integration_test_helpers
 import sql_utils
 
@@ -6,7 +8,7 @@ def test():
     azmfp = "../example_logs/nr_nsa_exynos_s21/354505623113016-19_08_2021-16_45_22.azm"
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
-    with integration_test_helpers.get_dbcon(dbfp) as dbcon:
+    with contextlib.closing(integration_test_helpers.get_dbcon(dbfp)) as dbcon:
         import pandas as pd
         time = "2021-08-19 16:44:47.186"
         log_hash = pd.read_sql('select log_hash from logs', dbcon).iloc[0, 0]

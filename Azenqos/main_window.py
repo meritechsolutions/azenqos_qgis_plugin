@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import json
 import pathlib
@@ -5,6 +6,7 @@ import shutil
 import threading
 import traceback
 
+import PyQt5
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QSettings, pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator, QPixmap, QIcon
@@ -433,7 +435,7 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionEvents_triggered(self):
         has_wave_file = False
-        with sqlite3.connect(self.gc.databasePath) as dbcon:
+        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
             try:
                 mos_df = pd.read_sql("select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos", dbcon)
                 if len(mos_df) > 0 and "wave_file" in mos_df.columns:
@@ -1507,7 +1509,7 @@ Log_hash list: {}""".format(
 
     def selectLayer(self):
         if self.qgis_iface:
-            self.add_db_layers()
+            self.add_db_layers(select=True)
 
     def selectCells(self):
         if not self.gc.db_fp:
@@ -1978,6 +1980,10 @@ Log_hash list: {}""".format(
                     if isinstance(lft, str):
                         print("ltf1: {} type: {}".format(lft, type(lft)))#  - sometimes comes as qdatetime we cant add
                         time_list.append(lft)
+                    if isinstance(lft, PyQt5.QtCore.QDateTime):
+                        print("ltf2: {} type: {}".format(lft, type(lft)))  # - sometimes comes as qdatetime we cant add
+                        time_list.append(lft.toMSecsSinceEpoch())
+
 
                 if len(fids) and len(time_list):
                     print("time_list: {}".format(time_list))
@@ -2273,10 +2279,10 @@ Log_hash list: {}""".format(
             print("WARNING: _gui_save() - exception: {}".format(exstr))
 
 
-    def add_db_layers(self):
+    def add_db_layers(self, select=False):
         if self.gc.db_fp:
             self.db_layer_task = db_layer_task.LayerTask(u"Add layers", self.gc.db_fp, self.gc, self.task_done_signal)
-            self.db_layer_task.run_blocking()
+            self.db_layer_task.run_blocking(select=select)
         else:
             qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
 
@@ -2330,7 +2336,7 @@ Log_hash list: {}""".format(
             ne_lat = 1
             se_lon = 1
             se_lat = 0
-            with sqlite3.connect(self.gc.databasePath) as dbcon:
+            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                 try:
                     indoor_bg_df = pd.read_sql("select * from indoor_background_img", dbcon)
                     if len(indoor_bg_df) > 0:

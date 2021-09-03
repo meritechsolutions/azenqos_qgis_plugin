@@ -22,7 +22,7 @@ import db_preprocess
 import fill_geom_in_location_df
 
 
-def dump_df_to_spatialite_db(df, dbfp, table):
+def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     assert df is not None
     assert "log_hash" in df.columns
     assert "time" in df.columns
@@ -36,6 +36,16 @@ def dump_df_to_spatialite_db(df, dbfp, table):
 
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         assert "lat" in df.columns and "lon" in df.columns
+        if is_indoor:
+            idf = df[["log_hash", "time", "lat", "lon"]]
+            idf = idf.dropna(subset=["time"])
+            idf = idf.drop_duplicates(subset='time').set_index('time')
+            idf = idf.groupby('log_hash').apply(lambda sdf: sdf.interpolate())
+            idf = idf.reset_index()
+            df["lat"] = idf["lat"]
+            df["lon"] = idf["lon"]
+            if "geom" in df.columns:
+                del df["geom"]
         if 'geom' not in df.columns:
             df = fill_geom_in_location_df.fill_geom_in_location_df(df)
         assert 'geom' in df
@@ -57,6 +67,7 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None):
     tmp_csv_fp = os.path.join(
         azq_utils.tmp_gen_path(), "tmp_csv_{}.csv".format(uuid.uuid4())
     )
+<<<<<<< HEAD
     df.to_csv(tmp_csv_fp, index=False, quoting=csv.QUOTE_ALL)
     create_qgis_layer_csv(tmp_csv_fp, layer_name=layer_name, label_col=label_col)
     '''
@@ -69,8 +80,6 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None):
     display_name = table
     layer = QgsVectorLayer(uri.uri(), display_name, 'spatialite')
     QgsProject.instance().addMapLayer(layer)
-
-
 
 
 def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="lat", label_col=None):

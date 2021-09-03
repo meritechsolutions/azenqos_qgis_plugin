@@ -345,14 +345,35 @@ def prepare_spatialite_views(dbcon):
         geomBlob[51:51+8] = by 
         geomBlob[59] = 0xfe
         return geomBlob
+
+    if len(df_posids_indoor_start) > 0:
+        try:
+            sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"
+            dbcon.execute(sqlstr)
+            dbcon.commit()
+        except:
+            pass
+        try:
+            sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
+            print("copy indoor_location lat lon to location: %s" % sqlstr)
+            dbcon.execute(sqlstr)
+            dbcon.commit()
+        except:
+            pass
+        for log_hash, posid in gps_cancel_list:
+            try:
+                sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where log_hash = {} and posid = {};".format(
+                    log_hash, posid-1
+                )
+                print("delete gps cancel sqlstr: %s" % sqlstr)
+                dbcon.execute(sqlstr)
+                dbcon.commit()
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: remove gps cancel rows exception:", exstr)
         
-    df_location = pd.read_sql_query("select time as time_datetime, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null and positioning_lat >= 0 and positioning_lon >= 0 and positioning_lat <= 1 and positioning_lon <= 1", dbcon)
-    try:
-        df_indoor_location = pd.read_sql_query("select time as time_datetime, log_hash, indoor_location_lat as positioning_lat, indoor_location_lon as positioning_lon from indoor_location ", dbcon)
-        if len(df_indoor_location) > 0:
-            df_location = df_indoor_location
-    except:
-        pass
+    df_location = pd.read_sql_query("select time as time_datetime, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon)
     df_location["time_datetime"] = pd.to_datetime(df_location["time_datetime"])
 
     # remove stray -1 -1 rows
@@ -391,8 +412,7 @@ def prepare_spatialite_views(dbcon):
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: remove gps cancel rows exception:", exstr)
         if len(df_posids_indoor_start) > 0:
-            view_null_df = pd.read_sql("select * from {} where geom is null".format(view), dbcon)
-            view_df = pd.read_sql("select * from {} where geom is not null".format(view), dbcon)
+            view_df = pd.read_sql("select * from {}".format(view), dbcon)
             if len(view_df) > 0:
                 by = None
                 if "log_hash" in view_df.columns and "log_hash" in df_location.columns:
@@ -414,37 +434,10 @@ def prepare_spatialite_views(dbcon):
                 view_df["positioning_lon"] = idf["positioning_lon"]
                 view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
                 view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
-                view_df = pd.concat([view_df, view_null_df], ignore_index=True)
                 view_df = view_df.sort_values(by="time").reset_index(drop=True)
                 view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
                 view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
-    if len(df_posids_indoor_start) > 0:
-        try:
-            sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"
-            dbcon.execute(sqlstr)
-            dbcon.commit()
-        except:
-            pass
-        try:
-            sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
-            print("copy indoor_location lat lon to location: %s" % sqlstr)
-            dbcon.execute(sqlstr)
-            dbcon.commit()
-        except:
-            pass
-        for log_hash, posid in gps_cancel_list:
-            try:
-                sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where log_hash = {} and posid = {};".format(
-                    log_hash, posid-1
-                )
-                print("delete gps cancel sqlstr: %s" % sqlstr)
-                dbcon.execute(sqlstr)
-                dbcon.commit()
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: remove gps cancel rows exception:", exstr)
-    
+
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
 
 

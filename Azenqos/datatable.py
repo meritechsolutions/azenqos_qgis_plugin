@@ -334,7 +334,6 @@ class TableWindow(QWidget):
                         tmpdbfp +=  "_{}.db".format(uuid.uuid4())
 
                         df = self.tableModel.df
-
                         if ("lat" not in df.columns) or ("lon" not in df.columns):
                             print("need to merge lat and lon")
                             with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
@@ -342,7 +341,7 @@ class TableWindow(QWidget):
 columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                             )
                         qgis_layers_gen.dump_df_to_spatialite_db(
-                        df, tmpdbfp, layer_name
+                        df, tmpdbfp, layer_name, is_indoor=self.gc.is_indoor
                         )
                         assert os.path.isfile(tmpdbfp)
                         qgis_layers_gen.create_qgis_layer_from_spatialite_db(

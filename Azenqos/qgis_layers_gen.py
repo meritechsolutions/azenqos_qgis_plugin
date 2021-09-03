@@ -17,7 +17,6 @@ try:
     )
 except:
     pass
-import preprocess_azm
 import pathlib
 import db_preprocess
 import fill_geom_in_location_df

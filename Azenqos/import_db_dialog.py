@@ -357,8 +357,6 @@ class import_db_dialog(QDialog):
             return False
 
         try:
-            self.gc.close_db()
-
             if self.import_thread is None or (self.import_thread.is_alive() == False):
                 self.zip_fp = zip_fp
                 self.buttonBox.setEnabled(False)
@@ -441,8 +439,8 @@ class import_db_dialog(QDialog):
             print("using log:", zip_fp)
             assert isinstance(zip_fp, str)
             assert os.path.isfile(zip_fp)
+            azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
             if zip_fp.endswith(".azm") or zip_fp.endswith(".zip"):
-                azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
                 self.databasePath = preprocess_azm.extract_entry_from_zip(
                     zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
                 )

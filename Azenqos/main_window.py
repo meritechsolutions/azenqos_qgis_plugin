@@ -1789,6 +1789,8 @@ Log_hash list: {}""".format(
 
     def open_logs(self):
         if self.gc.databasePath:
+            self.cleanup()
+            '''
             msgBox = QMessageBox()
             msgBox.setWindowTitle("Log already open")
             if self.qgis_iface is not None:
@@ -1796,8 +1798,9 @@ Log_hash list: {}""".format(
             else:
                 msgBox.setText("To open a new log, please close/exit first...")
             msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
-            msgBox.exec_()
+            msgBox.exec_()            
             return
+            '''
 
         dlg = import_db_dialog.import_db_dialog(self, self.gc)
         dlg.show()
@@ -2064,45 +2067,21 @@ Log_hash list: {}""".format(
             ret = shutil.copyfile(self.gc.db_fp, fp)
             qt_utils.msgbox("File saved: {}".format(ret))
 
+
     def closeEvent(self, event):
         print("analyzer_window: closeEvent:", event)
         # just close it as it might be ordered by qgis close (unload()) too
-        self.cleanup()
+        self.close()
         event.accept()
 
-        """
-        reply = None
-        if self.newImport is False:
-            reply = QMessageBox.question(
-                self,
-                "Quit Azenqos",
-                "Do you want to quit?",
-                QMessageBox.Yes|QMessageBox.No,
-                QMessageBox.Yes,
-            )
-
-        if reply == QMessageBox.Yes or self.newImport is True:
-            self.cleanup()
-            event.accept()
-        else:
-            event.ignore()
-        """
 
     def cleanup(self):
         try:
             self._gui_save()
-            # saving = Utils().saveState(self.gc.CURRENT_PATH)
             if self.qgis_iface:
                 self.qgis_iface.actionPan().trigger()
             self.pauseTime()
-            self.timeSliderThread.exit()
-            # self.removeToolBarActions()
-            if self.qgis_iface:
-                import quit_task
-                self.quitTask = quit_task.QuitTask(u"Quiting Plugin", self)
-                QgsApplication.taskManager().addTask(self.quitTask)
-
-            # Begin removing layer (which cause db issue)
+            # Begin removing layers
             if self.qgis_iface:
                 project = QgsProject.instance()
                 for (id_l, layer) in project.mapLayers().items():
@@ -2116,11 +2095,23 @@ Log_hash list: {}""".format(
                 QgsProject.instance().clear()
                 QgsProject.removeAllMapLayers(QgsProject.instance())
 
-            if len(self.gc.openedWindows) > 0:
-                for window in self.gc.openedWindows:
-                    window.close()
-                self.gc.openedWindows = []
+            print("cleanup: len(self.gc.openedWindows)", len(self.gc.openedWindows))
+            for widget in self.gc.openedWindows:
+                print("closing widget title:", widget.title)
+                widget.close()
+            self.gc.openedWindows = []
+            for window in self.mdi.subWindowList():
+                window.close()
+            assert len(self.mdi.subWindowList()) == 0
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: cleanup() exception:", exstr)
 
+
+    def close(self):
+        try:
+            self.cleanup()
             # End removing layer
             self.removeAzenqosGroup()
             for mdiwindow in self.mdi.subWindowList():
@@ -2128,19 +2119,12 @@ Log_hash list: {}""".format(
                 mdiwindow.close()
             self.mdi.close()
             print("Close App")
-            try:
-                self.gc.close_db()
-                shutil.rmtree(azq_utils.tmp_gen_path())
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: cleanup_tmp_dir() exception: %s" % exstr)
             self.closed = True
             print("cleanup done")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: cleanup() exception:", exstr)
+            print("WARNING: close() exception:", exstr)
 
     def removeToolBarActions(self):
         actions = self.toolbar.actions()

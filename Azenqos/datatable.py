@@ -1,3 +1,4 @@
+import csv
 import os
 import shutil
 import sqlite3
@@ -287,11 +288,14 @@ class TableWindow(QWidget):
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
-        actions_dict = {"create_qgis_layer": None, "custom_expression": None}
+        actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None}
         if self.time_list_mode and self.df is not None and 'log_hash' in self.df.columns and 'time' in self.df.columns:
             actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
         if isinstance(self.refresh_data_from_dbcon_and_time_func, str):
             actions_dict["custom_expression"] = menu.addAction("Customize SQL/Python expression...")
+        if self.tableModel.df is not None:
+            actions_dict["to_csv"] = menu.addAction("Dump to CSV...")
+            actions_dict["to_parquet"] = menu.addAction("Dump to Parquet...")
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action is None:
             return
@@ -300,6 +304,35 @@ class TableWindow(QWidget):
             if expression:
                 self.refresh_data_from_dbcon_and_time_func = expression
                 self.refreshTableContents()
+        elif action == actions_dict["to_csv"] or action == actions_dict["to_parquet"]:
+            df = self.tableModel.df
+            try:
+                if len(df) and "log_hash" in df.columns and "time" in df.columns:
+                    if ("lat" not in df.columns) or ("lon" not in df.columns):
+                        print("need to merge lat and lon")
+                        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                            df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+                                columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                            )
+                fp, _ = QFileDialog.getSaveFileName(
+                    self, "Select dump file/location", QtCore.QDir.rootPath(), "*.csv" if action == actions_dict["to_csv"] else "*.parquet"
+                )
+                if fp:
+                    if action == actions_dict["to_csv"]:
+                        df.to_csv(fp, index=False, quoting=csv.QUOTE_ALL)
+                    else:
+                        df.to_parquet(fp)
+                    qt_utils.msgbox("Dumped to file: {}".format(fp))
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print(
+                    "WARNING: datatable title {} dump table to file contextmenu exception: {}".format(
+                        self.title, exstr
+                    )
+                )
+                qt_utils.msgbox("dump failed: " + exstr, title="Failed")
+
         elif action == actions_dict["create_qgis_layer"]:
             if self.gc.qgis_iface is None:
                 qt_utils.msgbox("Not running in QGIS-plugin mode...")

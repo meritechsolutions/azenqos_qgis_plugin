@@ -89,3 +89,4 @@ Special thanks and notices
 
 - Thanks to the wireshark developers - this project (which is licensed under the GNU GPLv2 - same as Wireshark) uses `tshark` and `text2pcap` utilities from the Wireshark project. Full credit and thanks to the Wireshark developers for their great work. Please see [wireshark_LICENSE](wireshark_LICENSE) file for its license and [wireshark_SOURCE](wireshark_SOURCE) for its source.
 - Thanks to the [sqlite3](https://www.sqlite.org/copyright.html) developers, used extensively in this project including binaries for doing dumps.
+- Thanks to the [scrcpy](https://github.com/Genymobile/scrcpy) developers for their very handy and useful tool, it is used in this project. Please see its license at [LICENSE](Azenqos/scrcpy_nt/LICENSE).

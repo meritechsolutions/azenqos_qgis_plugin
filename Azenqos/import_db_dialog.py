@@ -7,6 +7,7 @@ import sys
 # Adding folder path
 import threading
 import traceback
+import uuid
 
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets
@@ -62,18 +63,28 @@ class import_db_dialog(QDialog):
 
         ########
         layout = QGridLayout()
-        radiobutton = QRadioButton("AZENQOS Server login")
+
+        radiobutton = QRadioButton("Log files (.azm)")
+        self.radioButtonAZM = radiobutton
+        radiobutton.setChecked(True)
+        radiobutton.mode = "local"
+        radiobutton.toggled.connect(self.onRadioClicked)
+        layout.addWidget(radiobutton, 0, 0)
+
+        radiobutton = QRadioButton("Server log_hash list")
         self.radioButtonServer = radiobutton
         radiobutton.setChecked(False)
         radiobutton.mode = "server"
         radiobutton.toggled.connect(self.onRadioClicked)
-        layout.addWidget(radiobutton, 0, 0)
-
-        radiobutton = QRadioButton("Local .azm log file")
-        radiobutton.setChecked(True)
-        radiobutton.mode = "local"
-        radiobutton.toggled.connect(self.onRadioClicked)
         layout.addWidget(radiobutton, 0, 1)
+
+        radiobutton = QRadioButton("Connected phone mode")
+        self.radioButtonPhone = radiobutton
+        radiobutton.setChecked(False)
+        radiobutton.mode = "adb"
+        radiobutton.toggled.connect(self.onRadioClicked)
+        layout.addWidget(radiobutton, 0, 2)
+
         mode_gb.setLayout(layout)
         #####################
 
@@ -261,7 +272,8 @@ class import_db_dialog(QDialog):
                 self.gc.cell_files = []
                 return
         logs = []
-        if self.radioButtonServer.isChecked() == False:
+        zip_fp = None
+        if self.radioButtonAZM.isChecked():
             if not self.dbPathLineEdit.text():
                 QtWidgets.QMessageBox.critical(
                     None,
@@ -270,8 +282,6 @@ class import_db_dialog(QDialog):
                     QtWidgets.QMessageBox.Cancel,
                 )
                 return False
-
-
             logs = self.dbPathLineEdit.text()
             if "," in logs:
                 logs = logs.split(",")
@@ -286,7 +296,45 @@ class import_db_dialog(QDialog):
                         QtWidgets.QMessageBox.Cancel,
                     )
                     return False
-        assert logs
+            assert logs
+            zip_fp = logs
+        elif self.radioButtonPhone.isChecked():
+            try:
+                adb_db_fp = azq_utils.pull_latest_log_db_from_phone()
+                if adb_db_fp is None:
+                    return
+                assert os.path.isfile(adb_db_fp)
+                zip_fp = adb_db_fp
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print(
+                    "WARNING: adb mode init exception: {}".format(
+                        exstr
+                    )
+                )
+                qt_utils.msgbox("Connected phone mode failed: " + exstr, title="Failed")
+                return
+
+        elif self.radioButtonServer.isChecked():
+            self.gc.login_ret_dict = None
+            if self.radioButtonServer.isChecked():
+                # server logs mode
+                dlg = login_dialog.login_dialog(self, self.gc)
+                dlg.show()
+                dlg.raise_()
+                ret = dlg.exec()
+                if ret == 0:  # dismissed
+                    return
+                # ok we have a successful login and downloaded the db zip
+                zip_fp = dlg.downloaded_zip_fp
+                if (not zip_fp) or (not os.path.isfile(zip_fp)):
+                    raise Exception(
+                        "Failed to get downloaded data from server login process..."
+                    )
+                self.gc.login_dialog = dlg  # so others can access server/token when needed for other api calls
+        else:
+             raise Exception("unknown/unhandled mode")
 
         if not self.themePathLineEdit.text():
             QtWidgets.QMessageBox.critical(
@@ -310,37 +358,6 @@ class import_db_dialog(QDialog):
 
         try:
             self.gc.close_db()
-            """
-            if hasattr(self, "azenqosMainMenu") is True:
-                self.azenqosMainMenu.newImport = True
-                self.azenqosMainMenu.killMainWindow()
-                self.clearCurrentProject()
-            """
-
-            print(
-                "self.radioButtonServer.isChecked() %s",
-                self.radioButtonServer.isChecked(),
-            )
-            zip_fp = self.dbPathLineEdit.text()
-            self.gc.login_ret_dict = None
-            if self.radioButtonServer.isChecked():
-                # server logs mode
-                dlg = login_dialog.login_dialog(self, self.gc)
-                dlg.show()
-                dlg.raise_()
-                ret = dlg.exec()
-                if ret == 0:  # dismissed
-                    return
-                # ok we have a successful login and downloaded the db zip
-                zip_fp = dlg.downloaded_zip_fp
-                if (not zip_fp) or (not os.path.isfile(zip_fp)):
-                    raise Exception(
-                        "Failed to get downloaded data from server login process..."
-                    )
-                self.gc.login_dialog = dlg  # so others can access server/token when needed for other api calls
-            else:
-                # local azm log mode
-                zip_fp = logs
 
             if self.import_thread is None or (self.import_thread.is_alive() == False):
                 self.zip_fp = zip_fp
@@ -376,7 +393,6 @@ class import_db_dialog(QDialog):
                 QtWidgets.QMessageBox.Cancel,
             )
             return False
-
         raise Exception("invalid state")
 
 
@@ -402,6 +418,7 @@ class import_db_dialog(QDialog):
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: ui_handler_import_status() failed exception:", exstr)
+
 
     def import_selection(self):
         self.import_status_signal.emit("Import logs - START")

@@ -7,9 +7,11 @@ import shutil
 import sys
 import traceback
 import uuid
+import subprocess
 from pathlib import Path
-
+from PyQt5 import QtWidgets
 import requests
+import threading
 
 import dprint
 
@@ -1618,3 +1620,78 @@ def ask_custom_sql_or_py_expression(parent, title="Custom SQL/Python expression"
     if expression is not None and table_view_mode and sql_utils.is_sql_select(expression):
         expression = "pd.read_sql('''{}''',dbcon)".format(expression)
     return expression
+
+
+def get_adb_command():
+    return os.path.join(get_module_path(), "Azenqos/scrcpy_nt/adb.exe") if os.name == "nt" else "adb"
+
+
+def get_scrcpy_command():
+    return  os.path.join(get_module_path(),
+    "Azenqos/scrcpy_nt/scrcpy.exe") if os.name == "nt" else "scrcpy"
+
+
+def get_failed_scrcpy_cmd():
+    scrcpy_cmd = get_scrcpy_command()
+    adb_cmd = get_adb_command()
+    # test scrcpy
+    test_cmds = [(scrcpy_cmd,"--version"), (adb_cmd, "--version")]
+    for test_cmd in test_cmds:
+        sret = run_cmd_no_shell(test_cmd)
+        if sret != 0:
+            return test_cmd
+    return ""
+
+
+def pull_latest_log_db_from_phone():
+    failed_cmd = get_failed_scrcpy_cmd()
+    if failed_cmd:
+        QtWidgets.QMessageBox.critical(
+            None,
+            "Test command failed",
+            "Command failed: " + failed_cmd,
+            QtWidgets.QMessageBox.Cancel,
+        )
+        return None
+    target_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(uuid.uuid4()))
+    assert not os.path.isfile(target_fp)
+    cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", target_fp)
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        QtWidgets.QMessageBox.critical(
+            None,
+            "Failed to pull data from connected phone",
+            "Please make sure that you have a phone with AZENQOS netmon/script running",
+            QtWidgets.QMessageBox.Cancel,
+        )
+        return None
+    assert os.path.isfile(target_fp)
+    start_scrcpy_in_thread()
+    return target_fp
+
+
+CREATE_NO_WINDOW = 0x08000000
+
+
+def run_cmd_no_shell(cmd_list):
+    assert isinstance(cmd_list, list) or isinstance(cmd_list, tuple)
+    cmdret = -99
+    if os.name == "nt":
+        cmdret = subprocess.call(cmd_list, shell=False, creationflags=CREATE_NO_WINDOW)
+    else:
+        cmdret = subprocess.call(cmd_list, shell=False)
+    return cmdret
+
+
+g_scrcpy_thread = None
+def start_scrcpy_in_thread():
+    global g_scrcpy_thread
+    if g_scrcpy_thread is None or not g_scrcpy_thread.is_alive():
+        g_scrcpy_thread = threading.Thread(target=start_scrcpy, daemon=False)
+        g_scrcpy_thread.start()
+    else:
+        print("g_scrcpy_thread is still running - ignore start_scrcpy_in_thread")
+
+
+def start_scrcpy():
+    run_cmd_no_shell((get_scrcpy_command(),))

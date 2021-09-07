@@ -1626,9 +1626,9 @@ Log_hash list: {}""".format(
                 rect = QgsRectangle(p1, p2)
                 nearby_features = layer.getFeatures(rect)
                 layer_fields = layer.fields()
-                has_seqid = "seqid" in layer_fields
-                has_posid = "posid" in layer_fields
-                has_log_hash = "log_hash" in layer_fields
+                has_seqid = "seqid" in layer_fields.names()
+                has_posid = "posid" in layer_fields.names()
+                has_log_hash = "log_hash" in layer_fields.names()
 
                 ########## fitler for one nearest feature only - faster way
                 from qgis._core import QgsSpatialIndex

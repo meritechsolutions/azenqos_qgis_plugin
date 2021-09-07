@@ -56,6 +56,7 @@ try:
 
     # from qgis.utils import
     from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
+    from PyQt5.QtGui import QColor
     from qgis.PyQt.QtCore import QVariant
 
     print("mainwindow working in qgis mode")
@@ -1447,19 +1448,14 @@ Log_hash list: {}""".format(
                 i += 1
                 print("selectChanged selectedfeature rect sf i:", i)
                 h = QgsHighlight(self.qgis_iface.mapCanvas(), sf.geometry(), layer)
-
                 # set highlight symbol properties
-                from PyQt5.QtGui import QColor
-
                 h.setColor(QColor(255, 0, 0, 255))
                 h.setWidth(2)
                 h.setFillColor(QColor(255, 255, 255, 0))
-
                 # write the object to the list
                 self.gc.highlight_list.append(h)
             canvas.flashFeatureIds(layer, layer.selectedFeatureIds(), flashes=1)
 
-        canvas.refresh()
 
     def updateUi(self):
         if not self.gc.slowDownValue == 1:
@@ -1603,18 +1599,14 @@ Log_hash list: {}""".format(
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         print("qgis_selected_layers: ", qgis_selected_layers)
 
-
         for layer in qgis_selected_layers:
-
             if not layer:
                 continue
-
             if layer.type() == layer.VectorLayer:
                 if layer.featureCount() == 0:
                     # There are no features - skip
                     continue
                 print("layer.name()", layer.name())
-
                 # Loop through all features in a rect near point xy
                 offset = 0.000180
                 distance_offset = 0.001
@@ -1977,9 +1969,6 @@ Log_hash list: {}""".format(
             )
         )
 
-    # def threadComplete(self):
-    #     QgsMessageLog.logMessage('[-- THREAD COMPLETE --]')
-    #     iface.mapCanvas().refresh()
 
     def hilightFeature(self):
         try:
@@ -2156,14 +2145,14 @@ Log_hash list: {}""".format(
         for action in actions:
             self.toolbar.removeAction(action)
 
+
     def clearAllSelectedFeatures(self):
         if self.qgis_iface:
-            mc = self.qgis_iface.mapCanvas()
-            for layer in mc.layers():
-                if layer.type() == layer.VectorLayer:
-                    layer.removeSelection()
-            mc.refresh()
-            print("[-- Clear selected features --]")
+            layer = self.qgis_iface.activeLayer()
+            if layer:
+                layer.removeSelection()
+            self.clear_highlights()
+
 
     def removeAzenqosGroup(self):
         if self.qgis_iface:

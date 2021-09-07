@@ -71,6 +71,7 @@ def merge(in_azm_list):
             dbfp = row.dbfp
             assert os.path.isfile(dbfp)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+                # iterdump somehow doesnt work in my system with these dbs, doing dump with sqlite3 cmd shell binaries instead
                 cmd = [sqlite_bin, dbfp, ".dump"]
                 print("dumping db file to ram:", dbfp, "cmd:", cmd)
                 sql_script = subprocess.check_output(cmd, encoding="utf-8")
@@ -80,7 +81,14 @@ def merge(in_azm_list):
                 if is_last_azm:
                     sql_script += "INSERT INTO spatial_ref_sys VALUES(4326,'epsg',4326,'WGS 84','+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');\n"
                 assert sql_script
-                with open("out.sql", "w") as f:
+
+                # add column names before values of each table insert row
+                tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name
+                for table in tables:
+                    cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns
+                    sql_script.replace("INSERT INTO {} VALUES".format(table), "INSERT INTO {} ({}) VALUES".format(table, ",".join(cols)))
+
+                with open(azq_utils.get_module_fp("tmp_dump.sql"), "w") as f:
                     f.write(sql_script)
                 #print("sql_script:", sql_script)
                 print("merginng to target db file:", out_db_fp)

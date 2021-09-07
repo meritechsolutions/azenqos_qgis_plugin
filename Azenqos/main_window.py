@@ -1380,12 +1380,23 @@ Log_hash list: {}""".format(
                 "<b>Load layers</b><br>Click to load cell files..."
             )
 
+            # refresh connected phone button
+            self.sync_connected_phone_button = QToolButton()
+            self.sync_connected_phone_button.setIcon(
+                QIcon(QPixmap(os.path.join(dirname, "res", "refresh.png")))
+            )
+            self.sync_connected_phone_button.setObjectName("sync_connected_phone_button")
+            self.sync_connected_phone_button.setToolTip(
+                "<b>Re-sync connected phone data</b><br>For connected phone mode..."
+            )
+
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.saveBtn.clicked.connect(self.saveDbAs)
             self.layerSelect.clicked.connect(self.selectLayer)
             self.cellsSelect.clicked.connect(self.selectCells)
             self.importDatabaseBtn.clicked.connect(self.open_logs)
             self.maptool.clicked.connect(self.setMapTool)
+            self.sync_connected_phone_button.clicked.connect(self.sync_connected_phone)
             self.setupToolBar()
 
             self.setWindowTitle(
@@ -1405,6 +1416,7 @@ Log_hash list: {}""".format(
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.layerSelect)
         self.toolbar.addWidget(self.cellsSelect)
+        self.toolbar.addWidget(self.sync_connected_phone_button)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
@@ -1787,7 +1799,17 @@ Log_hash list: {}""".format(
                 getParentNode = baseNode.parent().text(0)
                 self.classifySelectedItems(getParentNode, getChildNode)
 
-    def open_logs(self):
+
+    def sync_connected_phone(self):
+        print("sync_connecter_phone START")
+        if not (self.gc.log_mode and self.gc.log_mode == "adb"):
+            qt_utils.msgbox("This button is for re-sync data from phone in 'Connected phone mode' (chosen in 'Open logs') only.", "Not in 'Connected phone mode'", parent=self)
+            return
+        self.open_logs(connected_mode_refresh=True)
+        print("sync_connecter_phone DONE")
+
+
+    def open_logs(self, connected_mode_refresh=False):
         if self.gc.databasePath:
             self.cleanup()
             '''
@@ -1801,11 +1823,13 @@ Log_hash list: {}""".format(
             msgBox.exec_()            
             return
             '''
-
-        dlg = import_db_dialog.import_db_dialog(self, self.gc)
+        dlg = import_db_dialog.import_db_dialog(self, self.gc, connected_mode_refresh=connected_mode_refresh)
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
+        if ret:
+            # dialog not completed successfully
+            return
         if self.gc.db_fp:
             print("starting layertask")
             self.add_map_layer()
@@ -1824,6 +1848,9 @@ Log_hash list: {}""".format(
             self.ui.statusbar.showMessage(
                 "Opened log db: {}".format(self.gc.databasePath)
             )
+            if connected_mode_refresh:
+                if self.gc.sliderLength:
+                    self.gc.timeSlider.setValue(self.gc.sliderLength - 1)
         else:
             self.ui.statusbar.showMessage("Log not opened...")
         self.updateUi()
@@ -2065,7 +2092,7 @@ Log_hash list: {}""".format(
         if fp:
             print("saveDbAs:", fp)
             ret = shutil.copyfile(self.gc.db_fp, fp)
-            qt_utils.msgbox("File saved: {}".format(ret))
+            qt_utils.msgbox("File saved: {}".format(ret), parent=self)
 
 
     def closeEvent(self, event):

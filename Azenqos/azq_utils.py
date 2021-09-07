@@ -1643,11 +1643,11 @@ def get_failed_scrcpy_cmd():
     return ""
 
 
-def pull_latest_log_db_from_phone():
+def pull_latest_log_db_from_phone(parent=None):
     failed_cmd = get_failed_scrcpy_cmd()
     if failed_cmd:
         QtWidgets.QMessageBox.critical(
-            None,
+            parent,
             "Test command failed",
             "Command failed: " + failed_cmd,
             QtWidgets.QMessageBox.Cancel,
@@ -1659,7 +1659,7 @@ def pull_latest_log_db_from_phone():
     ret = subprocess.call(cmd)
     if ret != 0:
         QtWidgets.QMessageBox.critical(
-            None,
+            parent,
             "Failed to pull data from connected phone",
             "Please make sure that you have a phone with AZENQOS netmon/script running",
             QtWidgets.QMessageBox.Cancel,

@@ -28,6 +28,7 @@ class analyzer_vars:
     qgis_iface = None
     mostFeaturesLayer = None
 
+    log_mode = ""
     databasePath = None
     db_fp = None  # same as databasePath but in snake_case
     cell_files = []

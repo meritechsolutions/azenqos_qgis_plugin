@@ -37,7 +37,7 @@ class import_db_dialog(QDialog):
     import_done_signal = pyqtSignal(str)
     import_status_signal = pyqtSignal(str)
 
-    def __init__(self, parent_window, gc):
+    def __init__(self, parent_window, gc, connected_mode_refresh=False):
         super(import_db_dialog, self).__init__(parent=parent_window)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
@@ -46,6 +46,11 @@ class import_db_dialog(QDialog):
         self.import_done_signal.connect(self.ui_handler_import_done)
         self.import_status_signal.connect(self.ui_handler_import_status)
         self.setupUi(self)
+        self.connected_mode_refresh = connected_mode_refresh
+        if self.connected_mode_refresh:
+            self.setEnabled(False)
+            self.radioButtonPhone.setChecked(True)
+            self.check_and_start_import()
 
     def setupUi(self, DatabaseDialog):
         dirname = os.path.dirname(__file__)
@@ -157,6 +162,7 @@ class import_db_dialog(QDialog):
 
         vbox.addStretch()
         self.statusLabel = QtWidgets.QLabel()
+        self.statusLabel.setEnabled(False)
         vbox.addWidget(self.statusLabel)
 
         ################ config/connect signals
@@ -184,7 +190,7 @@ class import_db_dialog(QDialog):
     def retranslateUi(self, DatabaseDialog):
         _translate = QtCore.QCoreApplication.translate
         DatabaseDialog.setWindowTitle(
-            _translate("DatabaseDialog", "Select log files to open...")
+            "Open logs"
         )
         self.browseButton.setText(_translate("DatabaseDialog", "Select Logs..."))
         self.browseButtonTheme.setText(_translate("DatabaseDialog", "Select Theme..."))
@@ -255,7 +261,26 @@ class import_db_dialog(QDialog):
         azq_utils.write_settings_file("config_prev_theme", self.themePathLineEdit.text())
         azq_utils.write_settings_file("config_prev_cell_file", self.cellPathLineEdit.text())
 
+
     def check_and_start_import(self):
+        try:
+            self.import_status_signal.emit("Opening log...")
+            self.setEnabled(False)
+            self._check_and_start_import()
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print(
+                "WARNING: _check_and_start_import exception: {}".format(
+                    exstr
+                )
+            )
+            self.import_status_signal.emit("Opening log... failed")
+            qt_utils.msgbox("Open failed: " + exstr, title="Failed", parent=self)
+            self.setEnabled(True)
+
+
+    def _check_and_start_import(self):
         self.save_settings()
 
         cell_files = []
@@ -297,14 +322,18 @@ class import_db_dialog(QDialog):
                     )
                     return False
             assert logs
+            self.gc.log_mode = "local"
             zip_fp = logs
         elif self.radioButtonPhone.isChecked():
             try:
-                adb_db_fp = azq_utils.pull_latest_log_db_from_phone()
+                self.import_status_signal.emit("Trying to pull data from connected phone...")
+                adb_db_fp = azq_utils.pull_latest_log_db_from_phone(self)
                 if adb_db_fp is None:
                     return
                 assert os.path.isfile(adb_db_fp)
                 zip_fp = adb_db_fp
+                self.gc.log_mode = "adb"
+                self.import_status_signal.emit("Trying to pull data from connected phone... done")
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -313,7 +342,8 @@ class import_db_dialog(QDialog):
                         exstr
                     )
                 )
-                qt_utils.msgbox("Connected phone mode failed: " + exstr, title="Failed")
+                self.import_status_signal.emit("Trying to pull data from connected phone... failed")
+                qt_utils.msgbox("Connected phone mode failed: " + exstr, title="Failed", parent=self)
                 return
 
         elif self.radioButtonServer.isChecked():
@@ -326,8 +356,11 @@ class import_db_dialog(QDialog):
                 ret = dlg.exec()
                 if ret == 0:  # dismissed
                     return
+
                 # ok we have a successful login and downloaded the db zip
                 zip_fp = dlg.downloaded_zip_fp
+                self.gc.log_mode = "server"
+
                 if (not zip_fp) or (not os.path.isfile(zip_fp)):
                     raise Exception(
                         "Failed to get downloaded data from server login process..."
@@ -356,19 +389,26 @@ class import_db_dialog(QDialog):
             )
             return False
 
+        self.start_import_thread(zip_fp)
+
+
+
+    def start_import_thread(self, zip_fp):
         try:
+            self.setWindowTitle("Please wait... opening logs")
+            self.setEnabled(False)
             if self.import_thread is None or (self.import_thread.is_alive() == False):
                 self.zip_fp = zip_fp
                 self.buttonBox.setEnabled(False)
                 print("start import db zip thread...")
                 self.import_thread = threading.Thread(
-                    target=self.import_selection, args=()
+                    target=self.import_thread_run, args=()
                 )
                 self.import_thread.start()
             else:
                 print("already importing - please wait...")
                 QtWidgets.QMessageBox.critical(
-                    None,
+                    self,
                     "Please wait...",
                     "Log import is still loading...",
                     QtWidgets.QMessageBox.Ok,
@@ -385,17 +425,17 @@ class import_db_dialog(QDialog):
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: open log failed exception:", exstr)
             QtWidgets.QMessageBox.critical(
-                None,
+                self,
                 "Open log failed",
                 "Error: {}\n\nTrace:\n{}".format(ex, exstr),
                 QtWidgets.QMessageBox.Cancel,
             )
             return False
-        raise Exception("invalid state")
 
 
     def ui_handler_import_done(self, error):
         if error:
+            self.setEnabled(True)
             print("ui_handler_import_done() error: %s" % error)
             QtWidgets.QMessageBox.critical(
                 None, "Failed", error, QtWidgets.QMessageBox.Cancel,
@@ -418,7 +458,7 @@ class import_db_dialog(QDialog):
             print("WARNING: ui_handler_import_status() failed exception:", exstr)
 
 
-    def import_selection(self):
+    def import_thread_run(self):
         self.import_status_signal.emit("Import logs - START")
         zip_fp = self.zip_fp
         success = False

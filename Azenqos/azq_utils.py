@@ -1661,7 +1661,7 @@ def pull_latest_log_db_from_phone(parent=None):
         QtWidgets.QMessageBox.critical(
             parent,
             "Failed to pull data from connected phone",
-            "Please make sure that you have a phone with AZENQOS netmon/script running",
+            "- Please make sure that you have a phone with AZENQOS netmon/script running connected via USB.\n- Please make sure phone has 'USB Debugging' enabled in phone settings >> 'Developer options'.",
             QtWidgets.QMessageBox.Cancel,
         )
         return None

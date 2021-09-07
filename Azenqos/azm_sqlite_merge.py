@@ -59,22 +59,44 @@ def merge(in_azm_list):
 
         # sort azm apk vers, newest should be merged first as they might have more columns in same tables than older vers
         azm_df = pd.DataFrame({"azm": in_azm_list, "dbfp": dbfps, "azm_ver": azm_vers})
-        assert azm_df["azm_ver"].dtype == np.int64
+        assert azm_df["azm_ver"].dtype == np.int64 or azm_df["azm_ver"].dtype == int
         azm_df.sort_values("azm_ver", ascending=False, inplace=True)
         azm_df = azm_df.reset_index(drop=True)
         print("azm_df:\n", azm_df)
 
         # dump then import data of each db into target sqlite db
+        first_azm_table_to_cols_dict = {}
         for index, row in azm_df.iterrows():
             print("=== dumping db to merged azm [{}/{}] ===".format(index+1, len(azm_df)))
+            is_first_azm = index == azm_df.index[0]
             is_last_azm = index == azm_df.index[-1]
             dbfp = row.dbfp
             assert os.path.isfile(dbfp)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
                 # iterdump somehow doesnt work in my system with these dbs, doing dump with sqlite3 cmd shell binaries instead
-                cmd = [sqlite_bin, dbfp, ".dump"]
-                print("dumping db file to ram:", dbfp, "cmd:", cmd)
-                sql_script = subprocess.check_output(cmd, encoding="utf-8")
+                dump_to_file_first = False
+
+                sql_script = None
+                if dump_to_file_first:
+                    dump_fp = azq_utils.get_module_fp("tmp_dump.sql")
+                    if os.path.isfile(dump_fp):
+                        os.remove(dump_fp)
+                    assert not os.path.isfile(dump_fp)
+                    cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
+                    print("... dumping db file to sql:", dbfp, "cmd:", cmd)
+                    ret = subprocess.call(cmd)
+                    assert ret == 0
+                    assert os.path.isfile(dump_fp)
+                    print("... reading sql for mods:", dbfp)
+                    with open(dump_fp, "r") as f:
+                        sql_script = f.read()
+                    assert sql_script
+                else:
+                    cmd = [sqlite_bin, dbfp, ".dump"]
+                    print("... dumping db file to ram:", dbfp, "cmd:", cmd)
+                    sql_script = subprocess.check_output(cmd, encoding='utf-8')
+
+                print("... modding sql for merging - schema")
                 sql_script = sql_script.replace('CREATE TABLE IF NOT EXISTS ', 'CREATE TABLE ')
                 sql_script = sql_script.replace('CREATE TABLE ','CREATE TABLE IF NOT EXISTS ')
                 sql_script +=" delete from spatial_ref_sys;\n"
@@ -82,16 +104,28 @@ def merge(in_azm_list):
                     sql_script += "INSERT INTO spatial_ref_sys VALUES(4326,'epsg',4326,'WGS 84','+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');\n"
                 assert sql_script
 
-                # add column names before values of each table insert row
-                tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name
+                print("... checking if need to specify columns in INSERT of dump")
+                tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';",
+                                     dbcon).name
                 for table in tables:
-                    cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns
-                    sql_script.replace("INSERT INTO {} VALUES".format(table), "INSERT INTO {} ({}) VALUES".format(table, ",".join(cols)))
+                    cols = list(pd.read_sql("select * from {} where false".format(table), dbcon).columns)  # use list as we will compare this list next
+                    if is_first_azm:
+                        first_azm_table_to_cols_dict[table] = cols
+                    else:
+                        if table not in first_azm_table_to_cols_dict.keys():
+                            print("table: {} not in first azm - no need adjust".format(table))
+                            first_azm_table_to_cols_dict[table] = cols
+                        else:
+                            if cols == first_azm_table_to_cols_dict[table]:
+                                pass
+                                #print("table: {} same columns - no need adjust".format(table))
+                            else:
+                                print("table: {} diff columns - need adjust to specify columns".format(table))
+                                sql_script = sql_script.replace("INSERT INTO {} VALUES".format(table),
+                                                        "INSERT INTO {} ({}) VALUES".format(table, ",".join(cols)))
 
-                with open(azq_utils.get_module_fp("tmp_dump.sql"), "w") as f:
-                    f.write(sql_script)
                 #print("sql_script:", sql_script)
-                print("merginng to target db file:", out_db_fp)
+                print("... merginng to target db file:", out_db_fp)
                 out_dbcon.executescript(sql_script)
 
         # commit new db conn

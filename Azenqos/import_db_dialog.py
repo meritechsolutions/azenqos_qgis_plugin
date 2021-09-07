@@ -242,7 +242,9 @@ class import_db_dialog(QDialog):
         try:
             self.import_status_signal.emit("Opening log...")
             self.setEnabled(False)
-            self._check_and_start_import()
+            ret = self._check_and_start_import()
+            if not ret:
+                self.setEnabled(True)  # something failed so let user edit in the ui again
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -282,7 +284,7 @@ class import_db_dialog(QDialog):
                     "Please choose a log to open...",
                     QtWidgets.QMessageBox.Cancel,
                 )
-                return False
+                return
             logs = self.dbPathLineEdit.text()
             if "," in logs:
                 logs = logs.split(",")
@@ -296,7 +298,7 @@ class import_db_dialog(QDialog):
                         "Failed to find the specified file: {}".format(file),
                         QtWidgets.QMessageBox.Cancel,
                     )
-                    return False
+                    return
             assert logs
             self.gc.log_mode = "local"
             zip_fp = logs
@@ -352,7 +354,7 @@ class import_db_dialog(QDialog):
                 "Please choose a theme xml to use...",
                 QtWidgets.QMessageBox.Cancel,
             )
-            return False
+            return
 
         if self.themePathLineEdit.text() != "Default" and not os.path.isfile(
             self.themePathLineEdit.text()
@@ -363,9 +365,10 @@ class import_db_dialog(QDialog):
                 "Please choose a theme xml to use...",
                 QtWidgets.QMessageBox.Cancel,
             )
-            return False
+            return
 
         self.start_import_thread(zip_fp)
+        return True
 
 
 

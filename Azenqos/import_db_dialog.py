@@ -208,30 +208,6 @@ class import_db_dialog(QDialog):
             "Default"
         )
 
-    def clearCurrentProject(self):
-        try:
-            from qgis.core import QgsProject
-
-            for hi in self.gc.h_list:
-                hi.hide()
-            self.gc.h_list = []
-
-            import main_window
-
-            if isinstance(self.parent_window, main_window):
-                self.parent_window.clearAllSelectedFeatures()
-
-            project = QgsProject.instance()
-            for (id_l, layer) in project.mapLayers().items():
-                to_be_deleted = project.mapLayersByName(layer.name())[0]
-                project.removeMapLayer(to_be_deleted.id())
-                layer = None
-
-            QgsProject.instance().reloadAllLayers()
-            QgsProject.instance().clear()
-        except:
-            pass
-        self.gc.tableList = []
 
     def choose_azm(self):
         fps, _ = QFileDialog.getOpenFileNames(

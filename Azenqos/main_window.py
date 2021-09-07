@@ -1428,17 +1428,25 @@ Log_hash list: {}""".format(
         self.toolbar.addWidget(self.playSpeed)
 
 
+    def clear_highlights(self):
+        if self.qgis_iface and self.gc.highlight_list:
+            for h in self.gc.highlight_list:
+                self.qgis_iface.mapCanvas().scene().removeItem(h)
+            self.gc.highlight_list.clear()
+
+
     def selectChanged(self):
-        if self.gc.h_list:
-            for hi in self.gc.h_list:
-                hi.hide()
-        self.gc.h_list = []
+        self.clear_highlights()
+        canvas = self.qgis_iface.mapCanvas()
         layer = self.qgis_iface.activeLayer()
         if not layer:
             return False
         if layer.type() == layer.VectorLayer:
-            for i in layer.selectedFeatures():
-                h = QgsHighlight(self.qgis_iface.mapCanvas(), i.geometry(), layer)
+            i = -1
+            for sf in layer.selectedFeatures():
+                i += 1
+                print("selectChanged selectedfeature rect sf i:", i)
+                h = QgsHighlight(self.qgis_iface.mapCanvas(), sf.geometry(), layer)
 
                 # set highlight symbol properties
                 from PyQt5.QtGui import QColor
@@ -1448,9 +1456,10 @@ Log_hash list: {}""".format(
                 h.setFillColor(QColor(255, 255, 255, 0))
 
                 # write the object to the list
-                self.gc.h_list.append(h)
+                self.gc.highlight_list.append(h)
+            canvas.flashFeatureIds(layer, layer.selectedFeatureIds(), flashes=1)
 
-        self.qgis_iface.mapCanvas().refresh()
+        canvas.refresh()
 
     def updateUi(self):
         if not self.gc.slowDownValue == 1:
@@ -1811,6 +1820,8 @@ Log_hash list: {}""".format(
 
     def open_logs(self, connected_mode_refresh=False):
         if self.gc.databasePath:
+            self.gc.databasePath = None
+            self.gc.db_fp = None
             self.cleanup()
             '''
             msgBox = QMessageBox()
@@ -1827,7 +1838,7 @@ Log_hash list: {}""".format(
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
-        if ret:
+        if not self.gc.databasePath:
             # dialog not completed successfully
             return
         if self.gc.db_fp:
@@ -1990,6 +2001,7 @@ Log_hash list: {}""".format(
         for layer in qgis_selected_layers:
             try:
                 print("selectFeatureOnLayersByTime layer: %s" % layer.name())
+                layer.removeSelection()
                 end_dt = datetime.datetime.fromtimestamp(self.gc.currentTimestamp)
                 start_dt = end_dt - datetime.timedelta(
                     seconds=(params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS / 1000.0)
@@ -2033,24 +2045,7 @@ Log_hash list: {}""".format(
                         layer.name(), exstr
                     )
                 )
-            """
-            root = QgsProject.instance().layerTreeRoot()
-            root.setHasCustomLayerOrder(True)
-            order = root.customLayerOrder()
-            order.insert(0, order.pop(order.index(layer)))  # vlayer to the top
-            root.setCustomLayerOrder(order)
-            iface.setActiveLayer(layer)
 
-            for feature in layerFeatures:
-                posid = feature["posid"]
-                if self.currentMaxPosId == posid:
-                    selected_ids.append(feature.id())
-            QgsMessageLog.logMessage("selected_ids: {0}".format(str(selected_ids)))
-
-            if layer is not None:
-                if len(selected_ids) > 0:
-                    layer.selectByIds(selected_ids, QgsVectorLayer.SetSelection)
-            """
 
     def loadWorkspaceFile(self):
         print("loadFile()")
@@ -2105,22 +2100,25 @@ Log_hash list: {}""".format(
     def cleanup(self):
         try:
             self._gui_save()
-            if self.qgis_iface:
-                self.qgis_iface.actionPan().trigger()
             self.pauseTime()
+
+            # remove selected features:
+            self.clear_highlights()
+
             # Begin removing layers
             if self.qgis_iface:
                 project = QgsProject.instance()
+                '''
                 for (id_l, layer) in project.mapLayers().items():
                     if layer.type() == layer.VectorLayer:
+                        print("vlayer: rm sel", layer.name)
                         layer.removeSelection()
                     to_be_deleted = project.mapLayersByName(layer.name())[0]
                     project.removeMapLayer(to_be_deleted.id())
-                    layer = None
-
-                QgsProject.instance().reloadAllLayers()
-                QgsProject.instance().clear()
-                QgsProject.removeAllMapLayers(QgsProject.instance())
+                    del layer
+                '''
+                project.removeAllMapLayers()
+                project.clear()
 
             print("cleanup: len(self.gc.openedWindows)", len(self.gc.openedWindows))
             for widget in self.gc.openedWindows:

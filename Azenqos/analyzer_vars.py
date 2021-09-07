@@ -54,7 +54,7 @@ class analyzer_vars:
     is_indoor = False
     allLayers = []
     # tableList = []
-    h_list = []
+    highlight_list = []
     linechartWindowname = [
         "GSM_GSM Line Chart",
         "WCDMA_Line Chart",

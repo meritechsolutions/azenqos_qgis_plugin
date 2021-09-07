@@ -3,6 +3,7 @@ import sqlite3
 import subprocess
 
 import pandas as pd
+import numpy as np
 
 import preprocess_azm
 import azq_utils
@@ -58,7 +59,7 @@ def merge(in_azm_list):
 
         # sort azm apk vers, newest should be merged first as they might have more columns in same tables than older vers
         azm_df = pd.DataFrame({"azm": in_azm_list, "dbfp": dbfps, "azm_ver": azm_vers})
-        assert azm_df["azm_ver"].dtype == int
+        assert azm_df["azm_ver"].dtype == np.int64
         azm_df.sort_values("azm_ver", ascending=False, inplace=True)
         azm_df = azm_df.reset_index(drop=True)
         print("azm_df:\n", azm_df)

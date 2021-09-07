@@ -84,7 +84,7 @@ def merge(in_azm_list):
                     assert not os.path.isfile(dump_fp)
                     cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
                     print("... dumping db file to sql:", dbfp, "cmd:", cmd)
-                    ret = subprocess.call(cmd)
+                    ret = azq_utils.run_cmd_no_shell(cmd)
                     assert ret == 0
                     assert os.path.isfile(dump_fp)
                     print("... reading sql for mods:", dbfp)

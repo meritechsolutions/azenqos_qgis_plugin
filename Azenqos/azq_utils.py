@@ -1623,12 +1623,12 @@ def ask_custom_sql_or_py_expression(parent, title="Custom SQL/Python expression"
 
 
 def get_adb_command():
-    return os.path.join(get_module_path(), "Azenqos/scrcpy_nt/adb.exe") if os.name == "nt" else "adb"
+    return os.path.join(get_module_path(), "scrcpy_nt", "adb.exe") if os.name == "nt" else "adb"
 
 
 def get_scrcpy_command():
     return  os.path.join(get_module_path(),
-    "Azenqos/scrcpy_nt/scrcpy.exe") if os.name == "nt" else "scrcpy"
+    "scrcpy_nt", "scrcpy.exe") if os.name == "nt" else "scrcpy"
 
 
 def get_failed_scrcpy_cmd():
@@ -1653,10 +1653,14 @@ def pull_latest_log_db_from_phone(parent=None):
             QtWidgets.QMessageBox.Cancel,
         )
         return None
-    target_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(uuid.uuid4()))
+    azqdata_uuid = uuid.uuid4()
+    target_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
+    assert not os.path.isfile(target_fp)
+    run_cmd_no_shell((get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db-journal", target_fp))
+    target_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(azqdata_uuid))
     assert not os.path.isfile(target_fp)
     cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", target_fp)
-    ret = subprocess.call(cmd)
+    ret = run_cmd_no_shell(cmd)
     if ret != 0:
         QtWidgets.QMessageBox.critical(
             parent,
@@ -1665,6 +1669,7 @@ def pull_latest_log_db_from_phone(parent=None):
             QtWidgets.QMessageBox.Cancel,
         )
         return None
+        
     assert os.path.isfile(target_fp)
     start_scrcpy_in_thread()
     return target_fp

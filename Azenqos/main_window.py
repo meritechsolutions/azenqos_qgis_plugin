@@ -1390,6 +1390,7 @@ Log_hash list: {}""".format(
             self.sync_connected_phone_button.setToolTip(
                 "<b>Re-sync connected phone data</b><br>For connected phone mode..."
             )
+            self.sync_connected_phone_button.setEnabled(False)
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.saveBtn.clicked.connect(self.saveDbAs)
@@ -1830,6 +1831,10 @@ Log_hash list: {}""".format(
         dlg.show()
         ret = dlg.exec()
         print("import_db_dialog ret: {}".format(ret))
+        if self.gc.log_mode == "adb":
+            self.sync_connected_phone_button.setEnabled(True)
+        else:
+            self.sync_connected_phone_button.setEnabled(False)
         if not self.gc.databasePath:
             # dialog not completed successfully
             return

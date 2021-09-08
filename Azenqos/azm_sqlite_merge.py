@@ -1,15 +1,14 @@
+import contextlib
+import os
 import shutil
 import sqlite3
-import subprocess
-
-import pandas as pd
-import numpy as np
-
-import preprocess_azm
-import azq_utils
 import uuid
-import os
-import contextlib
+
+import numpy as np
+import pandas as pd
+
+import azq_utils
+import preprocess_azm
 
 
 def merge(in_azm_list):
@@ -84,7 +83,7 @@ def merge(in_azm_list):
                     assert not os.path.isfile(dump_fp)
                     cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
                     print("... dumping db file to sql:", dbfp, "cmd:", cmd)
-                    ret = subprocess.call(cmd)
+                    ret = azq_utils.call_no_shell(cmd)
                     assert ret == 0
                     assert os.path.isfile(dump_fp)
                     print("... reading sql for mods:", dbfp)
@@ -94,7 +93,7 @@ def merge(in_azm_list):
                 else:
                     cmd = [sqlite_bin, dbfp, ".dump"]
                     print("... dumping db file to ram:", dbfp, "cmd:", cmd)
-                    sql_script = subprocess.check_output(cmd, encoding='utf-8')
+                    sql_script = azq_utils.check_output_no_shell(cmd)
 
                 print("... modding sql for merging - schema")
                 sql_script = sql_script.replace('CREATE TABLE IF NOT EXISTS ', 'CREATE TABLE ')

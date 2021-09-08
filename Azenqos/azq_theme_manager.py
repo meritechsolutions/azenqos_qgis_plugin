@@ -272,13 +272,14 @@ g_csv_theme_df_cache = {}
 
 
 def get_csv_theme_df_for_csv_file(theme_csv_file):
+    global g_csv_theme_df_cache
     if theme_csv_file in g_csv_theme_df_cache:
-        return g_csv_theme_df_cache[theme_csv_file]
+        return g_csv_theme_df_cache[theme_csv_file].copy()
     theme_df = pd.read_csv(theme_csv_file).dropna(
         how="all"
     )  # drop rows where all cols are empty
     g_csv_theme_df_cache[theme_csv_file] = theme_df
-    return theme_df
+    return theme_df.copy()
 
 
 def get_theme_report_generator_setting_list():
@@ -557,12 +558,13 @@ def get_theme_df_for_column(
         # print "get col df"
         col_to_select = preprocess_azm.get_elm_name_from_param_col_with_arg(param_col)
         if elm_info is not None:
-            print("elm_info:", elm_info)
             try:
-                if str(elm_info.n_arg_max).strip() == "1":
-                    pass
-                else:
-                    col_to_select += "_1"
+                print("elm_info:", elm_info, "elm_info.n_arg_max type", type(elm_info.n_arg_max))
+                # if empty means 1
+                if elm_info.n_arg_max:
+                    n_arg_max = pd.to_numeric(elm_info.n_arg_max)
+                    if n_arg_max > 1:
+                        col_to_select += "_1"
             except:
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(
@@ -1930,9 +1932,8 @@ def get_default_color_for_index(i):
         return "#%02x%02x%02x" % (r(), r(), r())
 
 
-# g_generate_theme_from_data_dict = {}
 def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
-    # global g_generate_theme_from_data_dict
+
 
     if len(df) == 0:
         print("generate_theme_from_data got empty df - return None")

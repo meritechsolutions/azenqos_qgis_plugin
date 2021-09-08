@@ -113,6 +113,7 @@ def prepare_spatialite_views(dbcon):
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
+    azq_theme_manager
     params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
     print("params_to_gen:", params_to_gen)
 

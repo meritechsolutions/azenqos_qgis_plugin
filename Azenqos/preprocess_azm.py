@@ -1184,7 +1184,6 @@ def get_elm_df_from_csv():
         return g_azq_global_elm_info_df.copy()
     print("get_elm_df_from_csv AZQ_ELM_CSV:", AZQ_ELM_CSV)
     cols = ["id","var_name","csharp_oldname","db_table","var_type","db_type","val_min","val_max","n_arg_max","name","expiry","definition"]
-    
     g_azq_global_elm_info_df_elm_csv_fn = AZQ_ELM_CSV
     g_azq_global_elm_info_df = pd.read_csv(os.path.join(azq_utils.get_module_path(), AZQ_ELM_CSV )).iloc[3:]  # first two rows are comments
     g_azq_global_elm_info_df = g_azq_global_elm_info_df.iloc[: , :len(cols)].copy()  # get only columns we need
@@ -1192,89 +1191,6 @@ def get_elm_df_from_csv():
     g_azq_global_elm_info_df["n_arg_max"].fillna(value="1", inplace=True)
 
     return g_azq_global_elm_info_df.copy()
-
-
-gei_df_n_max_arg_1_elm = None
-def get_gei_df_n_max_arg_1_elm():
-    global gei_df_n_max_arg_1_elm
-    if gei_df_n_max_arg_1_elm is None:
-        gei_df_n_max_arg_1_elm = get_elm_df_from_csv()
-        gei_df_n_max_arg_1_elm["n_arg_max"] = pd.to_numeric(
-            gei_df_n_max_arg_1_elm.n_arg_max
-        )
-        gei_df_n_max_arg_1_elm = gei_df_n_max_arg_1_elm[
-            gei_df_n_max_arg_1_elm["n_arg_max"] == 1
-        ]
-    return gei_df_n_max_arg_1_elm
-
-
-def check_azqdata_db_col_name_n_arg_max_1_cases(table, columns):
-
-    gei_nam_df = get_gei_df_n_max_arg_1_elm()
-
-    max_arg_1_elm_cols = gei_nam_df[gei_nam_df.db_table == table].var_name
-    max_arg_1_elm_cols += "_1"
-    max_arg_1_elm_cols_str_list = max_arg_1_elm_cols.values
-
-    new_col_names = []
-    # first is "time" so omit - use range(1, n) instead
-    for i in range(len(columns)):
-        col = columns[i]
-        # print "check_azqdata_db_col_name_n_arg_max_1_cases: check col:", col, "max_arg_1_elm_cols:", max_arg_1_elm_cols_str_list
-        if col in max_arg_1_elm_cols_str_list:
-            # print "check_azqdata_db_col_name_n_arg_max_1_cases: got col case: {}".format(col)
-            name_no_arg = str(columns[i])[:-2]  # remove _1
-            new_col_names.append(name_no_arg)
-        else:
-            new_col_names.append(col)
-
-    return new_col_names
-
-
-def get_azqdata_db_col_name_invalid_arg_n_cols(cols):
-    gei_nam_df = get_elm_df_from_csv()
-    var_name_list = gei_nam_df.var_name.values
-    inv_cols = []
-    for col in cols:
-        try:
-            print("type(col)", type(col))
-            match = re.search(r"_\d{0,3}$", col)
-            arg_n = None
-            var_name = None
-            if match is not None:
-                match = match.group()
-                match_val = match.replace("_", "", 1)
-                arg_n = int(match_val)
-                # print "match:", match
-                reversed_match = match[::-1]
-                var_name = col[::-1].replace(reversed_match, "", 1)[
-                    ::-1
-                ]  # https://stackoverflow.com/questions/9943504/right-to-left-string-replace-in-python
-                # print "var_name:", var_name
-                # print "arg_n:", arg_n
-
-            if arg_n is not None and var_name is not None:
-                # check against gei_nam_df
-                if var_name in var_name_list:
-                    n_arg_max = (
-                        gei_nam_df[gei_nam_df.var_name == var_name].iloc[0].n_arg_max
-                    )
-                    # print "n_arg_max:", n_arg_max
-                    if arg_n <= n_arg_max:
-                        pass
-                    else:
-                        # print "get_azqdata_db_col_name_invalid_arg_n_cols: col {} invalid arg_n {} add to invalid_cols list...".format(col, arg_n)
-                        inv_cols.append(col)
-        except:
-            type_, value_, traceback_ = sys.exc_info()
-            exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print(
-                "WARNING: get_azqdata_db_col_name_invalid_cols check_col {} exception: {}".format(
-                    col, exstr
-                )
-            )
-
-    return inv_cols
 
 
 def get_table_for_column(param_col_with_arg):

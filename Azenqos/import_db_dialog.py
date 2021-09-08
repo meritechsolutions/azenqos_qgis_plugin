@@ -7,7 +7,6 @@ import sys
 # Adding folder path
 import threading
 import traceback
-import uuid
 
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets

@@ -10,7 +10,7 @@ def get_local_fp(fn):
 
 def check_and_install_requirements():
     needs_install = False
-    # pkg_list = subprocess.check_output(['python', '-m', 'pip', 'freeze']).decode().split('\n')
+
     # pkg_list = [x.strip() for x in pkg_list]
     requirement_fp = get_local_fp('requirements.txt')
     requirement_list = None

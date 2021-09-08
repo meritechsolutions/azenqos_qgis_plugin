@@ -1637,7 +1637,7 @@ def get_failed_scrcpy_cmd():
     # test scrcpy
     test_cmds = [(scrcpy_cmd,"--version"), (adb_cmd, "--version")]
     for test_cmd in test_cmds:
-        sret = run_cmd_no_shell(test_cmd)
+        sret = call_no_shell(test_cmd)
         if sret != 0:
             return test_cmd
     return ""
@@ -1673,7 +1673,7 @@ def pull_latest_log_db_from_phone(parent=None):
 CREATE_NO_WINDOW = 0x08000000
 
 
-def run_cmd_no_shell(cmd_list):
+def call_no_shell(cmd_list):
     assert isinstance(cmd_list, list) or isinstance(cmd_list, tuple)
     cmdret = -99
     if os.name == "nt":
@@ -1681,6 +1681,15 @@ def run_cmd_no_shell(cmd_list):
     else:
         cmdret = subprocess.call(cmd_list, shell=False)
     return cmdret
+
+
+def check_output_no_shell(cmd_list):
+    assert isinstance(cmd_list, list) or isinstance(cmd_list, tuple)
+    if os.name == "nt":
+        return subprocess.check_output(cmd_list, shell=False, encoding='utf-8', creationflags=CREATE_NO_WINDOW)
+    else:
+        return subprocess.check_output(cmd_list, shell=False, encoding='utf-8')
+    return None
 
 
 g_scrcpy_thread = None
@@ -1694,4 +1703,4 @@ def start_scrcpy_in_thread():
 
 
 def start_scrcpy():
-    run_cmd_no_shell((get_scrcpy_command(),))
+    call_no_shell((get_scrcpy_command(),))

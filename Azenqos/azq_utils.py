@@ -12,6 +12,9 @@ from pathlib import Path
 from PyQt5 import QtWidgets
 import requests
 import threading
+import sqlite3
+import contextlib
+import pandas as pd
 
 import dprint
 
@@ -1654,12 +1657,12 @@ def pull_latest_log_db_from_phone(parent=None):
         )
         return None
     azqdata_uuid = uuid.uuid4()
-    target_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
-    assert not os.path.isfile(target_fp)
-    run_cmd_no_shell((get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db-journal", target_fp))
-    target_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(azqdata_uuid))
-    assert not os.path.isfile(target_fp)
-    cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", target_fp)
+    db_journal_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
+    assert not os.path.isfile(db_journal_fp)
+    run_cmd_no_shell((get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db-journal", db_journal_fp))
+    dbfp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(azqdata_uuid))
+    assert not os.path.isfile(dbfp)
+    cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", dbfp)
     ret = run_cmd_no_shell(cmd)
     if ret != 0:
         QtWidgets.QMessageBox.critical(
@@ -1669,10 +1672,51 @@ def pull_latest_log_db_from_phone(parent=None):
             QtWidgets.QMessageBox.Cancel,
         )
         return None
+    sqlite_bin = os.path.join(
+        get_module_path(),
+        os.path.join(
+            "sqlite_" + os.name,
+            "sqlite3" + ("" if os.name == "posix" else ".exe"),
+        ),
+    )
+    assert os.path.isfile(sqlite_bin)
+    dump_to_file_first = False
+
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+        try:
+            integ_check_df = pd.read_sql("PRAGMA integrity_check;", dbcon)
+            print("azq_report_gen: sqlite db integ_check_df first row:", integ_check_df.integrity_check[0])
+            if integ_check_df.integrity_check[0] != "ok":
+                dump_to_file_first = True
+        except Exception as integcheck_ex:
+            print("WARNING: read_sql pragma integrity_check failed exception:", integcheck_ex)
+            dump_to_file_first = True
+
+    sql_script = None
+    if dump_to_file_first:
+        dump_fp = os.path.join(tmp_gen_path(), "tmp_dump.sql")
+        if os.path.isfile(dump_fp):
+            os.remove(dump_fp)
+        assert not os.path.isfile(dump_fp)
+        cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
+        print("... dumping db file to sql:", dbfp, "cmd:", cmd)
+        ret = run_cmd_no_shell(cmd)
+        assert ret == 0
+        assert os.path.isfile(dump_fp)
+        print("... reading sql for mods:", dbfp)
+        with open(dump_fp, "r") as f:
+            sql_script = f.read()
+        assert sql_script
+        out_db_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_dump_{}.db".format(azqdata_uuid))
+        with contextlib.closing(sqlite3.connect(out_db_fp)) as out_dbcon:
+            print("... merginng to target db file:", out_db_fp)
+            out_dbcon.executescript(sql_script)
+            out_dbcon.commit()
+        dbfp = out_db_fp
         
-    assert os.path.isfile(target_fp)
+    assert os.path.isfile(dbfp)
     start_scrcpy_in_thread()
-    return target_fp
+    return dbfp
 
 
 CREATE_NO_WINDOW = 0x08000000

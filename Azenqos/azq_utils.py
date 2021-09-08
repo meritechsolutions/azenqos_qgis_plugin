@@ -1700,7 +1700,7 @@ def pull_latest_log_db_from_phone(parent=None):
         assert not os.path.isfile(dump_fp)
         cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
         print("... dumping db file to sql:", dbfp, "cmd:", cmd)
-        ret = run_cmd_no_shell(cmd)
+        ret = call_no_shell(cmd)
         assert ret == 0
         assert os.path.isfile(dump_fp)
         print("... reading sql for mods:", dbfp)

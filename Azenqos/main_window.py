@@ -1348,7 +1348,7 @@ Log_hash list: {}""".format(
             )
             self.saveBtn.setObjectName("saveBtn")
             self.saveBtn.setToolTip(
-                "<b>Save workspace</b><br>Save current current DB (spatialite) to file..."
+                "<b>Save sqlite database</b><br>Save current current DB (spatialite) to file..."
             )
 
             # Map tool Button

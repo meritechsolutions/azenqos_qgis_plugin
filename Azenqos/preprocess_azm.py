@@ -1,22 +1,20 @@
+import contextlib
 import csv
 import os
-import re
 import shutil
+import sqlite3
 import subprocess
 import sys
 import traceback
 import zipfile
 from datetime import datetime
-import sqlite3
-import contextlib
 
 import numpy as np
 import pandas as pd
 
+import azq_utils
 from dprint import debug_file_flag
 from dprint import dprint
-
-import azq_utils
 
 # pd.set_option('display.max_colwidth', -1)
 

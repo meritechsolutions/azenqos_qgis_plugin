@@ -213,6 +213,9 @@ def prepare_spatialite_views(dbcon):
                 percent_part = ""
                 try:
                     rsql = "select count(*) from {view} where {view} >= {lower} and {view} < {upper}".format(view=view, lower=row.Lower, upper=row.Upper)
+                    if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
+                        rsql = "select count(*) from {view} where {view} = {lower}".format(
+                            view=view, lower=row.Lower)
                     print("range rsql:", rsql)
                     count = pd.read_sql(
                         rsql,

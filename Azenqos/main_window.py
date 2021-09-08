@@ -1451,7 +1451,7 @@ Log_hash list: {}""".format(
                 h = QgsHighlight(self.qgis_iface.mapCanvas(), sf.geometry(), layer)
                 # set highlight symbol properties
                 h.setColor(QColor(255, 0, 0, 255))
-                h.setWidth(4)
+                h.setWidth(2)
                 h.setFillColor(QColor(255, 255, 255, 0))
                 # write the object to the list
                 self.gc.highlight_list.append(h)

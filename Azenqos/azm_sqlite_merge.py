@@ -18,13 +18,7 @@ def merge(in_azm_list):
     out_db_fp = os.path.join(out_tmp_dir, "azqdata.db")
     assert not os.path.isfile(out_db_fp)
     assert not os.path.exists(out_db_fp)
-    sqlite_bin = os.path.join(
-        azq_utils.get_module_path(),
-        os.path.join(
-            "sqlite_" + os.name,
-            "sqlite3" + ("" if os.name == "posix" else ".exe"),
-        ),
-    )
+    sqlite_bin = azq_utils.get_sqlite_bin()
     assert os.path.isfile(sqlite_bin)
     combine_uuid = uuid.uuid4()
 
@@ -73,27 +67,8 @@ def merge(in_azm_list):
             assert os.path.isfile(dbfp)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
                 # iterdump somehow doesnt work in my system with these dbs, doing dump with sqlite3 cmd shell binaries instead
-                dump_to_file_first = False
 
-                sql_script = None
-                if dump_to_file_first:
-                    dump_fp = azq_utils.get_module_fp("tmp_dump.sql")
-                    if os.path.isfile(dump_fp):
-                        os.remove(dump_fp)
-                    assert not os.path.isfile(dump_fp)
-                    cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
-                    print("... dumping db file to sql:", dbfp, "cmd:", cmd)
-                    ret = azq_utils.call_no_shell(cmd)
-                    assert ret == 0
-                    assert os.path.isfile(dump_fp)
-                    print("... reading sql for mods:", dbfp)
-                    with open(dump_fp, "r") as f:
-                        sql_script = f.read()
-                    assert sql_script
-                else:
-                    cmd = [sqlite_bin, dbfp, ".dump"]
-                    print("... dumping db file to ram:", dbfp, "cmd:", cmd)
-                    sql_script = azq_utils.check_output_no_shell(cmd)
+                sql_script = azq_utils.dump_sqlite(dbfp)
 
                 print("... modding sql for merging - schema")
                 sql_script = sql_script.replace('CREATE TABLE IF NOT EXISTS ', 'CREATE TABLE ')

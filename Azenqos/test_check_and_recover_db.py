@@ -1,6 +1,7 @@
-import azq_utils
 import os
-import uuid
+import sqlite3
+import pandas as pd
+import azq_utils
 
 
 def test():
@@ -13,9 +14,12 @@ def test():
     if check_db_exist:
         if not os.path.isdir(tmp_path):
             os.makedirs(tmp_path)
-        dump_dbfp = azq_utils.check_and_recover_db(dbfp, tmp_path, "test")
-        print(dump_dbfp)
+        dump_dbfp = azq_utils.check_and_recover_db(dbfp, tmp_path)
         assert dump_dbfp != dbfp
+        with sqlite3.connect(dump_dbfp) as dbcon:
+            df = pd.read_sql("select distinct(log_hash) from signalling", dbcon)
+            assert len(df) == 1
+
 
 
 if __name__ == "__main__":

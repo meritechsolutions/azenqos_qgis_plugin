@@ -1,20 +1,20 @@
-import time
+import contextlib
 import datetime
 import hashlib
 import os
 import random
 import shutil
+import sqlite3
+import subprocess
 import sys
+import time
 import traceback
 import uuid
-import subprocess
 from pathlib import Path
-from PyQt5 import QtWidgets
-import requests
-import threading
-import sqlite3
-import contextlib
+
 import pandas as pd
+import requests
+from PyQt5 import QtWidgets
 
 import dprint
 
@@ -1467,6 +1467,10 @@ def tmp_gen_path():
     return dp
 
 
+def tmp_gen_fp(fn):
+    return os.path.join(tmp_gen_path(), fn)
+
+
 def cleanup_died_processes_tmp_folders():
     import psutil
 
@@ -1645,44 +1649,30 @@ def get_failed_scrcpy_cmd():
             return test_cmd
     return ""
 
-def check_and_recover_db(dbfp, tmp_path, azqdata_uuid):
-    dump_to_file_first = False
-    sql_script = None
-    sqlite_bin = os.path.join(
-        get_module_path(),
-        os.path.join(
-            "sqlite_" + os.name,
-            "sqlite3" + ("" if os.name == "posix" else ".exe"),
-        ),
-    )
+
+def check_and_recover_db(dbfp, tmp_path):
+    needs_recover_db = False
+    sqlite_bin = get_sqlite_bin()
     assert os.path.isfile(sqlite_bin)
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         try:
             integ_check_df = pd.read_sql("PRAGMA integrity_check;", dbcon)
             print("azq_report_gen: sqlite db integ_check_df first row:", integ_check_df.integrity_check[0])
-            if integ_check_df.integrity_check[0] != "ok":
-                print("WARNING: read_sql pragma integrity_check not ok:")
-                dump_to_file_first = True
+            if integ_check_df.integrity_check.iloc[0] != "ok":
+                print("WARNING: read_sql pragma integrity_check not ok - flag needs_recover_db")
+                needs_recover_db = True
         except Exception as integcheck_ex:
             print("WARNING: read_sql pragma integrity_check failed exception:", integcheck_ex)
-            dump_to_file_first = True
-    if dump_to_file_first:
-        dump_fp = os.path.join(tmp_path, "tmp_dump.sql")
-        if os.path.isfile(dump_fp):
-            os.remove(dump_fp)
-        assert not os.path.isfile(dump_fp)
-        cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
-        print("... dumping db file to sql:", dbfp, "cmd:", cmd)
-        ret = call_no_shell(cmd)
-        assert ret == 0
-        assert os.path.isfile(dump_fp)
-        print("... reading sql for mods:", dbfp)
-        with open(dump_fp, "r") as f:
-            sql_script = f.read()
+            needs_recover_db = True
+    if needs_recover_db:
+        sql_script = dump_sqlite(dbfp)
         assert sql_script
-        out_db_fp = os.path.join(tmp_path, "adb_log_snapshot_dump_{}.db".format(azqdata_uuid))
+        out_db_fp = os.path.join(tmp_path, "adb_log_snapshot_dump_recov_{}.db".format(uuid.uuid4()))
         with contextlib.closing(sqlite3.connect(out_db_fp)) as out_dbcon:
-            print("... merginng to target db file:", out_db_fp)
+            print("... merging to target db file:", out_db_fp)
+            sqlfpfordebug = out_db_fp+".sql"
+            with open(sqlfpfordebug, 'w') as f:
+                f.write(sql_script)
             out_dbcon.executescript(sql_script)
             out_dbcon.commit()
         dbfp = out_db_fp
@@ -1715,7 +1705,7 @@ def pull_latest_log_db_from_phone(parent=None):
             QtWidgets.QMessageBox.Cancel,
         )
         return None
-    dbfp = check_and_recover_db(dbfp, tmp_path, azqdata_uuid)
+    dbfp = check_and_recover_db(dbfp, tmp_gen_path())
     assert os.path.isfile(dbfp)
     start_scrcpy_proc()
     return dbfp
@@ -1775,10 +1765,63 @@ def close_scrcpy_proc():
 
 def scrcpy_popen():
     cmd = (get_scrcpy_command(),)
-    proc = subprocess.Popen(
-        cmd,
-        shell=False,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+    return popen_no_shell(cmd)
+
+
+def popen_no_shell(cmd):
+    proc = None
+    if os.name == "nt":
+        proc = subprocess.Popen(
+            cmd,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            creationflags=CREATE_NO_WINDOW
+        )
+    else:
+        proc = subprocess.Popen(
+            cmd,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
     return proc
+
+
+def dump_sqlite(dbfp, dump_to_file_first=False, rm_rollbacks=True, auto_add_commit=True):
+    sqlite_bin = get_sqlite_bin()
+    if dump_to_file_first:
+        dump_fp = tmp_gen_fp("tmp_sqlite_dump.sql")
+        if os.path.isfile(dump_fp):
+            os.remove(dump_fp)
+        assert not os.path.isfile(dump_fp)
+        cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
+        print("... dumping db file to sql:", dbfp, "cmd:", cmd)
+        ret = call_no_shell(cmd)
+        assert ret == 0
+        assert os.path.isfile(dump_fp)
+        print("... reading sql:", dbfp)
+        with open(dump_fp, "r") as f:
+            sql_script = f.read()
+    else:
+        cmd = [sqlite_bin, dbfp, ".dump"]
+        print("... dumping db file to ram:", dbfp, "cmd:", cmd)
+        sql_script = check_output_no_shell(cmd)
+    assert sql_script
+    if rm_rollbacks:
+        sql_script = sql_script.replace("ROLLBACK;", "")
+    if auto_add_commit:
+        if "BEGIN TRANSACTION;" in sql_script:
+            if "COMMIT;" not in sql_script:
+                sql_script += "\n"+"COMMIT;"+"\n"
+    return sql_script
+
+
+def get_sqlite_bin():
+    return os.path.join(
+        get_module_path(),
+        os.path.join(
+            "sqlite_" + os.name,
+            "sqlite3" + ("" if os.name == "posix" else ".exe"),
+        ),
+    )

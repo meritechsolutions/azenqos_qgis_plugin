@@ -133,7 +133,6 @@ class main_window(QMainWindow):
             azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN), QSettings.IniFormat
         )
         ########################
-
         self.setupUi()
 
         if self.qgis_iface is None:
@@ -153,6 +152,8 @@ class main_window(QMainWindow):
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
         self.resize(1024,768)
+        akr = azq_utils.adb_kill_server()  # otherwise cant update plugin as adb files would be locked
+        print("main_window __init__() adb_kill_server() ret:", akr)
         print("main_window __init__() done")
 
     @pyqtSlot()
@@ -2115,10 +2116,17 @@ Log_hash list: {}""".format(
             print("cleanup: len(self.gc.openedWindows)", len(self.gc.openedWindows))
             for widget in self.gc.openedWindows:
                 print("closing widget title:", widget.title)
-                widget.close()
+                try:
+                    widget.close()
+                except Exception as e:
+                    print("WARNING: widget.close() exception:", e)
+
             self.gc.openedWindows = []
             for window in self.mdi.subWindowList():
-                window.close()
+                try:
+                    window.close()
+                except Exception as e:
+                    print("WARNING: widget.close() exception:", e)
             assert len(self.mdi.subWindowList()) == 0
         except:
             type_, value_, traceback_ = sys.exc_info()
@@ -2137,6 +2145,8 @@ Log_hash list: {}""".format(
             self.mdi.close()
             azq_utils.close_scrcpy_proc()
             print("Close App")
+            akr = azq_utils.adb_kill_server()  # otherwise cant update plugin as adb files would be locked
+            print("main_window close() adb_kill_server() ret:", akr)
             self.closed = True
             print("cleanup done")
         except:

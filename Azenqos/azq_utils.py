@@ -1689,6 +1689,7 @@ def check_and_recover_db(dbfp, tmp_path, azqdata_uuid):
     return dbfp
 
 def pull_latest_log_db_from_phone(parent=None):
+    close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows
     failed_cmd = get_failed_scrcpy_cmd()
     if failed_cmd:
         QtWidgets.QMessageBox.critical(
@@ -1699,11 +1700,10 @@ def pull_latest_log_db_from_phone(parent=None):
         )
         return None
     azqdata_uuid = uuid.uuid4()
-    tmp_path = tmp_gen_path()
-    db_journal_fp = os.path.join(tmp_path, "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
+    db_journal_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
     assert not os.path.isfile(db_journal_fp)
     call_no_shell((get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db-journal", db_journal_fp))
-    dbfp = os.path.join(tmp_path, "adb_log_snapshot_{}.db".format(azqdata_uuid))
+    dbfp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(azqdata_uuid))
     assert not os.path.isfile(dbfp)
     cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", dbfp)
     ret = call_no_shell(cmd)
@@ -1717,7 +1717,7 @@ def pull_latest_log_db_from_phone(parent=None):
         return None
     dbfp = check_and_recover_db(dbfp, tmp_path, azqdata_uuid)
     assert os.path.isfile(dbfp)
-    start_scrcpy_in_thread()
+    start_scrcpy_proc()
     return dbfp
 
 
@@ -1743,15 +1743,42 @@ def check_output_no_shell(cmd_list):
     return None
 
 
-g_scrcpy_thread = None
-def start_scrcpy_in_thread():
-    global g_scrcpy_thread
-    if g_scrcpy_thread is None or not g_scrcpy_thread.is_alive():
-        g_scrcpy_thread = threading.Thread(target=start_scrcpy, daemon=False)
-        g_scrcpy_thread.start()
-    else:
-        print("g_scrcpy_thread is still running - ignore start_scrcpy_in_thread")
+g_scrcpy_proc = None
+def start_scrcpy_proc():
+    global g_scrcpy_proc
+    close_scrcpy_proc()
+    assert g_scrcpy_proc is None
+    g_scrcpy_proc = scrcpy_popen()
 
 
-def start_scrcpy():
-    call_no_shell((get_scrcpy_command(),))
+def is_scrcpy_proc_running():
+    global g_scrcpy_proc
+    return g_scrcpy_proc is not None and g_scrcpy_proc.poll() is None
+
+
+def close_scrcpy_proc():
+    global g_scrcpy_proc
+    if is_scrcpy_proc_running():
+        try:
+            g_scrcpy_proc.terminate()
+        except Exception as e:
+            print("WARNING: terminate prev scrcpy process failed with exception: {}".format(e))
+        if g_scrcpy_proc.poll() is None:
+            try:
+                g_scrcpy_proc.kill()
+            except Exception as e:
+                print("WARNING: kill prev scrcpy process failed with exception: {}".format(e))
+        if g_scrcpy_proc.poll() is None:
+            print("WARNING: still g_scrcpy_proc.poll() is None (still running) after kill() and terminate()")
+    g_scrcpy_proc = None
+
+
+def scrcpy_popen():
+    cmd = (get_scrcpy_command(),)
+    proc = subprocess.Popen(
+        cmd,
+        shell=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    return proc

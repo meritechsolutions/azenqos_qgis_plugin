@@ -294,3 +294,4 @@ pluginbuilder3/plugin_templates/toolbutton_with_dockwidget/template/test/test_mo
 pluginbuilder3/plugin_templates/toolbutton_with_dockwidget/template/test/test_resources.templ
 
 .DS_Store
+example_logs/test_check_and_recover_db/adb_log_snapshot_e6acfe45-d512-4054-95bb-0b67686321c1.db

@@ -1697,7 +1697,12 @@ def pull_latest_log_db_from_phone(parent=None):
     dbfp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(azqdata_uuid))
     assert not os.path.isfile(dbfp)
     cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", dbfp)
-    ret = call_no_shell(cmd)
+    ret = 1
+    try_n = 0
+    while ret != 0 and try_n < 10:
+        ret = call_no_shell(cmd)
+        try_n += 1
+    print("total pull: ", try_n, "ret: ", ret)
     if ret != 0:
         QtWidgets.QMessageBox.critical(
             parent,

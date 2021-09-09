@@ -1645,33 +1645,9 @@ def get_failed_scrcpy_cmd():
             return test_cmd
     return ""
 
-
-def pull_latest_log_db_from_phone(parent=None):
-    failed_cmd = get_failed_scrcpy_cmd()
-    if failed_cmd:
-        QtWidgets.QMessageBox.critical(
-            parent,
-            "Test command failed",
-            "Command failed: " + failed_cmd,
-            QtWidgets.QMessageBox.Cancel,
-        )
-        return None
-    azqdata_uuid = uuid.uuid4()
-    db_journal_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
-    assert not os.path.isfile(db_journal_fp)
-    call_no_shell((get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db-journal", db_journal_fp))
-    dbfp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(azqdata_uuid))
-    assert not os.path.isfile(dbfp)
-    cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", dbfp)
-    ret = call_no_shell(cmd)
-    if ret != 0:
-        QtWidgets.QMessageBox.critical(
-            parent,
-            "Failed to pull data from connected phone",
-            "- Please make sure that you have a phone with AZENQOS netmon/script running connected via USB.\n- Please make sure phone has 'USB Debugging' enabled in phone settings >> 'Developer options'.",
-            QtWidgets.QMessageBox.Cancel,
-        )
-        return None
+def check_and_recover_db(dbfp, tmp_path, azqdata_uuid):
+    dump_to_file_first = False
+    sql_script = None
     sqlite_bin = os.path.join(
         get_module_path(),
         os.path.join(
@@ -1680,21 +1656,18 @@ def pull_latest_log_db_from_phone(parent=None):
         ),
     )
     assert os.path.isfile(sqlite_bin)
-    dump_to_file_first = False
-
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         try:
             integ_check_df = pd.read_sql("PRAGMA integrity_check;", dbcon)
             print("azq_report_gen: sqlite db integ_check_df first row:", integ_check_df.integrity_check[0])
             if integ_check_df.integrity_check[0] != "ok":
+                print("WARNING: read_sql pragma integrity_check not ok:")
                 dump_to_file_first = True
         except Exception as integcheck_ex:
             print("WARNING: read_sql pragma integrity_check failed exception:", integcheck_ex)
             dump_to_file_first = True
-
-    sql_script = None
     if dump_to_file_first:
-        dump_fp = os.path.join(tmp_gen_path(), "tmp_dump.sql")
+        dump_fp = os.path.join(tmp_path, "tmp_dump.sql")
         if os.path.isfile(dump_fp):
             os.remove(dump_fp)
         assert not os.path.isfile(dump_fp)
@@ -1707,13 +1680,42 @@ def pull_latest_log_db_from_phone(parent=None):
         with open(dump_fp, "r") as f:
             sql_script = f.read()
         assert sql_script
-        out_db_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_dump_{}.db".format(azqdata_uuid))
+        out_db_fp = os.path.join(tmp_path, "adb_log_snapshot_dump_{}.db".format(azqdata_uuid))
         with contextlib.closing(sqlite3.connect(out_db_fp)) as out_dbcon:
             print("... merginng to target db file:", out_db_fp)
             out_dbcon.executescript(sql_script)
             out_dbcon.commit()
         dbfp = out_db_fp
-        
+    return dbfp
+
+def pull_latest_log_db_from_phone(parent=None):
+    failed_cmd = get_failed_scrcpy_cmd()
+    if failed_cmd:
+        QtWidgets.QMessageBox.critical(
+            parent,
+            "Test command failed",
+            "Command failed: " + failed_cmd,
+            QtWidgets.QMessageBox.Cancel,
+        )
+        return None
+    azqdata_uuid = uuid.uuid4()
+    tmp_path = tmp_gen_path()
+    db_journal_fp = os.path.join(tmp_path, "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
+    assert not os.path.isfile(db_journal_fp)
+    call_no_shell((get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db-journal", db_journal_fp))
+    dbfp = os.path.join(tmp_path, "adb_log_snapshot_{}.db".format(azqdata_uuid))
+    assert not os.path.isfile(dbfp)
+    cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", dbfp)
+    ret = call_no_shell(cmd)
+    if ret != 0:
+        QtWidgets.QMessageBox.critical(
+            parent,
+            "Failed to pull data from connected phone",
+            "- Please make sure that you have a phone with AZENQOS netmon/script running connected via USB.\n- Please make sure phone has 'USB Debugging' enabled in phone settings >> 'Developer options'.",
+            QtWidgets.QMessageBox.Cancel,
+        )
+        return None
+    dbfp = check_and_recover_db(dbfp, tmp_path, azqdata_uuid)
     assert os.path.isfile(dbfp)
     start_scrcpy_in_thread()
     return dbfp

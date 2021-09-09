@@ -152,8 +152,7 @@ class main_window(QMainWindow):
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
         self.resize(1024,768)
-        akr = azq_utils.adb_kill_server()  # otherwise cant update plugin as adb files would be locked
-        print("main_window __init__() adb_kill_server() ret:", akr)
+        azq_utils.adb_kill_server_threaded()  # otherwise cant update plugin as adb files would be locked
         print("main_window __init__() done")
 
     @pyqtSlot()
@@ -2145,10 +2144,9 @@ Log_hash list: {}""".format(
             self.mdi.close()
             azq_utils.close_scrcpy_proc()
             print("Close App")
-            akr = azq_utils.adb_kill_server()  # otherwise cant update plugin as adb files would be locked
-            print("main_window close() adb_kill_server() ret:", akr)
+            azq_utils.adb_kill_server_threaded()  # otherwise cant update plugin as adb files would be locked
             self.closed = True
-            print("cleanup done")
+            print("cleanup() done")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))

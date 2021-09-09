@@ -7,6 +7,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import threading
 import time
 import traceback
 import uuid
@@ -1769,8 +1770,14 @@ def close_scrcpy_proc():
     g_scrcpy_proc = None
 
 
+def adb_kill_server_threaded():
+    t = threading.Thread(target=adb_kill_server, daemon=False)
+    t.start()
+
+
 def adb_kill_server():
-    return call_no_shell((get_adb_command(), 'kill-server'))
+    ret = call_no_shell((get_adb_command(), 'kill-server'))
+    print("adb_kill_server() ret", ret)
 
 
 def scrcpy_popen():

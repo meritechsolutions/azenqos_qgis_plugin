@@ -133,7 +133,6 @@ class main_window(QMainWindow):
             azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN), QSettings.IniFormat
         )
         ########################
-
         self.setupUi()
 
         if self.qgis_iface is None:
@@ -153,6 +152,8 @@ class main_window(QMainWindow):
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
         self.resize(1024,768)
+        akr = azq_utils.adb_kill_server()  # otherwise cant update plugin as adb files would be locked
+        print("main_window __init__() adb_kill_server() ret:", akr)
         print("main_window __init__() done")
 
     @pyqtSlot()
@@ -1850,7 +1851,7 @@ Log_hash list: {}""".format(
         if self.gc.sliderLength:
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
         if self.gc.databasePath:
-            self._gui_restore()
+            self.load_current_workspace()
             self.ui.statusbar.showMessage(
                 "Opened log db: {}".format(self.gc.databasePath)
             )
@@ -2052,7 +2053,7 @@ Log_hash list: {}""".format(
                 self.gc.openedWindows = []
             shutil.copyfile(fp, azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN))
             self.current_workspace_settings.sync()  # load changes
-            self._gui_restore()
+            self.load_current_workspace()
             self.current_workspace_settings.sync()
 
     def saveWorkspaceFile(self):
@@ -2063,7 +2064,7 @@ Log_hash list: {}""".format(
         )
         if fp:
             print("saveWorkspaceFile:", fp)
-            self._gui_save()
+            self.save_current_workspace()
             self.current_workspace_settings.sync()  # save changes
             shutil.copyfile(azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN), fp)
 
@@ -2091,7 +2092,7 @@ Log_hash list: {}""".format(
 
     def cleanup(self):
         try:
-            self._gui_save()
+            self.save_current_workspace()
             self.pauseTime()
 
             # remove selected features:
@@ -2115,10 +2116,17 @@ Log_hash list: {}""".format(
             print("cleanup: len(self.gc.openedWindows)", len(self.gc.openedWindows))
             for widget in self.gc.openedWindows:
                 print("closing widget title:", widget.title)
-                widget.close()
+                try:
+                    widget.close()
+                except Exception as e:
+                    print("WARNING: widget.close() exception:", e)
+
             self.gc.openedWindows = []
             for window in self.mdi.subWindowList():
-                window.close()
+                try:
+                    window.close()
+                except Exception as e:
+                    print("WARNING: widget.close() exception:", e)
             assert len(self.mdi.subWindowList()) == 0
         except:
             type_, value_, traceback_ = sys.exc_info()
@@ -2137,6 +2145,8 @@ Log_hash list: {}""".format(
             self.mdi.close()
             azq_utils.close_scrcpy_proc()
             print("Close App")
+            akr = azq_utils.adb_kill_server()  # otherwise cant update plugin as adb files would be locked
+            print("main_window close() adb_kill_server() ret:", akr)
             self.closed = True
             print("cleanup done")
         except:
@@ -2212,25 +2222,25 @@ Log_hash list: {}""".format(
     pass
     '''
 
-    def _gui_save(self):
+    def save_current_workspace(self):
         # mod from https://stackoverflow.com/questions/23279125/python-pyqt4-functions-to-save-and-restore-ui-widget-values
         """
         save "ui" controls and values to registry "setting"
         :return:
         """
         try:
-            print("_gui_save() START")
-            print("_gui_save() geom")
+            print("save_current_workspace() START")
+            print("save_current_workspace() geom")
             self.current_workspace_settings.setValue(
                 GUI_SETTING_NAME_PREFIX + "geom", self.saveGeometry()
             )
-            print("_gui_save() state")
+            print("save_current_workspace() state")
             self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "state", self.saveState())
 
             swl = self.mdi.subWindowList()
             swl = [w for w in swl if (w is not None and w.widget() is not None)]
             print(
-                "_gui_save() len(swl)",
+                "save_current_workspace() len(swl)",
                 len(swl),
                 "len(gc.openedWindows)",
                 len(self.gc.openedWindows),
@@ -2245,7 +2255,7 @@ Log_hash list: {}""".format(
                         if not window.widget():
                             continue
                         print(
-                            "_gui_save() window_{}_title".format(i), window.widget().title
+                            "save_current_workspace() window_{}_title".format(i), window.widget().title
                         )
 
                         self.current_workspace_settings.setValue(
@@ -2260,6 +2270,13 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
                             window.saveGeometry(),
                         )
+
+                        if isinstance(window.widget(), TableWindow):
+                            self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i),
+                                window.widget().tableView.horizontalHeader().saveState(),
+                            )
+
                         self.current_workspace_settings.setValue(
                             GUI_SETTING_NAME_PREFIX + "window_{}_refresh_df_func_or_py_eval_str".format(i),
                             window.widget().refresh_data_from_dbcon_and_time_func,
@@ -2273,15 +2290,15 @@ Log_hash list: {}""".format(
                     except:
                         type_, value_, traceback_ = sys.exc_info()
                         exstr = str(traceback.format_exception(type_, value_, traceback_))
-                        print("WARNING: _gui_save() for window exception: {}".format(exstr))
+                        print("WARNING: save_current_workspace() for window exception: {}".format(exstr))
                     # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
 
             self.current_workspace_settings.sync()  # save to disk
-            print("_gui_save() DONE")
+            print("save_current_workspace() DONE")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: _gui_save() - exception: {}".format(exstr))
+            print("WARNING: save_current_workspace() - exception: {}".format(exstr))
 
 
     def add_db_layers(self, select=False):
@@ -2402,22 +2419,22 @@ Log_hash list: {}""".format(
             qt_utils.msgbox("No cell-files specified", parent=self)
 
 
-    def _gui_restore(self):
+    def load_current_workspace(self):
         """
         restore "ui" controls with values stored in registry "settings"
         :return:
         """
         try:
-            print("_gui_restore() START")
+            print("load_current_workspace() START")
             self.current_workspace_settings.sync()  # load from disk
             window_geom = self.current_workspace_settings.value(GUI_SETTING_NAME_PREFIX + "geom")
             if window_geom:
-                print("_gui_restore() geom")
+                print("load_current_workspace() geom")
                 self.restoreGeometry(window_geom)
             """
             state_value = self.settings.value(GUI_SETTING_NAME_PREFIX + "state")
             if state_value:
-                print("_gui_restore() state")
+                print("load_current_workspace() state")
                 self.restoreState(state_value)
             """
             n_windows = self.current_workspace_settings.value(GUI_SETTING_NAME_PREFIX + "n_windows")
@@ -2435,6 +2452,10 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
                         )
 
+                        hh_state = self.current_workspace_settings.value(
+                        GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i)
+                        )
+
                         refresh_df_func_or_py_eval_str = self.current_workspace_settings.value(
                             GUI_SETTING_NAME_PREFIX + "window_{}_refresh_df_func_or_py_eval_str".format(i)
                         )
@@ -2443,7 +2464,7 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i)
                         ))
 
-                        print("_gui_restore() window i: {} title: {} options: {}".format(i, title,
+                        print("load_current_workspace() window i: {} title: {} options: {}".format(i, title,
                                                                                                              options))
                         if func is not None:
                             # on..._triggered func like on L3 triggered etc
@@ -2460,22 +2481,25 @@ Log_hash list: {}""".format(
                                     continue
                                 if window.widget().title == title:
                                     print(
-                                        "_gui_restore() window i {} title {} setgeom".format(
+                                        "load_current_workspace() window i {} title {} setgeom".format(
                                             i, title
                                         )
                                     )
                                     window.restoreGeometry(geom)
+                                    if hh_state:
+                                        window.widget().tableView.horizontalHeader().restoreState(hh_state)
+                                        window.widget().tableView.horizontalHeader().adjustPositions()
                                     break
                     except:
                         type_, value_, traceback_ = sys.exc_info()
                         exstr = str(traceback.format_exception(type_, value_, traceback_))
-                        print("WARNING: _gui_restore() window i: {} - exception: {}".format(i, exstr))
+                        print("WARNING: load_current_workspace() window i: {} - exception: {}".format(i, exstr))
 
-            print("_gui_restore() DONE")
+            print("load_current_workspace() DONE")
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: _gui_restore() - exception: {}".format(exstr))
+            print("WARNING: load_current_workspace() - exception: {}".format(exstr))
             try:
                 print("doing qsettings clear()")
                 self.current_workspace_settings.clear()

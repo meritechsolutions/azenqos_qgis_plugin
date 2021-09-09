@@ -1769,6 +1769,10 @@ def close_scrcpy_proc():
     g_scrcpy_proc = None
 
 
+def adb_kill_server():
+    return call_no_shell((get_adb_command(), 'kill-server'))
+
+
 def scrcpy_popen():
     cmd = (get_scrcpy_command(),)
     return popen_no_shell(cmd)

@@ -286,6 +286,7 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
+
     def contextMenuEvent(self, event):
         menu = QMenu(self)
         actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None}

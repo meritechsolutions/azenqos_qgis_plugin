@@ -1650,7 +1650,7 @@ def get_failed_scrcpy_cmd():
     return ""
 
 
-def check_and_recover_db(dbfp, tmp_path):
+def check_and_recover_db(dbfp, tmp_path, write_debug_sql_file=False):
     needs_recover_db = False
     sqlite_bin = get_sqlite_bin()
     assert os.path.isfile(sqlite_bin)
@@ -1670,9 +1670,10 @@ def check_and_recover_db(dbfp, tmp_path):
         out_db_fp = os.path.join(tmp_path, "adb_log_snapshot_dump_recov_{}.db".format(uuid.uuid4()))
         with contextlib.closing(sqlite3.connect(out_db_fp)) as out_dbcon:
             print("... merging to target db file:", out_db_fp)
-            sqlfpfordebug = out_db_fp+".sql"
-            with open(sqlfpfordebug, 'w') as f:
-                f.write(sql_script)
+            if write_debug_sql_file:
+                sqlfpfordebug = out_db_fp+".sql"
+                with open(sqlfpfordebug, 'w') as f:
+                    f.write(sql_script)
             out_dbcon.executescript(sql_script)
             out_dbcon.commit()
         dbfp = out_db_fp

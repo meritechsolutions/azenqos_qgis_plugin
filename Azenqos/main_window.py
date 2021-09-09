@@ -2135,6 +2135,7 @@ Log_hash list: {}""".format(
                 print("mdiwindow close ", mdiwindow)
                 mdiwindow.close()
             self.mdi.close()
+            azq_utils.close_scrcpy_proc()
             print("Close App")
             self.closed = True
             print("cleanup done")

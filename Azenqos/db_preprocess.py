@@ -432,10 +432,11 @@ def prepare_spatialite_views(dbcon):
                 view_df = pd.merge_asof(view_df.sort_values('time_datetime'), df_location.sort_values('time_datetime'), on="time_datetime", by=by, direction="backward", allow_exact_matches=True)
                 view_df = view_df.drop(columns=['time_datetime'])
                 view_df.loc[view_df.duplicated(["positioning_lat", "positioning_lon"]), ["positioning_lat", "positioning_lon"]] = np.nan
+                view_df["time"] = pd.to_datetime(view_df["time"])
                 idf = view_df[["log_hash", "time", "positioning_lat", "positioning_lon"]]
                 idf = idf.dropna(subset=["time"])
                 idf = idf.drop_duplicates(subset='time').set_index('time')
-                idf = idf.groupby('log_hash').apply(lambda sdf: sdf.interpolate())
+                idf = idf.groupby('log_hash').apply(lambda sdf: sdf.interpolate(method='time'))
                 idf = idf.reset_index() 
                 view_df["positioning_lat"] = idf["positioning_lat"]
                 view_df["positioning_lon"] = idf["positioning_lon"]

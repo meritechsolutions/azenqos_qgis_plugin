@@ -344,42 +344,12 @@ Log_hash list: {}""".format(
     ############# log menu slots
     @pyqtSlot()
     def on_actionLog_Info_triggered(self):
-        print("action log info")
-        import log_query
-
-        headers = ["log_hash", "script_name", "script", "phonemodel", "imsi", "imei"]
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "Log Info",
-            log_query.get_logs_info_df,
-            tableHeader=headers,
-            time_list_mode=True,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        widget.tableView.setSortingEnabled(True)
-        
+        self.add_param_window("pd.read_sql('''select log_hash, time, max(script_name) as script_name, max(script)as script, max(phonemodel) as phonemodel, max(imsi) as imsi, max(imei) as imei from log_info group by log_hash''',dbcon)", title="Log Info", time_list_mode=True)
 
     @pyqtSlot()
     def on_actionLogs_triggered(self):
-        print("action logs")
-        import log_query
+        self.add_param_window("pd.read_sql('''select log_hash, time, log_start_time, log_end_time, log_tag, log_ori_file_name, log_app_version, log_license_edition, log_required_pc_version, log_timezone_offset from logs group by log_hash''',dbcon)", title="Logs", time_list_mode=True)
 
-        headers = ["log_hash", "log_start_time", "log_end_time", "log_tag", "log_ori_file_name", "log_app_version", "log_license_edition", "log_required_pc_version", "log_timezone_offset"]
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "Logs",
-            log_query.get_logs_df,
-            tableHeader=headers,
-            time_list_mode=True,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        widget.tableView.setSortingEnabled(True)
-        
     ############# system menu slots
     @pyqtSlot()
     def on_actionTechnology_triggered(self):
@@ -1687,12 +1657,7 @@ Log_hash list: {}""".format(
             break  # break on first one
 
         selectedTimestamp = None
-        try:
-            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(
-                selected_time.toString("yyyy-MM-dd HH:mm:ss.zzz")
-            )
-        except:
-            selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selected_time)
+        selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selected_time)
         if selectedTimestamp:
             timeSliderValue = self.gc.sliderLength - (
                 self.gc.maxTimeValue - selectedTimestamp

@@ -14,6 +14,7 @@ def test():
     for azm in azm_list:
         if not os.path.isfile(azm):
             print("file not found: {} - abort test".format(azm))
+            return
 
     out_dbfp = azm_sqlite_merge.merge(azm_list)
     assert os.path.isfile(out_dbfp)

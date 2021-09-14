@@ -1549,7 +1549,7 @@ def datetimeStringtoTimestamp(datetimeString):
     try:
         element = None
         if isinstance(datetimeString, float):
-            element = datetimeString = datetime.datetime.fromtimestamp(datetimeString)
+            element = datetime.datetime.fromtimestamp(datetimeString)
         elif isinstance(datetimeString, str):
             try:
                 element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")

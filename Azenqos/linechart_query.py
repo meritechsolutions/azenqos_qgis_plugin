@@ -3,6 +3,7 @@ import pandas as pd
 
 import params_disp_df
 import preprocess_azm
+import azq_utils
 
 
 def get_nr_df(dbcon):
@@ -318,10 +319,24 @@ def get_chart_df(dbcon, param_list_dict):
         sql = "SELECT log_hash, time as Time, {} FROM {}".format(param_name, table_name)
         df = pd.read_sql(sql, dbcon, parse_dates=["Time"])
         df["log_hash"] = df["log_hash"].astype(np.int64)
+        last_valid_value_time_ms = None
+        last_valid_value =  None
+        df["time_ms"] = df["Time"].apply(lambda x: azq_utils.datetimeStringtoTimestamp(x.strftime("%Y-%m-%d %H:%M:%S.%f")))
+        for index, row in df.iterrows():
+            if not pd.isna(row[param_name]):
+                last_valid_value_time_ms = row["time_ms"]
+                last_valid_value = row[param_name]
+            else:
+                if last_valid_value_time_ms is None:
+                    continue
+                if row["time_ms"] - last_valid_value_time_ms < 2:
+                    print(row["time_ms"] - last_valid_value_time_ms)
+                    df.loc[index, param_name] = last_valid_value
+                else:
+                    last_valid_value_time_ms = None
+        df = df.drop(columns=["time_ms"])
         if param_dict["data"]:
             df = df.fillna(0)
-        elif param_dict["null"]:
-            df = df.dropna()
         df_list.append(df)
 
     return df_list

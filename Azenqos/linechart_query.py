@@ -330,7 +330,6 @@ def get_chart_df(dbcon, param_list_dict):
                 if last_valid_value_time_ms is None:
                     continue
                 if row["time_ms"] - last_valid_value_time_ms < 2:
-                    print(row["time_ms"] - last_valid_value_time_ms)
                     df.loc[index, param_name] = last_valid_value
                 else:
                     last_valid_value_time_ms = None

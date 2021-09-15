@@ -210,13 +210,13 @@ class import_db_dialog(QDialog):
 
     def choose_azm(self):
         fps, _ = QFileDialog.getOpenFileNames(
-            self, "Single File", QtCore.QDir.rootPath(), "AZENQOS azm logs (*.azm);; SQLite db from azm (*.db)"
+            self, "Select files", QtCore.QDir.rootPath(), "AZENQOS azm logs (*.azm);; SQLite db from azm (*.db)"
         )
         self.dbPathLineEdit.setText(",".join(fps)) if fps else None
 
     def choose_theme(self):
         fileName, _ = QFileDialog.getOpenFileName(
-            self, "Single File", QtCore.QDir.rootPath(), "*.xml"
+            self, "Select file", QtCore.QDir.rootPath(), "*.xml"
         )
         self.themePathLineEdit.setText(
             fileName

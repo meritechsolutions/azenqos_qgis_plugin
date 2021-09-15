@@ -1842,3 +1842,37 @@ def get_sqlite_bin():
             "sqlite3" + ("" if os.name == "posix" else ".exe"),
         ),
     )
+
+
+def set_none_to_repetetive_rows(df, cols):
+    # set None to repetetive rows - https://stackoverflow.com/questions/19463985/pandas-drop-consecutive-duplicates
+    try:
+        df.loc[((df[cols].shift() == df[cols]).all
+                (axis=1)), cols] = None
+    except Exception:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: set_none_to_repetetive_rows exception:", exstr)
+
+
+def resample_per_log_hash_time(param_df, resample_param, use_last=False):
+    assert len(param_df)
+    ori_cols = param_df.columns
+    assert "log_hash" in ori_cols
+    assert "time" in ori_cols
+    #print("resample_per_log_hash_time param_df0:\n", param_df.head())
+    param_df = param_df.groupby('log_hash', as_index=True).apply(
+        lambda df: df.drop_duplicates('time').set_index('time').resample(resample_param).pad() if not use_last else df.drop_duplicates('time').set_index('time').resample(resample_param).last().ffill()
+    )
+    #print("resample_per_log_hash_time param_df1:\n", param_df.head())
+    del param_df["log_hash"]  # drop  the resampled log_hash col as can have nulls
+    assert "log_hash" not in param_df.columns
+    param_df = param_df.reset_index()  # pop-out log_hash
+    assert "log_hash" in param_df.columns
+    #print("resample_per_log_hash_time param_df2:\n", param_df.head())
+    end_cols = param_df.columns
+    #print("resample_per_log_hash_time: ori_cols:", ori_cols)
+    #print("resample_per_log_hash_time: end_cols:", end_cols)
+    assert len(ori_cols) == len(end_cols)
+    assert set(ori_cols) == set(end_cols)
+    return param_df

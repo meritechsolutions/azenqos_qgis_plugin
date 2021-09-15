@@ -380,8 +380,7 @@ def prepare_spatialite_views(dbcon):
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: remove gps cancel rows exception:", exstr)
         
-    df_location = pd.read_sql_query("select time as time_datetime, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon)
-    df_location["time_datetime"] = pd.to_datetime(df_location["time_datetime"])
+    df_location = pd.read_sql_query("select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon, parse_dates=['time'])
 
     # remove stray -1 -1 rows
     for view in tables_to_rm_stray_neg1_rows:
@@ -419,26 +418,11 @@ def prepare_spatialite_views(dbcon):
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: remove gps cancel rows exception:", exstr)
         if len(df_posids_indoor_start) > 0:
-            view_df = pd.read_sql("select * from {}".format(view), dbcon)
+            view_df = pd.read_sql("select * from {}".format(view), dbcon, parse_dates=['time'])
             if len(view_df) > 0:
-                by = None
-                if "log_hash" in view_df.columns and "log_hash" in df_location.columns:
-                    print("indoor merge df_location using by log_hash")
-                    by = "log_hash"
-                    view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
-                    df_location["log_hash"] = df_location["log_hash"].astype(np.int64)
-                view_df["time_datetime"] = pd.to_datetime(view_df["time"])
 
-                view_df = pd.merge_asof(view_df.sort_values('time_datetime'), df_location.sort_values('time_datetime'), on="time_datetime", by=by, direction="backward", allow_exact_matches=True)
-                view_df = view_df.drop(columns=['time_datetime'])
-                view_df.loc[view_df.duplicated(["positioning_lat", "positioning_lon"]), ["positioning_lat", "positioning_lon"]] = np.nan
-                idf = view_df[["log_hash", "time", "positioning_lat", "positioning_lon"]]
-                idf = idf.dropna(subset=["time"])
-                idf = idf.drop_duplicates(subset='time').set_index('time')
-                idf = idf.groupby('log_hash').apply(lambda sdf: sdf.interpolate())
-                idf = idf.reset_index() 
-                view_df["positioning_lat"] = idf["positioning_lat"]
-                view_df["positioning_lon"] = idf["positioning_lon"]
+                view_df = add_pos_lat_lon_to_indoor_df(view_df, df_location)
+
                 view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
                 view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
                 view_df = view_df.sort_values(by="time").reset_index(drop=True)
@@ -446,16 +430,43 @@ def prepare_spatialite_views(dbcon):
                 view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
 
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
-
-
-
     ## for each param
     # create view for param
     # put param view into geometry_columns to register for display
     # create param QML theme based on default_style.qml
     # put qml entry into 'layer_styles' table
 
+
 def get_geom_cols_df(dbcon):
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geom df:\n{}".format(df.head()))
+    return df
+
+
+def add_pos_lat_lon_to_indoor_df(df, df_location):
+    # we want to interpolate by time on lat/lon only - not the values, make new tmp df for this
+    indoor_location_df_interpolated = df_location[
+        ["log_hash", "time", "positioning_lat", "positioning_lon"]].copy()
+    indoor_location_df_interpolated = azq_utils.resample_per_log_hash_time(indoor_location_df_interpolated,
+                                                                           "100ms")
+    cols = ["positioning_lat", "positioning_lon"]
+    azq_utils.set_none_to_repetetive_rows(indoor_location_df_interpolated, cols)
+    indoor_location_df_interpolated = indoor_location_df_interpolated.dropna(subset=["time"])
+    indoor_location_df_interpolated = indoor_location_df_interpolated.drop_duplicates(
+        subset='time').set_index('time')
+    indoor_location_df_interpolated = indoor_location_df_interpolated.groupby('log_hash').apply(
+        lambda sdf: sdf.interpolate(method='time')).reset_index()
+
+    # merge indoor lat/lon into df
+
+    by = None
+    if "log_hash" in df.columns and "log_hash" in df_location.columns:
+        print('indoor merge df_location using by log_hash')
+        by = 'log_hash'
+        df['log_hash'] = df['log_hash'].astype(np.int64)
+        df_location['log_hash'] = df_location['log_hash'].astype(np.int64)
+
+    df = pd.merge_asof(df.sort_values("time"), indoor_location_df_interpolated.sort_values("time"),
+                           on="time", by=by,
+                           direction="backward", allow_exact_matches=True)
     return df

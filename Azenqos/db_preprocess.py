@@ -420,9 +420,7 @@ def prepare_spatialite_views(dbcon):
         if len(df_posids_indoor_start) > 0:
             view_df = pd.read_sql("select * from {}".format(view), dbcon, parse_dates=['time'])
             if len(view_df) > 0:
-
                 view_df = add_pos_lat_lon_to_indoor_df(view_df, df_location)
-
                 view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
                 view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
                 view_df = view_df.sort_values(by="time").reset_index(drop=True)

@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 import requests
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 import dprint
 
@@ -1543,13 +1543,18 @@ def signal_emit(signal_obj, emit_obj):
         signal_obj.emit(emit_obj)
 
 
-def datetimeStringtoTimestamp(datetimeString: str):
+def datetimeStringtoTimestamp(datetimeString):
+    if isinstance(datetimeString, QtCore.QDateTime):
+        datetimeString = float(datetimeString.toSecsSinceEpoch())
     try:
         element = None
-        try:
-            element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
-        except ValueError:
-            element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S")  # some ts str comes without millis like: "2021-04-22 15:22:18"
+        if isinstance(datetimeString, float):
+            element = datetime.datetime.fromtimestamp(datetimeString)
+        elif isinstance(datetimeString, str):
+            try:
+                element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+            except ValueError:
+                element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S")  # some ts str comes without millis like: "2021-04-22 15:22:18"
         timestamp = datetime.datetime.timestamp(element)
         return timestamp
     except:

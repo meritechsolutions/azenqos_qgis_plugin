@@ -310,8 +310,9 @@ def get_gsm_data_df_by_time(dbcon, time_before):
 ############ New Line Chart Query
 
 
-def get_chart_df(dbcon, param_list_dict):
+def get_chart_df(dbcon, param_list_dict, apply_mode=False):
     df_list = []
+    print(param_list_dict)
     for key in param_list_dict:
         param_dict = param_list_dict[key]
         param_name = param_dict["name"]
@@ -319,23 +320,23 @@ def get_chart_df(dbcon, param_list_dict):
         sql = "SELECT log_hash, time as Time, {} FROM {}".format(param_name, table_name)
         df = pd.read_sql(sql, dbcon, parse_dates=["Time"])
         df["log_hash"] = df["log_hash"].astype(np.int64)
-        last_valid_value_time_ms = None
-        last_valid_value =  None
-        df["time_ms"] = df["Time"].apply(lambda x: azq_utils.datetimeStringtoTimestamp(x.strftime("%Y-%m-%d %H:%M:%S.%f")))
-        for index, row in df.iterrows():
-            if not pd.isna(row[param_name]):
-                last_valid_value_time_ms = row["time_ms"]
-                last_valid_value = row[param_name]
-            else:
-                if last_valid_value_time_ms is None:
-                    continue
-                if row["time_ms"] - last_valid_value_time_ms < 2:
-                    df.loc[index, param_name] = last_valid_value
-                else:
-                    last_valid_value_time_ms = None
-        df = df.drop(columns=["time_ms"])
-        if param_dict["data"]:
-            df = df.fillna(0)
+        if apply_mode:
+            df["time_ms"] = df["Time"].apply(lambda x: azq_utils.datetimeStringtoTimestamp(x.strftime("%Y-%m-%d %H:%M:%S.%f")))
+            df["time_ms_diff"] = df.loc[df[param_name].notna(), "time_ms"]
+            df["null_param"] = df.loc[df[param_name].notna(), param_name]
+            df["time_ms_diff"] = df["time_ms_diff"].ffill()
+            df["null_param"] = df["null_param"].ffill()
+            def filter_two_sec(x):
+                if x["time_ms"] - x["time_ms_diff"] < 2:
+                    x[param_name] = x["null_param"]
+                return x
+            df = df.apply(lambda x: filter_two_sec(x), axis=1)
+            df = df.drop(columns=["null_param", "time_ms_diff", "time_ms"])
+        else:
+            df_merge = df.copy()
+            df_merge = df_merge.dropna()
+            df = pd.merge_asof(left=df.reset_index(), right=df_merge.reset_index(), left_on=['Time'], right_on=['Time'],by='log_hash',direction="backward", allow_exact_matches=True, tolerance=pd.Timedelta('2s'), suffixes=('_not_use', '')) 
+            df = df[["log_hash", "Time", param_name]]
         df_list.append(df)
 
     return df_list
@@ -353,8 +354,6 @@ def get_table_df_by_time(dbcon, time_before, param_list_dict):
             first_table = table_name
         parameter_to_columns = (param_name, [param_name], table_name)
         parameter_to_columns_list.append(parameter_to_columns)
-    if param_dict["data"]:
-        not_null_first_col = False
 
     return params_disp_df.get(
         dbcon,

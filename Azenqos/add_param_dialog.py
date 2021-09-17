@@ -36,18 +36,20 @@ class AddParamDialog(QDialog):
         completer.setCompletionMode(QCompleter.PopupCompletion)
         completer.setModel(self.ui.comboBox.model())
         self.ui.comboBox.setCompleter(completer)
-        if not preprocess_azm.is_leg_nr_tables():
-            self.ui.not_null_checkbox.hide()
-        enableNotNullSlot = partial(self.checkNotNull, self.ui.not_null_checkbox)
-        disableNotNullSlot = partial(self.unCheckNotNull, self.ui.not_null_checkbox)
-        self.ui.not_null_checkbox.stateChanged.connect(
-            lambda x: enableNotNullSlot() if x else disableNotNullSlot()
-        )
-        enableDataSlot = partial(self.checkData, self.ui.data_checkbox)
-        disableDataSlot = partial(self.uncheckData, self.ui.data_checkbox)
-        self.ui.data_checkbox.stateChanged.connect(
-            lambda x: enableDataSlot() if x else disableDataSlot()
-        )
+        self.ui.not_null_checkbox.hide()
+        self.ui.data_checkbox.hide()
+        # if not preprocess_azm.is_leg_nr_tables():
+        #     self.ui.not_null_checkbox.hide()
+        # enableNotNullSlot = partial(self.checkNotNull, self.ui.not_null_checkbox)
+        # disableNotNullSlot = partial(self.unCheckNotNull, self.ui.not_null_checkbox)
+        # self.ui.not_null_checkbox.stateChanged.connect(
+        #     lambda x: enableNotNullSlot() if x else disableNotNullSlot()
+        # )
+        # enableDataSlot = partial(self.checkData, self.ui.data_checkbox)
+        # disableDataSlot = partial(self.uncheckData, self.ui.data_checkbox)
+        # self.ui.data_checkbox.stateChanged.connect(
+        #     lambda x: enableDataSlot() if x else disableDataSlot()
+        # )
         for index, row in self.paramDF.iterrows():
             self.ui.comboBox.addItem(row.var_name)
         self.ui.comboBox.currentIndexChanged.connect(self.selectParam)

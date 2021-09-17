@@ -953,35 +953,18 @@ Log_hash list: {}""".format(
         )
         self.add_subwindow_with_widget(swa, widget)
 
-    def show_line_chart_dialog(self):
-        return True  # temporary as nr line chart when not ok becomes unreadable
-        msgBox = QtWidgets.QMessageBox()
-        msgBox.setIcon(QtWidgets.QMessageBox.Question)
-        msgBox.setText("Use Multiple Y-Axis")
-        msgBox.setWindowTitle("Line Chart")
-        msgBox.setStandardButtons(
-            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel
-        )
-
-        returnValue = msgBox.exec()
-        return returnValue == QtWidgets.QMessageBox.Ok
-
     ############# Line Chart NR
 
     @pyqtSlot()
     def on_actionNR_Line_Chart_triggered(self):
         import preprocess_azm
         print("action nr line chart")
-        is_use_multi_y = self.show_line_chart_dialog()
-        linechart_file_name = linechart_custom
-        if is_use_multi_y:
-            linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(
+        linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "nr_servingbeam_ss_rsrp_1", "null": False, "data": False},
-                {"name": "nr_servingbeam_ss_rsrq_1", "null": False, "data": False},
-                {"name": "nr_servingbeam_ss_sinr_1", "null": False, "data": False},
+                {"name": "nr_servingbeam_ss_rsrp_1"},
+                {"name": "nr_servingbeam_ss_rsrq_1"},
+                {"name": "nr_servingbeam_ss_sinr_1"},
             ],
         )
 
@@ -1000,35 +983,15 @@ Log_hash list: {}""".format(
     def on_actionNR_DATA_Line_Chart_triggered(self):
         import preprocess_azm
         print("action nr data line chart")
-        is_use_multi_y = self.show_line_chart_dialog()
-        linechart_file_name = linechart_custom
-        if is_use_multi_y:
-            linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(
+        linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_trafficstat_dl/1000", "null": False, "data": True},
-                {"name": "data_trafficstat_ul/1000", "null": False, "data": True},
-                {
-                    "name": "nr_p_plus_scell_nr_pdsch_tput_mbps",
-                    "null": False,
-                    "data": True,
-                },
-                {
-                    "name": "nr_p_plus_scell_nr_pusch_tput_mbps",
-                    "null": False,
-                    "data": True,
-                },
-                {
-                    "name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps",
-                    "null": False,
-                    "data": True,
-                },
-                {
-                    "name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps",
-                    "null": False,
-                    "data": True,
-                },
+                {"name": "data_trafficstat_dl/1000"},
+                {"name": "data_trafficstat_ul/1000"},
+                {"name": "nr_p_plus_scell_nr_pdsch_tput_mbps"},
+                {"name": "nr_p_plus_scell_nr_pusch_tput_mbps"},
+                {"name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps"},
+                {"name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps"},
             ],
         )
 
@@ -1048,17 +1011,13 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_Line_Chart_triggered(self):
         print("action lte line chart")
-        is_use_multi_y = self.show_line_chart_dialog()
-        linechart_file_name = linechart_custom
-        if is_use_multi_y:
-            linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(
+        linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "lte_sinr_1", "null": False, "data": False},
-                {"name": "lte_inst_rsrp_1", "null": False, "data": False},
-                {"name": "lte_inst_rsrq_1", "null": False, "data": False},
-                {"name": "lte_inst_rssi_1", "null": False, "data": False},
+                {"name": "lte_sinr_1"},
+                {"name": "lte_inst_rsrp_1"},
+                {"name": "lte_inst_rsrq_1"},
+                {"name": "lte_inst_rssi_1"},
             ],
         )
 
@@ -1076,17 +1035,13 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_DATA_Line_Chart_triggered(self):
         print("action lte data line chart")
-        is_use_multi_y = self.show_line_chart_dialog()
-        linechart_file_name = linechart_custom
-        if is_use_multi_y:
-            linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(
+        linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_trafficstat_dl/1000", "null": False, "data": True},
-                {"name": "data_trafficstat_ul/1000", "null": False, "data": True},
-                {"name": "lte_l1_throughput_mbps_1", "null": False, "data": True},
-                {"name": "lte_bler_1", "null": False, "data": True},
+                {"name": "data_trafficstat_dl/1000"},
+                {"name": "data_trafficstat_ul/1000"},
+                {"name": "lte_l1_throughput_mbps_1"},
+                {"name": "lte_bler_1"},
             ],
         )
 
@@ -1106,21 +1061,13 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_Line_Chart_triggered(self):
         print("action wcdma line chart")
-        is_use_multi_y = self.show_line_chart_dialog()
-        linechart_file_name = linechart_custom
-        if is_use_multi_y:
-            linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(
+        linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "wcdma_aset_ecio_avg", "null": False, "data": False},
-                {"name": "wcdma_aset_rscp_avg", "null": False, "data": False},
-                {"name": "wcdma_rssi", "null": False, "data": False},
-                {
-                    "name": "wcdma_bler_average_percent_all_channels",
-                    "null": False,
-                    "data": False,
-                },
+                {"name": "wcdma_aset_ecio_avg"},
+                {"name": "wcdma_aset_rscp_avg"},
+                {"name": "wcdma_rssi"},
+                {"name": "wcdma_bler_average_percent_all_channels"},
             ],
         )
 
@@ -1138,16 +1085,12 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_DATA_Line_Chart_triggered(self):
         print("action wcdma data line chart")
-        is_use_multi_y = self.show_line_chart_dialog()
-        linechart_file_name = linechart_custom
-        if is_use_multi_y:
-            linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(
+        linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_wcdma_rlc_dl_throughput", "null": False, "data": True},
-                {"name": "data_app_dl_throughput_1", "null": False, "data": True},
-                {"name": "data_hsdpa_thoughput", "null": False, "data": True},
+                {"name": "data_wcdma_rlc_dl_throughput"},
+                {"name": "data_app_dl_throughput_1"},
+                {"name": "data_hsdpa_thoughput"},
             ],
         )
 
@@ -1167,15 +1110,11 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_Line_Chart_triggered(self):
         print("action gsm line chart")
-        is_use_multi_y = self.show_line_chart_dialog()
-        linechart_file_name = linechart_custom
-        if is_use_multi_y:
-            linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(
+        linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "gsm_rxlev_sub_dbm", "null": False, "data": False},
-                {"name": "gsm_rxqual_sub", "null": False, "data": False},
+                {"name": "gsm_rxlev_sub_dbm"},
+                {"name": "gsm_rxqual_sub"},
             ],
         )
 
@@ -1193,15 +1132,11 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_DATA_Line_Chart_triggered(self):
         print("action gsm data line chart")
-        is_use_multi_y = self.show_line_chart_dialog()
-        linechart_file_name = linechart_custom
-        if is_use_multi_y:
-            linechart_file_name = linechart_multi_y_axis
-        linechart_window = linechart_file_name.LineChart(
+        linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_gsm_rlc_dl_throughput", "null": False, "data": True},
-                {"name": "data_app_dl_throughput_1", "null": False, "data": True},
+                {"name": "data_gsm_rlc_dl_throughput"},
+                {"name": "data_app_dl_throughput_1"},
             ],
         )
 

@@ -986,12 +986,12 @@ Log_hash list: {}""".format(
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_trafficstat_dl/1000"},
-                {"name": "data_trafficstat_ul/1000"},
-                {"name": "nr_p_plus_scell_nr_pdsch_tput_mbps"},
-                {"name": "nr_p_plus_scell_nr_pusch_tput_mbps"},
-                {"name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps"},
-                {"name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps"},
+                {"name": "data_trafficstat_dl/1000", "data": True},
+                {"name": "data_trafficstat_ul/1000", "data": True},
+                {"name": "nr_p_plus_scell_nr_pdsch_tput_mbps", "data": True},
+                {"name": "nr_p_plus_scell_nr_pusch_tput_mbps", "data": True},
+                {"name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "data": True},
+                {"name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps", "data": True},
             ],
         )
 
@@ -1038,10 +1038,10 @@ Log_hash list: {}""".format(
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_trafficstat_dl/1000"},
-                {"name": "data_trafficstat_ul/1000"},
-                {"name": "lte_l1_throughput_mbps_1"},
-                {"name": "lte_bler_1"},
+                {"name": "data_trafficstat_dl/1000", "data": True},
+                {"name": "data_trafficstat_ul/1000", "data": True},
+                {"name": "lte_l1_throughput_mbps_1", "data": True},
+                {"name": "lte_bler_1", "data": True},
             ],
         )
 
@@ -1088,9 +1088,9 @@ Log_hash list: {}""".format(
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_wcdma_rlc_dl_throughput"},
-                {"name": "data_app_dl_throughput_1"},
-                {"name": "data_hsdpa_thoughput"},
+                {"name": "data_wcdma_rlc_dl_throughput", "data": True},
+                {"name": "data_app_dl_throughput_1", "data": True},
+                {"name": "data_hsdpa_thoughput", "data": True},
             ],
         )
 
@@ -1135,8 +1135,8 @@ Log_hash list: {}""".format(
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_gsm_rlc_dl_throughput"},
-                {"name": "data_app_dl_throughput_1"},
+                {"name": "data_gsm_rlc_dl_throughput", "data": True},
+                {"name": "data_app_dl_throughput_1", "data": True},
             ],
         )
 

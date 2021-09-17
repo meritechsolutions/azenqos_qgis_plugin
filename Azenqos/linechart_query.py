@@ -337,6 +337,8 @@ def get_chart_df(dbcon, param_list_dict, apply_mode=False):
             df_merge = df_merge.dropna()
             df = pd.merge_asof(left=df.reset_index(), right=df_merge.reset_index(), left_on=['Time'], right_on=['Time'],by='log_hash',direction="backward", allow_exact_matches=True, tolerance=pd.Timedelta('2s'), suffixes=('_not_use', '')) 
             df = df[["log_hash", "Time", param_name]]
+        if "data" in param_dict and param_dict["data"] == True:
+            df = df.fillna(0)
         df_list.append(df)
 
     return df_list

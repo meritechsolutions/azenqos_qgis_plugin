@@ -292,7 +292,7 @@ class TableWindow(QWidget):
         actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None}
         if self.time_list_mode and self.df is not None and 'log_hash' in self.df.columns and 'time' in self.df.columns:
             actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
-        if isinstance(self.refresh_data_from_dbcon_and_time_func, str):
+        if isinstance(self.refresh_data_from_dbcon_and_time_func, (str, list, dict)):
             actions_dict["custom_expression"] = menu.addAction("Customize SQL/Python expression...")
         if self.tableModel.df is not None:
             actions_dict["to_csv"] = menu.addAction("Dump to CSV...")
@@ -537,6 +537,45 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                             df = eval(eval_str)
                             if not isinstance(df, pd.DataFrame):
                                 df = pd.DataFrame({"py_eval_result":[df]})
+                    elif isinstance(self.refresh_data_from_dbcon_and_time_func, list):
+                        df_list = []
+                        time = refresh_dict["time"]
+                        log_hash = refresh_dict["log_hash"]
+                        for eval_str in self.refresh_data_from_dbcon_and_time_func:
+                            if sql_utils.is_sql_select(eval_str):
+                                sql_str = eval_str
+                                print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
+                                df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time)
+                                df_list.append(df)
+                            else:
+                                print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
+                                df = eval(eval_str)
+                                if not isinstance(df, pd.DataFrame):
+                                    df = pd.DataFrame({"py_eval_result":[df]})
+                                df_list.append(df)
+                        df = pd.concat(df_list)
+                    elif isinstance(self.refresh_data_from_dbcon_and_time_func, dict):
+                        time = refresh_dict["time"]
+                        log_hash = refresh_dict["log_hash"]
+                        df_dict_list = []
+                        for key in self.refresh_data_from_dbcon_and_time_func:
+                            df_list = []
+                            for eval_str in self.refresh_data_from_dbcon_and_time_func[key]:
+                                if sql_utils.is_sql_select(eval_str):
+                                    sql_str = eval_str
+                                    print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
+                                    df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, col_name=key)
+                                    df_list.append(df)
+                                else:
+                                    print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
+                                    df = eval(eval_str)
+                                    if not isinstance(df, pd.DataFrame):
+                                        df = pd.DataFrame({"py_eval_result":[df]})
+                                    df_list.append(df)
+                            df = pd.concat(df_list)
+                            df_dict_list.append(df)
+                        df = pd.concat(df_dict_list, axis=1)
+                        df = df.loc[:,~df.columns.duplicated()]
                     else:
                         print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))
                         df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)

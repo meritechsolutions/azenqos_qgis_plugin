@@ -11,6 +11,7 @@ import threading
 import time
 import traceback
 import uuid
+import json 
 from pathlib import Path
 
 import pandas as pd
@@ -1629,7 +1630,13 @@ def launch_file(fp):
 def ask_custom_sql_or_py_expression(parent, title="Custom SQL/Python expression", existing_content="", table_view_mode=False, msg="Enter SQL select or Python expression"):
     import qt_utils
     import sql_utils
+    is_list_or_dict = False
+    if isinstance(existing_content, (list, dict)):
+        is_list_or_dict = True
+        existing_content = json.dumps(existing_content, indent = 4)
     expression = qt_utils.ask_text(parent, title=title, msg=msg, existing_content=existing_content, multiline=True)
+    if expression is not None and is_list_or_dict == True:
+        expression = json.loads(expression)
     if expression is not None and table_view_mode and sql_utils.is_sql_select(expression):
         expression = "pd.read_sql('''{}''',dbcon)".format(expression)
     return expression

@@ -425,32 +425,13 @@ Log_hash list: {}""".format(
     def on_action5GNR_Radio_triggered(self):
         print("action nr radio params")
         import nr_radio_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "NR Radio",
-            nr_radio_query.get_nr_radio_params_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.add_param_window(nr_radio_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio")
 
     @pyqtSlot()
     def on_action5GNR_Data_triggered(self):
         print("action nr data params")
         import nr_data_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "NR Data",
-            nr_data_query.get_nr_data_params_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
+        self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
     def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None):
         swa = SubWindowArea(self.mdi, self.gc)
@@ -569,165 +550,81 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_action5GNR_Radio_Parameters_triggered(self):
         print("action old nr radio params")
-        import nr_query
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "NR Radio Parameters",
-            nr_query.get_nr_radio_params_disp_df_old,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import nr_sql_query
+        import preprocess_azm
+        if not preprocess_azm.is_leg_nr_tables():
+            self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
+        else:
+            self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
         print("action nr serving neigh")
-        import nr_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "NR Serving + Neighbors",
-            nr_query.get_nr_serv_and_neigh_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import nr_sql_query
+        import preprocess_azm
+        if not preprocess_azm.is_leg_nr_tables():
+            self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
+        else:
+            self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
 
     @pyqtSlot()
     def on_action5GNR_Beams_triggered(self):
         print("action nr beams")
-        import nr_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "NR Beams",
-            nr_query.get_nr_beams_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import nr_sql_query
+        self.add_param_window(nr_sql_query.NR_BEAMS_SQL_LIST_DICT, title="NR Beams")
 
     @pyqtSlot()
     def on_action5GNR_Data_Params_triggered(self):
         print("action old nr data")
-        import nr_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "NR Data",
-            nr_query.get_nr_data_disp_df_old,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
+        import nr_sql_query
+        import preprocess_azm
+        if not preprocess_azm.is_leg_nr_tables():
+            self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
+        else:
+            self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
     ############# LTE menu slots
     @pyqtSlot()
     def on_actionLTE_Radio_Parameters_triggered(self):
         print("action lte radio params")
-        import lte_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "LTE Radio Parameters",
-            lte_query.get_lte_radio_params_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import lte_sql_query
+        self.add_param_window(lte_sql_query.LTE_RADIO_PARAMS_SQL_LIST_DICT, title="LTE Radio Parameters")
 
     @pyqtSlot()
     def on_actionLTE_Serving_Neighbors_triggered(self):
         print("action lte serving neigh")
-        import lte_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "LTE Serving + Neighbors",
-            lte_query.get_lte_serv_and_neigh_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-
+        import lte_sql_query
+        self.add_param_window(lte_sql_query.LTE_SERV_AND_NEIGH_SQL_LIST_DICT, title="LTE Serving + Neighbors")
+        
     @pyqtSlot()
     def on_actionLTE_Data_Params_triggered(self):
         print("action lte data param")
-        import lte_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "LTE Data Params",
-            lte_query.get_lte_data_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import lte_sql_query
+        self.add_param_window(lte_sql_query.LTE_DATA_PARAMS_SQL_LIST_DICT, title="LTE Data Params")
 
     @pyqtSlot()
     def on_actionLTE_PUCCH_PDSCH_Params_triggered(self):
         print("action lte pucch pdsch param")
-        import lte_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "LTE PUCCH/PDSCH Params",
-            lte_query.get_lte_pucch_pdsch_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
+        import lte_sql_query
+        self.add_param_window(lte_sql_query.LTE_PUCCH_PDSCH_SQL_LIST_DICT, title="PUCCH/PDSCH Params")
+        
     @pyqtSlot()
     def on_actionLTE_RRC_SIB_States_triggered(self):
         print("action lte rrc sib states")
-        import lte_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "LTE RRC/SIB States",
-            lte_query.get_lte_rrc_sib_states_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
+        import lte_sql_query
+        self.add_param_window(lte_sql_query.LTE_RRC_SIB_SQL_LIST, title="LTE RRC/SIB States")
+        
     @pyqtSlot()
     def on_actionLTE_RLC_triggered(self):
         print("action lte rlc")
-        import lte_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "LTE RLC",
-            lte_query.get_lte_rlc_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import lte_sql_query
+        self.add_param_window(lte_sql_query.LTE_RLC_SQL_LIST_DICT, title="LTE RLC")
 
     @pyqtSlot()
     def on_actionLTE_VoLTE_triggered(self):
         print("action lte volte")
-        import lte_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "LTE VoLTE",
-            lte_query.get_volte_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import lte_sql_query
+        self.add_param_window(lte_sql_query.LTE_VOLTE_SQL_LIST, title="LTE VoLTE")
 
     ############# WCDMA menu slots
 
@@ -957,7 +854,6 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionNR_Line_Chart_triggered(self):
-        import preprocess_azm
         print("action nr line chart")
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
@@ -981,7 +877,6 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionNR_DATA_Line_Chart_triggered(self):
-        import preprocess_azm
         print("action nr data line chart")
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,

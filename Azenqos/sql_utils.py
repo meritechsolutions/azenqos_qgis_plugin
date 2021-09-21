@@ -17,7 +17,7 @@ from exynos_basic_info_nr
 
 LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART = '''
 where {log_hash_filt_part} time between DATETIME('{time}','-2 seconds') and '{time}'
-order by time desc limit 1
+order by time desc
 '''
 
 LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SUFFIX = '''.format(
@@ -41,18 +41,27 @@ def sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time):
     )
 
 
-def get_lh_time_match_df(dbcon, sql, trasposed=True):
+def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
+    print(sql)
     df = pd.read_sql(sql, dbcon)
+    if len(df) > 0:
+        if df.first_valid_index() is not None:
+            df = df.loc[[df.first_valid_index()]].reset_index(drop=True)
+        else:
+            df = df.iloc[[0]].reset_index(drop=True)
+
     if trasposed:
         if len(df) == 0:
             df.loc[0] = None  # add new row so wont be empty df when transpose (otherwise datatable.py show would be different n columns and wont get refreshed when n columns increased)
         df = df.T.reset_index()  # pop out as column
+        if col_name is not None:
+            df = df.rename(columns={df.columns[1]: col_name})
     return df
 
 
-def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash, time, trasposed=True):
+def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash, time, col_name=None, trasposed=True):
     sql = sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time)
-    return get_lh_time_match_df(dbcon, sql, trasposed=trasposed)
+    return get_lh_time_match_df(dbcon, sql, col_name=col_name, trasposed=trasposed)
 
 
 def is_sql_select(eval_str):

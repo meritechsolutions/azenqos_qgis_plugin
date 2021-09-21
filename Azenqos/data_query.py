@@ -46,17 +46,16 @@ def get_Wifi_active_df(dbcon, time_before):
 
 
 def get_wifi_scan_df(dbcon, time_before):
-    custom_lookback_dur_millis = params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS
-    dt_before = pd.to_datetime(time_before)
-    dt_after = dt_before - pd.Timedelta(custom_lookback_dur_millis, "ms")
-    time_after_and = "and time >= '{}'".format(dt_after)
-    sql = "select wifi_scanned_info_time, wifi_scanned_info_record_number, wifi_scanned_info_bssid, wifi_scanned_info_ssid, wifi_scanned_info_freq, wifi_scanned_info_encryption, wifi_scanned_info_level, wifi_scanned_info_channel, wifi_scanned_info_standard, wifi_scanned_info_channel_width from wifi_scanned_info where time <= '{}' {}".format(
-        time_before, time_after_and
+    dt_before = time_before["time"]
+    sql = "select * from wifi_scanned_info where time between DATETIME('{}','-4 seconds') and '{}'".format(
+        dt_before, dt_before
     )
+    drop_col_list = ['log_hash','time','modem_time','posid','seqid','netid','geom']
     df = pd.read_sql(sql, dbcon)
     if len(df) == 0:
         for i in range(300):
             df = df.append(pd.Series(), ignore_index=True)
+    df = df.drop(columns=drop_col_list)
     return df
 
 

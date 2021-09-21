@@ -631,60 +631,26 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_Radio_Parameters_triggered(self):
         print("action wcdma radio params")
-        import wcdma_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "WCDMA Radio Parameters",
-            wcdma_query.get_wcdma_radio_params_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import wcdma_sql_query
+        self.add_param_window(wcdma_sql_query.WCDMA_RADIO_PARAMS_SQL_LIST, title="WCDMA Radio Parameters")
 
     @pyqtSlot()
     def on_actionWCDMA_Active_Monitored_sets_triggered(self):
         print("action wcdma active monitored")
-        import wcdma_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "WCDMA Active + Monitored sets",
-            wcdma_query.get_wcdma_acive_monitored_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import wcdma_sql_query
+        self.add_param_window(wcdma_sql_query.WCDMA_ACTIVE_MONITORED_SQL_LIST_DICT, title="WCDMA Active + Monitored sets")
 
     @pyqtSlot()
     def on_actionWCDMA_BLER_Summary_triggered(self):
         print("action wcdma bler summary")
-        import wcdma_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "WCDMA BLER Summary",
-            wcdma_query.get_bler_sum_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
+        import wcdma_sql_query
+        self.add_param_window(wcdma_sql_query.WCDMA_BLER_SQL_LIST, title="WCDMA BLER Summary")
+        
     @pyqtSlot()
     def on_actionWCDMA_Bearers_triggered(self):
         print("action wcdma bearers")
-        import wcdma_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "WCDMA Bearers",
-            wcdma_query.get_wcdma_bearers_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import wcdma_sql_query
+        self.add_param_window(wcdma_sql_query.WCDMA_BLER_SQL_LIST_DICT, title="WCDMA Bearers")
 
     ############# GSM menu slots
 

@@ -69,3 +69,30 @@ GSM_CURRENT_CHANNEL_SQL_LIST = [
     '''select gsm_arfcn_tch as 'ARFCN TCH' from gsm_rr_chan_desc''',
     '''select gsm_timeslot as 'Time Slot' from gsm_rr_chan_desc'''
 ]
+
+WORST_COL_DICT = {
+    "ARFCN":"gsm_coi_worst_arfcn_1",
+    "VALUE":"gsm_coi_worst",
+    }
+AVG_COL_DICT = {
+    "ARFCN":"gsm_coi_arfcn_",
+    "VALUE":"gsm_coi_",
+    }
+
+GSM_COI_SQL_LIST_DICT = {}
+separator = ","
+for key in WORST_COL_DICT:
+    SQL_LIST = []
+    WORST_SQL_LIST = []
+    AVG_SQL_LIST = []
+    worst_sql = "select {} as 'Worst', '' as 'Avg' from gsm_coi_per_chan".format(WORST_COL_DICT[key])
+    WORST_SQL_LIST.append(worst_sql)
+    for i in range(32):
+        avg_sql = "{}{} as '{}'".format(AVG_COL_DICT[key],i+1, i+1)
+        AVG_SQL_LIST.append(avg_sql)
+
+    worst_sql = separator.join(WORST_SQL_LIST)
+    SQL_LIST.append(worst_sql)
+    avg_sql = "select "+separator.join(AVG_SQL_LIST)+" from gsm_coi_per_chan"
+    SQL_LIST.append(avg_sql)
+    GSM_COI_SQL_LIST_DICT[key] = SQL_LIST

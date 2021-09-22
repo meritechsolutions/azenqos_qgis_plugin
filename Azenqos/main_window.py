@@ -354,49 +354,20 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionTechnology_triggered(self):
         print("technology")
-        import system_query
+        import system_sql_query
+        self.add_param_window(system_sql_query.SYSTEM_TECHNOLOGY_SQL_LIST, title="Technology", stretch_last_row=True, time_list_mode=True)
 
-        headers = ["log_hash", "time", "main_param", "rat"]
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "Technology",
-            system_query.get_technology_df,
-            tableHeader=headers,
-            time_list_mode=True,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        widget.tableView.setSortingEnabled(True)
-        
     @pyqtSlot()
     def on_actionGSM_WCDMA_System_Info_triggered(self):
         print("action gsm wdcma system info")
-        import system_query
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "GSM/WCDMA System Info",
-            system_query.get_gsm_wcdma_system_info_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import system_sql_query
+        self.add_param_window(system_sql_query.GSM_WCDMA_SYSTEM_INFO_SQL_LIST, title="GSM/WCDMA System Info")
 
     @pyqtSlot()
     def on_actionLTE_System_Info_triggered(self):
         print("action lte system info")
-        import system_query
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "LTE System Info",
-            system_query.get_lte_system_info_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import system_sql_query
+        self.add_param_window(system_sql_query.LTE_SYSTEM_INFO_SQL_LIST, title="LTE System Info")
 
     ############# signalling menu slots
     @pyqtSlot()
@@ -419,8 +390,6 @@ Log_hash list: {}""".format(
             self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
 
     ############# NR menu slots
-
-
     @pyqtSlot()
     def on_action5GNR_Radio_triggered(self):
         print("action nr radio params")
@@ -657,46 +626,20 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_Physical_Parameters_triggered(self):
         print("action gsm radio params")
-        import gsm_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "GSM Radio Parameters",
-            gsm_query.get_gsm_radio_params_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import gsm_sql_query
+        self.add_param_window(gsm_sql_query.GSM_RADIO_PARAMS_SQL_LIST, title="GSM Radio Parameters")
 
     @pyqtSlot()
     def on_actionGSM_Serving_Neighbors_triggered(self):
         print("action gsm serving neigh")
-        import gsm_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "GSM Serving + Neighbors",
-            gsm_query.get_gsm_serv_and_neigh__df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import gsm_sql_query
+        self.add_param_window(gsm_sql_query.GSM_SERV_AND_NEIGH_SQL_LIST_DICT, title="GSM Serving + Neighbors")
 
     @pyqtSlot()
     def on_actionGSM_Current_Channel_triggered(self):
         print("action gsm current channel")
-        import gsm_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "GSM Current Channel",
-            gsm_query.get_gsm_current_channel_disp_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        import gsm_sql_query
+        self.add_param_window(gsm_sql_query.GSM_CURRENT_CHANNEL_SQL_LIST, title="GSM Current Channel")
 
     @pyqtSlot()
     def on_actionGSM_C_I_triggered(self):
@@ -749,16 +692,8 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWiFi_Active_triggered(self):
         print("action wifi active")
-        import data_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "WiFi Active",
-            data_query.get_Wifi_active_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import data_sql_query
+        self.add_param_window(data_sql_query.WIFI_ACTIVE_SQL_LIST, title="WiFi Active")
 
     @pyqtSlot()
     def on_actionWiFi_Scan_triggered(self):
@@ -777,44 +712,20 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGPRS_EDGE_Information_triggered(self):
         print("action gprs edge info")
-        import data_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "GPRS/EDGE Information",
-            data_query.get_gprs_edge_info,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import data_sql_query
+        self.add_param_window(data_sql_query.GPRS_EDGE_SQL_LIST, title="GPRS/EDGE Information")
 
     @pyqtSlot()
     def on_actionHSDPA_Statistics_triggered(self):
         print("action hadpa statistics")
-        import data_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "HSDPA Statistics",
-            data_query.get_hsdpa_statistics,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import data_sql_query
+        self.add_param_window(data_sql_query.HSDPA_STATISTICS_SQL_LIST, title="HSDPA Statistics")
 
     @pyqtSlot()
     def on_actionHSUPA_Statistics_triggered(self):
         print("action haupa statistics")
-        import data_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "HSUPA Statistics",
-            data_query.get_hsupa_statistics,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import data_sql_query
+        self.add_param_window(data_sql_query.HSUPA_STATISTICS_SQL_LIST, title="HSUPA Statistics")
 
     ############# Line Chart NR
 

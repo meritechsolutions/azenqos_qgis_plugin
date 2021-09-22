@@ -21,9 +21,6 @@ class SortFilterProxyModel(QSortFilterProxyModel):
         # self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
-        if True:  # now we using pdtablemodel.setStrColFilters above already
-            return True
-
         print(
             "SortFilterProxyModel: filterAcceptsRow source_row: {} source_parent: {}".format(
                 source_row, source_parent

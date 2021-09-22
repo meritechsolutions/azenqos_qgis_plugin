@@ -221,13 +221,7 @@ class TableWindow(QWidget):
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
-
         self.filterHeader = FilterHeader(self.tableView)
-        """
-        if self.title in ["Signaling_Events", "Signaling_Layer 3 Messages"]:
-            self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-            self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
-        """
         self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
 
@@ -400,11 +394,13 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
         menu.addAction("Filter menu")
         selectedItem = menu.exec_(globalPos)
         if selectedItem:
-            self.horizontalHeader_sectionClicked()
+            col = self.tableView.currentIndex().column()
+            print("headermenuselected col: {}".format(col))
+            self.horizontalHeader_sectionClicked(col)
 
-    def horizontalHeader_sectionClicked(self):
-        if not self.filterMenu:
-            self.filterMenu = FilterMenuWidget(self, 1)
+    def horizontalHeader_sectionClicked(self, col):
+        print("horizontalHeader_sectionClicked col {}".format(col))
+        self.filterMenu = FilterMenuWidget(self, col)
         self.filterMenu.show()
 
         # posY = headerPos.y() + self.horizontalHeader.height()
@@ -900,10 +896,10 @@ class FilterMenuWidget(QWidget):
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         self.proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        self.proxyModel.setFilterKeyColumn(0)
+        self.proxyModel.setFilterKeyColumn(self.columnIndex)
         self.treeView.setModel(self.proxyModel)
         self.treeView.setSortingEnabled(True)
-        self.treeView.sortByColumn(0, Qt.AscendingOrder)
+        self.treeView.sortByColumn(self.columnIndex, Qt.AscendingOrder)
 
     def selectAll(self, state):
         print("filtermenuwidget: selectAll")
@@ -932,11 +928,14 @@ class FilterMenuWidget(QWidget):
 
     def closeEvent(self, QCloseEvent):
         print("filtermenuwidget: closeEvent")
+        '''
         indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
             self.gc.openedWindows.pop(index)
+        '''
         self.close()
         del self
+
 
 
 class DetailWidget(QDialog):
@@ -965,7 +964,7 @@ class DetailWidget(QDialog):
             self.setupUi()
 
     def findedit_text_changed(self):
-        substring = self.findEdit.toPlainText().strip()
+        substring = self.findEdit.text().strip()
         self.search_and_highlight(substring)
 
     def clear_selection(self):
@@ -995,7 +994,7 @@ class DetailWidget(QDialog):
             return
         first = True
         matched = False
-        for match in re.finditer(regex, self.detailText):
+        for match in re.finditer(regex, self.textEdit.toPlainText()):
             matched = True
             cursor = self.textEdit.textCursor()
             # Select the matched text and apply the desired format
@@ -1028,7 +1027,7 @@ class DetailWidget(QDialog):
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
             """
         self.textEdit.setStyleSheet(self.text_style)
-        self.findEdit = QTextEdit()
+        self.findEdit = QLineEdit()
         self.findEdit.setPlaceholderText("Search")
         self.findEdit.setStyleSheet(self.text_style)
         self.findEdit.setMaximumHeight(25)

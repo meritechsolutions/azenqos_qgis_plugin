@@ -1004,6 +1004,8 @@ class DetailWidget(QDialog):
             cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
             cursor.mergeCharFormat(format)
             if first:
+                cursor = self.textEdit.textCursor()
+                cursor.setPosition(match.start())
                 self.textEdit.setTextCursor(cursor)  # move to first match
 
             first = False

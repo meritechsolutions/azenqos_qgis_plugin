@@ -644,16 +644,8 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_C_I_triggered(self):
         print("action gsm coi")
-        import gsm_query
-
-        swa = SubWindowArea(self.mdi, self.gc)
-        widget = TableWindow(
-            swa,
-            "GSM C/I",
-            gsm_query.get_coi_df,
-            func_key=inspect.currentframe().f_code.co_name,
-        )
-        self.add_subwindow_with_widget(swa, widget)
+        import gsm_sql_query
+        self.add_param_window(gsm_sql_query.GSM_COI_SQL_LIST_DICT, title="GSM C/I")
 
     ############# PCAP menu slots
 

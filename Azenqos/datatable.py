@@ -1,5 +1,6 @@
 import csv
 import os
+import re
 import shutil
 import sqlite3
 import contextlib
@@ -10,6 +11,7 @@ import uuid
 
 import pandas as pd
 import numpy as np
+import regex
 
 from PyQt5.QtCore import (
     pyqtSignal,
@@ -976,7 +978,6 @@ class DetailWidget(QDialog):
 
     def move_to_top(self):
         # Process the displayed document
-        print("mtt")
         cursor = self.textEdit.textCursor()
         cursor.setPosition(0)
         cursor.movePosition(QtGui.QTextCursor.Start)
@@ -984,29 +985,31 @@ class DetailWidget(QDialog):
 
     def search_and_highlight(self, substring):
         format = QtGui.QTextCharFormat()
-        format.setBackground(QtGui.QBrush(QtGui.QColor("yellow")))
+        format.setBackground(QtGui.QBrush(QtGui.QColor("lightgreen")))
         # Setup the regex engine
         pattern = substring
-        regex = QtCore.QRegExp(pattern)
+        regex = re.compile(substring, flags=re.IGNORECASE)
         self.clear_selection()
-        if not substring or regex.indexIn(self.detailText, 0) < 0:
+        if not substring:
             self.move_to_top()
             return
-        pos = 0
-        while True:
-            index = regex.indexIn(self.detailText, pos)
-            if index < 0:
-                break
+        first = True
+        matched = False
+        for match in re.finditer(regex, self.detailText):
+            matched = True
             cursor = self.textEdit.textCursor()
             # Select the matched text and apply the desired format
-            cursor.setPosition(index)
-            if pos == 0:
-                self.textEdit.setTextCursor(cursor) # move to first match
-            cursor.movePosition(QtGui.QTextCursor.EndOfWord, 1)
+            print("match {} {}".format(match.start(), match.end()))
+            cursor.setPosition(match.start())
+            cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
             cursor.mergeCharFormat(format)
-            # Move to the next match
-            print("regex.matchedLength():", regex.matchedLength())
-            pos = index + regex.matchedLength()
+            if first:
+                self.textEdit.setTextCursor(cursor)  # move to first match
+
+            first = False
+        if not matched:
+            self.move_to_top()
+
 
 
     def setupUi(self):

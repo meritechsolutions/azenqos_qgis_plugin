@@ -18,6 +18,7 @@ from PyQt5.QtCore import (
     QSortFilterProxyModel,
     QAbstractTableModel,
 )
+import PyQt5.QtGui as QtGui
 from PyQt5.QtGui import QStandardItemModel, QIcon, QPixmap, QStandardItem
 from PyQt5.QtWidgets import (
     QWidget,
@@ -922,6 +923,50 @@ class DetailWidget(QDialog):
         else:
             self.setupUi()
 
+    def findedit_text_changed(self):
+        substring = self.findEdit.toPlainText().strip()
+        self.search_and_highlight(substring)
+
+    def clear_selection(self):
+        # Process the displayed document
+        cursor = self.textEdit.textCursor()
+        cursor.select(QtGui.QTextCursor.Document)
+        cursor.setCharFormat(QtGui.QTextCharFormat())
+        cursor.clearSelection()
+        #self.textEdit.setTextCursor(cursor)
+
+    def move_to_top(self):
+        # Process the displayed document
+        cursor = self.textEdit.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.Start)
+
+    def search_and_highlight(self, substring):
+        format = QtGui.QTextCharFormat()
+        format.setBackground(QtGui.QBrush(QtGui.QColor("yellow")))
+        # Setup the regex engine
+        pattern = substring
+        regex = QtCore.QRegExp(pattern)
+        self.clear_selection()
+        if not substring:
+            self.move_to_top()
+            return
+        pos = 0
+        while True:
+            index = regex.indexIn(self.detailText, pos)
+            if index < 0:
+                break
+            cursor = self.textEdit.textCursor()
+            # Select the matched text and apply the desired format
+            cursor.setPosition(index)
+            if pos == 0:
+                self.textEdit.setTextCursor(cursor) # move to first match
+            cursor.movePosition(QtGui.QTextCursor.EndOfWord, 1)
+            cursor.mergeCharFormat(format)
+            # Move to the next match
+            print("regex.matchedLength():", regex.matchedLength())
+            pos = index + regex.matchedLength()
+
+
     def setupUi(self):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
@@ -929,15 +974,21 @@ class DetailWidget(QDialog):
         self.textEdit = QTextEdit()
         self.textEdit.setPlainText(self.detailText)
         self.textEdit.setReadOnly(True)
-        self.textEdit.setStyleSheet(
-            """
+        self.text_style = """
             * {
             font-size: 11px;
             }
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
             """
-        )
+        self.textEdit.setStyleSheet(self.text_style)
+        self.findEdit = QTextEdit()
+        self.findEdit.setPlaceholderText("Search")
+        self.findEdit.setStyleSheet(self.text_style)
+        self.findEdit.setMaximumHeight(25)
+        self.findEdit.textChanged.connect(self.findedit_text_changed)
         layout = QVBoxLayout(self)
+
+        layout.addWidget(self.findEdit)
         layout.addWidget(self.textEdit)
         self.setLayout(layout)
         self.show()

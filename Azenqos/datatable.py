@@ -976,8 +976,11 @@ class DetailWidget(QDialog):
 
     def move_to_top(self):
         # Process the displayed document
+        print("mtt")
         cursor = self.textEdit.textCursor()
+        cursor.setPosition(0)
         cursor.movePosition(QtGui.QTextCursor.Start)
+        self.textEdit.setTextCursor(cursor)
 
     def search_and_highlight(self, substring):
         format = QtGui.QTextCharFormat()
@@ -986,7 +989,7 @@ class DetailWidget(QDialog):
         pattern = substring
         regex = QtCore.QRegExp(pattern)
         self.clear_selection()
-        if not substring:
+        if not substring or regex.indexIn(self.detailText, 0) < 0:
             self.move_to_top()
             return
         pos = 0

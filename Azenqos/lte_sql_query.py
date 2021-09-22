@@ -431,10 +431,8 @@ LTE_VOLTE_SQL_LIST = [
     lte_volte_rtp_round_trip_time as 'RTCP Round trip time (ms.)',
     'RTCP SR Params - Jitter DL:',
     lte_volte_rtp_jitter_dl as 'RTCP SR Jitter DL (ts unit)',
-    lte_volte_rtp_jitter_dl_millis as 'RTCP SR Jitter DL (ms.)',
     'RTCP SR Params - Jitter UL:',
     lte_volte_rtp_jitter_ul as 'RTCP SR Jitter UL (ts unit)',
-    lte_volte_rtp_jitter_ul_millis as 'RTCP SR Jitter UL (ms.)',
     'RTCP SR Params - Packet loss rate:',
     lte_volte_rtp_packet_loss_rate_dl as 'RTCP SR Packet loss DL (%)',
     lte_volte_rtp_packet_loss_rate_ul as 'RTCP SR Packet loss UL (%)' 

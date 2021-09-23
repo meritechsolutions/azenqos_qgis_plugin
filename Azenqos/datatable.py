@@ -58,7 +58,7 @@ import qgis_layers_gen
 import sql_utils
 import preprocess_azm
 
-
+SEARCH_PLACEHOLDER_TEXT = "Search regex: a|b means a or b"
 DEFAULT_TABLE_WINDOW_OPTIONS_DICT_KEYS = (
     "time_list_mode",
     "list_module",
@@ -845,7 +845,7 @@ class FilterMenuWidget(QWidget):
 
         self.searchBox = QLineEdit(FilterMenuWidget)
         self.searchBox.setFixedHeight(24)
-        self.searchBox.setPlaceholderText("Search...")
+        self.searchBox.setPlaceholderText(SEARCH_PLACEHOLDER_TEXT)
         self.verticalLayout.addWidget(self.searchBox)
 
         self.treeView = QTreeView(FilterMenuWidget)
@@ -992,45 +992,50 @@ class DetailWidget(QDialog):
         cursor.movePosition(QtGui.QTextCursor.Start)
         self.textEdit.setTextCursor(cursor)
 
-    def search_and_highlight(self, substring, next_match=False):
-        format = QtGui.QTextCharFormat()
-        format.setBackground(QtGui.QBrush(QtGui.QColor(255,255,0)))
-        # Setup the regex engine
-        pattern = substring
-        regex = re.compile(substring, flags=re.IGNORECASE)
-        self.clear_selection()
-        if not substring:
-            self.move_to_top()
-            return
-        matched = False
-        n = 0
-        print("next_match: {}".format(next_match))
-        matches = list(re.finditer(regex, self.textEdit.toPlainText()))
-        if next_match == False:
-            self.nth_match = 0
-        else:
-            self.nth_match = (self.nth_match+1) if (self.nth_match < len(matches)-1) else 0
-        print("self.nth_match: {}".format(self.nth_match))
-        for match in matches:
-            matched = True
-            cursor = self.textEdit.textCursor()
-            # Select the matched text and apply the desired format
-            #print("match {} {}".format(match.start(), match.end()))
-            cursor.setPosition(match.start())
-            cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
-            cursor.mergeCharFormat(format)
-            if n == self.nth_match:
-                cursor = self.textEdit.textCursor()
-                cursor.setPosition(match.start())
-                self.textEdit.setTextCursor(cursor)  # move to first match
-                cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
-                selected_format = QtGui.QTextCharFormat()
-                selected_format.setFontUnderline(True)
-                cursor.mergeCharFormat(selected_format)
-            n += 1
-        if not matched:
-            self.move_to_top()
 
+    def search_and_highlight(self, substring, next_match=False):
+        try:
+            format = QtGui.QTextCharFormat()
+            format.setBackground(QtGui.QBrush(QtGui.QColor(255,255,0)))
+            # Setup the regex engine
+            pattern = substring
+            regex = re.compile(substring, flags=re.IGNORECASE)
+            self.clear_selection()
+            if not substring:
+                self.move_to_top()
+                return
+            matched = False
+            n = 0
+            print("next_match: {}".format(next_match))
+            matches = list(re.finditer(regex, self.textEdit.toPlainText()))
+            if next_match == False:
+                self.nth_match = 0
+            else:
+                self.nth_match = (self.nth_match+1) if (self.nth_match < len(matches)-1) else 0
+            print("self.nth_match: {}".format(self.nth_match))
+            for match in matches:
+                matched = True
+                cursor = self.textEdit.textCursor()
+                # Select the matched text and apply the desired format
+                #print("match {} {}".format(match.start(), match.end()))
+                cursor.setPosition(match.start())
+                cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
+                cursor.mergeCharFormat(format)
+                if n == self.nth_match:
+                    cursor = self.textEdit.textCursor()
+                    cursor.setPosition(match.start())
+                    self.textEdit.setTextCursor(cursor)  # move to first match
+                    cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
+                    selected_format = QtGui.QTextCharFormat()
+                    selected_format.setFontUnderline(True)
+                    cursor.mergeCharFormat(selected_format)
+                n += 1
+            if not matched:
+                self.move_to_top()
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: detailwidget search_and_highlight() exception: {}".format(exstr))
 
 
     def setupUi(self):
@@ -1048,13 +1053,12 @@ class DetailWidget(QDialog):
             """
         self.textEdit.setStyleSheet(self.text_style)
         self.findEdit = QLineEdit()
-        self.findEdit.setPlaceholderText("Search")
+        self.findEdit.setPlaceholderText(SEARCH_PLACEHOLDER_TEXT)
         self.findEdit.setStyleSheet(self.text_style)
         self.findEdit.setMaximumHeight(25)
         self.findEdit.textChanged.connect(self.findedit_text_changed)
         self.findEdit.returnPressed.connect(self.findedit_text_next)
         layout = QVBoxLayout(self)
-
         layout.addWidget(self.findEdit)
         layout.addWidget(self.textEdit)
         self.setLayout(layout)

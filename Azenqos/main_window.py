@@ -114,6 +114,7 @@ class main_window(QMainWindow):
         self.closed = False
         self.gc = analyzer_vars.analyzer_vars()
         self.gc.qgis_iface = qgis_iface
+        self.gc.main_window = self
         self.timechange_service_thread = None
         self.is_legacy_indoor = False
         self.timechange_to_service_counter = atomic_int(0)

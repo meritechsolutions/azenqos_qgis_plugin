@@ -48,6 +48,7 @@ class analyzer_vars:
     selected_point_match_dict = dict.fromkeys(SELECTED_POINT_MATCH_PARAMS)
 
     sliderLength = 0
+    main_window = None
     openedWindows = []
     timeSlider = None
     isSliderPlay = False

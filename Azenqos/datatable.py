@@ -8,6 +8,8 @@ import sys
 import threading
 import traceback
 import uuid
+import signal
+signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
 import pandas as pd
 import numpy as np
@@ -156,6 +158,7 @@ class TableWindow(QWidget):
         self.find_row_log_hash = None
         self.tableViewCount = 0
         self.parentWindow = parent
+        self.parent = parent
         self.filterList = None
         self.filterMenu = None
         self.signal_ui_thread_emit_model_datachanged.connect(
@@ -685,7 +688,7 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
             side = row_sr["dir"]
             protocol = row_sr["protocol"]
             self.detailWidget = DetailWidget(
-                self.gc, parentWindow, cellContent, name, side, protocol
+                self.gc, self, cellContent, name, side, protocol
             )
         elif 'name' in row_sr.index and row_sr["name"].find("MOS Score") != -1:
             name = row_sr["name"]
@@ -698,14 +701,14 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                 row_sr["wave_file"].replace(".wav", "_polqa.txt"),
             )
             self.detailWidget = DetailWidget(
-                self.gc, parentWindow, cellContent, name, side
+                self.gc, self, cellContent, name, side
             )
         elif self.list_module:
             import module_dialog
             dlg = module_dialog.module_dialog(self, row_sr, self.gc, self.mdi)
             dlg.show()
         else:
-            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
+            self.detailWidget = DetailWidget(self.gc, self, cellContent)
         """
         print("showdetail self.tablename {}".format(self.tablename))
         if self.tablename == "signalling":
@@ -938,13 +941,13 @@ class FilterMenuWidget(QWidget):
 
 
 
-class DetailWidget(QDialog):
-    closed = False
+class DetailWidget(QDialog):    
 
     def __init__(
         self, gc, parent, detailText, messageName=None, side=None, protocol=None
     ):
         super().__init__(None)
+        self.closed = False
         self.title = "Details"
         self.gc = gc
         self.detailText = detailText
@@ -955,6 +958,7 @@ class DetailWidget(QDialog):
         self.left = 10
         self.top = 10
         self.parent = parent
+        print("detailwidget self.parent", self.parent)
         self.width = 640
         self.height = 480
         self.setWindowFlags(QtCore.Qt.Window)
@@ -1005,7 +1009,7 @@ class DetailWidget(QDialog):
         if next_match == False:
             self.nth_match = 0
         else:
-            self.nth_match += 1 if (self.nth_match < len(matches)-1) else 0
+            self.nth_match = (self.nth_match+1) if (self.nth_match < len(matches)-1) else 0
         print("self.nth_match: {}".format(self.nth_match))
         for match in matches:
             matched = True
@@ -1054,9 +1058,23 @@ class DetailWidget(QDialog):
         layout.addWidget(self.findEdit)
         layout.addWidget(self.textEdit)
         self.setLayout(layout)
+
+        try:
+            import main_window
+            window_geom = self.gc.main_window.current_workspace_settings.value(                
+                main_window.GUI_SETTING_NAME_PREFIX + "detail_widget_geom"
+            )
+            if window_geom:                
+                self.restoreGeometry(window_geom)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: detailwidget restoregeom failed - exception: {}".format(exstr))
+        
         self.show()
-        self.raise_()
-        self.activateWindow()
+        #self.raise_()
+        #self.activateWindow()
+        
         if (
             None not in [self.messageName, self.side, self.protocol]
             and "msg_raw_hex:" in self.detailText
@@ -1069,12 +1087,22 @@ class DetailWidget(QDialog):
             self.gc.threadpool.start(worker)
         # messageName is not None and side is not None and protocol is not None :
 
+        
     def closeEvent(self, QCloseEvent):
-        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
-        for index in indices:
-            self.gc.openedWindows.pop(index)
+        try:
+            import main_window
+            self.gc.main_window.current_workspace_settings.setValue(
+                
+                main_window.GUI_SETTING_NAME_PREFIX + "detail_widget_geom", self.saveGeometry()
+            )
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: closeevent savegeom failed - exception: {}".format(exstr))
         self.close()
+        self.closed = True
         del self
+        
 
     def setDecodedDetail(self, detail):
         if self.closed == False:

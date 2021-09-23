@@ -1,19 +1,19 @@
+import contextlib
 import csv
 import os
 import re
 import shutil
+import signal
 import sqlite3
-import contextlib
 import sys
 import threading
 import traceback
 import uuid
-import signal
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
 import pandas as pd
 import numpy as np
-import regex
 
 from PyQt5.QtCore import (
     pyqtSignal,
@@ -678,11 +678,10 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
         cellContent = ""
         for index, val in row_sr.items():
             cellContent += "[{}]: {}\n".format(index, val)
-        parentWindow = None
         if self.parentWindow:
             self.parentWindow.parentWidget()
         else:
-            parentWindow = self
+            pass
         if 'name' in row_sr.index and 'dir' in row_sr.index and 'protocol' in row_sr.index:
             name = row_sr["name"]
             side = row_sr["dir"]
@@ -998,7 +997,6 @@ class DetailWidget(QDialog):
             format = QtGui.QTextCharFormat()
             format.setBackground(QtGui.QBrush(QtGui.QColor(255,255,0)))
             # Setup the regex engine
-            pattern = substring
             regex = re.compile(substring, flags=re.IGNORECASE)
             self.clear_selection()
             if not substring:

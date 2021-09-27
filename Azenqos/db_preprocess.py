@@ -353,6 +353,7 @@ def prepare_spatialite_views(dbcon):
         geomBlob[59] = 0xfe
         return geomBlob
 
+    df_indoor_location = pd.read_sql_query("select count(log_hash) as row_count from indoor_location", dbcon)
     if len(df_posids_indoor_start) > 0:
         try:
             sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"
@@ -361,10 +362,11 @@ def prepare_spatialite_views(dbcon):
         except:
             pass
         try:
-            sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
-            print("copy indoor_location lat lon to location: %s" % sqlstr)
-            dbcon.execute(sqlstr)
-            dbcon.commit()
+            if df_indoor_location.row_count > 0: 
+                sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
+                print("copy indoor_location lat lon to location: %s" % sqlstr)
+                dbcon.execute(sqlstr)
+                dbcon.commit()
         except:
             pass
         for log_hash, posid in gps_cancel_list:

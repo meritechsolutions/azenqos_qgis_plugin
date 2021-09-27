@@ -719,6 +719,39 @@ Log_hash list: {}""".format(
         print("action haupa statistics")
         import data_sql_query
         self.add_param_window(data_sql_query.HSUPA_STATISTICS_SQL_LIST, title="HSUPA Statistics")
+    
+    ############# Legacy Session menu slots
+
+    @pyqtSlot()
+    def on_actiondatasession_triggered(self):
+        print("action data session")
+        self.add_param_window("pd.read_sql('''select * from datasession''',dbcon)", title="datasession", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionline_mo_triggered(self):
+        print("action line session")
+        self.add_param_window("pd.read_sql('''select * from line_mo''',dbcon)", title="line_mo", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionpingsession_triggered(self):
+        print("action ping session")
+        self.add_param_window("pd.read_sql('''select * from pingsession''',dbcon)", title="pingsession", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionspeedtestsession_triggered(self):
+        print("action speedtest session")
+        self.add_param_window("pd.read_sql('''select * from speedtestsession''',dbcon)", title="speedtestsession", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionyoutube_triggered(self):
+        print("action youtube session")
+        self.add_param_window("pd.read_sql('''select * from youtube''',dbcon)", title="youtube", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionyoutube_buffer_duration_triggered(self):
+        print("action youtube buffer duration session")
+        self.add_param_window("pd.read_sql('''select * from youtube_buffer_duration''',dbcon)", title="youtube_buffer_duration", time_list_mode=True)
+
 
     ############# Line Chart NR
 

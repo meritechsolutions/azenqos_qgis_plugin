@@ -180,6 +180,23 @@
      </property>
      <addaction name="actionExynosServiceMode_BasicInfo_2"/>
     </widget>
+    <widget class="QMenu" name="menuSession">
+     <property name="title">
+      <string>Session</string>
+     </property>
+     <addaction name="actionPing"/>
+    </widget>
+    <widget class="QMenu" name="menuLegacy_Session">
+     <property name="title">
+      <string>Legacy Session</string>
+     </property>
+     <addaction name="actiondatasession"/>
+     <addaction name="actionline_mo"/>
+     <addaction name="actionpingsession"/>
+     <addaction name="actionspeedtestsession"/>
+     <addaction name="actionyoutube"/>
+     <addaction name="actionyoutube_buffer_duration"/>
+    </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
@@ -191,6 +208,8 @@
     <addaction name="actionPCAP"/>
     <addaction name="menuCustom_Windows"/>
     <addaction name="menuMisc"/>
+    <addaction name="menuSession"/>
+    <addaction name="menuLegacy_Session"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -593,6 +612,41 @@
   <action name="actionExynosServiceMode_BasicInfo_2">
    <property name="text">
     <string>ExynosServiceMode BasicInfo</string>
+   </property>
+  </action>
+  <action name="actionPing">
+   <property name="text">
+    <string>Ping</string>
+   </property>
+  </action>
+  <action name="actionspeedtestsession">
+   <property name="text">
+    <string>speedtestsession</string>
+   </property>
+  </action>
+  <action name="actionyoutube_buffer_duration">
+   <property name="text">
+    <string>youtube_buffer_duration</string>
+   </property>
+  </action>
+  <action name="actionyoutube">
+   <property name="text">
+    <string>youtube</string>
+   </property>
+  </action>
+  <action name="actionline_mo">
+   <property name="text">
+    <string>line_mo</string>
+   </property>
+  </action>
+  <action name="actiondatasession">
+   <property name="text">
+    <string>datasession</string>
+   </property>
+  </action>
+  <action name="actionpingsession">
+   <property name="text">
+    <string>pingsession</string>
    </property>
   </action>
  </widget>

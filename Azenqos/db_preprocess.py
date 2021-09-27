@@ -354,8 +354,10 @@ def prepare_spatialite_views(dbcon):
         geomBlob[51:51+8] = by 
         geomBlob[59] = 0xfe
         return geomBlob
-
-    df_indoor_location = pd.read_sql_query("select count(log_hash) as row_count from indoor_location", dbcon)
+    try:
+        df_indoor_location = pd.read_sql_query("select count(log_hash) as row_count from indoor_location", dbcon)
+    except:
+        pass
     if len(df_posids_indoor_start) > 0:
         try:
             sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"

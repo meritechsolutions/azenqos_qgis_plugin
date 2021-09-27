@@ -102,7 +102,7 @@ def prepare_spatialite_views(dbcon):
         dbcon,
     )
     df_location_posid_time = pd.read_sql(
-        "select log_hash, posid, time from location",
+        "select log_hash, posid, time from location where positioning_lat is not null",
         dbcon,
     )
     gps_cancel_list = []
@@ -110,6 +110,8 @@ def prepare_spatialite_views(dbcon):
         posid = df_location_posid_time.loc[(df_location_posid_time.log_hash == row.log_hash) & (df_location_posid_time.time <= row.time), "posid"].max()
         df_location_posid_time = df_location_posid_time.loc[df_location_posid_time.posid != posid]
         gps_cancel_list.append((row.log_hash, posid+1))
+
+    # gps_cancel_list = []
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
@@ -448,7 +450,7 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
     indoor_location_df_interpolated = df_location[
         ["log_hash", "time", "positioning_lat", "positioning_lon"]].copy()
     indoor_location_df_interpolated = azq_utils.resample_per_log_hash_time(indoor_location_df_interpolated,
-                                                                           "100ms")
+                                                                           "100ms", use_last=True)
     cols = ["positioning_lat", "positioning_lon"]
     azq_utils.set_none_to_repetetive_rows(indoor_location_df_interpolated, cols)
     indoor_location_df_interpolated = indoor_location_df_interpolated.dropna(subset=["time"])

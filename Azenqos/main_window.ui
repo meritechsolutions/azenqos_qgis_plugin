@@ -241,8 +241,6 @@
      <addaction name="actionVideo"/>
      <addaction name="actionNperf_Test"/>
     </widget>
-    <addaction name="menuSession_1"/>
-    <addaction name="menuSession_2"/>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
@@ -254,6 +252,8 @@
     <addaction name="actionPCAP"/>
     <addaction name="menuCustom_Windows"/>
     <addaction name="menuMisc"/>
+    <addaction name="menuSession_1"/>
+    <addaction name="menuSession_2"/>
     <addaction name="menuLegacy_Session"/>
    </widget>
    <widget class="QMenu" name="menuWindows">

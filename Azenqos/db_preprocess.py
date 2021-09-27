@@ -354,8 +354,9 @@ def prepare_spatialite_views(dbcon):
         geomBlob[51:51+8] = by 
         geomBlob[59] = 0xfe
         return geomBlob
+    df_indoor_location = None
     try:
-        df_indoor_location = pd.read_sql_query("select count(log_hash) as row_count from indoor_location", dbcon)
+        df_indoor_location = pd.read_sql_query("select * from indoor_location", dbcon)
     except:
         pass
     if len(df_posids_indoor_start) > 0:
@@ -366,7 +367,7 @@ def prepare_spatialite_views(dbcon):
         except:
             pass
         try:
-            if df_indoor_location.row_count > 0: 
+            if df_indoor_location is not None and len(df_indoor_location) > 0: 
                 sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
                 print("copy indoor_location lat lon to location: %s" % sqlstr)
                 dbcon.execute(sqlstr)

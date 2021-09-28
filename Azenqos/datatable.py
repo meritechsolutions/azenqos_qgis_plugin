@@ -580,7 +580,10 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                         df = df.loc[:,~df.columns.duplicated()]
                     else:
                         print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))
-                        df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
+                        if self.title.lower() == "pcap":
+                            df = self.refresh_data_from_dbcon_and_time_func
+                        else:
+                            df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
                     assert df is not None
                     assert isinstance(df, pd.DataFrame)
                     print("datatable refersh param view got df:\n", df.head())

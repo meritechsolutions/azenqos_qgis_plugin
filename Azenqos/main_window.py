@@ -1552,10 +1552,8 @@ Log_hash list: {}""".format(
                 print("layer.name()", layer.name())
                 # Loop through all features in a rect near point xy
                 offset = 0.000180
-                distance_offset = 0.001
                 if self.is_legacy_indoor:
-                    offset = 0.1
-                    distance_offset = 0.05
+                    offset = 0.01
                 p1 = QgsPointXY(point.x() - offset, point.y() - offset)
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
@@ -2307,6 +2305,8 @@ Log_hash list: {}""".format(
                         ne_lat = indoor_bg_df["indoor_{}_img_north_east_lat".format(map_type)][0]
                         se_lon = indoor_bg_df["indoor_{}_img_south_east_lon".format(map_type)][0]
                         se_lat = indoor_bg_df["indoor_{}_img_south_east_lat".format(map_type)][0]
+                    else:
+                        self.is_legacy_indoor = True
                 except:
                     self.is_legacy_indoor = True
 

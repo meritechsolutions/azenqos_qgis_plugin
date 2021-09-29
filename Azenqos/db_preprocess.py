@@ -13,7 +13,7 @@ import preprocess_azm
 
 elm_table_main_col_types = {
     "log_hash": "BIGINT",
-    "time": "DATETIME",
+    "time": "TEXT",
     "seqid": "INT",
     "posid": "INT",
     "geom": "BLOB",

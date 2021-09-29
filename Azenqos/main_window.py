@@ -353,7 +353,7 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionLocation_triggered(self):
-        self.add_param_window("pd.read_sql('''select log_hash, time, printf('%.8f', positioning_lat) as latitude, printf('%.8f', positioning_lon) as longitude from location''',dbcon)", title="Location", time_list_mode=True)
+        self.add_param_window("pd.read_sql('''select log_hash, time, printf('%.8f', positioning_lat) as latitude, printf('%.8f', positioning_lon) as longitude from location where positioning_lat is not null''',dbcon)", title="Location", time_list_mode=True)
 
     ############# system menu slots
     @pyqtSlot()

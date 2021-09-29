@@ -166,6 +166,7 @@
      </property>
      <addaction name="actionLog_Info"/>
      <addaction name="actionLogs"/>
+     <addaction name="actionLocation"/>
     </widget>
     <widget class="QMenu" name="menuCustom_Windows">
      <property name="title">

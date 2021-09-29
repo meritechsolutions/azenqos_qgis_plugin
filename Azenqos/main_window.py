@@ -351,6 +351,10 @@ Log_hash list: {}""".format(
     def on_actionLogs_triggered(self):
         self.add_param_window("pd.read_sql('''select log_hash, time, log_start_time, log_end_time, log_tag, log_ori_file_name, log_app_version, log_license_edition, log_required_pc_version, log_timezone_offset from logs group by log_hash''',dbcon)", title="Logs", time_list_mode=True)
 
+    @pyqtSlot()
+    def on_actionLocation_triggered(self):
+        self.add_param_window("pd.read_sql('''select log_hash, time, printf('%.8f', positioning_lat) as latitude, printf('%.8f', positioning_lon) as longitude from location''',dbcon)", title="Location", time_list_mode=True)
+
     ############# system menu slots
     @pyqtSlot()
     def on_actionTechnology_triggered(self):

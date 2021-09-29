@@ -909,6 +909,11 @@
     <string>Instagram Download Photo</string>
    </property>
   </action>
+  <action name="actionLocation">
+   <property name="text">
+    <string>Location</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

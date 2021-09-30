@@ -209,12 +209,13 @@
     <property name="title">
      <string>Server modules</string>
     </property>
+    <addaction name="actionLogin"/>
+    <addaction name="actionServer_overview_layers"/>
     <addaction name="actionRun_server_modules"/>
     <addaction name="actionRun_PY_EVAL_code"/>
     <addaction name="actionRun_SQL_code"/>
     <addaction name="separator"/>
     <addaction name="actionSession_info"/>
-    <addaction name="actionLogin"/>
     <addaction name="actionLogout"/>
    </widget>
    <addaction name="menuFile"/>
@@ -357,17 +358,17 @@
   </action>
   <action name="actionRun_server_modules">
    <property name="text">
-    <string>Run server calculation modules...</string>
+    <string>Run server calculation modules</string>
    </property>
   </action>
   <action name="actionRun_PY_EVAL_code">
    <property name="text">
-    <string>Run PY_EVAL module code...</string>
+    <string>Run PY_EVAL module code</string>
    </property>
   </action>
   <action name="actionRun_SQL_code">
    <property name="text">
-    <string>Run SQL code...</string>
+    <string>Run SQL code</string>
    </property>
   </action>
   <action name="actionLogin">
@@ -382,7 +383,7 @@
   </action>
   <action name="actionSession_info">
    <property name="text">
-    <string>Session info...</string>
+    <string>Session info</string>
    </property>
   </action>
   <action name="actionLTE_Line_Chart">
@@ -593,6 +594,11 @@
   <action name="actionExynosServiceMode_BasicInfo_2">
    <property name="text">
     <string>ExynosServiceMode BasicInfo</string>
+   </property>
+  </action>
+  <action name="actionServer_overview_layers">
+   <property name="text">
+    <string>Server overview layers</string>
    </property>
   </action>
  </widget>

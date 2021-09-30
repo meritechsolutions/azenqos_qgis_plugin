@@ -152,7 +152,7 @@ class main_window(QMainWindow):
 
         self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
         self.timechange_service_thread.start()
-        self.resize(1024,768)
+        self.setMinimumSize(50, 50)
         azq_utils.adb_kill_server_threaded()  # otherwise cant update plugin as adb files would be locked
         print("main_window __init__() done")
 
@@ -268,6 +268,18 @@ Log_hash list: {}""".format(
             self.gc.login_dialog.token = None
         qt_utils.msgbox(msg, parent=self)
 
+
+    @pyqtSlot()
+    def on_actionServer_overview_layers_triggered(self):
+        if not self.is_logged_in():
+            qt_utils.msgbox("Please login to server first...", parent=self)
+            return
+        import server_overview_widget
+        swa = SubWindowArea(self.mdi, self.gc)
+        widget = server_overview_widget.server_overview_widget(self, self.gc)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
+
+
     @pyqtSlot()
     def on_actionRun_server_modules_triggered(self):
         if not self.is_logged_in():
@@ -340,7 +352,7 @@ Log_hash list: {}""".format(
             self.add_subwindow_with_widget(swa, widget)
 
     def is_logged_in(self):
-        return self.gc.login_dialog and self.gc.login_dialog.token
+        return self.gc.is_logged_in()
 
     ############# log menu slots
     @pyqtSlot()
@@ -916,17 +928,22 @@ Log_hash list: {}""".format(
         linechart_window.open()
         linechart_window.setWindowTitle("GSM Data Line Chart")
 
-    def add_subwindow_with_widget(self, swa, widget, w=280, h=250):
-        if self.gc.db_fp is None or os.path.isfile(self.gc.db_fp) == False:
-            qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
-            return False
+
+    def add_subwindow_with_widget(self, swa, widget, w=280, h=250, allow_no_log_opened=False):
+        if allow_no_log_opened == False:
+            if self.gc.db_fp is None or os.path.isfile(self.gc.db_fp) == False:
+                qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
+                return False
         swa.setWidget(widget)
         self.mdi.addSubWindow(swa)
-        swa.resize(w, h)
+        if w and h:
+            swa.resize(w, h)
         swa.show()
         self.gc.openedWindows.append(widget)
         return True
 
+    def status(self, msg):
+        self.ui.statusbar.showMessage(msg)
 
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_module_fp("main_window.ui"), self)
@@ -1074,8 +1091,8 @@ Log_hash list: {}""".format(
             print("WARNING: setupUi failed - exception: {}".format(exstr))
 
     def setupToolBar(self):
-        self.toolbar.setFloatable(False)
-        self.toolbar.setMovable(False)
+        self.toolbar.setFloatable(True)
+        self.toolbar.setMovable(True)
         self.toolbar.addWidget(self.importDatabaseBtn)
         self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.maptool)
@@ -1967,11 +1984,17 @@ Log_hash list: {}""".format(
 
 
     def add_map_layer(self):
+        layers_names = []
+        for layer in QgsProject.instance().mapLayers().values():
+            layers_names.append(layer.name())
+        map_layer_name = "OSM"
+        if map_layer_name in layers_names:
+            return  # no need to add
         urlWithParams = (
             "type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
         )
         from qgis._core import QgsRasterLayer
-        rlayer = QgsRasterLayer(urlWithParams, "OSM", "wms")
+        rlayer = QgsRasterLayer(urlWithParams, map_layer_name, "wms")
         if rlayer.isValid():
             QgsProject.instance().addMapLayer(rlayer)
         else:

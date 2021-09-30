@@ -63,6 +63,66 @@ def api_create_process(server, token, lhl, azq_report_gen_expression):
     return resp_dict
 
 
+def api_overview_db_list(server, token):
+    resp = call_api_get_resp(server, token, "livegen_api/overview_db_list", {})
+    assert "list" in resp
+    return resp["list"]
+
+
+def api_overview_db_df(server, token):
+    dbl = api_overview_db_list(server, token)
+    df = pd.DataFrame()
+    dbsr = pd.Series(dbl)
+    df["fn"] = dbsr
+    df["y"] = dbsr.str.extract('overview_(\d+)_\d+_bin_\d+_secs.db', expand=False)
+    df["m"] = dbsr.str.extract('overview_\d+_(\d+)_bin_\d+_secs.db', expand=False)
+    df["bin"] = dbsr.str.extract('overview_\d+_\d+_bin_(\d+)_secs.db',expand=False)
+    return df
+
+
+def api_overview_db_download(server, token, target_fp, overview_mode_params_dict):
+    body_dict = overview_mode_params_dict
+    ret_fp = call_api_get_resp(server, token, "livegen_api/overview_db", body_dict, resp_content_to_fp=target_fp)
+    return ret_fp
+
+
+def call_api_get_resp(server, token, path, body_dict, method='post', resp_content_to_fp=None):
+    host = urlparse(server).netloc
+    url = "https://{}/{}".format(host, path)
+    headers={"Authorization": "Bearer {}".format(token),}
+    resp = None
+    if method == "post":
+        resp = requests.post(
+            url,
+            headers=headers,
+            json=body_dict,
+            verify=False,
+        )
+    elif method == "get":
+        assert not body_dict
+        resp = requests.get(
+            url,
+            headers=headers,
+            verify=False,
+        )
+    else:
+        raise Exception("unsupported method: {}".format(method))
+    if resp.status_code != 200:
+        raise Exception(
+            "Got failed status_code: {} resp.text: {}".format(
+                resp.status_code, resp.text,
+            )
+        )
+    if resp_content_to_fp:
+        with open(resp_content_to_fp, "wb") as f:
+            f.write(resp.content)
+        assert os.path.isfile(resp_content_to_fp)
+        return resp_content_to_fp
+    else:
+        resp_dict = resp.json()
+        return resp_dict
+
+
 def api_get_process(server, token, proc_uuid):
     host = urlparse(server).netloc
     resp = requests.get(
@@ -186,6 +246,7 @@ def api_login_and_dl_db_zip(
     done_signal=None,
     on_zip_downloaded_func=None,
     download_db_zip=True,
+    overview_mode_params_dict = None, # dict
 ):
 
     try:
@@ -198,40 +259,43 @@ def api_login_and_dl_db_zip(
         signal_emit(status_update_signal, "Login success...")
         signal_emit(progress_update_signal, 10)
 
-        py_eval_ret_dict = api_py_eval_get_parsed_ret_dict(
-            server,
-            token,
-            lhl,
-            "PY_EVAL sql_helpers.read_sql('select * from logs', dbcon)"
-            if (not download_db_zip)
-            else api_dump_db_expression(),
-            progress_update_signal,
-            status_update_signal,
-        )
-        print("login py_eval_ret_dict: {}".format(py_eval_ret_dict))
+        # prepare for download db zip from server
+        azq_utils.cleanup_died_processes_tmp_folders()
+        tmp_dir = azq_utils.tmp_gen_path()
+        target_fp = os.path.join(tmp_dir, "server_db.zip")
+        if os.path.isfile(target_fp):
+            os.remove(target_fp)
+        zip_url = None
 
-        assert py_eval_ret_dict is not None
-
-        target_fp = None
-        if download_db_zip:
+        if overview_mode_params_dict:
+            signal_emit(status_update_signal, "Downloading overview db zip from server...")
+            target_fp = api_overview_db_download(server, token, target_fp, overview_mode_params_dict)
+        else:
+            py_eval_ret_dict = api_py_eval_get_parsed_ret_dict(
+                server,
+                token,
+                lhl,
+                "PY_EVAL sql_helpers.read_sql('select * from logs', dbcon)"
+                if (not download_db_zip)
+                else api_dump_db_expression(),
+                progress_update_signal,
+                status_update_signal,
+            )
+            print("login py_eval_ret_dict: {}".format(py_eval_ret_dict))
+            assert py_eval_ret_dict is not None
+            zip_url = api_relative_path_to_url(server, py_eval_ret_dict["ret_dump"])
             # check that server process succeeded
             signal_emit(status_update_signal, "Check server response for db zip...")
-            zip_url = api_relative_path_to_url(server, py_eval_ret_dict["ret_dump"])
             print("zip_url:", zip_url)
             signal_emit(progress_update_signal, 60)
-
-            # download db zip from server
-            azq_utils.cleanup_died_processes_tmp_folders()
             signal_emit(status_update_signal, "Downloading db zip from server...")
-            tmp_dir = azq_utils.tmp_gen_path()
-            target_fp = os.path.join(tmp_dir, "server_db.zip")
-            if os.path.isfile(target_fp):
-                os.remove(target_fp)
             azq_utils.download_file(zip_url, target_fp)
+
+        if download_db_zip and zip_url:
+            assert target_fp
             assert os.path.isfile(target_fp) == True
             signal_emit(progress_update_signal, 80)
             signal_emit(status_update_signal, "Download complete...")
-
             if on_zip_downloaded_func:
                 signal_emit(status_update_signal, "Processing downloaded zip/data...")
                 on_zip_downloaded_func(target_fp)

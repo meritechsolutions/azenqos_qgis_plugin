@@ -1,5 +1,7 @@
 import os
+import sys
 import threading
+import traceback
 from urllib.parse import urlparse
 
 import numpy as np
@@ -56,6 +58,7 @@ class login_dialog(QDialog):
             azq_utils.read_settings_file("prev_login_dialog_server")
         )
         self.ui.login_le.setText(azq_utils.read_settings_file("prev_login_dialog_user"))
+        self.ui.pass_le.setText(azq_utils.read_settings_file("prev_login_dialog_passwd", decrypt=True))
         self.ui.lhl_le.setText(azq_utils.read_settings_file("prev_login_dialog_lhl"))
 
     def read_ui_input_to_vars(self):
@@ -89,22 +92,36 @@ class login_dialog(QDialog):
         print("login_dialog: accept()")
         if self.validate():
             if self.login_thread is None or (self.login_thread.is_alive() == False):
-                self.ui_login_thread_start()
-                self.login_thread = threading.Thread(
-                    target=azq_server_api.api_login_and_dl_db_zip,
-                    args=(
-                        self.server,
-                        self.user,
-                        self.passwd,
-                        self.lhl,
-                        self.progress_update_signal,
-                        self.status_update_signal,
-                        self.login_done_signal,
-                        self.on_zip_downloaded,
-                        self.download_db_zip,
-                    ),
-                )
-                self.login_thread.start()
+                if not self.lhl:
+                    import qt_utils
+                    qt_utils.msgbox("Skipping log download (for server overview)", "No log_hash specified", parent=self)
+                    try:
+                        self.login_get_token_only()
+                        self.done(QtWidgets.QDialog.Accepted)
+                        self.gc.main_window.status("Login successful - user: {} in server: {}".format(self.user, self.server))
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        msg = "WARNING: login failed - exception: {}".format(exstr)
+                        print(msg)
+                        qt_utils.msgbox(msg, "Login failed", self)
+                else:
+                    self.ui_login_thread_start()
+                    self.login_thread = threading.Thread(
+                        target=azq_server_api.api_login_and_dl_db_zip,
+                        args=(
+                            self.server,
+                            self.user,
+                            self.passwd,
+                            self.lhl,
+                            self.progress_update_signal,
+                            self.status_update_signal,
+                            self.login_done_signal,
+                            self.on_zip_downloaded,
+                            self.download_db_zip,
+                        ),
+                    )
+                    self.login_thread.start()
             else:
                 QtWidgets.QMessageBox.critical(
                     None,
@@ -115,8 +132,14 @@ class login_dialog(QDialog):
 
     def validate(self):
         vars = self.read_ui_input_to_vars()
-        for val in vars:
+        n = len(vars)
+        last = False
+        for i in range(n):
+            val = vars[i]
+            last = i == n - 1
             if not val:
+                if last:
+                    continue  # allow no log_hash
                 QtWidgets.QMessageBox.critical(
                     None,
                     "Missing data",
@@ -126,18 +149,25 @@ class login_dialog(QDialog):
                 return False
 
         azq_utils.write_settings_file("prev_login_dialog_server", self.server)
+        azq_utils.write_settings_file("prev_login_dialog_passwd", self.passwd, encrypt=True)
         print("self.user", self.user)
         azq_utils.write_settings_file("prev_login_dialog_user", self.user)
         azq_utils.write_settings_file("prev_login_dialog_lhl", self.lhl)
 
         ###### check lhl
         lhl = self.lhl
+        empty_lhl = not lhl.strip()
         if "," in lhl:
             lhl = lhl.split(",")
         else:
-            lhl = [lhl]
+            if empty_lhl:
+                lhl = []
+            else:
+                lhl = [lhl]
+        print("lhl:", lhl)
         try:
-            lhl = pd.Series(lhl, dtype=np.int64)
+            if lhl:
+                lhl = pd.Series(lhl, dtype=np.int64)
         except:
             QtWidgets.QMessageBox.critical(
                 None,
@@ -191,3 +221,6 @@ class login_dialog(QDialog):
             #qt_utils.msgbox("Db dump from server success, press OK to continue", parent=self)
             print("on_login_done self.downloaded_zip_fp: %s" % self.downloaded_zip_fp)
             self.done(QtWidgets.QDialog.Accepted)
+
+    def login_get_token_only(self):
+        self.token = azq_server_api.api_login_get_token(self.server, self.user, self.passwd)

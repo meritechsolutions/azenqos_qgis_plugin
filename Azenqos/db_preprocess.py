@@ -92,28 +92,34 @@ def prepare_spatialite_views(dbcon):
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: del from geom cols exception: ", exstr)
 
+
     ### get list of log_hash, posids where location table's positioning_lat is -1.0 and positioning_lon is -1.0 caused by pressing load indoor logs
-    df_posids_indoor_start = pd.read_sql(
-        "select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0",
-        dbcon,
-    )
-    df_posids_indoor_gps_cancel = pd.read_sql(
-        "select log_hash, time from events where name = 'AddGPSCancel'",
-        dbcon,
-    )
-    df_location_posid_time = pd.read_sql(
-        "select log_hash, posid, time from location",
-        dbcon,
-    )
     gps_cancel_list = []
-    for index, row in df_posids_indoor_gps_cancel.iterrows():
-        posid = df_location_posid_time.loc[(df_location_posid_time.log_hash == row.log_hash) & (df_location_posid_time.time <= row.time), "posid"].max()
-        df_location_posid_time = df_location_posid_time.loc[df_location_posid_time.posid != posid]
-        gps_cancel_list.append((row.log_hash, posid+1))
+    df_posids_indoor_start = pd.DataFrame()
+    try:
+        df_posids_indoor_start = pd.read_sql(
+            "select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0",
+            dbcon,
+        )
+        df_posids_indoor_gps_cancel = pd.read_sql(
+            "select log_hash, time from events where name = 'AddGPSCancel'",
+            dbcon,
+        )
+        df_location_posid_time = pd.read_sql(
+            "select log_hash, posid, time from location",
+            dbcon,
+        )
+        for index, row in df_posids_indoor_gps_cancel.iterrows():
+            posid = df_location_posid_time.loc[(df_location_posid_time.log_hash == row.log_hash) & (df_location_posid_time.time <= row.time), "posid"].max()
+            df_location_posid_time = df_location_posid_time.loc[df_location_posid_time.posid != posid]
+            gps_cancel_list.append((row.log_hash, posid+1))
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: indoor prepare failed exception: ", exstr)
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
-    azq_theme_manager
     params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
     print("params_to_gen:", params_to_gen)
 
@@ -379,53 +385,58 @@ def prepare_spatialite_views(dbcon):
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: remove gps cancel rows exception:", exstr)
-        
-    df_location = pd.read_sql_query("select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon, parse_dates=['time'])
 
-    # remove stray -1 -1 rows
-    for view in tables_to_rm_stray_neg1_rows:
-        for index, row in df_posids_indoor_start.iterrows():
-            try:
-                for posid in [
-                    row.posid,
-                    row.posid + 1,
-                ]:  # del with same posid and next posid as found in log case: 354985102910027 20_1_2021 7.57.38.azm
-                    # sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
-                    #     view, row.log_hash, posid
-                    # )
+    try:
+        df_location = pd.read_sql_query("select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon, parse_dates=['time'])
 
-                    sqlstr = "update {} set geom = null where log_hash = {} and posid <= {};".format(
-                        view, row.log_hash, posid
-                    )
-                    print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)
-                    dbcon.execute(sqlstr)
-                    dbcon.commit()
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: remove stray -1 -1 rows exception:", exstr)
-        if len(gps_cancel_list) > 0:
-            for log_hash, posid in gps_cancel_list:
+        # remove stray -1 -1 rows
+        for view in tables_to_rm_stray_neg1_rows:
+            for index, row in df_posids_indoor_start.iterrows():
                 try:
-                    sqlstr = "update {} set geom = null where log_hash = {} and posid = {};".format(
-                        view, log_hash, posid
-                    )
-                    print("delete gps cancel sqlstr: %s" % sqlstr)
-                    dbcon.execute(sqlstr)
-                    dbcon.commit()
+                    for posid in [
+                        row.posid,
+                        row.posid + 1,
+                    ]:  # del with same posid and next posid as found in log case: 354985102910027 20_1_2021 7.57.38.azm
+                        # sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
+                        #     view, row.log_hash, posid
+                        # )
+
+                        sqlstr = "update {} set geom = null where log_hash = {} and posid <= {};".format(
+                            view, row.log_hash, posid
+                        )
+                        print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)
+                        dbcon.execute(sqlstr)
+                        dbcon.commit()
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
-                    print("WARNING: remove gps cancel rows exception:", exstr)
-        if len(df_posids_indoor_start) > 0:
-            view_df = pd.read_sql("select * from {}".format(view), dbcon, parse_dates=['time'])
-            if len(view_df) > 0:
-                view_df = add_pos_lat_lon_to_indoor_df(view_df, df_location)
-                view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
-                view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
-                view_df = view_df.sort_values(by="time").reset_index(drop=True)
-                view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
-                view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
+                    print("WARNING: remove stray -1 -1 rows exception:", exstr)
+            if len(gps_cancel_list) > 0:
+                for log_hash, posid in gps_cancel_list:
+                    try:
+                        sqlstr = "update {} set geom = null where log_hash = {} and posid = {};".format(
+                            view, log_hash, posid
+                        )
+                        print("delete gps cancel sqlstr: %s" % sqlstr)
+                        dbcon.execute(sqlstr)
+                        dbcon.commit()
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print("WARNING: remove gps cancel rows exception:", exstr)
+            if len(df_posids_indoor_start) > 0:
+                view_df = pd.read_sql("select * from {}".format(view), dbcon, parse_dates=['time'])
+                if len(view_df) > 0:
+                    view_df = add_pos_lat_lon_to_indoor_df(view_df, df_location)
+                    view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)
+                    view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
+                    view_df = view_df.sort_values(by="time").reset_index(drop=True)
+                    view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
+                    view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: indoor prepare failed exception:", exstr)
 
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
     ## for each param

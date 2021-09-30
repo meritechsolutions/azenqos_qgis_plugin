@@ -337,7 +337,6 @@ class import_db_dialog(QDialog):
                 # ok we have a successful login and downloaded the db zip
                 zip_fp = dlg.downloaded_zip_fp
                 self.gc.log_mode = "server"
-
                 if (not zip_fp) or (not os.path.isfile(zip_fp)):
                     raise Exception(
                         "Failed to get downloaded data from server login process..."
@@ -422,8 +421,13 @@ class import_db_dialog(QDialog):
             return False
         else:
             print("ui_handler_import_done() success")
-            self.getTimeForSlider()
-            print("getTimeForSlider() done")
+            try:
+                self.getTimeForSlider()
+                print("getTimeForSlider() done")
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: getTimeForSlider() failed exception:", exstr)
             self.close()
 
 
@@ -530,12 +534,17 @@ class import_db_dialog(QDialog):
         assert os.path.isfile(self.databasePath)
         with contextlib.closing(sqlite3.connect(self.databasePath)) as dbcon:
             try:
-                logs_df = pd.read_sql("select * from logs limit 1", dbcon)
-                if not len(logs_df):
-                    raise Exception("invalid log database - cant read log metadata")
-                log_hash = logs_df.iloc[0].log_hash
-                if not log_hash:
-                    raise Exception("invalid log database - cant read log_hash")
+                try:
+                    logs_df = pd.read_sql("select * from logs limit 1", dbcon)
+                    if not len(logs_df):
+                        print("warning: invalid log database - cant read log metadata")
+                    log_hash = logs_df.iloc[0].log_hash
+                    if not log_hash:
+                        print("invalid log database - cant read log_hash")
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: check db failed exception:", exstr)
 
                 # check theme
                 theme_fp = self.themePathLineEdit.text()

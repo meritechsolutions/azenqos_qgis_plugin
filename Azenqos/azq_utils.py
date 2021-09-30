@@ -13,6 +13,7 @@ import traceback
 import uuid
 import json 
 from pathlib import Path
+import base64
 
 import pandas as pd
 import requests
@@ -49,10 +50,12 @@ def get_settings_fp(fn):
     return fp
 
 
-def write_settings_file(fname, contents, auto_encode=True):
+def write_settings_file(fname, contents, auto_encode=True, encrypt=False):
     try:
         if auto_encode and isinstance(contents, str):
             contents = contents.encode()  # conv to bytes for write
+        if encrypt:
+            contents = base64.b64encode(contents)
         with open(get_settings_fp(fname), "wb") as f:
             f.write(contents)
     except:
@@ -61,10 +64,12 @@ def write_settings_file(fname, contents, auto_encode=True):
         print("WARNING: write_local_file - exception: {}".format(exstr))
 
 
-def read_settings_file(fname, auto_decode=True):
+def read_settings_file(fname, auto_decode=True, decrypt=False):
     try:
         with open(get_settings_fp(fname), "rb") as f:
             ret = f.read()
+            if decrypt:
+                ret = base64.b64decode(ret)
             if auto_decode:
                 ret = ret.decode()
             return ret
@@ -1542,6 +1547,10 @@ def signal_emit(signal_obj, emit_obj):
     print("signal_emit: {}: {}".format(signal_obj, emit_obj))
     if signal_obj is not None:
         signal_obj.emit(emit_obj)
+
+
+def datetime_now():
+    return datetime.datetime.now()
 
 
 def datetimeStringtoTimestamp(datetimeString):

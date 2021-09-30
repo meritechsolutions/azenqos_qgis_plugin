@@ -945,7 +945,7 @@ class DetailWidget(QDialog):
     def __init__(
         self, gc, parent, detailText, messageName=None, side=None, protocol=None
     ):
-        super().__init__(None)
+        super().__init__(parent)
         self.closed = False
         self.title = "Details"
         self.gc = gc

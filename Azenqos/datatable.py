@@ -975,7 +975,6 @@ class DetailWidget(QDialog):
         substring = self.findEdit.text().strip()
         self.search_and_highlight(substring, next_match=False)
 
-
     def clear_selection(self):
         # Process the displayed document
         cursor = self.textEdit.textCursor()
@@ -994,14 +993,12 @@ class DetailWidget(QDialog):
 
     def search_and_highlight(self, substring, next_match=False):
         try:
-            format = QtGui.QTextCharFormat()
-            format.setBackground(QtGui.QBrush(QtGui.QColor(255,255,0)))
-            # Setup the regex engine
-            regex = re.compile(substring, flags=re.IGNORECASE)
             self.clear_selection()
             if not substring:
                 self.move_to_top()
                 return
+            # Setup the regex engine
+            regex = re.compile(substring, flags=re.IGNORECASE)
             matched = False
             n = 0
             print("next_match: {}".format(next_match))
@@ -1011,15 +1008,29 @@ class DetailWidget(QDialog):
             else:
                 self.nth_match = (self.nth_match+1) if (self.nth_match < len(matches)-1) else 0
             print("self.nth_match: {}".format(self.nth_match))
-            for match in matches:
-                matched = True
-                cursor = self.textEdit.textCursor()
-                # Select the matched text and apply the desired format
-                #print("match {} {}".format(match.start(), match.end()))
-                cursor.setPosition(match.start())
-                cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
-                cursor.mergeCharFormat(format)
+
+            # hilight in the ui
+            MAX_UI_HIGHLIGHT_N = 50  # if thousands of matches this will block ui and ui thread so keep it quick
+            ui_background_color_format = QtGui.QTextCharFormat()
+            ui_background_color_format.setBackground(QtGui.QBrush(QtGui.QColor(255, 255, 0)))
+
+            if not len(matches):
+                self.move_to_top()
+
+            for i in range(len(matches)):
+                # hilight - dont hilight all as this is slow and will hang the ui thread
+                do_hilight = n > self.nth_match - MAX_UI_HIGHLIGHT_N/2 and n < self.nth_match + MAX_UI_HIGHLIGHT_N/2
+                if do_hilight:
+                    match = matches[i]
+                    matched = True
+                    cursor = self.textEdit.textCursor()
+                    cursor.setPosition(match.start())
+                    cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
+                    cursor.mergeCharFormat(ui_background_color_format)
+                # underline and move the position
                 if n == self.nth_match:
+                    match = matches[i]
+                    matched = True
                     cursor = self.textEdit.textCursor()
                     cursor.setPosition(match.start())
                     self.textEdit.setTextCursor(cursor)  # move to first match
@@ -1028,8 +1039,7 @@ class DetailWidget(QDialog):
                     selected_format.setFontUnderline(True)
                     cursor.mergeCharFormat(selected_format)
                 n += 1
-            if not matched:
-                self.move_to_top()
+
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -1054,8 +1064,8 @@ class DetailWidget(QDialog):
         self.findEdit.setPlaceholderText(SEARCH_PLACEHOLDER_TEXT)
         self.findEdit.setStyleSheet(self.text_style)
         self.findEdit.setMaximumHeight(25)
-        self.findEdit.textChanged.connect(self.findedit_text_changed)
         self.findEdit.returnPressed.connect(self.findedit_text_next)
+        self.findEdit.textChanged.connect(self.findedit_text_changed)
         layout = QVBoxLayout(self)
         layout.addWidget(self.findEdit)
         layout.addWidget(self.textEdit)

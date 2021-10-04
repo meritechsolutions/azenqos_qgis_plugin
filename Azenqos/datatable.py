@@ -1013,7 +1013,7 @@ class DetailWidget(QDialog):
             print("self.nth_match: {}".format(self.nth_match))
 
             # hilight in the ui
-            MAX_UI_HIGHLIGHT_N = 50  # if thousands of matches this will block ui and ui thread so keep it quick
+            MAX_UI_HIGHLIGHT_N = 10  # if thousands of matches this will block ui and ui thread so keep it quick
             ui_background_color_format = QtGui.QTextCharFormat()
             ui_background_color_format.setBackground(QtGui.QBrush(QtGui.QColor(255, 255, 0)))
 

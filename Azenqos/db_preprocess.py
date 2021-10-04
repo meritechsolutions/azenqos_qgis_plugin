@@ -13,7 +13,7 @@ import preprocess_azm
 
 elm_table_main_col_types = {
     "log_hash": "BIGINT",
-    "time": "DATETIME",
+    "time": "TEXT",
     "seqid": "INT",
     "posid": "INT",
     "geom": "BLOB",
@@ -102,7 +102,7 @@ def prepare_spatialite_views(dbcon):
         dbcon,
     )
     df_location_posid_time = pd.read_sql(
-        "select log_hash, posid, time from location",
+        "select log_hash, posid, time from location where positioning_lat is not null",
         dbcon,
     )
     gps_cancel_list = []
@@ -110,6 +110,8 @@ def prepare_spatialite_views(dbcon):
         posid = df_location_posid_time.loc[(df_location_posid_time.log_hash == row.log_hash) & (df_location_posid_time.time <= row.time), "posid"].max()
         df_location_posid_time = df_location_posid_time.loc[df_location_posid_time.posid != posid]
         gps_cancel_list.append((row.log_hash, posid+1))
+
+    # gps_cancel_list = []
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
@@ -352,7 +354,11 @@ def prepare_spatialite_views(dbcon):
         geomBlob[51:51+8] = by 
         geomBlob[59] = 0xfe
         return geomBlob
-
+    df_indoor_location = None
+    try:
+        df_indoor_location = pd.read_sql_query("select * from indoor_location", dbcon)
+    except:
+        pass
     if len(df_posids_indoor_start) > 0:
         try:
             sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"
@@ -361,10 +367,11 @@ def prepare_spatialite_views(dbcon):
         except:
             pass
         try:
-            sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
-            print("copy indoor_location lat lon to location: %s" % sqlstr)
-            dbcon.execute(sqlstr)
-            dbcon.commit()
+            if df_indoor_location is not None and len(df_indoor_location) > 0: 
+                sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
+                print("copy indoor_location lat lon to location: %s" % sqlstr)
+                dbcon.execute(sqlstr)
+                dbcon.commit()
         except:
             pass
         for log_hash, posid in gps_cancel_list:
@@ -446,7 +453,7 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
     indoor_location_df_interpolated = df_location[
         ["log_hash", "time", "positioning_lat", "positioning_lon"]].copy()
     indoor_location_df_interpolated = azq_utils.resample_per_log_hash_time(indoor_location_df_interpolated,
-                                                                           "100ms")
+                                                                           "100ms", use_last=True)
     cols = ["positioning_lat", "positioning_lon"]
     azq_utils.set_none_to_repetetive_rows(indoor_location_df_interpolated, cols)
     indoor_location_df_interpolated = indoor_location_df_interpolated.dropna(subset=["time"])

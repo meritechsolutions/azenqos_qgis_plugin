@@ -310,7 +310,7 @@ def get_gsm_data_df_by_time(dbcon, time_before):
 ############ New Line Chart Query
 
 
-def get_chart_df(dbcon, param_list_dict, apply_mode=False):
+def get_chart_df(dbcon, param_list_dict):
     df_list = []
     print(param_list_dict)
     for key in param_list_dict:
@@ -321,23 +321,10 @@ def get_chart_df(dbcon, param_list_dict, apply_mode=False):
         df = pd.read_sql(sql, dbcon, parse_dates=["Time"])
         df["log_hash"] = df["log_hash"].astype(np.int64)
         df = df.sort_values(by="Time")
-        if apply_mode:
-            df["time_ms"] = df["Time"].apply(lambda x: azq_utils.datetimeStringtoTimestamp(x.strftime("%Y-%m-%d %H:%M:%S.%f")))
-            df["time_ms_diff"] = df.loc[df[param_name].notna(), "time_ms"]
-            df["null_param"] = df.loc[df[param_name].notna(), param_name]
-            df["time_ms_diff"] = df["time_ms_diff"].ffill()
-            df["null_param"] = df["null_param"].ffill()
-            def filter_two_sec(x):
-                if x["time_ms"] - x["time_ms_diff"] < 2:
-                    x[param_name] = x["null_param"]
-                return x
-            df = df.apply(lambda x: filter_two_sec(x), axis=1)
-            df = df.drop(columns=["null_param", "time_ms_diff", "time_ms"])
-        else:
-            df_merge = df.copy()
-            df_merge = df_merge.dropna().sort_values(by="Time")
-            df = pd.merge_asof(left=df.reset_index(), right=df_merge.reset_index(), left_on=['Time'], right_on=['Time'],by='log_hash',direction="backward", allow_exact_matches=True, tolerance=pd.Timedelta('2s'), suffixes=('_not_use', '')) 
-            df = df[["log_hash", "Time", param_name]]
+        df_merge = df.copy()
+        df_merge = df_merge.dropna().sort_values(by="Time")
+        df = pd.merge_asof(left=df.reset_index(), right=df_merge.reset_index(), left_on=['Time'], right_on=['Time'],by='log_hash',direction="backward", allow_exact_matches=True, tolerance=pd.Timedelta('2s'), suffixes=('_not_use', '')) 
+        df = df[["log_hash", "Time", param_name]]
         if "data" in param_dict and param_dict["data"] == True:
             df = df.fillna(0)
         df_list.append(df)

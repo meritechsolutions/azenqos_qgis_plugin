@@ -3,7 +3,6 @@ import pandas as pd
 
 import params_disp_df
 import preprocess_azm
-import azq_utils
 
 
 def get_nr_df(dbcon):

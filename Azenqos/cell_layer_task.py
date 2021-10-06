@@ -52,6 +52,23 @@ def cell_to_polygon(cell, fields, channel_col, code_col, sector_distance=0.001, 
     poly.setGeometry(QgsGeometry.fromPolygonXY([points]))
     return poly
 
+def cell_in_logs_with_color(cell_files, databasePath, rat):
+    import spider_plot
+    import azq_theme_manager
+    import sqlite3
+    param = spider_plot.rat_to_spider_param_dict[rat][0]
+    df = spider_plot.gen_spider_df(cell_files, databasePath, rat,
+                                   plot_spider_param=param, single_point_match_dict=None, freq_code_match_mode=True)
+    df = df.drop_duplicates(subset=["cgi", "cell_lat", "cell_lon", "ant_bw", "dir", param])
+    with sqlite3.connect(databasePath) as dbcon:
+        theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
+    theme_df = theme_df[['ColorXml', 'match_value']]
+    print(df)
+    print(theme_df)
+    df = df.merge(theme_df, left_on=param, right_on='match_value')
+    print(df.columns)
+    df = df[['cgi', 'cell_lat', 'cell_lon', 'ant_bw', 'dir', 'ColorXml', param]]
+    return df
 
 class CellLayerTask(QgsTask):
 

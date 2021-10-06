@@ -131,7 +131,7 @@ netbios-ssn	139/tcp/udp	# NETBIOS Session Service
 emfis-data	140/tcp/udp	# EMFIS Data Service
 emfis-cntl	141/tcp/udp	# EMFIS Control Service
 bl-idm		142/tcp/udp	# Britton-Lee IDM
-imap		143/tcp/udp	# Internet Message Access Protocol
+imap		143/tcp		# Internet Message Access Protocol
 uma		144/tcp/udp	# Universal Management Architecture
 uaac		145/tcp/udp	# UAAC Protocol
 iso-tp0		146/tcp/udp	# ISO-IP0
@@ -292,7 +292,7 @@ ulistproc	372/tcp/udp	# ListProcessor
 legent-1	373/tcp/udp	# Legent Corporation
 legent-2	374/tcp/udp	# Legent Corporation
 hassle		375/tcp/udp	# Hassle
-nip		376/tcp/udp	# Amiga Envoy Network Inquiry Proto
+nip		376/tcp/udp	# Amiga Envoy Network Inquiry Protocol
 tnETOS		377/tcp/udp	# NEC Corporation
 dsETOS		378/tcp/udp	# NEC Corporation
 is99c		379/tcp/udp	# TIA/EIA/IS-99 modem client
@@ -711,7 +711,7 @@ ftps-data	989/tcp/udp	# ftp protocol, data, over TLS/SSL
 ftps		990/tcp/udp	# ftp protocol, control, over TLS/SSL
 nas		991/tcp/udp	# Netnews Administration System
 telnets		992/tcp/udp	# telnet protocol over TLS/SSL
-imaps		993/tcp/udp	# IMAP over TLS protocol
+imaps		993/tcp		# IMAP over TLS protocol
 pop3s		995/tcp/udp	# POP3 over TLS protocol
 vsinet		996/tcp/udp
 maitrd		997/tcp/udp
@@ -1220,7 +1220,7 @@ ingreslock	1524/tcp/udp	# ingres
 orasrv		1525/tcp/udp	# oracle
 pdap-np		1526/tcp/udp	# Prospero Data Access Prot non-priv
 tlisrv		1527/tcp/udp	# oracle
-ngr-t		1528/udp	# NGR transport protocol for mobile ad-hoc networks
+norp		1528/tcp/udp/sctp	# Not Only a Routeing Protocol
 coauthor	1529/tcp/udp	# oracle
 rap-service	1530/tcp/udp
 rap-listen	1531/tcp/udp
@@ -2086,6 +2086,7 @@ hydra		2374/tcp	# Hydra RPC
 docker		2375/tcp	# Docker REST API (plain text)
 docker-s	2376/tcp	# Docker REST API (ssl)
 swarm		2377/tcp	# RPC interface for Docker Swarm
+dali		2378/udp	# DALI lighting control
 etcd-client	2379/tcp	# etcd client communication
 etcd-server	2380/tcp	# etcd server to server communication
 compaq-https	2381/tcp/udp	# Compaq HTTPS
@@ -3676,7 +3677,6 @@ opswagent	3976/tcp/udp	# Server Automation Agent
 opswmanager	3977/tcp/udp	# Opsware Manager
 secure-cfg-svr	3978/tcp/udp	# Secured Configuration Server
 smwan		3979/tcp/udp	# Smith Micro Wide Area Network Service
-acms		3980/tcp/udp	# Aircraft Cabin Management System
 starfish	3981/tcp/udp	# Starfish System Admin
 eis		3982/tcp/udp	# ESRI Image Server
 eisp		3983/tcp/udp	# ESRI Image Service
@@ -3909,6 +3909,7 @@ pscl-mgt	4312/tcp	# Parascale Membership Manager
 perrla		4313/tcp	# PERRLA User Services
 choiceview-agt	4314/tcp	# ChoiceView Agent
 choiceview-clt	4316/tcp	# ChoiceView Client
+opentelemetry	4317/tcp	# OpenTelemetry Protocol
 fdt-rcatp	4320/tcp/udp	# FDT Remote Categorization Protocol
 rwhois		4321/tcp/udp	# Remote Who Is
 trim-event	4322/tcp/udp	# TRIM Event Service
@@ -4076,7 +4077,7 @@ irp		4604/tcp	# Identity Registration Protocol
 sixchat		4605/tcp	# Direct End to End Secure Chat Protocol
 sixid		4606/tcp	# Secure ID to IP registration and lookup
 ventoso		4621/udp	# Bidirectional single port remote radio VOIP and Control stream
-dots-signal	4646/tcp/udp	# Distributed Denial-of-Service Open Threat Signaling (DOTS) Signal Channel
+dots-signal	4646/tcp/udp	# Distributed Denial-of-Service Open Threat Signaling (DOTS) Signal Channel Protocol. The service name is used to construct the SRV service names "_dots-signal._udp" and "_dots-signal._tcp" for discovering DOTS servers used to establish DOTS signal channel.
 playsta2-app	4658/tcp/udp	# PlayStation2 App Port
 playsta2-lob	4659/tcp/udp	# PlayStation2 Lobby Port
 smaclmgr	4660/tcp/udp
@@ -4512,6 +4513,7 @@ fcp-cics-gw1	5504/tcp/udp
 checkoutdb	5505/tcp/udp	# Checkout Database
 amc		5506/tcp/udp	# Amcom Mobile Connect
 psl-management	5507/tcp	# PowerSysLab Electrical Management
+matter		5540/tcp/udp	# Matter Operational Discovery and Communi
 cbus		5550/tcp	# Model Railway control using the CBUS message protocol
 sgi-eventmond	5553/tcp/udp	# SGI Eventmond Port
 sgi-esphttp	5554/tcp/udp	# SGI ESP HTTP
@@ -4619,7 +4621,7 @@ openmailpxy	5768/tcp/udp	# OpenMail CMTS Server
 spramsca	5769/tcp/udp	# x509solutions Internal CA
 spramsd		5770/tcp/udp	# x509solutions Secure Data
 netagent	5771/tcp/udp	# NetAgent
-dali-port	5777/tcp/udp	# DALI Port
+starfield-io	5777/tcp/udp	# Control commands and responses
 vts-rpc		5780/tcp	# Visual Tag System RPC
 3par-evts	5781/tcp/udp	# 3PAR Event Reporting Service
 3par-mgmt	5782/tcp/udp	# 3PAR Management Service
@@ -4656,6 +4658,7 @@ wbem-exp-https	5990/tcp/udp	# WBEM Export HTTPS
 nuxsl		5991/tcp/udp	# NUXSL
 consul-insight	5992/tcp/udp	# Consul InSight Security
 cim-rs		5993/tcp	# DMTF WBEM CIM REST
+rms-agent	5994/tcp	# RMS Agent Listening Service
 cvsup		5999/tcp/udp	# CVSup
 x11		6000-6063/tcp/udp	# X Window System
 ndl-ahp-svc	6064/tcp/udp	# NDL-AHP-SVC
@@ -4865,6 +4868,7 @@ tsa		6689/tcp/udp	# Tofino Security Appliance
 cleverdetect	6690/tcp	# CLEVERDetect Message Service
 babel		6696/udp	# Babel Routing Protocol
 ircs-u		6697/tcp	# Internet Relay Chat via TLS/SSL
+babel-dtls	6699/udp	# Babel Routing Protocol over DTLS
 kti-icad-srvr	6701/tcp/udp	# KTI/ICAD Nameserver
 e-design-net	6702/tcp/udp	# e-Design network
 e-design-web	6703/tcp/udp	# e-Design web
@@ -5154,6 +5158,7 @@ http-alt	8008/tcp/udp	# HTTP Alternate
 nvme-disc	8009/tcp	# NVMe over Fabrics Discovery Service
 cfg-cloud	8015/tcp	# Configuration Cloud Service
 ads-s		8016/tcp	# Beckhoff Automation Device Specification
+cisco-cloudsec	8017/udp	# Cisco Cloudsec Dataplane Port Number
 qbdb		8019/tcp/udp	# QB DB Dynamic Port
 intu-ec-svcdisc	8020/tcp/udp	# Intuit Entitlement Service and Discovery
 intu-ec-client	8021/tcp/udp	# Intuit Entitlement Client
@@ -5161,6 +5166,7 @@ oa-system	8022/tcp/udp
 arca-api	8023/tcp/udp	# ARCATrust vault API
 ca-audit-da	8025/tcp/udp	# CA Audit Distribution Agent
 ca-audit-ds	8026/tcp/udp	# CA Audit Distribution Server
+papachi-p2p-srv	8027/tcp/udp	# peer tracker and data relay service
 pro-ed		8032/tcp/udp	# ProEd
 mindprint	8033/tcp/udp	# MindPrint
 vantronix-mgmt	8034/tcp/udp	# .vantronix Management
@@ -5352,6 +5358,7 @@ ddi-udp-7	8894/udp	# Desktop Data UDP 6: COAL application
 ospf-lite	8899/tcp/udp
 jmb-cds1	8900/tcp/udp	# JMB-CDS 1
 jmb-cds2	8901/tcp/udp	# JMB-CDS 2
+dpp		8908/tcp	# WFA Device Provisioning Protocol
 manyone-http	8910/tcp/udp
 manyone-xml	8911/tcp/udp
 wcbackup	8912/tcp/udp	# Windows Client Backup
@@ -5488,6 +5495,7 @@ sma-spw		9522/udp	# SMA Speedwire
 mngsuite	9535/tcp/udp	# Management Suite Remote Control
 laes-bf		9536/tcp/udp	# Surveillance buffering function
 trispen-sra	9555/tcp/udp	# Trispen Secure Remote Access
+p4runtime	9559/tcp	# P4Runtime gRPC Service
 ldgateway	9592/tcp/udp	# LANDesk Gateway
 cba8		9593/tcp/udp	# LANDesk Management Agent (cba8)
 msgsys		9594/tcp/udp	# Message System
@@ -5653,6 +5661,7 @@ smsqp		11201/tcp/udp
 dcsl-backup	11202/tcp	# DCSL Network Backup Services
 wifree		11208/tcp/udp	# WiFree Service
 memcache	11211/tcp/udp	# Memory cache service
+xcompute	11235/tcp/sctp	# numerical systems messaging
 imip		11319/tcp/udp	# IMIP
 imip-channels	11320/tcp/udp	# IMIP Channels Port
 arena-server	11321/tcp/udp	# Arena Server Listen
@@ -5839,6 +5848,7 @@ fxuptp		19539/tcp/udp	# FXUPTP
 sxuptp		19540/tcp/udp	# SXUPTP
 jcp		19541/tcp/udp	# JCP Client
 mle		19788/udp	# Mesh Link Establishment
+faircom-db	19790/tcp	# FairCom Database
 iec-104-sec	19998/tcp	# IEC 60870-5-104 process control - secure
 dnp-sec		19999/tcp/udp	# Distributed Network Protocol - Secure
 dnp		20000/tcp/udp	# DNP
@@ -5859,6 +5869,7 @@ ipdtp-port	20202/tcp/udp	# IPD Tunneling Port
 ipulse-ics	20222/tcp/udp	# iPulse-ICS
 emwavemsg	20480/tcp/udp	# emWave Message Service
 track		20670/tcp/udp	# Track
+crtech-nlm	20810/tcp	# CRTech NLM
 athand-mmp	20999/tcp/udp	# At Hand MMP
 irtrans		21000/tcp/udp	# IRTrans Control
 notezilla-lan	21010/tcp	# Notezilla.Lan Server
@@ -5885,6 +5896,7 @@ gsidcap		22128/tcp	# GSI dCache Access Protocol
 easyengine	22222/tcp	# EasyEngine is CLI tool to manage WordPress Sites on Nginx server
 wnn6		22273/tcp/udp
 cis		22305/tcp/udp	# CompactIS Tunnel
+showcockpit-net	22333/tcp/udp	# ShowCockpit Networking
 shrewd-control	22335/tcp	# Initium Labs Security and Automation Control
 shrewd-stream	22335/udp	# Initium Labs Security and Automation Streaming
 cis-secure	22343/tcp/udp	# CompactIS Secure Tunnel
@@ -6006,6 +6018,7 @@ ka-sddp		31016/tcp	# Kollective Agent Secure Distributed Delivery Protocol
 ka-kdp		31016/udp	# Kollective Agent Kollective Delivery Protocol
 autotrac-acp	31020/tcp	# Autotrac ACP 245
 yawn		31029/udp	# YaWN - Yet Another Windows Notifier
+eldim		31337/tcp/udp	# eldim is a secure file upload proxy
 pace-licensed	31400/tcp	# PACE license server
 xqosd		31416/tcp/udp	# XQoS network monitor
 tetrinet	31457/tcp/udp	# TetriNET Protocol

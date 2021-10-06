@@ -197,7 +197,7 @@ class CellInformation(QDialog):
     def browseFile(self, buttonNo):
         if buttonNo == "1":
             fileName, _ = QFileDialog.getOpenFileName(
-                self, "Single File", QDir.rootPath(), "*.cel"
+                self, "Select file", QDir.rootPath(), "*.cel"
             )
             if fileName != "":
 
@@ -205,7 +205,7 @@ class CellInformation(QDialog):
             return False
         elif buttonNo == "2":
             fileName, _ = QFileDialog.getOpenFileName(
-                self, "Single File", QDir.rootPath(), "*.cel"
+                self, "Select file", QDir.rootPath(), "*.cel"
             )
             if fileName != "":
 
@@ -213,7 +213,7 @@ class CellInformation(QDialog):
             return False
         elif buttonNo == "3":
             fileName, _ = QFileDialog.getOpenFileName(
-                self, "Single File", QDir.rootPath(), "*.cel"
+                self, "Select file", QDir.rootPath(), "*.cel"
             )
             if fileName != "":
 
@@ -221,7 +221,7 @@ class CellInformation(QDialog):
             return False
         elif buttonNo == "4":
             fileName, _ = QFileDialog.getOpenFileName(
-                self, "Single File", QDir.rootPath(), "*.cel"
+                self, "Select file", QDir.rootPath(), "*.cel"
             )
             if fileName != "":
 

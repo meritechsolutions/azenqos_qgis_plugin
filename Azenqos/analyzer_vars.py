@@ -28,6 +28,7 @@ class analyzer_vars:
     qgis_iface = None
     mostFeaturesLayer = None
 
+    log_mode = ""
     databasePath = None
     db_fp = None  # same as databasePath but in snake_case
     cell_files = []
@@ -47,12 +48,14 @@ class analyzer_vars:
     selected_point_match_dict = dict.fromkeys(SELECTED_POINT_MATCH_PARAMS)
 
     sliderLength = 0
+    main_window = None
     openedWindows = []
     timeSlider = None
     isSliderPlay = False
+    is_indoor = False
     allLayers = []
     # tableList = []
-    h_list = []
+    highlight_list = []
     linechartWindowname = [
         "GSM_GSM Line Chart",
         "WCDMA_Line Chart",

@@ -1,15 +1,22 @@
-import time
+import contextlib
 import datetime
 import hashlib
 import os
 import random
 import shutil
+import sqlite3
+import subprocess
 import sys
+import threading
+import time
 import traceback
 import uuid
+import json 
 from pathlib import Path
 
+import pandas as pd
 import requests
+from PyQt5 import QtWidgets, QtCore
 
 import dprint
 
@@ -1462,6 +1469,10 @@ def tmp_gen_path():
     return dp
 
 
+def tmp_gen_fp(fn):
+    return os.path.join(tmp_gen_path(), fn)
+
+
 def cleanup_died_processes_tmp_folders():
     import psutil
 
@@ -1533,13 +1544,18 @@ def signal_emit(signal_obj, emit_obj):
         signal_obj.emit(emit_obj)
 
 
-def datetimeStringtoTimestamp(datetimeString: str):
+def datetimeStringtoTimestamp(datetimeString):
+    if isinstance(datetimeString, QtCore.QDateTime):
+        datetimeString = float(datetimeString.toSecsSinceEpoch())
     try:
         element = None
-        try:
-            element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
-        except ValueError:
-            element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S")  # some ts str comes without millis like: "2021-04-22 15:22:18"
+        if isinstance(datetimeString, float):
+            element = datetime.datetime.fromtimestamp(datetimeString)
+        elif isinstance(datetimeString, str):
+            try:
+                element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S.%f")
+            except ValueError:
+                element = datetime.datetime.strptime(datetimeString, "%Y-%m-%d %H:%M:%S")  # some ts str comes without millis like: "2021-04-22 15:22:18"
         timestamp = datetime.datetime.timestamp(element)
         return timestamp
     except:
@@ -1614,7 +1630,261 @@ def launch_file(fp):
 def ask_custom_sql_or_py_expression(parent, title="Custom SQL/Python expression", existing_content="", table_view_mode=False, msg="Enter SQL select or Python expression"):
     import qt_utils
     import sql_utils
+    is_list_or_dict = False
+    if isinstance(existing_content, (list, dict)):
+        is_list_or_dict = True
+        existing_content = json.dumps(existing_content, indent = 4)
     expression = qt_utils.ask_text(parent, title=title, msg=msg, existing_content=existing_content, multiline=True)
+    if expression is not None and is_list_or_dict == True:
+        expression = json.loads(expression)
     if expression is not None and table_view_mode and sql_utils.is_sql_select(expression):
         expression = "pd.read_sql('''{}''',dbcon)".format(expression)
     return expression
+
+
+def get_adb_command():
+    return os.path.join(get_module_path(), "scrcpy_nt", "adb.exe") if os.name == "nt" else "adb"
+
+
+def get_scrcpy_command():
+    return  os.path.join(get_module_path(),
+    "scrcpy_nt", "scrcpy.exe") if os.name == "nt" else "scrcpy"
+
+
+def get_failed_scrcpy_cmd():
+    scrcpy_cmd = get_scrcpy_command()
+    adb_cmd = get_adb_command()
+    # test scrcpy
+    test_cmds = [(scrcpy_cmd,"--version"), (adb_cmd, "--version")]
+    for test_cmd in test_cmds:
+        sret = call_no_shell(test_cmd)
+        if sret != 0:
+            return test_cmd
+    return ""
+
+
+def check_and_recover_db(dbfp, tmp_path, write_debug_sql_file=False):
+    needs_recover_db = False
+    sqlite_bin = get_sqlite_bin()
+    assert os.path.isfile(sqlite_bin)
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+        try:
+            integ_check_df = pd.read_sql("PRAGMA integrity_check;", dbcon)
+            print("azq_report_gen: sqlite db integ_check_df first row:", integ_check_df.integrity_check[0])
+            if integ_check_df.integrity_check.iloc[0] != "ok":
+                print("WARNING: read_sql pragma integrity_check not ok - flag needs_recover_db")
+                needs_recover_db = True
+        except Exception as integcheck_ex:
+            print("WARNING: read_sql pragma integrity_check failed exception:", integcheck_ex)
+            needs_recover_db = True
+    if needs_recover_db:
+        sql_script = dump_sqlite(dbfp)
+        assert sql_script
+        out_db_fp = os.path.join(tmp_path, "adb_log_snapshot_dump_recov_{}.db".format(uuid.uuid4()))
+        with contextlib.closing(sqlite3.connect(out_db_fp)) as out_dbcon:
+            print("... merging to target db file:", out_db_fp)
+            if write_debug_sql_file:
+                sqlfpfordebug = out_db_fp+".sql"
+                with open(sqlfpfordebug, 'w') as f:
+                    f.write(sql_script)
+            out_dbcon.executescript(sql_script)
+            out_dbcon.commit()
+        dbfp = out_db_fp
+    return dbfp
+
+def pull_latest_log_db_from_phone(parent=None):
+    close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows
+    failed_cmd = get_failed_scrcpy_cmd()
+    if failed_cmd:
+        QtWidgets.QMessageBox.critical(
+            parent,
+            "Test command failed",
+            "Command failed: " + failed_cmd,
+            QtWidgets.QMessageBox.Cancel,
+        )
+        return None
+    azqdata_uuid = uuid.uuid4()
+    db_journal_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
+    assert not os.path.isfile(db_journal_fp)
+    call_no_shell((get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db-journal", db_journal_fp))
+    dbfp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(azqdata_uuid))
+    assert not os.path.isfile(dbfp)
+    cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", dbfp)
+    ret = 1
+    try_n = 0
+    while ret != 0 and try_n < 10:
+        ret = call_no_shell(cmd)
+        try_n += 1
+    print("total pull: ", try_n, "ret: ", ret)
+    if ret != 0:
+        QtWidgets.QMessageBox.critical(
+            parent,
+            "Failed to pull data from connected phone",
+            "- Please make sure that you have a phone with AZENQOS netmon/script running connected via USB.\n- Please make sure phone has 'USB Debugging' enabled in phone settings >> 'Developer options'.",
+            QtWidgets.QMessageBox.Cancel,
+        )
+        return None
+    dbfp = check_and_recover_db(dbfp, tmp_gen_path())
+    assert os.path.isfile(dbfp)
+    start_scrcpy_proc()
+    return dbfp
+
+
+CREATE_NO_WINDOW = 0x08000000
+
+
+def call_no_shell(cmd_list):
+    assert isinstance(cmd_list, list) or isinstance(cmd_list, tuple)
+    cmdret = -99
+    if os.name == "nt":
+        cmdret = subprocess.call(cmd_list, shell=False, creationflags=CREATE_NO_WINDOW)
+    else:
+        cmdret = subprocess.call(cmd_list, shell=False)
+    return cmdret
+
+
+def check_output_no_shell(cmd_list):
+    assert isinstance(cmd_list, list) or isinstance(cmd_list, tuple)
+    if os.name == "nt":
+        return subprocess.check_output(cmd_list, shell=False, encoding='utf-8', creationflags=CREATE_NO_WINDOW)
+    else:
+        return subprocess.check_output(cmd_list, shell=False, encoding='utf-8')
+    return None
+
+
+g_scrcpy_proc = None
+def start_scrcpy_proc():
+    global g_scrcpy_proc
+    close_scrcpy_proc()
+    assert g_scrcpy_proc is None
+    g_scrcpy_proc = scrcpy_popen()
+
+
+def is_scrcpy_proc_running():
+    global g_scrcpy_proc
+    return g_scrcpy_proc is not None and g_scrcpy_proc.poll() is None
+
+
+def close_scrcpy_proc():
+    global g_scrcpy_proc
+    if is_scrcpy_proc_running():
+        try:
+            g_scrcpy_proc.terminate()
+        except Exception as e:
+            print("WARNING: terminate prev scrcpy process failed with exception: {}".format(e))
+        if g_scrcpy_proc.poll() is None:
+            try:
+                g_scrcpy_proc.kill()
+            except Exception as e:
+                print("WARNING: kill prev scrcpy process failed with exception: {}".format(e))
+        if g_scrcpy_proc.poll() is None:
+            print("WARNING: still g_scrcpy_proc.poll() is None (still running) after kill() and terminate()")
+    g_scrcpy_proc = None
+
+
+def adb_kill_server_threaded():
+    t = threading.Thread(target=adb_kill_server, daemon=False)
+    t.start()
+
+
+def adb_kill_server():
+    ret = call_no_shell((get_adb_command(), 'kill-server'))
+    print("adb_kill_server() ret", ret)
+
+
+def scrcpy_popen():
+    cmd = (get_scrcpy_command(),)
+    return popen_no_shell(cmd)
+
+
+def popen_no_shell(cmd):
+    proc = None
+    if os.name == "nt":
+        proc = subprocess.Popen(
+            cmd,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            creationflags=CREATE_NO_WINDOW
+        )
+    else:
+        proc = subprocess.Popen(
+            cmd,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+    return proc
+
+
+def dump_sqlite(dbfp, dump_to_file_first=False, rm_rollbacks=True, auto_add_commit=True):
+    sqlite_bin = get_sqlite_bin()
+    if dump_to_file_first:
+        dump_fp = tmp_gen_fp("tmp_sqlite_dump.sql")
+        if os.path.isfile(dump_fp):
+            os.remove(dump_fp)
+        assert not os.path.isfile(dump_fp)
+        cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
+        print("... dumping db file to sql:", dbfp, "cmd:", cmd)
+        ret = call_no_shell(cmd)
+        assert ret == 0
+        assert os.path.isfile(dump_fp)
+        print("... reading sql:", dbfp)
+        with open(dump_fp, "r") as f:
+            sql_script = f.read()
+    else:
+        cmd = [sqlite_bin, dbfp, ".dump"]
+        print("... dumping db file to ram:", dbfp, "cmd:", cmd)
+        sql_script = check_output_no_shell(cmd)
+    assert sql_script
+    if rm_rollbacks:
+        sql_script = sql_script.replace("ROLLBACK;", "")
+    if auto_add_commit:
+        if "BEGIN TRANSACTION;" in sql_script:
+            if "COMMIT;" not in sql_script:
+                sql_script += "\n"+"COMMIT;"+"\n"
+    return sql_script
+
+
+def get_sqlite_bin():
+    return os.path.join(
+        get_module_path(),
+        os.path.join(
+            "sqlite_" + os.name,
+            "sqlite3" + ("" if os.name == "posix" else ".exe"),
+        ),
+    )
+
+
+def set_none_to_repetetive_rows(df, cols):
+    # set None to repetetive rows - https://stackoverflow.com/questions/19463985/pandas-drop-consecutive-duplicates
+    try:
+        df.loc[((df[cols].shift() == df[cols]).all
+                (axis=1)), cols] = None
+    except Exception:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: set_none_to_repetetive_rows exception:", exstr)
+
+
+def resample_per_log_hash_time(param_df, resample_param, use_last=False):
+    assert len(param_df)
+    ori_cols = param_df.columns
+    assert "log_hash" in ori_cols
+    assert "time" in ori_cols
+    #print("resample_per_log_hash_time param_df0:\n", param_df.head())
+    param_df = param_df.groupby('log_hash', as_index=True).apply(
+        lambda df: df.drop_duplicates('time').set_index('time').resample(resample_param).pad() if not use_last else df.drop_duplicates('time').set_index('time').resample(resample_param).last().ffill()
+    )
+    #print("resample_per_log_hash_time param_df1:\n", param_df.head())
+    del param_df["log_hash"]  # drop  the resampled log_hash col as can have nulls
+    assert "log_hash" not in param_df.columns
+    param_df = param_df.reset_index()  # pop-out log_hash
+    assert "log_hash" in param_df.columns
+    #print("resample_per_log_hash_time param_df2:\n", param_df.head())
+    end_cols = param_df.columns
+    #print("resample_per_log_hash_time: ori_cols:", ori_cols)
+    #print("resample_per_log_hash_time: end_cols:", end_cols)
+    assert len(ori_cols) == len(end_cols)
+    assert set(ori_cols) == set(end_cols)
+    return param_df

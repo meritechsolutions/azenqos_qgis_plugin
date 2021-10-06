@@ -24,8 +24,7 @@ Installation instructions
 - Restart QGIS
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') - the analyzer window will launch.
 - In the analyzer window, go to File > Open log file... to choose a .azm log file to analyze.
-- After a log has been opened. Go to Presentation to open each required analyzer window - like Signalling > Layer-3 Messages.
-
+- After a log has been opened. Go to Presentation to open each required analyzer window - like Signalling > Layer-3 Messages. Example logs are available at: https://github.com/freewillfx-azenqos/azenqos_qgis_plugin/tree/master/example_logs
 - Repeat the same steps above when you want to upgrade the plugin to a new version (version is shown at top-right of analyzer window).
 
 - Installation video guide (in Thai)
@@ -87,5 +86,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 Special thanks and notices
 --------------------------
 
-- This project (which is licensed under the GNU GPLv2 - same as Wireshark) uses `tshark` and `text2pcap` utilities from the Wireshark project. Full credit and thanks to the Wireshark developers for their great work. Please see [wireshark_LICENSE](wireshark_LICENSE) file for its license and [wireshark_SOURCE](wireshark_SOURCE) for its source.
-
+- Thanks to the wireshark developers - this project (which is licensed under the GNU GPLv2 - same as Wireshark) uses `tshark` and `text2pcap` utilities from the Wireshark project. Full credit and thanks to the Wireshark developers for their great work. Please see [wireshark_LICENSE](wireshark_LICENSE) file for its license and [wireshark_SOURCE](wireshark_SOURCE) for its source.
+- Thanks to the [sqlite3](https://www.sqlite.org/copyright.html) developers, used extensively in this project including binaries for doing dumps.
+- Thanks to the [scrcpy](https://github.com/Genymobile/scrcpy) developers for their very handy and useful tool, it is used in this project. Please see its license at [LICENSE](Azenqos/scrcpy_nt/LICENSE).

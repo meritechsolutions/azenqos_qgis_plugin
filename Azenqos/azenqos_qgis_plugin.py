@@ -247,8 +247,11 @@ class azenqos_qgis_plugin:
             print("reply: {}".format(reply))
             if reply == QMessageBox.Yes:
                 print("close prev main_window start")
-                self.main_window.close()
-                self.main_window = None
+                try:
+                    self.main_window.close()
+                    self.main_window = None
+                except:
+                    pass
                 print("close prev main_window done")
             else:
                 return
@@ -260,7 +263,6 @@ class azenqos_qgis_plugin:
             if qgis_panel_dock_mode:
                 from PyQt5.QtGui import QDockWidget
                 from qgis.PyQt.QtCore import Qt
-
                 if self.dock_widget is None:
                     self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer - v%.03f' % version.VERSION, self.qgis_iface.mainWindow())
                 self.main_window = main_window.main_window(self.qgis_iface, None)

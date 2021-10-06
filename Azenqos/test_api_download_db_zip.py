@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import os
 import azq_server_api
@@ -25,7 +26,7 @@ def _test(server, user, passwd, lhl):
     azmfp = ret
     dbfp = integration_test_helpers.unzip_azm_to_tmp_get_dbfp(azmfp)
 
-    with sqlite3.connect(dbfp) as dbcon:
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         db_preprocess.prepare_spatialite_views(dbcon)
 
         df = pd.read_sql("select * from signalling", dbcon)

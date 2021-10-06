@@ -1,9 +1,16 @@
+import contextlib
+import csv
 import os
+import re
 import shutil
+import signal
 import sqlite3
 import sys
 import threading
 import traceback
+import uuid
+
+signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
 import pandas as pd
 import numpy as np
@@ -15,13 +22,13 @@ from PyQt5.QtCore import (
     QSortFilterProxyModel,
     QAbstractTableModel,
 )
+import PyQt5.QtGui as QtGui
 from PyQt5.QtGui import QStandardItemModel, QIcon, QPixmap, QStandardItem
 from PyQt5.QtWidgets import (
     QWidget,
     QTableView,
     QAbstractItemView,
     QVBoxLayout,
-    QHeaderView,
     QMenu,
     QLineEdit,
     QTreeView,
@@ -49,10 +56,18 @@ import azq_utils
 import qt_utils
 import qgis_layers_gen
 import sql_utils
+import preprocess_azm
 
+SEARCH_PLACEHOLDER_TEXT = "Search regex: a|b means a or b"
+DEFAULT_TABLE_WINDOW_OPTIONS_DICT_KEYS = (
+    "time_list_mode",
+    "list_module",
+    "stretch_last_row",
+)
 
 class TableWindow(QWidget):
     signal_ui_thread_emit_model_datachanged = pyqtSignal()
+    signal_ui_thread_emit_new_model = pyqtSignal()
     signal_ui_thread_setup_ui = pyqtSignal()  # use with skip_setup_ui in ctor
     signal_ui_thread_emit_select_row = pyqtSignal(int)
 
@@ -66,28 +81,46 @@ class TableWindow(QWidget):
         refresh_df_func_or_py_eval_str=None,
         tableHeader=None,
         custom_df=None,
-        time_list_mode=False,
-        l3_alt_wireshark_decode=False,
-        event_mos_score=False,
-        list_module=False,
         gc=None,
         skip_setup_ui=False,
         mdi=None,
         func_key=None,
-            stretch_last_row=False,
+
+        # these params will be written to options_dict
+        time_list_mode=False,
+        list_module=False,
+        stretch_last_row=False,
+        options=None,
     ):
         super().__init__(parent)
-        self.time_list_mode = time_list_mode  # True for windows like signalling, events where it shows data as a time list
-        self.l3_alt_wireshark_decode = l3_alt_wireshark_decode  # If True then detailwidget will try decode detail_hex into alternative wireshark l3 decode
-        self.event_mos_score = event_mos_score
-        self.list_module = list_module
+        if options is None:
+            options = {}
         self.tableModel = None
         self.skip_setup_ui = skip_setup_ui
         self.mdi = mdi
         self.func_key = func_key
-        self.stretch_last_row = stretch_last_row
-        # self.settings.setValue("func_key",self.func_key)
 
+        ################ support old params not put in options dict
+        print("options0:", options)
+        if time_list_mode:
+            options["time_list_mode"] = time_list_mode
+        print("options1:", options)
+        if list_module:
+            options["list_module"] = list_module
+        if stretch_last_row:
+            options["stretch_last_row"] = stretch_last_row
+        print("options2:", options)
+        for key in DEFAULT_TABLE_WINDOW_OPTIONS_DICT_KEYS:
+            if key not in options.keys():
+                options[key] = False
+        print("options3:", options)
+        self.time_list_mode = options["time_list_mode"]  # True for windows like signalling, events where it shows data as a time list
+        self.list_module = options["list_module"]
+        self.stretch_last_row = options["stretch_last_row"]
+        self.options = options
+        ################
+
+        # self.settings.setValue("func_key",self.func_key)
         self.selected_row_time = None
         self.selected_row_time_string = None
         self.selected_row_log_hash = None
@@ -100,6 +133,9 @@ class TableWindow(QWidget):
 
         self.title = title
         self.refresh_data_from_dbcon_and_time_func = refresh_df_func_or_py_eval_str
+
+        print("datatable.tablewindow title: {} time_list_mode: {} self.time_list_mode: {} options: {}".format(self.title, time_list_mode, self.time_list_mode,  self.options))
+
         self.custom_df = custom_df
         self.tableHeader = tableHeader
         self.rows = 0
@@ -122,10 +158,14 @@ class TableWindow(QWidget):
         self.find_row_log_hash = None
         self.tableViewCount = 0
         self.parentWindow = parent
+        self.parent = parent
         self.filterList = None
         self.filterMenu = None
         self.signal_ui_thread_emit_model_datachanged.connect(
             self.ui_thread_model_datachanged
+        )
+        self.signal_ui_thread_emit_new_model.connect(
+            self.ui_thread_new_model
         )
         self.signal_ui_thread_setup_ui.connect(self.ui_thread_sutup_ui)
         self.ui_thread_selecting_row_dont_trigger_timechanged = False
@@ -184,13 +224,7 @@ class TableWindow(QWidget):
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Init filter header
-
         self.filterHeader = FilterHeader(self.tableView)
-        """
-        if self.title in ["Signaling_Events", "Signaling_Layer 3 Messages"]:
-            self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-            self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
-        """
         self.filterHeader.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.filterHeader.customContextMenuRequested.connect(self.headerMenu)
 
@@ -231,11 +265,12 @@ class TableWindow(QWidget):
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.horizontalHeader().setMinimumSectionSize(40)
         self.tableView.horizontalHeader().setDefaultSectionSize(60)
-        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
 
         # self.tableView.verticalHeader().setMinimumSectionSize(12)
         self.tableView.verticalHeader().setDefaultSectionSize(14)
         self.tableView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.tableView.horizontalHeader().setStretchLastSection(True)
         self.tableView.verticalHeader().setStretchLastSection(self.stretch_last_row)
         # flayout = QFormLayout()
         # layout.addLayout(flayout)
@@ -251,13 +286,17 @@ class TableWindow(QWidget):
         self.setLayout(layout)
         self.show()
 
+
     def contextMenuEvent(self, event):
         menu = QMenu(self)
-        actions_dict = {"create_qgis_layer": None, "custom_expression": None}
+        actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None}
         if self.time_list_mode and self.df is not None and 'log_hash' in self.df.columns and 'time' in self.df.columns:
             actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
-        if isinstance(self.refresh_data_from_dbcon_and_time_func, str):
+        if isinstance(self.refresh_data_from_dbcon_and_time_func, (str, list, dict)):
             actions_dict["custom_expression"] = menu.addAction("Customize SQL/Python expression...")
+        if self.tableModel.df is not None:
+            actions_dict["to_csv"] = menu.addAction("Dump to CSV...")
+            actions_dict["to_parquet"] = menu.addAction("Dump to Parquet...")
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action is None:
             return
@@ -266,6 +305,35 @@ class TableWindow(QWidget):
             if expression:
                 self.refresh_data_from_dbcon_and_time_func = expression
                 self.refreshTableContents()
+        elif action == actions_dict["to_csv"] or action == actions_dict["to_parquet"]:
+            df = self.tableModel.df
+            try:
+                if len(df) and "log_hash" in df.columns and "time" in df.columns:
+                    if ("lat" not in df.columns) or ("lon" not in df.columns):
+                        print("need to merge lat and lon")
+                        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                            df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+                                columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                            )
+                fp, _ = QFileDialog.getSaveFileName(
+                    self, "Select dump file/location", QtCore.QDir.rootPath(), "*.csv" if action == actions_dict["to_csv"] else "*.parquet"
+                )
+                if fp:
+                    if action == actions_dict["to_csv"]:
+                        df.to_csv(fp, index=False, quoting=csv.QUOTE_ALL)
+                    else:
+                        df.to_parquet(fp)
+                    qt_utils.msgbox("Dumped to file: {}".format(fp))
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print(
+                    "WARNING: datatable title {} dump table to file contextmenu exception: {}".format(
+                        self.title, exstr
+                    )
+                )
+                qt_utils.msgbox("dump failed: " + exstr, title="Failed")
+
         elif action == actions_dict["create_qgis_layer"]:
             if self.gc.qgis_iface is None:
                 qt_utils.msgbox("Not running in QGIS-plugin mode...")
@@ -287,18 +355,41 @@ class TableWindow(QWidget):
                 )
             ):
                 qt_utils.msgbox(
-                    "This table doesn't contain required columns to add lat/lon: log_hash, time"
+                    "This table doesn't contain 'lat' and 'lon' columns, and alson doesn't contain the required columns to auto match/add lat/lon from logs: 'log_hash' and 'time'"
                 )
             else:
                 layer_name = qt_utils.ask_text(
                     self, "New layer", "Please specify layer name:"
                 )
                 if layer_name:
-                    with sqlite3.connect(self.gc.databasePath) as dbcon:
-                        # load it into qgis as new layer
-                        qgis_layers_gen.create_qgis_layer_df(
-                            self.tableModel.df, dbcon, layer_name=layer_name
+                    # load it into qgis as new layer
+                    try:
+                        tmpdbfp = self.gc.databasePath
+                        tmpdbfp +=  "_{}.db".format(uuid.uuid4())
+
+                        df = self.tableModel.df
+                        if ("lat" not in df.columns) or ("lon" not in df.columns):
+                            print("need to merge lat and lon")
+                            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                            )
+                        qgis_layers_gen.dump_df_to_spatialite_db(
+                        df, tmpdbfp, layer_name, is_indoor=self.gc.is_indoor
                         )
+                        assert os.path.isfile(tmpdbfp)
+                        qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+                            tmpdbfp, layer_name, label_col="name" if "name" in self.tableModel.df.columns else None
+                        )
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print(
+                            "WARNING: create_qgis_layer_df exception title {} refreshTableContents() failed exception: {}".format(
+                                self.title, exstr
+                            )
+                        )
+                        qt_utils.msgbox("create layer failed: "+exstr, title="Failed")
 
     def headerMenu(self, pos):
         globalPos = self.mapToGlobal(pos)
@@ -306,11 +397,13 @@ class TableWindow(QWidget):
         menu.addAction("Filter menu")
         selectedItem = menu.exec_(globalPos)
         if selectedItem:
-            self.horizontalHeader_sectionClicked()
+            col = self.tableView.currentIndex().column()
+            print("headermenuselected col: {}".format(col))
+            self.horizontalHeader_sectionClicked(col)
 
-    def horizontalHeader_sectionClicked(self):
-        if not self.filterMenu:
-            self.filterMenu = FilterMenuWidget(self, 1)
+    def horizontalHeader_sectionClicked(self, col):
+        print("horizontalHeader_sectionClicked col {}".format(col))
+        self.filterMenu = FilterMenuWidget(self, col)
         self.filterMenu.show()
 
         # posY = headerPos.y() + self.horizontalHeader.height()
@@ -325,6 +418,9 @@ class TableWindow(QWidget):
         )
         self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
         self.proxyModel.invalidateFilter()
+
+    def ui_thread_new_model(self):
+        self.setTableModel(self.dataList)
 
     def ui_thread_model_datachanged(self):
         print("ui_thread_model_datachanged")
@@ -424,7 +520,7 @@ class TableWindow(QWidget):
             and self.refresh_data_from_dbcon_and_time_func is not None
         ):
             try:
-                with sqlite3.connect(self.gc.databasePath) as dbcon:
+                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                     refresh_dict = {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
                     print(
                         "datatable refreshTableContents() refresh_data_from_dbcon_and_time_func: refresh_dict:", refresh_dict
@@ -443,9 +539,51 @@ class TableWindow(QWidget):
                             df = eval(eval_str)
                             if not isinstance(df, pd.DataFrame):
                                 df = pd.DataFrame({"py_eval_result":[df]})
+                    elif isinstance(self.refresh_data_from_dbcon_and_time_func, list):
+                        df_list = []
+                        time = refresh_dict["time"]
+                        log_hash = refresh_dict["log_hash"]
+                        for eval_str in self.refresh_data_from_dbcon_and_time_func:
+                            if sql_utils.is_sql_select(eval_str):
+                                sql_str = eval_str
+                                print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
+                                df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time)
+                                df_list.append(df)
+                            else:
+                                print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
+                                df = eval(eval_str)
+                                if not isinstance(df, pd.DataFrame):
+                                    df = pd.DataFrame({"py_eval_result":[df]})
+                                df_list.append(df)
+                        df = pd.concat(df_list)
+                    elif isinstance(self.refresh_data_from_dbcon_and_time_func, dict):
+                        time = refresh_dict["time"]
+                        log_hash = refresh_dict["log_hash"]
+                        df_dict_list = []
+                        for key in self.refresh_data_from_dbcon_and_time_func:
+                            df_list = []
+                            for eval_str in self.refresh_data_from_dbcon_and_time_func[key]:
+                                if sql_utils.is_sql_select(eval_str):
+                                    sql_str = eval_str
+                                    print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
+                                    df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, col_name=key)
+                                    df_list.append(df)
+                                else:
+                                    print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
+                                    df = eval(eval_str)
+                                    if not isinstance(df, pd.DataFrame):
+                                        df = pd.DataFrame({"py_eval_result":[df]})
+                                    df_list.append(df)
+                            df = pd.concat(df_list)
+                            df_dict_list.append(df)
+                        df = pd.concat(df_dict_list, axis=1)
+                        df = df.loc[:,~df.columns.duplicated()]
                     else:
                         print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))
-                        df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
+                        if self.title.lower() == "pcap":
+                            df = self.refresh_data_from_dbcon_and_time_func
+                        else:
+                            df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
                     assert df is not None
                     assert isinstance(df, pd.DataFrame)
                     print("datatable refersh param view got df:\n", df.head())
@@ -463,7 +601,7 @@ class TableWindow(QWidget):
         if self.dataList is not None:
             if create_table_model:
                 print("datatable refreshTableContents() settablemodel")
-                self.setTableModel(self.dataList)
+                self.signal_ui_thread_emit_new_model.emit()
             else:
                 print("datatable refreshTableContents() updatetablemodeldata")
                 self.updateTableModelData(self.dataList)  # applies new self.dataList
@@ -543,19 +681,18 @@ class TableWindow(QWidget):
         cellContent = ""
         for index, val in row_sr.items():
             cellContent += "[{}]: {}\n".format(index, val)
-        parentWindow = None
         if self.parentWindow:
             self.parentWindow.parentWidget()
         else:
-            parentWindow = self
-        if self.l3_alt_wireshark_decode:
+            pass
+        if 'name' in row_sr.index and 'dir' in row_sr.index and 'protocol' in row_sr.index:
             name = row_sr["name"]
             side = row_sr["dir"]
             protocol = row_sr["protocol"]
             self.detailWidget = DetailWidget(
-                self.gc, parentWindow, cellContent, name, side, protocol
+                self.gc, self, cellContent, name, side, protocol
             )
-        elif self.event_mos_score and row_sr["name"].find("MOS Score") != -1:
+        elif 'name' in row_sr.index and row_sr["name"].find("MOS Score") != -1:
             name = row_sr["name"]
             side = {}
             side["wav_file"] = os.path.join(
@@ -566,14 +703,14 @@ class TableWindow(QWidget):
                 row_sr["wave_file"].replace(".wav", "_polqa.txt"),
             )
             self.detailWidget = DetailWidget(
-                self.gc, parentWindow, cellContent, name, side
+                self.gc, self, cellContent, name, side
             )
         elif self.list_module:
             import module_dialog
             dlg = module_dialog.module_dialog(self, row_sr, self.gc, self.mdi)
             dlg.show()
         else:
-            self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
+            self.detailWidget = DetailWidget(self.gc, self, cellContent)
         """
         print("showdetail self.tablename {}".format(self.tablename))
         if self.tablename == "signalling":
@@ -710,7 +847,7 @@ class FilterMenuWidget(QWidget):
 
         self.searchBox = QLineEdit(FilterMenuWidget)
         self.searchBox.setFixedHeight(24)
-        self.searchBox.setPlaceholderText("Search...")
+        self.searchBox.setPlaceholderText(SEARCH_PLACEHOLDER_TEXT)
         self.verticalLayout.addWidget(self.searchBox)
 
         self.treeView = QTreeView(FilterMenuWidget)
@@ -731,7 +868,7 @@ class FilterMenuWidget(QWidget):
         self.model.setHorizontalHeaderLabels(["Name"])
 
         self.retranslateUi()
-        QtCore.QMetaObject.connectSlotsByName(self)
+        #QtCore.QMetaObject.connectSlotsByName(self)
         self.setFocus()
 
         # self.searchBox.textChanged.connect(self.completer.setCompletionPrefix)
@@ -764,10 +901,10 @@ class FilterMenuWidget(QWidget):
         self.proxyModel = QSortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         self.proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        self.proxyModel.setFilterKeyColumn(0)
+        self.proxyModel.setFilterKeyColumn(self.columnIndex)
         self.treeView.setModel(self.proxyModel)
         self.treeView.setSortingEnabled(True)
-        self.treeView.sortByColumn(0, Qt.AscendingOrder)
+        self.treeView.sortByColumn(self.columnIndex, Qt.AscendingOrder)
 
     def selectAll(self, state):
         print("filtermenuwidget: selectAll")
@@ -796,29 +933,34 @@ class FilterMenuWidget(QWidget):
 
     def closeEvent(self, QCloseEvent):
         print("filtermenuwidget: closeEvent")
+        '''
         indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
         for index in indices:
             self.gc.openedWindows.pop(index)
+        '''
         self.close()
         del self
 
 
-class DetailWidget(QDialog):
-    closed = False
+
+class DetailWidget(QDialog):    
 
     def __init__(
         self, gc, parent, detailText, messageName=None, side=None, protocol=None
     ):
         super().__init__(None)
+        self.closed = False
         self.title = "Details"
         self.gc = gc
         self.detailText = detailText
+        self.nth_match = 0
         self.messageName = messageName
         self.side = side
         self.protocol = protocol
         self.left = 10
         self.top = 10
         self.parent = parent
+        print("detailwidget self.parent", self.parent)
         self.width = 640
         self.height = 480
         self.setWindowFlags(QtCore.Qt.Window)
@@ -828,6 +970,85 @@ class DetailWidget(QDialog):
         else:
             self.setupUi()
 
+    def findedit_text_next(self):
+        substring = self.findEdit.text().strip()
+        self.search_and_highlight(substring, next_match=True)
+
+    def findedit_text_changed(self):
+        substring = self.findEdit.text().strip()
+        self.search_and_highlight(substring, next_match=False)
+
+    def clear_selection(self):
+        # Process the displayed document
+        cursor = self.textEdit.textCursor()
+        cursor.select(QtGui.QTextCursor.Document)
+        cursor.setCharFormat(QtGui.QTextCharFormat())
+        cursor.clearSelection()
+        #self.textEdit.setTextCursor(cursor)
+
+    def move_to_top(self):
+        # Process the displayed document
+        cursor = self.textEdit.textCursor()
+        cursor.setPosition(0)
+        cursor.movePosition(QtGui.QTextCursor.Start)
+        self.textEdit.setTextCursor(cursor)
+
+
+    def search_and_highlight(self, substring, next_match=False):
+        try:
+            self.clear_selection()
+            if not substring:
+                self.move_to_top()
+                return
+            # Setup the regex engine
+            regex = re.compile(substring, flags=re.IGNORECASE)
+            matched = False
+            n = 0
+            print("next_match: {}".format(next_match))
+            matches = list(re.finditer(regex, self.textEdit.toPlainText()))
+            if next_match == False:
+                self.nth_match = 0
+            else:
+                self.nth_match = (self.nth_match+1) if (self.nth_match < len(matches)-1) else 0
+            print("self.nth_match: {}".format(self.nth_match))
+
+            # hilight in the ui
+            MAX_UI_HIGHLIGHT_N = 10  # if thousands of matches this will block ui and ui thread so keep it quick
+            ui_background_color_format = QtGui.QTextCharFormat()
+            ui_background_color_format.setBackground(QtGui.QBrush(QtGui.QColor(255, 255, 0)))
+
+            if not len(matches):
+                self.move_to_top()
+
+            for i in range(len(matches)):
+                # hilight - dont hilight all as this is slow and will hang the ui thread
+                do_hilight = n > self.nth_match - MAX_UI_HIGHLIGHT_N/2 and n < self.nth_match + MAX_UI_HIGHLIGHT_N/2
+                if do_hilight:
+                    match = matches[i]
+                    matched = True
+                    cursor = self.textEdit.textCursor()
+                    cursor.setPosition(match.start())
+                    cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
+                    cursor.mergeCharFormat(ui_background_color_format)
+                # underline and move the position
+                if n == self.nth_match:
+                    match = matches[i]
+                    matched = True
+                    cursor = self.textEdit.textCursor()
+                    cursor.setPosition(match.start())
+                    self.textEdit.setTextCursor(cursor)  # move to first match
+                    cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
+                    selected_format = QtGui.QTextCharFormat()
+                    selected_format.setFontUnderline(True)
+                    cursor.mergeCharFormat(selected_format)
+                n += 1
+
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: detailwidget search_and_highlight() exception: {}".format(exstr))
+
+
     def setupUi(self):
         self.setObjectName(self.title)
         self.setWindowTitle(self.title)
@@ -835,12 +1056,40 @@ class DetailWidget(QDialog):
         self.textEdit = QTextEdit()
         self.textEdit.setPlainText(self.detailText)
         self.textEdit.setReadOnly(True)
+        self.text_style = """
+            * {
+            font-size: 11px;
+            }
+            QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
+            """
+        self.textEdit.setStyleSheet(self.text_style)
+        self.findEdit = QLineEdit()
+        self.findEdit.setPlaceholderText(SEARCH_PLACEHOLDER_TEXT)
+        self.findEdit.setStyleSheet(self.text_style)
+        self.findEdit.setMaximumHeight(25)
+        self.findEdit.returnPressed.connect(self.findedit_text_next)
+        self.findEdit.textChanged.connect(self.findedit_text_changed)
         layout = QVBoxLayout(self)
+        layout.addWidget(self.findEdit)
         layout.addWidget(self.textEdit)
         self.setLayout(layout)
+
+        try:
+            import main_window
+            window_geom = self.gc.main_window.current_workspace_settings.value(                
+                main_window.GUI_SETTING_NAME_PREFIX + "detail_widget_geom"
+            )
+            if window_geom:                
+                self.restoreGeometry(window_geom)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: detailwidget restoregeom failed - exception: {}".format(exstr))
+        
         self.show()
-        self.raise_()
-        self.activateWindow()
+        #self.raise_()
+        #self.activateWindow()
+        
         if (
             None not in [self.messageName, self.side, self.protocol]
             and "msg_raw_hex:" in self.detailText
@@ -853,18 +1102,28 @@ class DetailWidget(QDialog):
             self.gc.threadpool.start(worker)
         # messageName is not None and side is not None and protocol is not None :
 
+        
     def closeEvent(self, QCloseEvent):
-        indices = [i for i, x in enumerate(self.gc.openedWindows) if x == self]
-        for index in indices:
-            self.gc.openedWindows.pop(index)
+        try:
+            import main_window
+            self.gc.main_window.current_workspace_settings.setValue(
+                
+                main_window.GUI_SETTING_NAME_PREFIX + "detail_widget_geom", self.saveGeometry()
+            )
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: closeevent savegeom failed - exception: {}".format(exstr))
         self.close()
+        self.closed = True
         del self
+        
 
     def setDecodedDetail(self, detail):
         if self.closed == False:
             self.textEdit.setPlainText(
                 self.detailText
-                + "\n\n------\nALTERNATIVE WIRESHARK DECODE OF SAME PACKET BELOW\n------\n"
+                + "\n------\nALTERNATIVE WIRESHARK DECODE OF SAME PACKET BELOW\n------\n"
                 + str(detail)
             )
 

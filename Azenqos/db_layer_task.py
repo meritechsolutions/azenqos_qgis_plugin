@@ -1,7 +1,11 @@
+import contextlib
 import os
+import sqlite3
 import sys
 import time
 import traceback
+
+import pandas as pd
 
 try:
     from qgis.core import (
@@ -73,7 +77,7 @@ class LayerTask(QgsTask):
     def finished(self, result):
         self.task_done_signal.emit(os.path.basename(__file__))
 
-    def add_layers_from_ui_thread(self):
+    def add_layers_from_ui_thread(self, select=False):
         try:
             if self.gc.qgis_iface:
                 # gc.mostFeaturesLayer = None
@@ -81,7 +85,26 @@ class LayerTask(QgsTask):
 
                 print("db_layer_task.py add_layers_from_ui_thread() 3 addVectorLayer")
                 # geom_column = "geom"
-                self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
+                table_list = []
+                with contextlib.closing(sqlite3.connect(self.dbPath)) as dbcon:
+                    table_list = pd.read_sql("select f_table_name from geometry_columns", dbcon)
+                if True:
+                    #TODO add lower direct, non-ogr support?
+                    self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
+                else:
+                    import qgis_layers_gen
+                    for table in table_list:
+                        try:
+                            qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+                            self.dbPath, table
+                            )
+                        except:
+                            type_, value_, traceback_ = sys.exc_info()
+                            exstr = str(traceback.format_exception(type_, value_, traceback_))
+                            print("WARNING: create_qgis_layer_from_spatialite_db table {} failed exception: {}".format(
+                                table, exstr
+                            )
+                        )
 
                 # Setting CRS
                 my_crs = QgsCoordinateReferenceSystem(4326)
@@ -118,7 +141,7 @@ class LayerTask(QgsTask):
         print("add_layers_from_ui_thread() end")
 
 
-    def run_blocking(self):
+    def run_blocking(self, select=False):
         self.run()
         self.add_layers_from_ui_thread()
 

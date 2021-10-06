@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import sqlite3
 import sys
@@ -7,8 +8,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QMenu, QHeaderView, QFont
-
+from PyQt5.QtGui import QMenu, QFont
 # from qgis.gui import QgsColorButton
 from PyQt5.uic import loadUi
 
@@ -101,7 +101,7 @@ class LineChart(QtWidgets.QDialog):
         )
         self.ui.checkBox_2.setChecked(False)
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
-        self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         if self.gc.currentDateTimeString is not None:
             self.updateTime(datetime.datetime.strptime(self.gc.currentDateTimeString, "%Y-%m-%d %H:%M:%S.%f"))
         self.tableView.setStyleSheet(
@@ -244,7 +244,7 @@ class LineChart(QtWidgets.QDialog):
         print("updateInternal")
         time = self.newTime
         if self.gc.databasePath is not None:
-            with sqlite3.connect(self.gc.databasePath) as dbcon:
+            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                 self.reQueryChartData(dbcon)
                 self.reQueryTableData(dbcon, time)
 

@@ -13,7 +13,7 @@ import preprocess_azm
 
 elm_table_main_col_types = {
     "log_hash": "BIGINT",
-    "time": "DATETIME",
+    "time": "TEXT",
     "seqid": "INT",
     "posid": "INT",
     "geom": "BLOB",
@@ -28,9 +28,7 @@ elm_table_main_col_types = {
     "detail_str": "TEXT",
 }
 
-def prepare_spatialite_views(dbcon):
-    assert dbcon is not None
-
+def prepare_spatialite_required_tables(dbcon):
     dbcon.execute(
         """
         CREATE TABLE IF NOT EXISTS spatial_ref_sys (srid INTEGER NOT NULL PRIMARY KEY,auth_name VARCHAR(256) NOT NULL,auth_srid INTEGER NOT NULL,ref_sys_name VARCHAR(256),proj4text VARCHAR(2048) NOT NULL);
@@ -69,6 +67,11 @@ def prepare_spatialite_views(dbcon):
     )
     dbcon.execute("delete from layer_styles;")
 
+
+def prepare_spatialite_views(dbcon):
+    assert dbcon is not None
+    prepare_spatialite_required_tables(dbcon)
+
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geometry_columns df:\n{}".format(df.head()))
     assert len(df) == 0
@@ -99,7 +102,7 @@ def prepare_spatialite_views(dbcon):
         dbcon,
     )
     df_location_posid_time = pd.read_sql(
-        "select log_hash, posid, time from location",
+        "select log_hash, posid, time from location where positioning_lat is not null",
         dbcon,
     )
     gps_cancel_list = []
@@ -108,8 +111,11 @@ def prepare_spatialite_views(dbcon):
         df_location_posid_time = df_location_posid_time.loc[df_location_posid_time.posid != posid]
         gps_cancel_list.append((row.log_hash, posid+1))
 
+    # gps_cancel_list = []
+
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
+    azq_theme_manager
     params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
     print("params_to_gen:", params_to_gen)
 
@@ -161,17 +167,23 @@ def prepare_spatialite_views(dbcon):
                 print("not table_has_geom so gen sql merge in from location table by time - DONE")
             else:
                 if "cell_meas" in table:
+                    drop_view_sqlstr = "drop table if exists {col}".format(col=view)
                     sqlstr = "create table {col} as select * from {table} where {col} is not null;".format(col=view, table=table)
                 else:
+                    drop_view_sqlstr = "drop table if exists {col}".format(col=view)
                     sqlstr = "create table {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null;".format(
                         col=view, table=table,
                         modem_time_part="modem_time" if table_has_modem_time else "null as modem_time"
                     )
             print("create view sqlstr: %s" % sqlstr)
+            dbcon.execute(drop_view_sqlstr)
             dbcon.execute(sqlstr)
             view_cols = pd.read_sql("select * from {} where false".format(view), dbcon).columns
             assert "geom" in view_cols
             assert param in view_cols
+            view_len = pd.read_sql("select count(*) from {}".format(view), dbcon).iloc[0,0]
+            if not view_len:
+                continue
             tables_to_rm_stray_neg1_rows.append(view)
 
             sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
@@ -193,9 +205,35 @@ def prepare_spatialite_views(dbcon):
             print("param: {} got theme_df:\n{}".format(param, theme_df))
 
             ranges_xml = "<ranges>\n"
+            try:
+                # QGIS ranges count (right click > show layer count) wont match sql counts below if we dont sort this way
+                theme_df["Upper"] = pd.to_numeric(theme_df["Upper"])
+                theme_df.sort_values("Upper", ascending=False, inplace=True)
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: theme_df.sort_values exception:", exstr)
+
             for index, row in theme_df.iterrows():
-                ranges_xml += """<range symbol="{index}" label="{lower} to {upper}" render="true" lower="{lower}" upper="{upper}"/>\n""".format(
-                    index=index, lower=row.Lower, upper=row.Upper
+                percent_part = ""
+                try:
+                    rsql = "select count(*) from {view} where {view} >= {lower} and {view} < {upper}".format(view=view, lower=row.Lower, upper=row.Upper)
+                    if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
+                        rsql = "select count(*) from {view} where {view} = {lower}".format(
+                            view=view, lower=row.Lower)
+                    print("range rsql:", rsql)
+                    count = pd.read_sql(
+                        rsql,
+                        dbcon).iloc[0, 0]
+                    print("view_len: {} count: {}".format(view_len, count))
+                    percent_part = " (%d: %.02f%%)" % (count, ((count*100.0)/view_len))
+                    print("range percent_part:", percent_part)
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: calc range percent exception:", exstr)
+                ranges_xml += """<range symbol="{index}" label="{lower} to {upper}{percent}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
+                    index=index, lower=row.Lower, upper=row.Upper, percent=percent_part
                 )
             ranges_xml += "</ranges>\n"
 
@@ -316,15 +354,40 @@ def prepare_spatialite_views(dbcon):
         geomBlob[51:51+8] = by 
         geomBlob[59] = 0xfe
         return geomBlob
-        
-    df_location = pd.read_sql_query("select time as time_datetime, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null and positioning_lat >= 0 and positioning_lon >= 0 and positioning_lat <= 1 and positioning_lon <= 1", dbcon)
+    df_indoor_location = None
     try:
-        df_indoor_location = pd.read_sql_query("select time as time_datetime, log_hash, indoor_location_lat as positioning_lat, indoor_location_lon as positioning_lon from indoor_location ", dbcon)
-        if len(df_indoor_location) > 0:
-            df_location = df_indoor_location
+        df_indoor_location = pd.read_sql_query("select * from indoor_location", dbcon)
     except:
         pass
-    df_location["time_datetime"] = pd.to_datetime(df_location["time_datetime"])
+    if len(df_posids_indoor_start) > 0:
+        try:
+            sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"
+            dbcon.execute(sqlstr)
+            dbcon.commit()
+        except:
+            pass
+        try:
+            if df_indoor_location is not None and len(df_indoor_location) > 0: 
+                sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
+                print("copy indoor_location lat lon to location: %s" % sqlstr)
+                dbcon.execute(sqlstr)
+                dbcon.commit()
+        except:
+            pass
+        for log_hash, posid in gps_cancel_list:
+            try:
+                sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where log_hash = {} and posid = {};".format(
+                    log_hash, posid-1
+                )
+                print("delete gps cancel sqlstr: %s" % sqlstr)
+                dbcon.execute(sqlstr)
+                dbcon.commit()
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: remove gps cancel rows exception:", exstr)
+        
+    df_location = pd.read_sql_query("select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon, parse_dates=['time'])
 
     # remove stray -1 -1 rows
     for view in tables_to_rm_stray_neg1_rows:
@@ -362,45 +425,53 @@ def prepare_spatialite_views(dbcon):
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: remove gps cancel rows exception:", exstr)
         if len(df_posids_indoor_start) > 0:
-            view_null_df = pd.read_sql("select * from {} where geom is null".format(view), dbcon)
-            view_df = pd.read_sql("select * from {} where geom is not null".format(view), dbcon)
+            view_df = pd.read_sql("select * from {}".format(view), dbcon, parse_dates=['time'])
             if len(view_df) > 0:
-                by = None
-                if "log_hash" in view_df.columns and "log_hash" in df_location.columns:
-                    print("indoor merge df_location using by log_hash")
-                    by = "log_hash"
-                    view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
-                    df_location["log_hash"] = df_location["log_hash"].astype(np.int64)
-                view_df["time_datetime"] = pd.to_datetime(view_df["time"])
-
-                view_df = pd.merge_asof(view_df.sort_values('time_datetime'), df_location.sort_values('time_datetime'), on="time_datetime", by=by, direction="backward", allow_exact_matches=True)
-                view_df = view_df.drop(columns=['time_datetime'])
-                view_df.loc[view_df.duplicated(["positioning_lat", "positioning_lon"]), ["positioning_lat", "positioning_lon"]] = np.nan
-                idf = view_df[["log_hash", "time", "positioning_lat", "positioning_lon"]]
-                idf = idf.dropna(subset=["time"])
-                idf = idf.drop_duplicates(subset='time').set_index('time')
-                idf = idf.groupby('log_hash').apply(lambda sdf: sdf.interpolate())
-                idf = idf.reset_index() 
-                view_df["positioning_lat"] = idf["positioning_lat"]
-                view_df["positioning_lon"] = idf["positioning_lon"]
+                view_df = add_pos_lat_lon_to_indoor_df(view_df, df_location)
                 view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
                 view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
-                view_df = pd.concat([view_df, view_null_df], ignore_index=True)
                 view_df = view_df.sort_values(by="time").reset_index(drop=True)
                 view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
                 view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
-    
+
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
-
-
-
     ## for each param
     # create view for param
     # put param view into geometry_columns to register for display
     # create param QML theme based on default_style.qml
     # put qml entry into 'layer_styles' table
 
+
 def get_geom_cols_df(dbcon):
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geom df:\n{}".format(df.head()))
+    return df
+
+
+def add_pos_lat_lon_to_indoor_df(df, df_location):
+    # we want to interpolate by time on lat/lon only - not the values, make new tmp df for this
+    indoor_location_df_interpolated = df_location[
+        ["log_hash", "time", "positioning_lat", "positioning_lon"]].copy()
+    indoor_location_df_interpolated = azq_utils.resample_per_log_hash_time(indoor_location_df_interpolated,
+                                                                           "100ms", use_last=True)
+    cols = ["positioning_lat", "positioning_lon"]
+    azq_utils.set_none_to_repetetive_rows(indoor_location_df_interpolated, cols)
+    indoor_location_df_interpolated = indoor_location_df_interpolated.dropna(subset=["time"])
+    indoor_location_df_interpolated = indoor_location_df_interpolated.drop_duplicates(
+        subset='time').set_index('time')
+    indoor_location_df_interpolated = indoor_location_df_interpolated.groupby('log_hash').apply(
+        lambda sdf: sdf.interpolate(method='time')).reset_index()
+
+    # merge indoor lat/lon into df
+
+    by = None
+    if "log_hash" in df.columns and "log_hash" in df_location.columns:
+        print('indoor merge df_location using by log_hash')
+        by = 'log_hash'
+        df['log_hash'] = df['log_hash'].astype(np.int64)
+        df_location['log_hash'] = df_location['log_hash'].astype(np.int64)
+
+    df = pd.merge_asof(df.sort_values("time"), indoor_location_df_interpolated.sort_values("time"),
+                           on="time", by=by,
+                           direction="backward", allow_exact_matches=True)
     return df

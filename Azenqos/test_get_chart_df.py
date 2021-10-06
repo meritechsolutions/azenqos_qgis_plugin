@@ -1,7 +1,6 @@
 import integration_test_helpers
 import linechart_query
 import contextlib
-import time
 
 def test():
     azmfp = "../example_logs/line_chart/354505624002242-13_09_2021-14_32_00_processed.azm"

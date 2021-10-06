@@ -1002,7 +1002,6 @@ class DetailWidget(QDialog):
                 return
             # Setup the regex engine
             regex = re.compile(substring, flags=re.IGNORECASE)
-            matched = False
             n = 0
             print("next_match: {}".format(next_match))
             matches = list(re.finditer(regex, self.textEdit.toPlainText()))
@@ -1025,7 +1024,6 @@ class DetailWidget(QDialog):
                 do_hilight = n > self.nth_match - MAX_UI_HIGHLIGHT_N/2 and n < self.nth_match + MAX_UI_HIGHLIGHT_N/2
                 if do_hilight:
                     match = matches[i]
-                    matched = True
                     cursor = self.textEdit.textCursor()
                     cursor.setPosition(match.start())
                     cursor.setPosition(match.end(), QtGui.QTextCursor.KeepAnchor)
@@ -1033,7 +1031,6 @@ class DetailWidget(QDialog):
                 # underline and move the position
                 if n == self.nth_match:
                     match = matches[i]
-                    matched = True
                     cursor = self.textEdit.textCursor()
                     cursor.setPosition(match.start())
                     self.textEdit.setTextCursor(cursor)  # move to first match

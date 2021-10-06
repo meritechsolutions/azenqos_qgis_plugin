@@ -2348,7 +2348,7 @@ Log_hash list: {}""".format(
                         print("csv uri: {}".format(uri))
                         layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
                         param_att_rat = {'gsm': 'bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
-                        param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
+                        param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'wcdma_sc1', 'lte': 'lte_physical_cell_id_1', 'nr': 'nr_servingbeam_pci_1'}
                         param_name_in_cell = param_att_rat[rat]
                         param_name_in_db = param_db_rat[rat]
                         color_range_list = []

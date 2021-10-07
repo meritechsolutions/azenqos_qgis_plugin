@@ -80,6 +80,7 @@ except:
     pass
 from atomic_int import atomic_int
 import import_db_dialog
+import preprocess_azm
 import params_disp_df
 from version import VERSION
 
@@ -120,6 +121,7 @@ class main_window(QMainWindow):
         self.gc.main_window = self
         self.timechange_service_thread = None
         self.is_legacy_indoor = False
+        self.is_leg_nr_tables = False
         self.timechange_to_service_counter = atomic_int(0)
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
@@ -528,20 +530,20 @@ Log_hash list: {}""".format(
     def on_action5GNR_Radio_Parameters_triggered(self):
         print("action old nr radio params")
         import nr_sql_query
-        import preprocess_azm
-        if not preprocess_azm.is_leg_nr_tables():
+        if self.is_leg_nr_tables == False:
             self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
         else:
+            print("is legacy nr")
             self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
         print("action nr serving neigh")
         import nr_sql_query
-        import preprocess_azm
-        if not preprocess_azm.is_leg_nr_tables():
+        if self.is_leg_nr_tables == False:
             self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
         else:
+            print("is legacy nr")
             self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
 
     @pyqtSlot()
@@ -554,10 +556,10 @@ Log_hash list: {}""".format(
     def on_action5GNR_Data_Params_triggered(self):
         print("action old nr data")
         import nr_sql_query
-        import preprocess_azm
-        if not preprocess_azm.is_leg_nr_tables():
+        if self.is_leg_nr_tables == False:
             self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
         else:
+            print("is legacy nr")
             self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
     ############# LTE menu slots
@@ -1798,6 +1800,7 @@ Log_hash list: {}""".format(
         else:
             self.ui.statusbar.showMessage("Log not opened...")
         self.updateUi()
+        self.is_leg_nr_tables = preprocess_azm.is_leg_nr_tables()
 
     def timeChange(self):
         ret = self.timechange_to_service_counter.inc_and_get()

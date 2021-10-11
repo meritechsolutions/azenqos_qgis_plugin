@@ -284,7 +284,7 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
     "1":[
         '''
         select log_hash, time as Time,
-        '--- PUCCH ---',
+        '' as '--- PUCCH ---',
         lte_cqi_cw0_1 as 'CQI CW 0',
         lte_cqi_cw1_1 as 'CQI CW 1',
         lte_cqi_n_subbands_1 as 'CQI N Sub-bands',
@@ -293,7 +293,7 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
         ''',
         '''
         select
-        '--- PDSCH ---',
+        '' as '--- PDSCH ---',
         lte_pdsch_serving_cell_id_1 as 'PDSCH Serving Cell ID',
         lte_pdsch_rnti_id_1 as 'PDSCH RNTI ID',
         lte_pdsch_rnti_type_1 as 'PDSCH RNTI Type',
@@ -316,7 +316,7 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
     "2":[
         '''
         select '' as log_hash, '' as Time,
-        '--- PUCCH ---',
+        '' as '--- PUCCH ---',
         lte_cqi_cw0_2 as 'CQI CW 0',
         lte_cqi_cw1_2 as 'CQI CW 1',
         lte_cqi_n_subbands_2 as 'CQI N Sub-bands',
@@ -325,7 +325,7 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
         ''',
         '''
         select
-        '--- PDSCH ---',
+        '' as '--- PDSCH ---',
         lte_pdsch_serving_cell_id_2 as 'PDSCH Serving Cell ID',
         lte_pdsch_rnti_id_2 as 'PDSCH RNTI ID',
         lte_pdsch_rnti_type_2 as 'PDSCH RNTI Type',
@@ -348,7 +348,7 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
     "3":[
         '''
         select '' as log_hash, '' as Time,
-        '--- PUCCH ---',
+        '' as '--- PUCCH ---',
         lte_cqi_cw0_3 as 'CQI CW 0',
         lte_cqi_cw1_3 as 'CQI CW 1',
         lte_cqi_n_subbands_3 as 'CQI N Sub-bands',
@@ -357,7 +357,7 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
         ''',
         '''
         select
-        '--- PDSCH ---',
+        '' as '--- PDSCH ---',
         lte_pdsch_serving_cell_id_3 as 'PDSCH Serving Cell ID',
         lte_pdsch_rnti_id_3 as 'PDSCH RNTI ID',
         lte_pdsch_rnti_type_3 as 'PDSCH RNTI Type',
@@ -380,7 +380,7 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
     "4":[
         '''
         select '' as log_hash, '' as Time,
-        '--- PUCCH ---',
+        '' as '--- PUCCH ---',
         lte_cqi_cw0_4 as 'CQI CW 0',
         lte_cqi_cw1_4 as 'CQI CW 1',
         lte_cqi_n_subbands_4 as 'CQI N Sub-bands',
@@ -389,7 +389,7 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
         ''',
         '''
         select
-        '--- PDSCH ---',
+        '' as '--- PDSCH ---',
         lte_pdsch_serving_cell_id_4 as 'PDSCH Serving Cell ID',
         lte_pdsch_rnti_id_4 as 'PDSCH RNTI ID',
         lte_pdsch_rnti_type_4 as 'PDSCH RNTI Type',
@@ -414,29 +414,51 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
 LTE_VOLTE_SQL_LIST = [
     '''
     select 
-    time as 'Time', 'Codec:' 
+    time as 'Time', 
+    '' as 'Codec:' 
     from lte_volte_stats
     ''',
     '''
     select 
-    gsm_speechcodecrx as 'AMR SpeechCodec-RX',
-    gsm_speechcodectx as 'AMR SpeechCodec-TX',
-    'Delay interval avg:',
+    gsm_speechcodecrx as 'AMR SpeechCodec-RX'
+    from vocoder_info''',
+    '''
+    select
+    gsm_speechcodectx as 'AMR SpeechCodec-TX'
+    from vocoder_info''',
+    '''
+    select
+    '' as 'Delay interval avg:',
     vocoder_amr_audio_packet_delay_avg as 'Audio Packet delay (ms.)' 
     from vocoder_info''',
     '''
     select 
-    lte_volte_rtp_pkt_delay_avg as 'RTP Packet delay (ms.)',
-    'RTCP SR Params:',
-    lte_volte_rtp_round_trip_time as 'RTCP Round trip time (ms.)',
-    'RTCP SR Params - Jitter DL:',
-    lte_volte_rtp_jitter_dl as 'RTCP SR Jitter DL (ts unit)',
-    'RTCP SR Params - Jitter UL:',
-    lte_volte_rtp_jitter_ul as 'RTCP SR Jitter UL (ts unit)',
-    'RTCP SR Params - Packet loss rate:',
-    lte_volte_rtp_packet_loss_rate_dl as 'RTCP SR Packet loss DL (%)',
+    lte_volte_rtp_pkt_delay_avg as 'RTP Packet delay (ms.)'
+    from lte_volte_stats''',
+    '''
+    select 
+    '' as 'RTCP SR Params:',
+    lte_volte_rtp_round_trip_time as 'RTCP Round trip time (ms.)'
+    from lte_volte_stats''',
+    '''
+    select
+    '' as 'RTCP SR Params - Jitter DL:',
+    lte_volte_rtp_jitter_dl as 'RTCP SR Jitter DL (ts unit)'
+    from lte_volte_stats''',
+    '''
+    select
+    '' as 'RTCP SR Params - Jitter UL:',
+    lte_volte_rtp_jitter_ul as 'RTCP SR Jitter UL (ts unit)'
+    from lte_volte_stats''',
+    '''
+    select
+    '' as 'RTCP SR Params - Packet loss rate:',
+    lte_volte_rtp_packet_loss_rate_dl as 'RTCP SR Packet loss DL (%)'
+    from lte_volte_stats''',
+    '''
+    select
     lte_volte_rtp_packet_loss_rate_ul as 'RTCP SR Packet loss UL (%)' 
-    from lte_volte_stats'''
+    from lte_volte_stats''',
 ]
 
 LTE_DATA_PARAMS_SQL_LIST_DICT = {

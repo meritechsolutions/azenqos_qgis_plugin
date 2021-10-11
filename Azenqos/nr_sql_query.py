@@ -1,7 +1,7 @@
 NR_RADIO_PARAMS_SQL_LIST = [
     '''
     select log_hash, time,
-    '--- PCell ---'
+    '' as '--- PCell ---'
     from nr_cell_meas
     ''' ,
     '''
@@ -60,7 +60,7 @@ NR_RADIO_PARAMS_SQL_LIST = [
     ''' ,
     '''
     select nr_endc_total_tx_power as 'NR ENDC Total Tx Power',
-    '--- PUSCH ---',
+    '' as '--- PUSCH ---',
     nr_pusch_tx_power_1 as 'NR PUSCH Tx Power'
     from nr_deb_stat
     ''' ,
@@ -71,7 +71,7 @@ NR_RADIO_PARAMS_SQL_LIST = [
     from nr_cell_meas
     ''' ,
     '''
-    select '--- PUCCH ---',
+    select '' as '--- PUCCH ---',
     nr_pucch_tx_power_1 as 'NR PUCCH Tx Power'
     from nr_deb_stat
     ''' ,
@@ -82,7 +82,7 @@ NR_RADIO_PARAMS_SQL_LIST = [
     from nr_cell_meas
     ''' ,
     '''
-    select '--- SRS ---',
+    select '' as '--- SRS ---',
     nr_srs_tx_power_1 as 'NR SRX Tx Power'
     from nr_tx_srs_status
     ''' ,
@@ -96,7 +96,7 @@ NR_RADIO_PARAMS_SQL_LIST = [
     from nr_cell_meas
     ''' ,
     '''
-    select '--- RACH ---',
+    select '' as '--- RACH ---',
     nr_prach_tx_power as 'NR PRACH Tx Power'
     from nr_deb_stat
     ''' ,
@@ -147,7 +147,7 @@ NR_RADIO_PARAMS_SQL_LIST = [
     from nr_cell_meas
     ''' ,
     '''
-    select '--- ReconfigWithSync params ---',
+    select '' as '--- ReconfigWithSync params ---',
     nr_reconfigwithsync_target_arfcn as 'target_arfcn',
     nr_reconfigwithsync_carrier_offset_to_carrier_1 as 'offset_to_carrier',
     nr_reconfigwithsync_carrier_bandwidth_rbs_1 as 'carrier_bandwidth_rbs',
@@ -159,7 +159,7 @@ NR_RADIO_PARAMS_SQL_LIST = [
 OLD_NR_RADIO_PARAMS_SQL_LIST = [
     '''
     select log_hash, time,
-    '--- PCell ---'
+    '' as '--- PCell ---'
     from nr_cell_meas
     ''' ,
     '''
@@ -219,7 +219,7 @@ OLD_NR_RADIO_PARAMS_SQL_LIST = [
     ''' ,
     '''
     select nr_endc_total_tx_power as 'NR ENDC Total Tx Power',
-    '--- PUSCH ---',
+    '' as '--- PUSCH ---',
     nr_pusch_tx_power_1 as 'NR PUSCH Tx Power'
     from nr_cell_meas
     ''' ,
@@ -230,7 +230,7 @@ OLD_NR_RADIO_PARAMS_SQL_LIST = [
     from nr_cell_meas
     ''' ,
     '''
-    select '--- PUCCH ---',
+    select '' as '--- PUCCH ---',
     nr_pucch_tx_power_1 as 'NR PUCCH Tx Power'
     from nr_cell_meas
     ''' ,
@@ -241,7 +241,7 @@ OLD_NR_RADIO_PARAMS_SQL_LIST = [
     from nr_cell_meas
     ''' ,
     '''
-    select '--- SRS ---',
+    select '' as '--- SRS ---',
     nr_srs_tx_power_1 as 'NR SRX Tx Power'
     from nr_cell_meas
     ''' ,
@@ -255,7 +255,7 @@ OLD_NR_RADIO_PARAMS_SQL_LIST = [
     from nr_cell_meas
     ''' ,
     '''
-    select '--- RACH ---',
+    select '' as '--- RACH ---',
     nr_prach_tx_power as 'NR PRACH Tx Power'
     from nr_deb_stat
     ''' ,
@@ -306,7 +306,7 @@ OLD_NR_RADIO_PARAMS_SQL_LIST = [
     from nr_cell_meas
     ''' ,
     '''
-    select '--- ReconfigWithSync params ---',
+    select '' as '--- ReconfigWithSync params ---',
     nr_reconfigwithsync_target_arfcn as 'target_arfcn',
     nr_reconfigwithsync_carrier_offset_to_carrier_1 as 'offset_to_carrier',
     nr_reconfigwithsync_carrier_bandwidth_rbs_1 as 'carrier_bandwidth_rbs',
@@ -783,7 +783,7 @@ NR_DATA_PARAMS_SQL_LIST = [
     '''select nr_modulation_1 as 'NR DL Mod' from nr_dci_11''',
     '''select nr_ul_mcs_mode_1 as 'NR UL MCS' from nr_cell_meas''',
     '''select nr_ul_mcs_avg_1 as 'NR UL MCS(Avg)' from nr_deb_stat''',
-    '''select nr_ul_modulation_1 as 'NR UL Mod', '--- Mod last second ---' from nr_cell_meas''',
+    '''select nr_ul_modulation_1 as 'NR UL Mod', '' as '--- Mod last second ---' from nr_cell_meas''',
     '''select nr_qpsk_1 as 'NR DL Mod QPSK %',nr_16qam_1 as 'NR DL Mod 16QAM %',nr_64qam_1 as 'NR DL Mod 64QAM %',nr_256qam_1 as 'NR DL Mod 256QAM %',nr_1024qam_1 as 'NR DL Mod 1024QAM %' from nr_pdsch_stat''',
     '''select nr_ul_modulation_order as 'NR UL Modulation' from nr_pusch_status''',
     '''select nr_ul_qpsk_1 as 'NR UL Mod QPSK %',nr_ul_16qam_1 as 'NR UL Mod 16QAM %',nr_ul_64qam_1 as 'NR UL Mod 64QAM %',nr_ul_256qam_1 as 'NR UL Mod 256QAM %',nr_ul_1024qam_1 as 'NR UL Mod 1024QAM %' from nr_cell_meas'''
@@ -799,7 +799,7 @@ OLD_NR_DATA_PARAMS_SQL_LIST = [
     '''select nr_p_plus_scell_nr_pusch_tput_mbps as 'UL NR PDSCH TP (MBps)' from nr_cell_meas''',
     '''select nr_cqi as 'NR CQI',nr_cri_1 as 'NR CRI',nr_ri_1 as 'NR RI',nr_wb_pmi_i1_1_1 as 'NR PMI I1 1',nr_wb_pmi_i1_2_1 as 'NR PMI I1 2',nr_wb_pmi_i1_3_1 as 'NR PMI I1 3',nr_wb_pmi_i2_1 as 'NR PMI I2' from nr_cell_meas''',
     '''select nr_csi_cqi as 'NR CSI CQI',nr_csi_cri as 'NR CSI CRI',nr_csi_ri as 'NR CSI RI',nr_csi_li as 'NR CSI LI' from nr_csi_report''',
-    '''select nr_num_crc_pass_tb_1 as 'NR DL N CRC Pass TB',nr_num_crc_fail_tb_1 as 'NR DL N CRC Fail TB',nr_num_ul_crc_pass_tb_1 as 'NR UL N CRC Pass TB',nr_num_ul_crc_fail_tb_1 as 'NR UL N CRC Fail TB',nr_num_ul_all_tx_type_1 as 'NR UL N All Tx',nr_num_ul_re_tx_type_1 as 'NR UL N Re Tx',nr_dl_mcs_mode_1 as 'NR DL MCS',nr_dl_mcs_avg_1 as 'NR DL MCS(Avg)',nr_modulation_1 as 'NR DL Mod',nr_ul_mcs_mode_1 as 'NR UL MCS',nr_ul_mcs_avg_1 as 'NR UL MCS(Avg)',nr_ul_modulation_1 as 'NR UL Mod', '--- Mod last second ---' from nr_cell_meas''',
+    '''select nr_num_crc_pass_tb_1 as 'NR DL N CRC Pass TB',nr_num_crc_fail_tb_1 as 'NR DL N CRC Fail TB',nr_num_ul_crc_pass_tb_1 as 'NR UL N CRC Pass TB',nr_num_ul_crc_fail_tb_1 as 'NR UL N CRC Fail TB',nr_num_ul_all_tx_type_1 as 'NR UL N All Tx',nr_num_ul_re_tx_type_1 as 'NR UL N Re Tx',nr_dl_mcs_mode_1 as 'NR DL MCS',nr_dl_mcs_avg_1 as 'NR DL MCS(Avg)',nr_modulation_1 as 'NR DL Mod',nr_ul_mcs_mode_1 as 'NR UL MCS',nr_ul_mcs_avg_1 as 'NR UL MCS(Avg)',nr_ul_modulation_1 as 'NR UL Mod', '' as '--- Mod last second ---' from nr_cell_meas''',
     '''select nr_qpsk_1 as 'NR DL Mod QPSK %',nr_16qam_1 as 'NR DL Mod 16QAM %',nr_64qam_1 as 'NR DL Mod 64QAM %',nr_256qam_1 as 'NR DL Mod 256QAM %',nr_1024qam_1 as 'NR DL Mod 1024QAM %' from nr_cell_meas''',
     '''select nr_ul_num_rb as 'NR UL Num RB',nr_ul_modulation_order as 'NR UL Modulation' from nr_deb_stat''',
     '''select nr_ul_qpsk_1 as 'NR UL Mod QPSK %',nr_ul_16qam_1 as 'NR UL Mod 16QAM %',nr_ul_64qam_1 as 'NR UL Mod 64QAM %',nr_ul_256qam_1 as 'NR UL Mod 256QAM %',nr_ul_1024qam_1 as 'NR UL Mod 1024QAM %' from nr_cell_meas'''

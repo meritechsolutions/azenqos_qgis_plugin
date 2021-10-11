@@ -16,7 +16,7 @@ from exynos_basic_info_nr
 '''
 
 LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART = '''
-where {log_hash_filt_part} time between DATETIME('{time}','-2 seconds') and '{time}'
+where {log_hash_filt_part} time between DATETIME('{time}','-4 seconds') and '{time}'
 '''
 
 LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SUFFIX = '''.format(
@@ -45,7 +45,14 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
     df = pd.read_sql(sql, dbcon)
     if len(df) > 0:
         if df.last_valid_index() is not None:
-            df = df.loc[[df.last_valid_index()]].reset_index(drop=True)
+            last_valid_each_col = df.apply(pd.Series.last_valid_index)
+            valid_df_dict = {}
+            for index, value in last_valid_each_col.items():
+                value_index = 0
+                if not pd.isna(value):
+                    value_index = int(value)
+                valid_df_dict[index] = df[index][value_index]
+            df = pd.DataFrame.from_dict(valid_df_dict, orient='index').T
         else:
             df = df.iloc[[0]].reset_index(drop=True)
 

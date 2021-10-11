@@ -24,8 +24,6 @@ import fill_geom_in_location_df
 
 def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     assert df is not None
-    assert "log_hash" in df.columns
-    assert "time" in df.columns
 
     if "lat" not in df.columns:
         if "positioning_lat" in df.columns:
@@ -37,6 +35,8 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         assert "lat" in df.columns and "lon" in df.columns
         if is_indoor:
+            assert "log_hash" in df.columns
+            assert "time" in df.columns
             idf = df[["log_hash", "time", "lat", "lon"]]
             idf = idf.dropna(subset=["time"])
             idf = idf.drop_duplicates(subset='time').set_index('time')

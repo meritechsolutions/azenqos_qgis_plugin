@@ -180,6 +180,12 @@
      </property>
      <addaction name="actionExynosServiceMode_BasicInfo_2"/>
     </widget>
+    <widget class="QMenu" name="menuAI_ML_Prediction">
+     <property name="title">
+      <string>Machine Learning / AI</string>
+     </property>
+     <addaction name="actionServerPredict"/>
+    </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
@@ -187,6 +193,7 @@
     <addaction name="menuSignalling"/>
     <addaction name="menuData"/>
     <addaction name="menuSystem"/>
+    <addaction name="menuAI_ML_Prediction"/>
     <addaction name="menuLog"/>
     <addaction name="actionPCAP"/>
     <addaction name="menuCustom_Windows"/>
@@ -599,6 +606,11 @@
   <action name="actionServer_overview_layers">
    <property name="text">
     <string>Server overview layers</string>
+   </property>
+  </action>
+  <action name="actionServerPredict">
+   <property name="text">
+    <string>Predict from server models</string>
    </property>
   </action>
  </widget>

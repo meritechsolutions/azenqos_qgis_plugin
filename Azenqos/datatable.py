@@ -362,34 +362,8 @@ class TableWindow(QWidget):
                     self, "New layer", "Please specify layer name:"
                 )
                 if layer_name:
-                    # load it into qgis as new layer
-                    try:
-                        tmpdbfp = self.gc.databasePath
-                        tmpdbfp +=  "_{}.db".format(uuid.uuid4())
+                    azq_utils.create_layer_in_qgis(self.gc.databasePath, self.tableModel.df, layer_name)
 
-                        df = self.tableModel.df
-                        if ("lat" not in df.columns) or ("lon" not in df.columns):
-                            print("need to merge lat and lon")
-                            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
-columns={"positioning_lat": "lat", "positioning_lon": "lon"}
-                            )
-                        qgis_layers_gen.dump_df_to_spatialite_db(
-                        df, tmpdbfp, layer_name, is_indoor=self.gc.is_indoor
-                        )
-                        assert os.path.isfile(tmpdbfp)
-                        qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-                            tmpdbfp, layer_name, label_col="name" if "name" in self.tableModel.df.columns else None
-                        )
-                    except:
-                        type_, value_, traceback_ = sys.exc_info()
-                        exstr = str(traceback.format_exception(type_, value_, traceback_))
-                        print(
-                            "WARNING: create_qgis_layer_df exception title {} refreshTableContents() failed exception: {}".format(
-                                self.title, exstr
-                            )
-                        )
-                        qt_utils.msgbox("create layer failed: "+exstr, title="Failed")
 
     def headerMenu(self, pos):
         globalPos = self.mapToGlobal(pos)

@@ -1897,3 +1897,33 @@ def resample_per_log_hash_time(param_df, resample_param, use_last=False):
     assert len(ori_cols) == len(end_cols)
     assert set(ori_cols) == set(end_cols)
     return param_df
+
+
+def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False):
+    try:
+        import preprocess_azm
+        import qgis_layers_gen
+        tmpdbfp = tmp_gen_fp("tmp_{}.db".format(uuid.uuid4()))
+        if ("lat" not in df.columns) or ("lon" not in df.columns):
+            print("need to merge lat and lon")
+            with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
+                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+                    columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                )
+        qgis_layers_gen.dump_df_to_spatialite_db(
+            df, tmpdbfp, layer_name, is_indoor=is_indoor
+        )
+        assert os.path.isfile(tmpdbfp)
+        qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+            tmpdbfp, layer_name, label_col="name" if "name" in df.columns else None
+        )
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(
+            "WARNING: create_layer_in_qgis failed exception: {}".format(
+                exstr
+            )
+        )
+        import qt_utils
+        qt_utils.msgbox("create layer failed: " + exstr, title="Failed")

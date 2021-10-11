@@ -272,11 +272,23 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionServer_overview_layers_triggered(self):
         if not self.is_logged_in():
-            qt_utils.msgbox("Please login to server first...", parent=self)
-            return
+            self.on_actionLogin_triggered()
+            if not self.is_logged_in():
+                return
         import server_overview_widget
-        swa = SubWindowArea(self.mdi, self.gc)
         widget = server_overview_widget.server_overview_widget(self, self.gc)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
+
+    @pyqtSlot()
+    def on_actionServerPredict_triggered(self):
+        if not self.is_logged_in():
+            qt_utils.msgbox("Please login to server first...", parent=self)
+            self.on_actionLogin_triggered()
+            return
+        import predict_widget
+        widget = predict_widget.predict_widget(self, self.gc)
+        swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
 
 

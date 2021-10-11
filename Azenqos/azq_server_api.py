@@ -64,10 +64,16 @@ def api_create_process(server, token, lhl, azq_report_gen_expression):
 
 
 def api_overview_db_list(server, token):
-    resp = call_api_get_resp(server, token, "livegen_api/overview_db_list", {})
-    assert "list" in resp
+    resp = call_api_get_resp(server, token, "uapi/overview_db", {})
     return resp["list"]
 
+def api_predict_models_list(server, token):
+    resp = call_api_get_resp(server, token, "uapi/predict", {}, method="get")
+    return pd.DataFrame(resp)
+
+def api_predict_df(server, token, body_dict):
+    resp = call_api_get_resp(server, token, "uapi/predict", body_dict)
+    return pd.DataFrame(resp)
 
 def api_overview_db_df(server, token):
     dbl = api_overview_db_list(server, token)

@@ -305,11 +305,11 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
         lte_pdsch_rb_allocation_slot1_1 as 'PDSCH Rb Allocation Slot 1',
         lte_pdsch_pmi_type_1 as 'PDSCH PMI Type',
         lte_pdsch_pmi_index_1 as 'PDSCH PMI Index',
-        lte_pdsch_stream0_transport_block_size_bits_1 as 'PDSCH Stream[0] Block Size',
-        lte_pdsch_stream0_modulation_1 as 'PDSCH Stream[0] Modulation',
+        lte_pdsch_stream0_transport_block_size_bits_1 as 'PDSCH Stream_0 Block Size',
+        lte_pdsch_stream0_modulation_1 as 'PDSCH Stream_0 Modulation',
         lte_pdsch_traffic_to_pilot_ratio_1 as 'PDSCH Traffic To Pilot Ratio',
-        lte_pdsch_stream1_transport_block_size_bits_1 as 'PDSCH Stream[1] Block Size',
-        lte_pdsch_stream1_modulation_1 as 'PDSCH Stream[1] Modulation'
+        lte_pdsch_stream1_transport_block_size_bits_1 as 'PDSCH Stream_1 Block Size',
+        lte_pdsch_stream1_modulation_1 as 'PDSCH Stream_1 Modulation'
         from lte_pdsch_meas
         '''
     ],
@@ -337,11 +337,11 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
         lte_pdsch_rb_allocation_slot1_2 as 'PDSCH Rb Allocation Slot 1',
         lte_pdsch_pmi_type_2 as 'PDSCH PMI Type',
         lte_pdsch_pmi_index_2 as 'PDSCH PMI Index',
-        lte_pdsch_stream0_transport_block_size_bits_2 as 'PDSCH Stream[0] Block Size',
-        lte_pdsch_stream0_modulation_2 as 'PDSCH Stream[0] Modulation',
+        lte_pdsch_stream0_transport_block_size_bits_2 as 'PDSCH Stream_0 Block Size',
+        lte_pdsch_stream0_modulation_2 as 'PDSCH Stream_0 Modulation',
         lte_pdsch_traffic_to_pilot_ratio_2 as 'PDSCH Traffic To Pilot Ratio',
-        lte_pdsch_stream1_transport_block_size_bits_2 as 'PDSCH Stream[1] Block Size',
-        lte_pdsch_stream1_modulation_2 as 'PDSCH Stream[1] Modulation'
+        lte_pdsch_stream1_transport_block_size_bits_2 as 'PDSCH Stream_1 Block Size',
+        lte_pdsch_stream1_modulation_2 as 'PDSCH Stream_1 Modulation'
         from lte_pdsch_meas
         '''
     ],
@@ -369,11 +369,11 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
         lte_pdsch_rb_allocation_slot1_3 as 'PDSCH Rb Allocation Slot 1',
         lte_pdsch_pmi_type_3 as 'PDSCH PMI Type',
         lte_pdsch_pmi_index_3 as 'PDSCH PMI Index',
-        lte_pdsch_stream0_transport_block_size_bits_3 as 'PDSCH Stream[0] Block Size',
-        lte_pdsch_stream0_modulation_3 as 'PDSCH Stream[0] Modulation',
+        lte_pdsch_stream0_transport_block_size_bits_3 as 'PDSCH Stream_0 Block Size',
+        lte_pdsch_stream0_modulation_3 as 'PDSCH Stream_0 Modulation',
         lte_pdsch_traffic_to_pilot_ratio_3 as 'PDSCH Traffic To Pilot Ratio',
-        lte_pdsch_stream1_transport_block_size_bits_3 as 'PDSCH Stream[1] Block Size',
-        lte_pdsch_stream1_modulation_3 as 'PDSCH Stream[1] Modulation'
+        lte_pdsch_stream1_transport_block_size_bits_3 as 'PDSCH Stream_1 Block Size',
+        lte_pdsch_stream1_modulation_3 as 'PDSCH Stream_1 Modulation'
         from lte_pdsch_meas
         '''
     ],
@@ -401,11 +401,11 @@ LTE_PUCCH_PDSCH_SQL_LIST_DICT = {
         lte_pdsch_rb_allocation_slot1_4 as 'PDSCH Rb Allocation Slot 1',
         lte_pdsch_pmi_type_4 as 'PDSCH PMI Type',
         lte_pdsch_pmi_index_4 as 'PDSCH PMI Index',
-        lte_pdsch_stream0_transport_block_size_bits_4 as 'PDSCH Stream[0] Block Size',
-        lte_pdsch_stream0_modulation_4 as 'PDSCH Stream[0] Modulation',
+        lte_pdsch_stream0_transport_block_size_bits_4 as 'PDSCH Stream_0 Block Size',
+        lte_pdsch_stream0_modulation_4 as 'PDSCH Stream_0 Modulation',
         lte_pdsch_traffic_to_pilot_ratio_4 as 'PDSCH Traffic To Pilot Ratio',
-        lte_pdsch_stream1_transport_block_size_bits_4 as 'PDSCH Stream[1] Block Size',
-        lte_pdsch_stream1_modulation_4 as 'PDSCH Stream[1] Modulation'
+        lte_pdsch_stream1_transport_block_size_bits_4 as 'PDSCH Stream_1 Block Size',
+        lte_pdsch_stream1_modulation_4 as 'PDSCH Stream_1 Modulation'
         from lte_pdsch_meas
         '''
     ],
@@ -546,7 +546,7 @@ LTE_DATA_PARAMS_SQL_LIST_DICT = {
         '''
         select
         lte_pdsch_serving_n_tx_antennas_1 as 'Serv N Tx Ant',
-        lte_pdsch_serving_n_rx_antennas_1 as 'Serv N Tx Ant',
+        lte_pdsch_serving_n_rx_antennas_1 as 'Serv N Rx Ant',
         lte_pdsch_spatial_rank_1 as 'Spatial Rank'
         from lte_pdsch_meas
         ''',
@@ -590,10 +590,10 @@ LTE_DATA_PARAMS_SQL_LIST_DICT = {
         ''',
         '''
         select
-        lte_pdsch_stream0_transport_block_size_bits_1 as 'BlockSizeBits[0]',
-        lte_pdsch_stream0_modulation_1 as 'Modulation[0]',
-        lte_pdsch_stream1_transport_block_size_bits_1 as 'BlockSizeBits[1]',
-        lte_pdsch_stream1_modulation_1 as 'Modulation[1]',
+        lte_pdsch_stream0_transport_block_size_bits_1 as 'BlockSizeBits_0',
+        lte_pdsch_stream0_modulation_1 as 'Modulation_0',
+        lte_pdsch_stream1_transport_block_size_bits_1 as 'BlockSizeBits_1',
+        lte_pdsch_stream1_modulation_1 as 'Modulation_1',
         lte_pdsch_traffic_to_pilot_ratio_1 as 'TrafficToPilot Ratio',
         lte_pdsch_rnti_type_1 as 'RNTI Type',
         lte_pdsch_rnti_id_1 as 'RNTI ID',
@@ -686,7 +686,7 @@ LTE_DATA_PARAMS_SQL_LIST_DICT = {
         '''
         select
         lte_pdsch_serving_n_tx_antennas_2 as 'Serv N Tx Ant',
-        lte_pdsch_serving_n_rx_antennas_2 as 'Serv N Tx Ant',
+        lte_pdsch_serving_n_rx_antennas_2 as 'Serv N Rx Ant',
         lte_pdsch_spatial_rank_2 as 'Spatial Rank'
         from lte_pdsch_meas
         ''',
@@ -730,10 +730,10 @@ LTE_DATA_PARAMS_SQL_LIST_DICT = {
         ''',
         '''
         select
-        lte_pdsch_stream0_transport_block_size_bits_2 as 'BlockSizeBits[0]',
-        lte_pdsch_stream0_modulation_2 as 'Modulation[0]',
-        lte_pdsch_stream1_transport_block_size_bits_2 as 'BlockSizeBits[1]',
-        lte_pdsch_stream1_modulation_2 as 'Modulation[1]',
+        lte_pdsch_stream0_transport_block_size_bits_2 as 'BlockSizeBits_0',
+        lte_pdsch_stream0_modulation_2 as 'Modulation_0',
+        lte_pdsch_stream1_transport_block_size_bits_2 as 'BlockSizeBits_1',
+        lte_pdsch_stream1_modulation_2 as 'Modulation_1',
         lte_pdsch_traffic_to_pilot_ratio_2 as 'TrafficToPilot Ratio',
         lte_pdsch_rnti_type_2 as 'RNTI Type',
         lte_pdsch_rnti_id_2 as 'RNTI ID',
@@ -826,7 +826,7 @@ LTE_DATA_PARAMS_SQL_LIST_DICT = {
         '''
         select
         lte_pdsch_serving_n_tx_antennas_3 as 'Serv N Tx Ant',
-        lte_pdsch_serving_n_rx_antennas_3 as 'Serv N Tx Ant',
+        lte_pdsch_serving_n_rx_antennas_3 as 'Serv N Rx Ant',
         lte_pdsch_spatial_rank_3 as 'Spatial Rank'
         from lte_pdsch_meas
         ''',
@@ -870,10 +870,10 @@ LTE_DATA_PARAMS_SQL_LIST_DICT = {
         ''',
         '''
         select
-        lte_pdsch_stream0_transport_block_size_bits_3 as 'BlockSizeBits[0]',
-        lte_pdsch_stream0_modulation_3 as 'Modulation[0]',
-        lte_pdsch_stream1_transport_block_size_bits_3 as 'BlockSizeBits[1]',
-        lte_pdsch_stream1_modulation_3 as 'Modulation[1]',
+        lte_pdsch_stream0_transport_block_size_bits_3 as 'BlockSizeBits_0',
+        lte_pdsch_stream0_modulation_3 as 'Modulation_0',
+        lte_pdsch_stream1_transport_block_size_bits_3 as 'BlockSizeBits_1',
+        lte_pdsch_stream1_modulation_3 as 'Modulation_1',
         lte_pdsch_traffic_to_pilot_ratio_3 as 'TrafficToPilot Ratio',
         lte_pdsch_rnti_type_3 as 'RNTI Type',
         lte_pdsch_rnti_id_3 as 'RNTI ID',
@@ -966,7 +966,7 @@ LTE_DATA_PARAMS_SQL_LIST_DICT = {
         '''
         select
         lte_pdsch_serving_n_tx_antennas_4 as 'Serv N Tx Ant',
-        lte_pdsch_serving_n_rx_antennas_4 as 'Serv N Tx Ant',
+        lte_pdsch_serving_n_rx_antennas_4 as 'Serv N Rx Ant',
         lte_pdsch_spatial_rank_4 as 'Spatial Rank'
         from lte_pdsch_meas
         ''',
@@ -1010,10 +1010,10 @@ LTE_DATA_PARAMS_SQL_LIST_DICT = {
         ''',
         '''
         select
-        lte_pdsch_stream0_transport_block_size_bits_4 as 'BlockSizeBits[0]',
-        lte_pdsch_stream0_modulation_4 as 'Modulation[0]',
-        lte_pdsch_stream1_transport_block_size_bits_4 as 'BlockSizeBits[1]',
-        lte_pdsch_stream1_modulation_4 as 'Modulation[1]',
+        lte_pdsch_stream0_transport_block_size_bits_4 as 'BlockSizeBits_0',
+        lte_pdsch_stream0_modulation_4 as 'Modulation_0',
+        lte_pdsch_stream1_transport_block_size_bits_4 as 'BlockSizeBits_1',
+        lte_pdsch_stream1_modulation_4 as 'Modulation_1',
         lte_pdsch_traffic_to_pilot_ratio_4 as 'TrafficToPilot Ratio',
         lte_pdsch_rnti_type_4 as 'RNTI Type',
         lte_pdsch_rnti_id_4 as 'RNTI ID',

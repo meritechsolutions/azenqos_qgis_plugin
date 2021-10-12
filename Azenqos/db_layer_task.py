@@ -99,6 +99,7 @@ class LayerTask(QgsTask):
                     import qgis_layers_gen
                     last_visible_layer = None
                     table_to_layer_dict = {}
+                    layer_id_to_visible_flag_dict = {}
                     for table in table_list:
                         print("Adding table layer to UI:", table)
                         try:
@@ -110,7 +111,8 @@ class LayerTask(QgsTask):
                             layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
                             self.dbPath, table, visible=visible, style_qml_fp=azq_utils.tmp_gen_fp("style_{}.qml".format(table)), add_to_qgis=False
                             )
-                            table_to_layer_dict [table] = layer
+                            layer_id_to_visible_flag_dict[layer.id()] = visible
+                            table_to_layer_dict[table] = layer
                             if visible:
                                 last_visible_layer = layer
                         except:
@@ -122,14 +124,18 @@ class LayerTask(QgsTask):
                         )
                         layers = table_to_layer_dict.values()
                         QgsProject.instance().addMapLayers(layers)
+
+                        for lid in layer_id_to_visible_flag_dict.keys():
+                            visible = layer_id_to_visible_flag_dict[lid]
+                            ltlayer = QgsProject.instance().layerTreeRoot().findLayer(lid)
+                            ltlayer.setItemVisibilityChecked(visible)
+
                         for layer in layers:
                             ltlayer = QgsProject.instance().layerTreeRoot().findLayer(layer.id())
                             ltlayer.setExpanded(False)
-                            visible = False
                             if last_visible_layer is not None and last_visible_layer.id() == layer.id():
-                                visible = True
                                 self.gc.qgis_iface.setActiveLayer(last_visible_layer)
-                            ltlayer.setItemVisibilityChecked(visible)
+
 
                 elapsed_time = time.time() - self.start_time
                 QgsMessageLog.logMessage(

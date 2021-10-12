@@ -20,6 +20,8 @@ except:
 import pathlib
 import db_preprocess
 import fill_geom_in_location_df
+import azq_utils
+import uuid
 
 
 def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
@@ -61,7 +63,8 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     assert os.path.isfile(dbfp)
 
 
-def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None):
+def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None):
+    print("create_qgis_layer_from_spatialite_db: table", table)
     '''
     # now we create from spatialite dbcon instead
     tmp_csv_fp = os.path.join(
@@ -77,9 +80,36 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None):
     uri = QgsDataSourceUri()
     uri.setDatabase(dbfp)
     uri.setDataSource(schema, table, 'geom')
-    display_name = table
+    if display_name is None:
+        display_name = table
     layer = QgsVectorLayer(uri.uri(), display_name, 'spatialite')
-    QgsProject.instance().addMapLayer(layer)
+    if style_qml_fp is None and theme_param is not None:
+        with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+            qml_bytes = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon)
+            qml_fp = azq_utils.tmp_gen_fp("tmp_theme_{}.qml".format(uuid.uuid4()))
+            with open(qml_fp, "wb") as f:  # ret is a buffer so use wb
+                f.write(qml_bytes)
+            style_qml_fp = qml_fp
+    if style_qml_fp is not None:
+        print("style_qml_fp:", style_qml_fp)
+        if os.path.isfile(style_qml_fp):
+            print("loading style file")
+            layer.loadNamedStyle(style_qml_fp)
+            print("loading style file done")
+        else:
+            print("not loading style file as file not found")
+    if add_to_qgis:
+        print("adding map layer")
+        QgsProject.instance().addMapLayer(layer)
+        print("adding map layer done")
+        print("find layer")
+        ltlayer = QgsProject.instance().layerTreeRoot().findLayer(layer.id())
+        print("set visi")
+        ltlayer.setItemVisibilityChecked(visible)
+        print("set expanded")
+        ltlayer.setExpanded(expanded)
+        print("set expanded done")
+    return layer
 
 
 def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="lat", label_col=None):

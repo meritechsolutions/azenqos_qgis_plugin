@@ -50,7 +50,14 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QLineEdit" name="lat_lon_le"/>
+         <widget class="QLineEdit" name="lat_lon_le">
+          <property name="toolTip">
+           <string>Click on map with crosshair</string>
+          </property>
+          <property name="placeholderText">
+           <string>Click on map to update</string>
+          </property>
+         </widget>
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="label_4">
@@ -60,7 +67,11 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QLineEdit" name="band_le"/>
+         <widget class="QLineEdit" name="band_le">
+          <property name="placeholderText">
+           <string>Numbers only</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

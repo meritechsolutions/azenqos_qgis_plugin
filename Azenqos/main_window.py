@@ -99,9 +99,11 @@ class main_window(QMainWindow):
 
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
     task_done_signal = pyqtSignal(str)
-
+    signal_trigger_zoom_to_active_layer = pyqtSignal(str)
+    curInstance = None
 
     def __init__(self, qgis_iface, parent=None):
+        curInstance = self
         if qgis_iface is not None and parent is None:
             parent = qgis_iface.mainWindow()
         print("mainwindow __init__ parent: {}".format(parent))
@@ -124,8 +126,14 @@ class main_window(QMainWindow):
         self.task_done_signal.connect(
             self.task_done_slot
         )
+
+        self.signal_trigger_zoom_to_active_layer.connect(
+            self.slot_trigger_zoom_to_active_layer
+        )
+
         self.db_layer_task = None
         self.cell_layer_task = None
+        self.zoom_thread = None
 
         self.dbfp = None
         self.qgis_iface = qgis_iface
@@ -143,10 +151,10 @@ class main_window(QMainWindow):
             self.canvas = qgis_iface.mapCanvas()
             self.clickTool = QgsMapToolEmitPoint(self.canvas)
             self.canvas.setMapTool(self.clickTool)
-            self.clickTool.canvasClicked.connect(self.clickCanvas)
+            self.reg_map_tool_click_point(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
         try:
-            QgsProject.instance().layersAdded.connect(self.rename_layers)
+            QgsProject.instance().layersAdded.connect(self.on_layers_added)
         except:
             pass
 
@@ -283,14 +291,21 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionServerPredict_triggered(self):
         if not self.is_logged_in():
-            qt_utils.msgbox("Please login to server first...", parent=self)
             self.on_actionLogin_triggered()
-            return
+            if not self.is_logged_in():
+                return
         import predict_widget
         widget = predict_widget.predict_widget(self, self.gc)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
 
+    def reg_map_tool_click_point(self, func):
+        print("reg_map_tool_click_point func:", func)
+        self.clickTool.canvasClicked.connect(func)
+
+    def dereg_map_tool_click_point(self, func):
+        print("dereg_map_tool_click_point func:", func)
+        self.clickTool.canvasClicked.disconnect(func)
 
     @pyqtSlot()
     def on_actionRun_server_modules_triggered(self):
@@ -1216,7 +1231,7 @@ Log_hash list: {}""".format(
     def setMapTool(self):
         self.clickTool = QgsMapToolEmitPoint(self.canvas)
         self.canvas.setMapTool(self.clickTool)
-        self.clickTool.canvasClicked.connect(self.clickCanvas)
+        self.reg_map_tool_click_point(self.clickCanvas)
 
     def selectLayer(self):
         if self.qgis_iface:
@@ -1292,7 +1307,6 @@ Log_hash list: {}""".format(
         self.clearAllSelectedFeatures()
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         print("qgis_selected_layers: ", qgis_selected_layers)
-
         for layer in qgis_selected_layers:
             if not layer:
                 continue
@@ -1335,7 +1349,10 @@ Log_hash list: {}""".format(
                 #############################
 
                 try:
-                    time = layer.getFeature(closestFeatureId).attribute("time")
+                    feature = layer.getFeature(closestFeatureId)
+                    attrs = feature.attributes()
+                    print("attrs:", attrs)
+                    time = feature.attribute("time")
                     log_hash = None
                     posid = None
                     seqid = None
@@ -1861,22 +1878,24 @@ Log_hash list: {}""".format(
             if azqGroup:
                 root.removeChildNode(azqGroup)
 
-    def rename_layers(self, layers):
-        print('rename_layers start')
+    def on_layers_added(self, layers):
         if layers is None:
             return
-            
+        print('on_layers_added start len:', len(layers))
         for layer in layers:
             name = layer.name()
+            import system_sql_query
+            #if name in system_sql_query.rat_to_main_param_dict.values():
+            if self.gc.qgis_iface.activeLayer() is not None:
+                self.gc.main_window.trigger_zoom_to_active_layer()
             print("renamingLayers layer:", name)
-            
             if "azqdata " in name:
                 try:
                     param = name.split("azqdata ")[1]
                     layer.setName(param)
                 except Exception as e:
                     print("WARNING: renaming layers exception: {}".format(e))
-            
+
 
 
     '''
@@ -1994,6 +2013,27 @@ Log_hash list: {}""".format(
         else:
             qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
 
+    def trigger_zoom_to_active_layer(self, wait_secs=0.6):
+        print("trigger_zoom_to_active_layer")
+        if self.zoom_thread is None or self.zoom_thread.is_alive() == False:
+            print("trigger_zoom_to_active_layer create")
+            self.zoom_thread = threading.Thread(
+            target=self.zoom_after_secs,
+            args=(wait_secs,)
+            )
+            self.zoom_thread.start()
+        else:
+            print("trigger_zoom_to_active_layer omit because already working")
+
+    def zoom_after_secs(self, secs):
+        print("zoom_after_secs wait")
+        time.sleep(secs)
+        print("zoom_after_secs start")
+        self.signal_trigger_zoom_to_active_layer.emit("")
+
+    def slot_trigger_zoom_to_active_layer(self, msg):
+        print("slot_trigger_zoom_to_active_layer")
+        self.gc.qgis_iface.zoomToActiveLayer()
 
     def add_map_layer(self):
         layers_names = []

@@ -50,6 +50,9 @@ class predict_widget(QWidget):
         self.config = {}
         self.apply_thread = None
         self.overview_db_fp = None
+        self.closed = False
+        if self.gvars.main_window is not None:
+            self.gvars.main_window.reg_map_tool_click_point(self.map_tool_click_point)
 
     def setupUi(self):
         self.setWindowTitle("AI Prediction")
@@ -70,11 +73,16 @@ class predict_widget(QWidget):
         if self.ui.mode_combo.currentIndex() == 0:
             self.ui.lat_lon_le.setEnabled(True)
             self.ui.band_le.setEnabled(True)
+            self.ui.predict_on_map_click_checkbox.setEnabled(True)
         else:
             self.ui.lat_lon_le.setEnabled(False)
             self.ui.band_le.setEnabled(False)
+            self.ui.predict_on_map_click_checkbox.setEnabled(False)
 
-
+    def map_tool_click_point(self, point, button):
+        print("predict_widget map_tool_click_point:", point)
+        if point is not None and not self.closed:
+            self.ui.lat_lon_le.setText("{},{}".format(point.y(), point.x()))
 
     def read_server_facts(self):
         self.on_processing(True, processing_text="Reading server data...")
@@ -249,7 +257,7 @@ class predict_widget(QWidget):
             if self.ret_df is not None and len(self.ret_df):
                 self.status("Adding prediction to QGIS...")
                 assert "lat" in self.ret_df.columns
-                azq_utils.create_layer_in_qgis(self.gvars.databasePath, self.ret_df, "prediction_"+model_row_to_text_sum(self.model))
+                azq_utils.create_layer_in_qgis(self.gvars.databasePath, self.ret_df, "prediction_"+model_row_to_text_sum(self.model), theme_param=self.model.param)
                 assert "lon" in self.ret_df.columns
                 self.status("Adding prediction to QGIS... done")
 
@@ -277,6 +285,7 @@ class predict_widget(QWidget):
     def apply_worker_func(self):
         try:
             assert self.gvars.is_logged_in()
+            assert self.input_df is not None
             assert len(self.input_df)
             self.status_update_signal.emit("Asking server for prediction...")
             self.progress_update_signal.emit(0)
@@ -301,7 +310,7 @@ class predict_widget(QWidget):
                 head_n = n
             result_text = """SUCCESS
             <br/>
-             <b>AI Model:</b> {}
+             <b>AI Model:</b> {} - server: {}
              <br/>
              <br/>
              <b>Results:</b> n_rows: {}, showing first {} rows:             
@@ -313,7 +322,7 @@ class predict_widget(QWidget):
              <br/>
              <br/> 
              For all samples please see/export the attribute table of the created qgis layer.
-            """.format(model_row_to_text_sum(self.model), n, head_n, self.ret_df.head(head_n).to_html(), self.ret_df.describe().to_html())
+            """.format(model_row_to_text_sum(self.model), self.gvars.login_dialog.server, n, head_n, self.ret_df.head(head_n).to_html(), self.ret_df.describe().to_html())
             self.progress_update_signal.emit(100)
             self.apply_done_signal.emit(result_text)
             return 0
@@ -324,6 +333,11 @@ class predict_widget(QWidget):
             self.apply_done_signal.emit("FAILED: "+msg)
             return -1
         return -2
+
+    def closeEvent(self, event):
+        if self.gvars.main_window is not None:
+            self.gvars.main_window.dereg_map_tool_click_point(self.map_tool_click_point)
+        self.closed = True
 
 
 

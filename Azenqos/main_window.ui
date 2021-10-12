@@ -182,7 +182,7 @@
     </widget>
     <widget class="QMenu" name="menuAI_ML_Prediction">
      <property name="title">
-      <string>Machine Learning / AI</string>
+      <string>AI Prediction</string>
      </property>
      <addaction name="actionServerPredict"/>
     </widget>

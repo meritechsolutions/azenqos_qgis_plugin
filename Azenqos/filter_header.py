@@ -21,11 +21,11 @@ class SortFilterProxyModel(QSortFilterProxyModel):
         # self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
-        print(
+        '''print(
             "SortFilterProxyModel: filterAcceptsRow source_row: {} source_parent: {}".format(
                 source_row, source_parent
             )
-        )
+        )'''
         for key, regex in self.filters.items():
             ix = self.sourceModel().index(source_row, key, source_parent)
             if ix.isValid():

@@ -1899,7 +1899,7 @@ def resample_per_log_hash_time(param_df, resample_param, use_last=False):
     return param_df
 
 
-def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False):
+def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None):
     try:
         import preprocess_azm
         import qgis_layers_gen
@@ -1911,11 +1911,11 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False):
                     columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                 )
         qgis_layers_gen.dump_df_to_spatialite_db(
-            df, tmpdbfp, layer_name, is_indoor=is_indoor
+            df, tmpdbfp, "layer_dump", is_indoor=is_indoor
         )
         assert os.path.isfile(tmpdbfp)
         qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-            tmpdbfp, layer_name, label_col="name" if "name" in df.columns else None
+            tmpdbfp, "layer_dump", label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name
         )
     except:
         type_, value_, traceback_ = sys.exc_info()

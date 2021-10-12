@@ -4,7 +4,7 @@ import sqlite3
 import sys
 import time
 import traceback
-
+import threading
 import pandas as pd
 
 try:
@@ -22,6 +22,7 @@ except:
 
 
 class LayerTask(QgsTask):
+
     def __init__(self, desc, databasePath, gc, task_done_signal):
         QgsTask.__init__(self, desc)
         print("start layertask: databasePath {}".format(databasePath))
@@ -32,7 +33,6 @@ class LayerTask(QgsTask):
         self.exception = None
         self.vLayers = []
         self.gc = gc
-
 
 
     def zoomToActiveLayer(self):
@@ -71,33 +71,48 @@ class LayerTask(QgsTask):
         if not self.gc.qgis_iface:
             return
         self.start_time = time.time()
+        self.add_layers_from_ui_thread()
         return True
 
 
     def finished(self, result):
         self.task_done_signal.emit(os.path.basename(__file__))
 
-    def add_layers_from_ui_thread(self, select=False):
+    def add_layers_from_ui_thread(self, select=False, ogr_mode=False):
         try:
             if self.gc.qgis_iface:
                 # gc.mostFeaturesLayer = None
                 print("db_layer_task.py add_layers_from_ui_thread 0")
-
+                # Setting CRS
+                my_crs = QgsCoordinateReferenceSystem(4326)
+                QgsProject.instance().setCrs(my_crs)
                 print("db_layer_task.py add_layers_from_ui_thread() 3 addVectorLayer")
                 # geom_column = "geom"
-                table_list = []
+                table_list = None
                 with contextlib.closing(sqlite3.connect(self.dbPath)) as dbcon:
-                    table_list = pd.read_sql("select f_table_name from geometry_columns", dbcon)
-                if True:
+                    table_list = pd.read_sql("select f_table_name from geometry_columns", dbcon).f_table_name.values
+
+                if ogr_mode:
                     #TODO add lower direct, non-ogr support?
                     self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
                 else:
                     import qgis_layers_gen
+                    last_visible_layer = None
+                    table_to_layer_dict = {}
                     for table in table_list:
+                        print("Adding table layer to UI:", table)
                         try:
-                            qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-                            self.dbPath, table
+                            import azq_utils
+                            import system_sql_query
+                            visible = False
+                            if table in system_sql_query.rat_to_main_param_dict.values():
+                                visible = True
+                            layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+                            self.dbPath, table, visible=visible, style_qml_fp=azq_utils.tmp_gen_fp("style_{}.qml".format(table)), add_to_qgis=False
                             )
+                            table_to_layer_dict [table] = layer
+                            if visible:
+                                last_visible_layer = layer
                         except:
                             type_, value_, traceback_ = sys.exc_info()
                             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -105,12 +120,16 @@ class LayerTask(QgsTask):
                                 table, exstr
                             )
                         )
-
-                # Setting CRS
-                my_crs = QgsCoordinateReferenceSystem(4326)
-                QgsProject.instance().setCrs(my_crs)
-
-                self.zoomToActiveLayer()
+                        layers = table_to_layer_dict.values()
+                        QgsProject.instance().addMapLayers(layers)
+                        for layer in layers:
+                            ltlayer = QgsProject.instance().layerTreeRoot().findLayer(layer.id())
+                            ltlayer.setExpanded(False)
+                            visible = False
+                            if last_visible_layer is not None and last_visible_layer.id() == layer.id():
+                                visible = True
+                                self.gc.qgis_iface.setActiveLayer(last_visible_layer)
+                            ltlayer.setItemVisibilityChecked(visible)
 
                 elapsed_time = time.time() - self.start_time
                 QgsMessageLog.logMessage(
@@ -142,7 +161,7 @@ class LayerTask(QgsTask):
 
 
     def run_blocking(self, select=False):
-        self.run()
         self.add_layers_from_ui_thread()
+
 
 

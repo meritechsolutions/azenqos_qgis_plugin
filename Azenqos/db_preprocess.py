@@ -68,19 +68,13 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon):
+def prepare_spatialite_views(dbcon, cre_table=True):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geometry_columns df:\n{}".format(df.head()))
     assert len(df) == 0
-
-    default_qml_fp = os.path.join(azq_utils.get_module_path(), "default_style.qml")
-    default_qml = None
-    with open(default_qml_fp, "rb") as f:
-        default_qml = f.read().decode("ascii")
-    default_qml_param = "lte_inst_rsrp_1"
 
     ### we will make views one per param so drop all existing tables from geom_columns
     try:
@@ -170,13 +164,16 @@ def prepare_spatialite_views(dbcon):
                 )
                 print("not table_has_geom so gen sql merge in from location table by time - DONE")
             else:
+                cre_type = "table"
+                if cre_table == False:
+                    cre_type = "view"
                 if "cell_meas" in table:
                     drop_view_sqlstr = "drop table if exists {col}".format(col=view)
-                    sqlstr = "create table {col} as select * from {table};".format(col=view, table=table)
+                    sqlstr = "create {} {col} as select * from {table};".format(cre_type, col=view, table=table)   # need to create table because create view casues get nearest feature id to fail - getting only 0
                 else:
                     drop_view_sqlstr = "drop table if exists {col}".format(col=view)
-                    sqlstr = "create table {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null;".format(
-                        col=view, table=table,
+                    sqlstr = "create {} {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null;".format(
+                        cre_type, col=view, table=table,
                         modem_time_part="modem_time" if table_has_modem_time else "null as modem_time"
                     )
             print("create view sqlstr: %s" % sqlstr)
@@ -208,89 +205,7 @@ def prepare_spatialite_views(dbcon):
                 continue
             print("param: {} got theme_df:\n{}".format(param, theme_df))
 
-            ranges_xml = "<ranges>\n"
-            try:
-                # QGIS ranges count (right click > show layer count) wont match sql counts below if we dont sort this way
-                theme_df["Upper"] = pd.to_numeric(theme_df["Upper"])
-                theme_df.sort_values("Upper", ascending=False, inplace=True)
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: theme_df.sort_values exception:", exstr)
-
-            for index, row in theme_df.iterrows():
-                percent_part = ""
-                try:
-                    rsql = "select count(*) from {view} where {view} >= {lower} and {view} < {upper}".format(view=view, lower=row.Lower, upper=row.Upper)
-                    if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
-                        rsql = "select count(*) from {view} where {view} = {lower}".format(
-                            view=view, lower=row.Lower)
-                    print("range rsql:", rsql)
-                    count = pd.read_sql(
-                        rsql,
-                        dbcon).iloc[0, 0]
-                    print("view_len: {} count: {}".format(view_len, count))
-                    percent_part = " (%d: %.02f%%)" % (count, ((count*100.0)/view_len))
-                    print("range percent_part:", percent_part)
-                except:
-                    type_, value_, traceback_ = sys.exc_info()
-                    exstr = str(traceback.format_exception(type_, value_, traceback_))
-                    print("WARNING: calc range percent exception:", exstr)
-                ranges_xml += """<range symbol="{index}" label="{lower} to {upper}{percent}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
-                    index=index, lower=row.Lower, upper=row.Upper, percent=percent_part
-                )
-            ranges_xml += "</ranges>\n"
-
-            symbols_xml = "<symbols>\n"
-            for index, row in theme_df.iterrows():
-                color = row.ColorXml
-                r = int(color[1:3], 16)
-                g = int(color[3:5], 16)
-                b = int(color[5:7], 16)
-                symbols_xml += """
-      <symbol alpha="1" force_rhr="0" clip_to_extent="1" name="{index}" type="marker">
-        <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
-          <prop k="angle" v="0"/>
-          <prop k="color" v="{r},{g},{b},255"/>
-          <prop k="horizontal_anchor_point" v="1"/>
-          <prop k="joinstyle" v="bevel"/>
-          <prop k="name" v="circle"/>
-          <prop k="offset" v="0,0"/>
-          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="offset_unit" v="MM"/>
-          <prop k="outline_color" v="35,35,35,255"/>
-          <prop k="outline_style" v="no"/>
-          <prop k="outline_width" v="0"/>
-          <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="outline_width_unit" v="MM"/>
-          <prop k="scale_method" v="diameter"/>
-          <prop k="size" v="2"/>
-          <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="size_unit" v="MM"/>
-          <prop k="vertical_anchor_point" v="1"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties"/>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
-        </layer>
-      </symbol>
-            """.format(
-                    index=index, r=r, g=g, b=b
-                )
-
-            symbols_xml += "</symbols>\n"
-            # print("symbols_xml: %s" % symbols_xml)
-
-            qml = default_qml.replace(default_qml_param, param)
-            root = xet.fromstring(qml)
-            renderer = root.find("renderer-v2")
-            renderer.remove(renderer.find("ranges"))
-            renderer.append(xet.fromstring(ranges_xml))
-            renderer.remove(renderer.find("symbols"))
-            renderer.append(xet.fromstring(symbols_xml))
+            qml = gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon)
             # print("qml_xml: %s" % xet.tostring(root))
 
             df = pd.DataFrame(
@@ -301,7 +216,7 @@ def prepare_spatialite_views(dbcon):
                     "stylename": [param],
                     "styleqml": [
                         "<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>\n {}".format(
-                            str(xet.tostring(root), "utf8")
+                            str(qml, "utf8")
                         )
                     ],
                     "useasdefault": [1],
@@ -479,3 +394,112 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
                            on="time", by=by,
                            direction="backward", allow_exact_matches=True)
     return df
+
+def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, write_qml_for_param=True):
+    if theme_df is None:
+        theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
+    if 'match_value' in theme_df.columns:
+        # id columns like pci, earfcn
+        theme_df.Lower = theme_df.match_value
+        theme_df.Upper = theme_df.match_value
+    ranges_xml = "<ranges>\n"
+    try:
+        # QGIS ranges count (right click > show layer count) wont match sql counts below if we dont sort this way
+        theme_df["Upper"] = pd.to_numeric(theme_df["Upper"])
+        theme_df.sort_values("Upper", ascending=False, inplace=True)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: theme_df.sort_values exception:", exstr)
+
+    for index, row in theme_df.iterrows():
+        percent_part = ""
+        try:
+            if view_len is None:
+                view_len = pd.read_sql("select count(*) from {}".format(view), dbcon).iloc[0,0]
+            rsql = "select count(*) from {view} where {param} >= {lower} and {param} < {upper}".format(view=view,
+                                                                                                       param=param,
+                                                                                                     lower=row.Lower,
+                                                                                                     upper=row.Upper)
+            if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
+                rsql = "select count(*) from {view} where {param} = {lower}".format(
+                    view=view, lower=row.Lower, param=param)
+            print("range rsql:", rsql)
+            count = pd.read_sql(
+                rsql,
+                dbcon).iloc[0, 0]
+            print("view_len: {} count: {}".format(view_len, count))
+            percent_part = " (%d: %.02f%%)" % (count, ((count * 100.0) / view_len))
+            print("range percent_part:", percent_part)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: calc range percent exception:", exstr)
+        ranges_xml += """<range symbol="{index}" label="{lower} to {upper}{percent}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
+            index=index, lower=row.Lower, upper=row.Upper, percent=percent_part
+        )
+    ranges_xml += "</ranges>\n"
+    symbols_xml = "<symbols>\n"
+    for index, row in theme_df.iterrows():
+        color = row.ColorXml
+        r = int(color[1:3], 16)
+        g = int(color[3:5], 16)
+        b = int(color[5:7], 16)
+        symbols_xml += """
+          <symbol alpha="1" force_rhr="0" clip_to_extent="1" name="{index}" type="marker">
+            <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
+              <prop k="angle" v="0"/>
+              <prop k="color" v="{r},{g},{b},255"/>
+              <prop k="horizontal_anchor_point" v="1"/>
+              <prop k="joinstyle" v="bevel"/>
+              <prop k="name" v="circle"/>
+              <prop k="offset" v="0,0"/>
+              <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="outline_color" v="35,35,35,255"/>
+              <prop k="outline_style" v="no"/>
+              <prop k="outline_width" v="0"/>
+              <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="outline_width_unit" v="MM"/>
+              <prop k="scale_method" v="diameter"/>
+              <prop k="size" v="2"/>
+              <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="size_unit" v="MM"/>
+              <prop k="vertical_anchor_point" v="1"/>
+              <data_defined_properties>
+                <Option type="Map">
+                  <Option name="name" type="QString" value=""/>
+                  <Option name="properties"/>
+                  <Option name="type" type="QString" value="collection"/>
+                </Option>
+              </data_defined_properties>
+            </layer>
+          </symbol>
+                """.format(
+            index=index, r=r, g=g, b=b
+        )
+
+    symbols_xml += "</symbols>\n"
+    # print("symbols_xml: %s" % symbols_xml)
+    default_qml_fp = os.path.join(azq_utils.get_module_path(), "default_style.qml")
+    default_qml = None
+    with open(default_qml_fp, "rb") as f:
+        default_qml = f.read().decode("ascii")
+    default_qml_param = "lte_inst_rsrp_1"
+
+    qml = default_qml.replace(default_qml_param, param)
+    root = xet.fromstring(qml)
+    renderer = root.find("renderer-v2")
+    renderer.remove(renderer.find("ranges"))
+    renderer.append(xet.fromstring(ranges_xml))
+    renderer.remove(renderer.find("symbols"))
+    renderer.append(xet.fromstring(symbols_xml))
+    ret = xet.tostring(root)
+    if ret and write_qml_for_param:
+        qml_fp = get_qml_fp_for_view(view)
+        with open(qml_fp, "wb") as f:  # ret is a buffer so use wb
+            f.write(ret)
+    return ret
+
+def get_qml_fp_for_view(view):
+    return azq_utils.tmp_gen_fp("style_{}.qml".format(view))

@@ -229,7 +229,9 @@ class main_window(QMainWindow):
     @pyqtSlot()
     def on_actionSupport_triggered(self):
         print("action support")
-        qt_utils.msgbox("Please email support@azenqos.com", "Technical support", self)
+        import qgis_layers_gen
+        # qt_utils.msgbox("Please email support@azenqos.com", "Technical support", self)
+        qgis_layers_gen.create_test_qgis_layer_py_objs()
 
     ############# server_modules menu slots
     @pyqtSlot()

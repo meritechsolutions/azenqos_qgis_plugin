@@ -8,8 +8,12 @@ def test():
     print("app: ", app)  # use it so pyflakes wont complain - we need a ref to qapplicaiton otherwise we'll get segfault
     gc = analyzer_vars.analyzer_vars()
     detail = ""
-    for i in range(100):
+    '''
+    for i in range(10000):
         detail += "What is REAL{}\n".format(i)
+    '''
+    with open("../example_logs/UEcap.txt", "r") as f:
+        detail = f.read()
     dw = DetailWidget(gc, None, detail)
     dw.show()
     result = app.exec()

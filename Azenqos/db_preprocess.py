@@ -13,7 +13,7 @@ import preprocess_azm
 
 elm_table_main_col_types = {
     "log_hash": "BIGINT",
-    "time": "DATETIME",
+    "time": "TEXT",
     "seqid": "INT",
     "posid": "INT",
     "geom": "BLOB",
@@ -112,6 +112,8 @@ def prepare_spatialite_views(dbcon, cre_table=True):
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: indoor prepare failed exception: ", exstr)
 
+    # gps_cancel_list = []
+
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
     params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
@@ -169,7 +171,7 @@ def prepare_spatialite_views(dbcon, cre_table=True):
                     cre_type = "view"
                 if "cell_meas" in table:
                     drop_view_sqlstr = "drop table if exists {col}".format(col=view)
-                    sqlstr = "create {} {col} as select * from {table};".format(cre_type, col=view, table=table)   # need to create table because create view casues get nearest feature id to fail - getting only 0
+                    sqlstr = "create {} {col} as select * from {table} where {col} is not null;".format(cre_type, col=view, table=table)   # need to create table because create view casues get nearest feature id to fail - getting only 0
                 else:
                     drop_view_sqlstr = "drop table if exists {col}".format(col=view)
                     sqlstr = "create {} {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null;".format(
@@ -182,7 +184,7 @@ def prepare_spatialite_views(dbcon, cre_table=True):
             view_cols = pd.read_sql("select * from {} where false".format(view), dbcon).columns
             assert "geom" in view_cols
             assert param in view_cols
-            view_len = pd.read_sql("select count(*) from {}".format(view), dbcon).iloc[0,0]
+            view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, view), dbcon).iloc[0,0]
             if not view_len:
                 continue
             tables_to_rm_stray_neg1_rows.append(view)
@@ -273,7 +275,11 @@ def prepare_spatialite_views(dbcon, cre_table=True):
         geomBlob[51:51+8] = by 
         geomBlob[59] = 0xfe
         return geomBlob
-
+    df_indoor_location = None
+    try:
+        df_indoor_location = pd.read_sql_query("select * from indoor_location", dbcon)
+    except:
+        pass
     if len(df_posids_indoor_start) > 0:
         try:
             sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"
@@ -282,10 +288,11 @@ def prepare_spatialite_views(dbcon, cre_table=True):
         except:
             pass
         try:
-            sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
-            print("copy indoor_location lat lon to location: %s" % sqlstr)
-            dbcon.execute(sqlstr)
-            dbcon.commit()
+            if df_indoor_location is not None and len(df_indoor_location) > 0: 
+                sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
+                print("copy indoor_location lat lon to location: %s" % sqlstr)
+                dbcon.execute(sqlstr)
+                dbcon.commit()
         except:
             pass
         for log_hash, posid in gps_cancel_list:
@@ -372,7 +379,7 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
     indoor_location_df_interpolated = df_location[
         ["log_hash", "time", "positioning_lat", "positioning_lon"]].copy()
     indoor_location_df_interpolated = azq_utils.resample_per_log_hash_time(indoor_location_df_interpolated,
-                                                                           "100ms")
+                                                                           "100ms", use_last=True)
     cols = ["positioning_lat", "positioning_lon"]
     azq_utils.set_none_to_repetetive_rows(indoor_location_df_interpolated, cols)
     indoor_location_df_interpolated = indoor_location_df_interpolated.dropna(subset=["time"])
@@ -416,7 +423,7 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, write_qml_fo
         percent_part = ""
         try:
             if view_len is None:
-                view_len = pd.read_sql("select count(*) from {}".format(view), dbcon).iloc[0,0]
+                view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, param), dbcon).iloc[0,0]
             rsql = "select count(*) from {view} where {param} >= {lower} and {param} < {upper}".format(view=view,
                                                                                                        param=param,
                                                                                                      lower=row.Lower,

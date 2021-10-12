@@ -121,7 +121,7 @@ def new_get_all_pcap_content(azm_path):
         print(log_hash)
     pcap_path_list = get_pcap_path_list(azm_path)
 
-    return tmp
+    return tmp()
 
 
 def tmp():

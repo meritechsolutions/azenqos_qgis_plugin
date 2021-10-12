@@ -567,11 +567,7 @@ def get_theme_df_for_column(
                         col_to_select += "_1"
             except:
                 type_, value_, traceback_ = sys.exc_info()
-                exstr = str(
-                    traceback.format_exception(
-                        type_, value_, traceback_
-                    )
-                )
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: gen colname from nargmax check exception: " + exstr)
 
         datadfsql = "select {} from {}".format(col_to_select, table_name)

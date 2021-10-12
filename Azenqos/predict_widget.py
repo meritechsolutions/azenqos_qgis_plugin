@@ -73,11 +73,9 @@ class predict_widget(QWidget):
         if self.ui.mode_combo.currentIndex() == 0:
             self.ui.lat_lon_le.setEnabled(True)
             self.ui.band_le.setEnabled(True)
-            self.ui.predict_on_map_click_checkbox.setEnabled(True)
         else:
             self.ui.lat_lon_le.setEnabled(False)
             self.ui.band_le.setEnabled(False)
-            self.ui.predict_on_map_click_checkbox.setEnabled(False)
 
     def map_tool_click_point(self, point, button):
         print("predict_widget map_tool_click_point:", point)

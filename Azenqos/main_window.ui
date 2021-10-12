@@ -166,6 +166,7 @@
      </property>
      <addaction name="actionLog_Info"/>
      <addaction name="actionLogs"/>
+     <addaction name="actionLocation"/>
     </widget>
     <widget class="QMenu" name="menuCustom_Windows">
      <property name="title">
@@ -185,6 +186,68 @@
       <string>AI Prediction</string>
      </property>
      <addaction name="actionServerPredict"/>
+     </widget>
+
+    <widget class="QMenu" name="menuSession_1">
+     <property name="title">
+      <string>Session 1</string>
+     </property>
+     <addaction name="actionVoice_Report"/>
+     <addaction name="actionLog_To_Operator_Map"/>
+     <addaction name="actionShow_Polqa_Mos_Samples"/>
+     <addaction name="actionFtp_Download"/>
+     <addaction name="actionVoice_Dial"/>
+     <addaction name="actionAnswer"/>
+     <addaction name="actionSMS"/>
+     <addaction name="actionMMS"/>
+     <addaction name="actionFtp_Upload"/>
+     <addaction name="actionHttp_Download"/>
+     <addaction name="actionHttp_Upload"/>
+     <addaction name="actionBrowse"/>
+     <addaction name="actionSS_Youtube"/>
+     <addaction name="actionPing"/>
+     <addaction name="actionTraceroute"/>
+     <addaction name="actionOokla_Speed_Test"/>
+     <addaction name="actionDropbox_Download"/>
+     <addaction name="actionDropbox_Upload"/>
+     <addaction name="actionLine"/>
+     <addaction name="actionLine_Receive"/>
+     <addaction name="actionLine_Call"/>
+     <addaction name="actionLine_Call_Answer"/>
+     <addaction name="actionLine_Mo_Call"/>
+     <addaction name="actionLine_Mt_Call"/>
+    </widget>
+    <widget class="QMenu" name="menuLegacy_Session">
+     <property name="title">
+      <string>Legacy Session</string>
+     </property>
+     <addaction name="actiondatasession"/>
+     <addaction name="actionline_mo"/>
+     <addaction name="actionpingsession"/>
+     <addaction name="actionspeedtestsession"/>
+     <addaction name="actionyoutube"/>
+     <addaction name="actionyoutube_buffer_duration"/>
+    </widget>
+    <widget class="QMenu" name="menuSession_2">
+     <property name="title">
+      <string>Session 2</string>
+     </property>
+     <addaction name="actionFacebook_Post_Status"/>
+     <addaction name="actionFacebook_Post_Photo"/>
+     <addaction name="actionFacebook_Download_Photo"/>
+     <addaction name="actionFacebook_Download_Feed"/>
+     <addaction name="actionFacebook_Video"/>
+     <addaction name="actionInstagram_Download_Photo"/>
+     <addaction name="actionInstagram_Post_Photo"/>
+     <addaction name="actionInstagram_Post_Video"/>
+     <addaction name="actionInstagram_Post_Comment"/>
+     <addaction name="actionWhats_App_Send_Message"/>
+     <addaction name="actionWhats_App_Call"/>
+     <addaction name="actionSend_Email"/>
+     <addaction name="actionDns_Lookup"/>
+     <addaction name="actionLong_Sung_Ping"/>
+     <addaction name="actionVideo"/>
+     <addaction name="actionNperf_Test"/>
     </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
@@ -198,6 +261,9 @@
     <addaction name="actionPCAP"/>
     <addaction name="menuCustom_Windows"/>
     <addaction name="menuMisc"/>
+    <addaction name="menuSession_1"/>
+    <addaction name="menuSession_2"/>
+    <addaction name="menuLegacy_Session"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -610,7 +676,263 @@
   </action>
   <action name="actionServerPredict">
    <property name="text">
-    <string>Predict from server models</string>
+     <string>Predict from server models</string>
+   </property>
+     </action>
+
+  <action name="actionPing">
+   <property name="text">
+    <string>Ping</string>
+   </property>
+  </action>
+  <action name="actionspeedtestsession">
+   <property name="text">
+    <string>speedtestsession</string>
+   </property>
+  </action>
+  <action name="actionyoutube_buffer_duration">
+   <property name="text">
+    <string>youtube_buffer_duration</string>
+   </property>
+  </action>
+  <action name="actionyoutube">
+   <property name="text">
+    <string>youtube</string>
+   </property>
+  </action>
+  <action name="actionline_mo">
+   <property name="text">
+    <string>line_mo</string>
+   </property>
+  </action>
+  <action name="actiondatasession">
+   <property name="text">
+    <string>datasession</string>
+   </property>
+  </action>
+  <action name="actionpingsession">
+   <property name="text">
+    <string>pingsession</string>
+   </property>
+  </action>
+  <action name="actionVoice_Report">
+   <property name="text">
+    <string>Voice Report</string>
+   </property>
+  </action>
+  <action name="actionLog_To_Operator_Map">
+   <property name="text">
+    <string>Log To Operator Map</string>
+   </property>
+  </action>
+  <action name="actionShow_Polqa_Mos_Samples">
+   <property name="text">
+    <string>Show Polqa Mos Samples</string>
+   </property>
+  </action>
+  <action name="actionFtp_Download">
+   <property name="text">
+    <string>Ftp Download</string>
+   </property>
+  </action>
+  <action name="actionVoice_Dial">
+   <property name="text">
+    <string>Voice Dial</string>
+   </property>
+  </action>
+  <action name="actionAnswer">
+   <property name="text">
+    <string>Answer</string>
+   </property>
+  </action>
+  <action name="actionSMS">
+   <property name="text">
+    <string>SMS</string>
+   </property>
+  </action>
+  <action name="actionMMS">
+   <property name="text">
+    <string>MMS</string>
+   </property>
+  </action>
+  <action name="actionFtp_Upload">
+   <property name="text">
+    <string>Ftp Upload</string>
+   </property>
+  </action>
+  <action name="actionHttp_Download">
+   <property name="text">
+    <string>Http Download</string>
+   </property>
+  </action>
+  <action name="actionHttp_Upload">
+   <property name="text">
+    <string>Http Upload</string>
+   </property>
+  </action>
+  <action name="actionBrowse">
+   <property name="text">
+    <string>Browse</string>
+   </property>
+  </action>
+  <action name="actionSS_Youtube">
+   <property name="text">
+    <string>Youtube</string>
+   </property>
+  </action>
+  <action name="actionNew_Sector_Tag">
+   <property name="text">
+    <string>New Sector Tag</string>
+   </property>
+  </action>
+  <action name="actionSwitch_To_Indoor_Outdoor">
+   <property name="text">
+    <string>Switch To Indoor Outdoor</string>
+   </property>
+  </action>
+  <action name="actionWifi_ENABLE">
+   <property name="text">
+    <string>Wifi ENABLE</string>
+   </property>
+  </action>
+  <action name="actionTraceroute">
+   <property name="text">
+    <string>Traceroute</string>
+   </property>
+  </action>
+  <action name="actionOokla_Speed_Test">
+   <property name="text">
+    <string>Ookla Speed Test</string>
+   </property>
+  </action>
+  <action name="actionDropbox_Download">
+   <property name="text">
+    <string>Dropbox Download</string>
+   </property>
+  </action>
+  <action name="actionDropbox_Upload">
+   <property name="text">
+    <string>Dropbox Upload</string>
+   </property>
+  </action>
+  <action name="actionLine">
+   <property name="text">
+    <string>Line</string>
+   </property>
+  </action>
+  <action name="actionLine_Receive">
+   <property name="text">
+    <string>Line Receive</string>
+   </property>
+  </action>
+  <action name="actionLine_Call">
+   <property name="text">
+    <string>Line Call</string>
+   </property>
+  </action>
+  <action name="actionLine_Call_Answer">
+   <property name="text">
+    <string>Line Call Answer</string>
+   </property>
+  </action>
+  <action name="actionLine_Mo_Call">
+   <property name="text">
+    <string>Line Mo Call</string>
+   </property>
+  </action>
+  <action name="actionLine_Mt_Call">
+   <property name="text">
+    <string>Line Mt Call</string>
+   </property>
+  </action>
+  <action name="actionFacebook_Post_Status">
+   <property name="text">
+    <string>Facebook Post Status</string>
+   </property>
+  </action>
+  <action name="actionFacebook_Post_Photo">
+   <property name="text">
+    <string>Facebook Post Photo</string>
+   </property>
+  </action>
+  <action name="actionFacebook_Download_Photo">
+   <property name="text">
+    <string>Facebook Download Photo</string>
+   </property>
+  </action>
+  <action name="actionFacebook_Download_Feed">
+   <property name="text">
+    <string>Facebook Download Feed</string>
+   </property>
+  </action>
+  <action name="actionInstagram_Post_Photo">
+   <property name="text">
+    <string>Instagram Post Photo</string>
+   </property>
+  </action>
+  <action name="actionInstagram_Post_Video">
+   <property name="text">
+    <string>Instagram Post Video</string>
+   </property>
+  </action>
+  <action name="actionSend_Email">
+   <property name="text">
+    <string>Send Email</string>
+   </property>
+  </action>
+  <action name="actionInstagram_Post_Comment">
+   <property name="text">
+    <string>Instagram Post Comment</string>
+   </property>
+  </action>
+  <action name="actionWait">
+   <property name="text">
+    <string>Wait</string>
+   </property>
+  </action>
+  <action name="actionDns_Lookup">
+   <property name="text">
+    <string>Dns Lookup</string>
+   </property>
+  </action>
+  <action name="actionWhats_App_Send_Message">
+   <property name="text">
+    <string>Whats App Send Message</string>
+   </property>
+  </action>
+  <action name="actionLong_Sung_Ping">
+   <property name="text">
+    <string>Long Sung Ping</string>
+   </property>
+  </action>
+  <action name="actionVideo">
+   <property name="text">
+    <string>Video</string>
+   </property>
+  </action>
+  <action name="actionNperf_Test">
+   <property name="text">
+    <string>Nperf Test</string>
+   </property>
+  </action>
+  <action name="actionWhats_App_Call">
+   <property name="text">
+    <string>Whats App Call</string>
+   </property>
+  </action>
+  <action name="actionFacebook_Video">
+   <property name="text">
+    <string>Facebook Video</string>
+   </property>
+  </action>
+  <action name="actionInstagram_Download_Photo">
+   <property name="text">
+    <string>Instagram Download Photo</string>
+   </property>
+  </action>
+  <action name="actionLocation">
+   <property name="text">
+    <string>Location</string>
    </property>
   </action>
  </widget>

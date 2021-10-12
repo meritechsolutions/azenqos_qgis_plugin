@@ -9,7 +9,7 @@ import traceback
 import PyQt5
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QSettings, pyqtSlot, pyqtSignal
-from PyQt5.QtGui import QDoubleValidator, QPixmap, QIcon
+from PyQt5.QtGui import QDoubleValidator, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
     QLabel,
     QLineEdit,
@@ -51,7 +51,10 @@ try:
         QgsVectorLayer,
         QgsFeature,
         QgsField,
-        QgsFields
+        QgsFields,
+        QgsSymbol,
+        QgsRendererRange,
+        QgsGraduatedSymbolRenderer
     )
 
     # from qgis.utils import
@@ -77,6 +80,7 @@ except:
     pass
 from atomic_int import atomic_int
 import import_db_dialog
+import preprocess_azm
 import params_disp_df
 from version import VERSION
 
@@ -119,6 +123,7 @@ class main_window(QMainWindow):
         self.gc.main_window = self
         self.timechange_service_thread = None
         self.is_legacy_indoor = False
+        self.is_leg_nr_tables = False
         self.timechange_to_service_counter = atomic_int(0)
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
@@ -390,6 +395,10 @@ Log_hash list: {}""".format(
     def on_actionLogs_triggered(self):
         self.add_param_window("pd.read_sql('''select log_hash, time, log_start_time, log_end_time, log_tag, log_ori_file_name, log_app_version, log_license_edition, log_required_pc_version, log_timezone_offset from logs group by log_hash''',dbcon)", title="Logs", time_list_mode=True)
 
+    @pyqtSlot()
+    def on_actionLocation_triggered(self):
+        self.add_param_window("pd.read_sql('''select log_hash, time, printf('%.8f', positioning_lat) as latitude, printf('%.8f', positioning_lon) as longitude from location where positioning_lat is not null''',dbcon)", title="Location", time_list_mode=True)
+
     ############# system menu slots
     @pyqtSlot()
     def on_actionTechnology_triggered(self):
@@ -560,20 +569,20 @@ Log_hash list: {}""".format(
     def on_action5GNR_Radio_Parameters_triggered(self):
         print("action old nr radio params")
         import nr_sql_query
-        import preprocess_azm
-        if not preprocess_azm.is_leg_nr_tables():
+        if self.is_leg_nr_tables == False:
             self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
         else:
+            print("is legacy nr")
             self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
         print("action nr serving neigh")
         import nr_sql_query
-        import preprocess_azm
-        if not preprocess_azm.is_leg_nr_tables():
+        if self.is_leg_nr_tables == False:
             self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
         else:
+            print("is legacy nr")
             self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
 
     @pyqtSlot()
@@ -586,10 +595,10 @@ Log_hash list: {}""".format(
     def on_action5GNR_Data_Params_triggered(self):
         print("action old nr data")
         import nr_sql_query
-        import preprocess_azm
-        if not preprocess_azm.is_leg_nr_tables():
+        if self.is_leg_nr_tables == False:
             self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
         else:
+            print("is legacy nr")
             self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
     ############# LTE menu slots
@@ -758,6 +767,280 @@ Log_hash list: {}""".format(
         print("action haupa statistics")
         import data_sql_query
         self.add_param_window(data_sql_query.HSUPA_STATISTICS_SQL_LIST, title="HSUPA Statistics")
+    
+    ############# Session menu slots
+
+    @pyqtSlot()
+    def on_actionVoice_Report_triggered(self):
+        print("action action voice report")
+        self.add_param_window("pd.read_sql('select * from pp_voice_report',dbcon)", title="Voice Report", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionLog_To_Operator_Map_triggered(self):
+        print("action action log to operator map")
+        self.add_param_window("pd.read_sql('select * from pp_log_to_operator_map',dbcon)", title="Log To Operator Map", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionShow_Polqa_Mos_Samples_triggered(self):
+        print("action action show polqa mos samples")
+        self.add_param_window("pd.read_sql('select * from pp_show_polqa_mos_samples',dbcon)", title="Show Polqa Mos Samples", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionFtp_Download_triggered(self):
+        print("action action ftp download")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_ftp_download',dbcon)", title="Ftp Download", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionVoice_Dial_triggered(self):
+        print("action action voice dial")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_voice_dial',dbcon)", title="Voice Dial", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionAnswer_triggered(self):
+        print("action action answer")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_answer',dbcon)", title="Answer", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionSMS_triggered(self):
+        print("action action sms")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_sms',dbcon)", title="SMS", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionMMS_triggered(self):
+        print("action action mms")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_mms',dbcon)", title="MMS", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionFtp_Upload_triggered(self):
+        print("action action ftp upload")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_ftp_upload',dbcon)", title="Ftp Upload", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionHttp_Download_triggered(self):
+        print("action action http download")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_http_download',dbcon)", title="Http Download", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionHttp_Upload_triggered(self):
+        print("action action http upload")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_http_upload',dbcon)", title="Http Upload", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionBrowse_triggered(self):
+        print("action action browse")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_browse',dbcon)", title="Browse", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionSS_Youtube_triggered(self):
+        print("action action ss youtube")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_youtube',dbcon)", title="SS Youtube", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionPing_triggered(self):
+        print("action action ping")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_ping',dbcon)", title="Ping", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionTraceroute_triggered(self):
+        print("action action traceroute")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_traceroute',dbcon)", title="Traceroute", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionOokla_Speed_Test_triggered(self):
+        print("action action ookla speed test")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_ookla_speed_test',dbcon)", title="Ookla Speed Test", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionDropbox_Download_triggered(self):
+        print("action action dropbox download")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_dropbox_download',dbcon)", title="Dropbox Download", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionDropbox_Upload_triggered(self):
+        print("action action dropbox upload")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_dropbox_upload',dbcon)", title="Dropbox Upload", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionLine_triggered(self):
+        print("action action line")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_line',dbcon)", title="Line", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionLine_Receive_triggered(self):
+        print("action action line receive")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_line_receive',dbcon)", title="Line Receive", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionLine_Call_triggered(self):
+        print("action action line call")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_line_call',dbcon)", title="Line Call", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionLine_Call_Answer_triggered(self):
+        print("action action line call answer")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_line_call_answer',dbcon)", title="Line Call Answer", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionLine_Mo_Call_triggered(self):
+        print("action action line mo call")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_line_mo_call',dbcon)", title="Line Mo Call", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionLine_Mt_Call_triggered(self):
+        print("action action line mt call")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_line_mt_call',dbcon)", title="Line Mt Call", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionFacebook_Post_Status_triggered(self):
+        print("action action facebook post status")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_facebook_post_status',dbcon)", title="Facebook Post Status", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionFacebook_Post_Photo_triggered(self):
+        print("action action facebook post photo")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_facebook_post_photo',dbcon)", title="Facebook Post Photo", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionFacebook_Download_Photo_triggered(self):
+        print("action action facebook download photo")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_facebook_download_photo',dbcon)", title="Facebook Download Photo", time_list_mode=True)       
+
+
+    @pyqtSlot()
+    def on_actionFacebook_Download_Feed_triggered(self):
+        print("action action facebook download feed")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_facebook_download_feed',dbcon)", title="Facebook Download Feed", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionFacebook_Video_triggered(self):
+        print("action action facebook video")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_facebook_video',dbcon)", title="Facebook Video", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionInstagram_Download_Photo_triggered(self):
+        print("action action instagram download photo")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_instagram_download_photo',dbcon)", title="Instagram Download Photo", time_list_mode=True)     
+
+
+    @pyqtSlot()
+    def on_actionInstagram_Post_Photo_triggered(self):
+        print("action action instagram post photo")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_instagram_post_photo',dbcon)", title="Instagram Post Photo", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionInstagram_Post_Video_triggered(self):
+        print("action action instagram post video")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_instagram_post_video',dbcon)", title="Instagram Post Video", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionInstagram_Post_Comment_triggered(self):
+        print("action action instagram post comment")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_instagram_post_comment',dbcon)", title="Instagram Post Comment", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionWhats_App_Send_Message_triggered(self):
+        print("action action whats app send message")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_whats_app_send_message',dbcon)", title="Whats App Send Message", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionWhats_App_Call_triggered(self):
+        print("action action whats app call")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_whats_app_call',dbcon)", title="Whats App Call", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionSend_Email_triggered(self):
+        print("action action send email")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_send_email',dbcon)", title="Send Email", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionDns_Lookup_triggered(self):
+        print("action action dns lookup")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_dns_lookup',dbcon)", title="Dns Lookup", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionLong_Sung_Ping_triggered(self):
+        print("action action long sung ping")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_long_sung_ping',dbcon)", title="Long Sung Ping", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionVideo_triggered(self):
+        print("action action video")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_video',dbcon)", title="Video", time_list_mode=True)
+
+
+    @pyqtSlot()
+    def on_actionNperf_Test_triggered(self):
+        print("action action nperf test")
+        self.add_param_window("pd.read_sql('select * from pp_statement_sum_nperf_test',dbcon)", title="Nperf Test", time_list_mode=True)
+
+    ############# Legacy Session menu slots
+
+    @pyqtSlot()
+    def on_actiondatasession_triggered(self):
+        print("action data session")
+        self.add_param_window("pd.read_sql('''select * from datasession''',dbcon)", title="datasession", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionline_mo_triggered(self):
+        print("action line session")
+        self.add_param_window("pd.read_sql('''select * from line_mo''',dbcon)", title="line_mo", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionpingsession_triggered(self):
+        print("action ping session")
+        self.add_param_window("pd.read_sql('''select * from pingsession''',dbcon)", title="pingsession", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionspeedtestsession_triggered(self):
+        print("action speedtest session")
+        self.add_param_window("pd.read_sql('''select * from speedtestsession''',dbcon)", title="speedtestsession", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionyoutube_triggered(self):
+        print("action youtube session")
+        self.add_param_window("pd.read_sql('''select * from youtube''',dbcon)", title="youtube", time_list_mode=True)
+
+    @pyqtSlot()
+    def on_actionyoutube_buffer_duration_triggered(self):
+        print("action youtube buffer duration session")
+        self.add_param_window("pd.read_sql('''select * from youtube_buffer_duration''',dbcon)", title="youtube_buffer_duration", time_list_mode=True)
+
 
     ############# Line Chart NR
 
@@ -1304,7 +1587,10 @@ Log_hash list: {}""".format(
         selected_seqid = None
         selected_lat = None
         selected_lon = None
-        self.clearAllSelectedFeatures()
+        try:
+            self.clearAllSelectedFeatures()
+        except:
+            pass
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         print("qgis_selected_layers: ", qgis_selected_layers)
         for layer in qgis_selected_layers:
@@ -1317,10 +1603,8 @@ Log_hash list: {}""".format(
                 print("layer.name()", layer.name())
                 # Loop through all features in a rect near point xy
                 offset = 0.000180
-                distance_offset = 0.001
                 if self.is_legacy_indoor:
-                    offset = 0.1
-                    distance_offset = 0.05
+                    offset = 0.01
                 p1 = QgsPointXY(point.x() - offset, point.y() - offset)
                 p2 = QgsPointXY(point.x() + offset, point.y() + offset)
                 rect = QgsRectangle(p1, p2)
@@ -1565,6 +1849,7 @@ Log_hash list: {}""".format(
         else:
             self.ui.statusbar.showMessage("Log not opened...")
         self.updateUi()
+        self.is_leg_nr_tables = preprocess_azm.is_leg_nr_tables()
 
     def timeChange(self):
         ret = self.timechange_to_service_counter.inc_and_get()
@@ -2104,6 +2389,8 @@ Log_hash list: {}""".format(
                         ne_lat = indoor_bg_df["indoor_{}_img_north_east_lat".format(map_type)][0]
                         se_lon = indoor_bg_df["indoor_{}_img_south_east_lon".format(map_type)][0]
                         se_lat = indoor_bg_df["indoor_{}_img_south_east_lat".format(map_type)][0]
+                    else:
+                        self.is_legacy_indoor = True
                 except:
                     self.is_legacy_indoor = True
 
@@ -2125,6 +2412,7 @@ Log_hash list: {}""".format(
         if self.gc.cell_files:
             import azq_cell_file
             import azq_utils
+            import cell_layer_task
             rrv = azq_cell_file.CELL_FILE_RATS.copy()
             rrv.reverse()  # by default gsm is biggest so put it at the bottom
             for rat in rrv:
@@ -2140,6 +2428,33 @@ Log_hash list: {}""".format(
                         uri += "?crs=epsg:4326&wktField={}".format('sector_polygon_wkt')
                         print("csv uri: {}".format(uri))
                         layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
+                        param_att_rat = {'gsm': 'bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
+                        param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'wcdma_aset_sc_1', 'lte': 'lte_physical_cell_id_1', 'nr': 'nr_servingbeam_pci_1'}
+                        param_name_in_cell = param_att_rat[rat]
+                        param_name_in_db = param_db_rat[rat]
+                        color_range_list = []
+                        param_with_color_df = cell_layer_task.cell_in_logs_with_color(self.gc.cell_files, self.gc.databasePath, rat)
+                        param_with_color_df[param_name_in_db] = param_with_color_df[param_name_in_db].astype(int)
+                        print(param_with_color_df)
+                        fes = layer.getFeatures()
+                        for fe in fes:
+                            param_val_in_fe = int(fe.attribute(param_name_in_cell))
+                            print(param_val_in_fe, list(param_with_color_df[param_name_in_db]))
+                            if param_val_in_fe in list(param_with_color_df[param_name_in_db]):
+                                tmp_df = param_with_color_df[param_with_color_df[param_name_in_db] == param_val_in_fe].reset_index()
+                                color = tmp_df.loc[0, 'ColorXml']
+                            else:
+                                color = '#666666'
+
+                            symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+                            symbol.setColor(QColor(color))
+                            color_per_param = QgsRendererRange(param_val_in_fe, param_val_in_fe, symbol, str(param_val_in_fe))
+                            color_range_list.append(color_per_param)
+
+                        renderer = QgsGraduatedSymbolRenderer(param_name_in_cell, color_range_list)
+                        renderer.setMode(QgsGraduatedSymbolRenderer.Custom)
+
+                        layer.setRenderer(renderer)
                         QgsProject.instance().addMapLayers([layer])
                         pass
                 except:

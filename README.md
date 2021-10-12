@@ -24,8 +24,7 @@ Installation instructions
 - Restart QGIS
 - Press on the AZENQOS icon button in toolbar (or in 'Plugins') - the analyzer window will launch.
 - In the analyzer window, go to File > Open log file... to choose a .azm log file to analyze.
-- After a log has been opened. Go to Presentation to open each required analyzer window - like Signalling > Layer-3 Messages.
-
+- After a log has been opened. Go to Presentation to open each required analyzer window - like Signalling > Layer-3 Messages. Example logs are available at: https://github.com/freewillfx-azenqos/azenqos_qgis_plugin/tree/master/example_logs
 - Repeat the same steps above when you want to upgrade the plugin to a new version (version is shown at top-right of analyzer window).
 
 - Installation video guide (in Thai)

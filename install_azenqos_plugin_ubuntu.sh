@@ -17,8 +17,6 @@ echo "== Installing required python packages into local python3 env..."
 sudo python3 -m pip install -r requirements.txt
 exit_if_failed
 
-HOME=/home/admin
-
 mkdir -p $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
 
 echo == Removing any existing plugin folders...
@@ -27,6 +25,16 @@ rm -rf $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Azenqos
 echo == Copying new plugin from this folder...
 ln -s `pwd`/Azenqos $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Azenqos
 exit_if_failed
+
+ls -l $HOME/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini
+exit_if_failed
+
+sudo apt-get -y install crudini
+exit_if_failed
+
+crudini --set $HOME/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini PythonPlugins Azenqos true
+exit_if_failed
+
 echo
 echo === INSTAL SUCCESS - you can start QGIS now
 echo "If first time, in QGIS, go to 'Plugins' > 'Manage and install plugins' > 'Installed' and enable the 'Azenqos' plugin"

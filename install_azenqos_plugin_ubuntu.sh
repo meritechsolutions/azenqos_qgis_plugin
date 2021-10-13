@@ -23,6 +23,7 @@ echo == Removing any existing plugin folders...
 rm -rf $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Azenqos
 
 echo == Copying new plugin from this folder...
+rm -f `pwd`/Azenqos $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Azenqos
 ln -s `pwd`/Azenqos $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Azenqos
 exit_if_failed
 

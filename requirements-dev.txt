@@ -1,5 +1,0 @@
-black==19.10b0
-pandas==1.0.1
-pyarrow==3.0.0
-pyflakes
-

@@ -14,7 +14,10 @@ echo "== Finding local QGIS installation folder..."
 
 echo "note: pyqt5 pip must not be installed as it should be installed by qgis already - do not install in pip again as it will conflict and qgis launch python would fail"
 echo "== Installing required python packages into local python3 env..."
-sudo python3 -m pip install -r requirements.txt
+sudo python3 -m pip install -r Azenqos/requirements.txt
+exit_if_failed
+
+sudo python3 -m pip install -r Azenqos/requirements-dev.txt
 exit_if_failed
 
 mkdir -p $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins/

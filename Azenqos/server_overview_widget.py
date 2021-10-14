@@ -42,10 +42,9 @@ class server_overview_widget(QWidget):
         self.overview_db_fp = None
 
     def setupUi(self):
-        self.setWindowTitle("Server logs overview")
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.ui = loadUi(azq_utils.get_module_fp("server_overview_widget.ui"), self)
-
+        self.setWindowTitle("Server logs overview")
         now = azq_utils.datetime_now()
         last_month = now - datetime.timedelta(days=30)
         self.ui.start_dateEdit.setDateTime(last_month)
@@ -55,29 +54,10 @@ class server_overview_widget(QWidget):
         self.apply_done_signal.connect(self.apply_done)
         self.progress_update_signal.connect(self.progress)
         self.status_update_signal.connect(self.status)
-        self.read_server_facts()
+        self.apply_read_server_facts = True
+        self.setMinimumSize(320,350)
+        self.apply()
 
-    def read_server_facts(self):
-        self.on_processing(True, processing_text="Reading server data...")
-        try:
-            if not self.gvars.is_logged_in():
-                raise Exception("Please login to server first")
-            # avail server samplings
-            df = azq_server_api.api_overview_db_df(
-                self.gvars.login_dialog.server,
-                self.gvars.login_dialog.token
-            )
-            bins = sorted(list(df.bin.unique()), reverse=True)
-            self.ui.samp_rate_comboBox.addItems(bins)
-            # TODO imei list/group list for this account
-            self.on_processing(False)
-        except Exception as e:
-            type_, value_, traceback_ = sys.exc_info()
-            exstr = str(traceback.format_exception(type_, value_, traceback_))
-            msg = "WARNING: read_server_facts failed - exception: {}".format(exstr)
-            print(msg)
-            self.on_processing(True, processing_text="Read server data failed")
-            qt_utils.msgbox(msg, "Server overview", self)
 
     def on_processing(self, processing, processing_text="Processing..."):
         if processing:
@@ -109,8 +89,12 @@ class server_overview_widget(QWidget):
         self.on_processing(False)
         if not msg.startswith("SUCCESS"):
             qt_utils.msgbox(msg, "Server overview apply failed", parent=self)
-            self.status(msg[:20])
+            self.status(msg[:50])
         else:
+            if self.apply_read_server_facts:
+                bins = sorted(list(self.overview_list_df.bin.unique()), reverse=True)
+                self.ui.samp_rate_comboBox.addItems(bins)
+                self.apply_read_server_facts = False
             if self.gvars.main_window:
                 self.gvars.main_window.add_map_layer()
             self.status("Adding new layers to QGIS...")
@@ -123,7 +107,8 @@ class server_overview_widget(QWidget):
         self.on_processing(True)
         try:
             self.overview_db_fp = None
-            self.read_input_to_vars()
+            if not self.apply_read_server_facts:
+                self.read_input_to_vars()
             self.apply_thread = threading.Thread(
                 target=self.apply_worker_func, args=()
             )
@@ -140,6 +125,12 @@ class server_overview_widget(QWidget):
     def apply_worker_func(self):
         try:
             assert self.gvars.is_logged_in()
+            if self.apply_read_server_facts:
+                self.overview_list_df = azq_server_api.api_overview_db_df(
+                    self.gvars.login_dialog.server,
+                    self.gvars.login_dialog.token
+                )
+                return
             self.status_update_signal.emit("Preparing folder...")
             target_fp = azq_utils.tmp_gen_fp("overview.zip")
             if os.path.isfile(target_fp):

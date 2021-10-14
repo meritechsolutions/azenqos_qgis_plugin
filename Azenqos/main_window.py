@@ -27,6 +27,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
 )
 from PyQt5.uic import loadUi
+from qgis._core import QgsTask
 
 import qt_utils, azq_utils
 import spider_plot
@@ -104,6 +105,7 @@ class main_window(QMainWindow):
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
     task_done_signal = pyqtSignal(str)
     signal_trigger_zoom_to_active_layer = pyqtSignal(str)
+    add_created_layers_signal = pyqtSignal(str, object)
     curInstance = None
 
     def __init__(self, qgis_iface, parent=None):
@@ -142,6 +144,7 @@ class main_window(QMainWindow):
 
         self.dbfp = None
         self.qgis_iface = qgis_iface
+        self.crs_already_set = False
         self.timeSliderThread = timeSliderThread(self.gc)
         self.current_workspace_settings = QSettings(
             azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN), QSettings.IniFormat
@@ -155,9 +158,11 @@ class main_window(QMainWindow):
             print("analyzer_window: qgis mode")
             self.canvas = qgis_iface.mapCanvas()
             self.clickTool = QgsMapToolEmitPoint(self.canvas)
-            self.canvas.setMapTool(self.clickTool)
+            self.setMapTool()
             self.reg_map_tool_click_point(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
+            self.add_created_layers_signal.connect(self._add_created_layers)
+            self.add_map_layer()
         try:
             QgsProject.instance().layersAdded.connect(self.on_layers_added)
         except:
@@ -294,15 +299,18 @@ Log_hash list: {}""".format(
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
 
     @pyqtSlot()
-    def on_actionServerPredict_triggered(self):
+    def on_actionServerAIPrediction_triggered(self):
         if not self.is_logged_in():
             self.on_actionLogin_triggered()
-            if not self.is_logged_in():
-                return
+            return
         import predict_widget
         widget = predict_widget.predict_widget(self, self.gc)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
+
+    @pyqtSlot()
+    def on_actionOSM_triggered(self):
+        self.add_map_layer()
 
     def reg_map_tool_click_point(self, func):
         print("reg_map_tool_click_point func:", func)
@@ -1385,7 +1393,7 @@ Log_hash list: {}""".format(
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.saveBtn.clicked.connect(self.saveDbAs)
-            self.layerSelect.clicked.connect(self.selectLayer)
+            self.layerSelect.clicked.connect(self.on_button_selectLayer)
             self.cellsSelect.clicked.connect(self.selectCells)
             self.importDatabaseBtn.clicked.connect(self.open_logs)
             self.maptool.clicked.connect(self.setMapTool)
@@ -1407,7 +1415,7 @@ Log_hash list: {}""".format(
         self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.maptool)
         self.toolbar.addSeparator()
-        self.toolbar.addWidget(self.layerSelect)
+        #self.toolbar.addWidget(self.layerSelect) - now we add all layers
         self.toolbar.addWidget(self.cellsSelect)
         self.toolbar.addWidget(self.sync_connected_phone_button)
         self.toolbar.addSeparator()
@@ -1512,11 +1520,9 @@ Log_hash list: {}""".format(
             self.timeSliderThread.start()
 
     def setMapTool(self):
-        self.clickTool = QgsMapToolEmitPoint(self.canvas)
         self.canvas.setMapTool(self.clickTool)
-        self.reg_map_tool_click_point(self.clickCanvas)
 
-    def selectLayer(self):
+    def on_button_selectLayer(self):
         if self.qgis_iface:
             self.add_db_layers(select=True)
 
@@ -1773,12 +1779,6 @@ Log_hash list: {}""".format(
         print("clickCanvas done")
 
 
-
-    def useCustomMapTool(self):
-        currentTool = self.canvas.mapTool()
-        if currentTool != self.clickTool:
-            self.canvas.setMapTool(self.clickTool)
-
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
         if getSelected:
@@ -1825,7 +1825,7 @@ Log_hash list: {}""".format(
         if not self.gc.databasePath:
             # dialog not completed successfully
             return
-        if self.gc.db_fp:
+        if self.gc.db_fp and self.qgis_iface:
             print("starting layertask")
             self.add_map_layer()
             self.add_spider_layer()
@@ -2163,6 +2163,14 @@ Log_hash list: {}""".format(
             if azqGroup:
                 root.removeChildNode(azqGroup)
 
+
+    def set_project_crs(self):
+        if self.qgis_iface:
+            print("setting project crs")
+            my_crs = QgsCoordinateReferenceSystem(4326)
+            QgsProject.instance().setCrs(my_crs)
+            self.crs_already_set = True
+
     def on_layers_added(self, layers):
         if layers is None:
             return
@@ -2283,6 +2291,9 @@ Log_hash list: {}""".format(
                         print("WARNING: save_current_workspace() for window exception: {}".format(exstr))
                     # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
 
+            wsfp = azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN)
+            if os.path.isfile(wsfp):
+                os.remove(wsfp)
             self.current_workspace_settings.sync()  # save to disk
             print("save_current_workspace() DONE")
         except:
@@ -2290,13 +2301,45 @@ Log_hash list: {}""".format(
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: save_current_workspace() - exception: {}".format(exstr))
 
+    def qgis_msgbar(self, title, msg):
+        if self.qgis_iface:
+            self.qgis_iface.messageBar().clearWidgets()
+            self.qgis_iface.messageBar().pushInfo(title, msg)
 
     def add_db_layers(self, select=False):
+        print("add_db_layers 0")
         if self.gc.db_fp:
-            self.db_layer_task = db_layer_task.LayerTask(u"Add layers", self.gc.db_fp, self.gc, self.task_done_signal)
-            self.db_layer_task.run_blocking(select=select)
+            print("add_db_layers 2")
+            self.qgis_msgbar("Creating layers", "Please wait...")
+            self._create_db_layers(None)
+            '''
+            self.load_db_layers_task = QgsTask.fromFunction('Load db layers', self._create_db_layers,
+                                                            on_finished=self._create_db_layers_done)
+                                       
+            print("add_db_layers 3")
+            QgsApplication.taskManager().addTask(self.load_db_layers_task)
+            '''
+            print("add_db_layers 4")
         else:
             qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
+
+    def _create_db_layers(self, task):
+        print("_add_db_layers start")
+        table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer = db_layer_task.create_layers(
+            self.gc)
+        obj = (table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer)
+        #this was for older QgsTask.fromFunction but this always creates the QObject::setParent: Cannot set parent... although we already sent it via signales, perhaps qvectorlayer should be created in ui thread too... self.add_created_layers_signal.emit("", obj)
+        self._add_created_layers(None, obj)
+        print("_add_db_layers done")
+
+    def _create_db_layers_done(self, exception, result=None):
+        print("_add_db_layers_done exception: {} result: {}".format(exception, result))
+
+    def _add_created_layers(self, signal_msg, obj):
+        print("add_created_layers signal_msg:", signal_msg)
+        table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer = obj
+        db_layer_task.ui_thread_add_layers_to_qgis(self.gc, table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer)
+        self.qgis_msgbar("Done", "Loading layers completed")
 
     def trigger_zoom_to_active_layer(self, wait_secs=0.6):
         print("trigger_zoom_to_active_layer")
@@ -2319,6 +2362,7 @@ Log_hash list: {}""".format(
     def slot_trigger_zoom_to_active_layer(self, msg):
         print("slot_trigger_zoom_to_active_layer")
         self.gc.qgis_iface.zoomToActiveLayer()
+        self.set_project_crs()
 
     def add_map_layer(self):
         layers_names = []
@@ -2328,7 +2372,7 @@ Log_hash list: {}""".format(
         if map_layer_name in layers_names:
             return  # no need to add
         urlWithParams = (
-            "type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
+            "type=xyz&url=http://tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
         )
         from qgis._core import QgsRasterLayer
         rlayer = QgsRasterLayer(urlWithParams, map_layer_name, "wms")
@@ -2336,6 +2380,7 @@ Log_hash list: {}""".format(
             QgsProject.instance().addMapLayer(rlayer)
         else:
             QgsMessageLog.logMessage("Invalid layer")
+        self.trigger_zoom_to_active_layer()
 
 
     def add_spider_layer(self):

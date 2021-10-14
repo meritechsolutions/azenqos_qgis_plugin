@@ -181,16 +181,9 @@
      </property>
      <addaction name="actionExynosServiceMode_BasicInfo_2"/>
     </widget>
-    <widget class="QMenu" name="menuAI_ML_Prediction">
-     <property name="title">
-      <string>AI Prediction</string>
-     </property>
-     <addaction name="actionServerPredict"/>
-     </widget>
-
     <widget class="QMenu" name="menuSession_1">
      <property name="title">
-      <string>Session 1</string>
+      <string>Common test sessions</string>
      </property>
      <addaction name="actionVoice_Report"/>
      <addaction name="actionLog_To_Operator_Map"/>
@@ -219,7 +212,7 @@
     </widget>
     <widget class="QMenu" name="menuLegacy_Session">
      <property name="title">
-      <string>Legacy Session</string>
+      <string>Legacy test sessions</string>
      </property>
      <addaction name="actiondatasession"/>
      <addaction name="actionline_mo"/>
@@ -230,7 +223,7 @@
     </widget>
     <widget class="QMenu" name="menuSession_2">
      <property name="title">
-      <string>Session 2</string>
+      <string>Other test sessions</string>
      </property>
      <addaction name="actionFacebook_Post_Status"/>
      <addaction name="actionFacebook_Post_Photo"/>
@@ -249,6 +242,12 @@
      <addaction name="actionVideo"/>
      <addaction name="actionNperf_Test"/>
     </widget>
+    <widget class="QMenu" name="menuMaps">
+     <property name="title">
+      <string>Maps</string>
+     </property>
+     <addaction name="actionOSM"/>
+    </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
@@ -256,14 +255,14 @@
     <addaction name="menuSignalling"/>
     <addaction name="menuData"/>
     <addaction name="menuSystem"/>
-    <addaction name="menuAI_ML_Prediction"/>
     <addaction name="menuLog"/>
     <addaction name="actionPCAP"/>
-    <addaction name="menuCustom_Windows"/>
-    <addaction name="menuMisc"/>
     <addaction name="menuSession_1"/>
     <addaction name="menuSession_2"/>
     <addaction name="menuLegacy_Session"/>
+    <addaction name="menuCustom_Windows"/>
+    <addaction name="menuMisc"/>
+    <addaction name="menuMaps"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -284,6 +283,7 @@
     </property>
     <addaction name="actionLogin"/>
     <addaction name="actionServer_overview_layers"/>
+    <addaction name="actionServerAIPrediction"/>
     <addaction name="actionRun_server_modules"/>
     <addaction name="actionRun_PY_EVAL_code"/>
     <addaction name="actionRun_SQL_code"/>
@@ -671,15 +671,14 @@
   </action>
   <action name="actionServer_overview_layers">
    <property name="text">
-    <string>Server overview layers</string>
+    <string>All logs overview</string>
    </property>
   </action>
   <action name="actionServerPredict">
    <property name="text">
-     <string>Predict from server models</string>
+    <string>Predict from server models</string>
    </property>
-     </action>
-
+  </action>
   <action name="actionPing">
    <property name="text">
     <string>Ping</string>
@@ -933,6 +932,16 @@
   <action name="actionLocation">
    <property name="text">
     <string>Location</string>
+   </property>
+  </action>
+  <action name="actionServerAIPrediction">
+   <property name="text">
+    <string>AI Prediction</string>
+   </property>
+  </action>
+  <action name="actionOSM">
+   <property name="text">
+    <string>OSM</string>
    </property>
   </action>
  </widget>

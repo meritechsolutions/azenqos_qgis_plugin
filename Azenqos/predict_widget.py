@@ -41,6 +41,7 @@ class predict_widget(QWidget):
     progress_update_signal = pyqtSignal(int)
     status_update_signal = pyqtSignal(str)
     apply_done_signal = pyqtSignal(str)
+    server_fact_read_done_signal = pyqtSignal(str)
 
     def __init__(self, parent, gvars):
         super().__init__(parent)
@@ -55,9 +56,9 @@ class predict_widget(QWidget):
             self.gvars.main_window.reg_map_tool_click_point(self.map_tool_click_point)
 
     def setupUi(self):
-        self.setWindowTitle("AI Prediction")
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.ui = loadUi(azq_utils.get_module_fp("server_predict_widget.ui"), self)
+        self.setWindowTitle("Server AI prediction")
         self.ui.mode_combo.addItems(["Single point", "Multi point from CSV", "Multi point from QGIS Layer"])
         self.ui.lat_lon_le.setText(azq_utils.read_settings_file("prev_predict_lat_lon"))
         self.ui.band_le.setText(azq_utils.read_settings_file("prev_predict_band"))
@@ -67,7 +68,9 @@ class predict_widget(QWidget):
         self.apply_done_signal.connect(self.apply_done)
         self.progress_update_signal.connect(self.progress)
         self.status_update_signal.connect(self.status)
-        self.read_server_facts()
+        self.apply_read_server_facts = True
+        self.setMinimumSize(320,350)
+        self.apply()
 
     def on_input_mode_changed(self):
         if self.ui.mode_combo.currentIndex() == 0:
@@ -81,32 +84,6 @@ class predict_widget(QWidget):
         print("predict_widget map_tool_click_point:", point)
         if point is not None and not self.closed:
             self.ui.lat_lon_le.setText("{},{}".format(point.y(), point.x()))
-
-    def read_server_facts(self):
-        self.on_processing(True, processing_text="Reading server data...")
-        try:
-            if not self.gvars.is_logged_in():
-                raise Exception("Please login to server first")
-            # avail server samplings
-            models_df = azq_server_api.api_predict_models_list(
-                self.gvars.login_dialog.server,
-                self.gvars.login_dialog.token
-            )
-            self.models_df = models_df
-            print("models_df:", models_df)
-            params = sorted(list(models_df.param.unique()))
-            #not used yet - self.ui.param_combo.addItems(params)
-            models = models_df.apply(model_row_to_text_sum, axis=1)
-            print("models:", models)
-            self.ui.model_combo.addItems(models)
-            self.on_processing(False)
-        except Exception as e:
-            type_, value_, traceback_ = sys.exc_info()
-            exstr = str(traceback.format_exception(type_, value_, traceback_))
-            msg = "WARNING: read_server_facts failed - exception: {}".format(exstr)
-            print(msg)
-            self.on_processing(True, processing_text="Read server data failed")
-            qt_utils.msgbox(msg, "Failed", self)
 
     def on_processing(self, processing, processing_text="Processing..."):
         if processing:
@@ -249,15 +226,28 @@ class predict_widget(QWidget):
             qt_utils.msgbox(msg, "Apply failed", parent=self)
             self.status(msg[:20])
         else:
-            if self.gvars.main_window:
-                self.gvars.main_window.add_map_layer()
-            self.ui.result_text.setHtml(msg)
-            if self.ret_df is not None and len(self.ret_df):
-                self.status("Adding prediction to QGIS...")
-                assert "lat" in self.ret_df.columns
-                azq_utils.create_layer_in_qgis(self.gvars.databasePath, self.ret_df, "prediction_"+model_row_to_text_sum(self.model), theme_param=self.model.param)
-                assert "lon" in self.ret_df.columns
-                self.status("Adding prediction to QGIS... done")
+            if self.apply_read_server_facts:
+                self.apply_read_server_facts = False
+                models_df = self.models_df
+                params = sorted(list(models_df.param.unique()))
+                # not used yet - self.ui.param_combo.addItems(params)
+                models = models_df.apply(model_row_to_text_sum, axis=1)
+                print("models:", models)
+                self.ui.model_combo.addItems(models)
+            else:
+                if self.ret_df is not None and len(self.ret_df) and not (pd.isnull(self.ret_df[self.model.param])).all():
+                    self.ui.result_text.setHtml(msg)
+                    self.status("Adding prediction to QGIS...")
+                    assert "lat" in self.ret_df.columns
+                    azq_utils.create_layer_in_qgis(self.gvars.databasePath, self.ret_df, "prediction_"+model_row_to_text_sum(self.model), theme_param=self.model.param)
+                    assert "lon" in self.ret_df.columns
+                    self.status("Adding prediction to QGIS... done")
+                else:
+                    msg = "Failed - there were likely no tests done near your target prediction areas.\nTip: Try use a 'combined' model."
+                    print(msg)
+                    qt_utils.msgbox(msg, "failed", self)
+                    self.ui.result_text.setHtml(msg)
+                    return
 
     def apply(self):
         self.ui.status_label.setText("")
@@ -265,7 +255,10 @@ class predict_widget(QWidget):
         self.on_processing(True)
         try:
             self.overview_db_fp = None
-            self.read_input_to_vars()
+            if self.apply_read_server_facts:
+                self.on_processing(True, processing_text="Reading server data...")
+            else:
+                self.read_input_to_vars()
             self.ret_df = None
             self.apply_thread = threading.Thread(
                 target=self.apply_worker_func, args=()
@@ -280,48 +273,62 @@ class predict_widget(QWidget):
             self.ui.result_text.setText(msg)
             self.on_processing(False)
 
+
     def apply_worker_func(self):
         try:
             assert self.gvars.is_logged_in()
-            assert self.input_df is not None
-            assert len(self.input_df)
-            self.status_update_signal.emit("Asking server for prediction...")
-            self.progress_update_signal.emit(0)
-            body_dict = {
-            "y":int(self.model.y),
-            "m":int(self.model.m),
-            "grid_size_meters":int(self.model.grid_size_meters),
-            "bin":int(self.model.bin),
-            "param": self.model.param,
-            "lat": self.input_df.lat.values.tolist(),
-            "lon": self.input_df.lon.values.tolist(),
-            "band": self.input_df.band.values.tolist()
-            }
-            self.ret_df = azq_server_api.api_predict_df(
-                self.gvars.login_dialog.server,
-                self.gvars.login_dialog.token,
-                body_dict=body_dict
-            )
-            n = len(self.ret_df)
-            head_n = 100
-            if n < head_n:
-                head_n = n
-            result_text = """SUCCESS
-            <br/>
-             <b>AI Model:</b> {} - server: {}
-             <br/>
-             <br/>
-             <b>Results:</b> n_rows: {}, showing first {} rows:             
-             {}
-             <br/>
-             <br/>
-             <b>Stats:</b>             
-             {}
-             <br/>
-             <br/> 
-             For all samples please see/export the attribute table of the created qgis layer.
-            """.format(model_row_to_text_sum(self.model), self.gvars.login_dialog.server, n, head_n, self.ret_df.head(head_n).to_html(), self.ret_df.describe().to_html())
-            self.progress_update_signal.emit(100)
+            if self.apply_read_server_facts:
+                if not self.gvars.is_logged_in():
+                    raise Exception("Please login to server first")
+                    # avail server samplings
+                models_df = azq_server_api.api_predict_models_list(
+                    self.gvars.login_dialog.server,
+                    self.gvars.login_dialog.token
+                )
+                self.models_df = models_df
+                print("models_df:", models_df)
+                result_text = "SUCCESS - server ai models list read successfully."
+            else:
+                assert self.input_df is not None
+                assert len(self.input_df)
+                self.status_update_signal.emit("Asking server for prediction...")
+                self.progress_update_signal.emit(0)
+                body_dict = {
+                "y":int(self.model.y),
+                "m":int(self.model.m),
+                "grid_size_meters":int(self.model.grid_size_meters),
+                "bin":int(self.model.bin),
+                "param": self.model.param,
+                "lat": self.input_df.lat.values.tolist(),
+                "lon": self.input_df.lon.values.tolist(),
+                "band": self.input_df.band.values.tolist()
+                }
+                self.ret_df = azq_server_api.api_predict_df(
+                    self.gvars.login_dialog.server,
+                    self.gvars.login_dialog.token,
+                    body_dict=body_dict
+                )
+                assert self.model.param in self.ret_df.columns
+                n = len(self.ret_df)
+                head_n = 100
+                if n < head_n:
+                    head_n = n
+                result_text = """SUCCESS
+                <br/>
+                 <b>AI Model:</b> {} - server: {}
+                 <br/>
+                 <br/>
+                 <b>Results:</b> n_rows: {}, showing first {} rows:             
+                 {}
+                 <br/>
+                 <br/>
+                 <b>Stats:</b>             
+                 {}
+                 <br/>
+                 <br/> 
+                 For all samples please see/export the attribute table of the created qgis layer.
+                """.format(model_row_to_text_sum(self.model), self.gvars.login_dialog.server, n, head_n, self.ret_df.head(head_n).to_html(), self.ret_df.describe().to_html())
+                self.progress_update_signal.emit(100)
             self.apply_done_signal.emit(result_text)
             return 0
         except Exception as e:

@@ -65,15 +65,6 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
 
 def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None):
     print("create_qgis_layer_from_spatialite_db: table", table)
-    '''
-    # now we create from spatialite dbcon instead
-    tmp_csv_fp = os.path.join(
-        azq_utils.tmp_gen_path(), "tmp_csv_{}.csv".format(uuid.uuid4())
-    )
-<<<<<<< HEAD
-    df.to_csv(tmp_csv_fp, index=False, quoting=csv.QUOTE_ALL)
-    create_qgis_layer_csv(tmp_csv_fp, layer_name=layer_name, label_col=label_col)
-    '''
     # https://qgis-docs.readthedocs.io/en/latest/docs/pyqgis_developer_cookbook/loadlayer.html
     schema = ''
     table = table

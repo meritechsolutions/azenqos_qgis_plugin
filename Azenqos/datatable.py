@@ -8,7 +8,6 @@ import sqlite3
 import sys
 import threading
 import traceback
-import uuid
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
@@ -54,7 +53,6 @@ from PyQt5 import QtCore
 from tsharkworker import TsharkDecodeWorker
 import azq_utils
 import qt_utils
-import qgis_layers_gen
 import sql_utils
 import preprocess_azm
 

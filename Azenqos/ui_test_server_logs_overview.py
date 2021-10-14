@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QApplication
-from server_overview_widget import server_overview_widget
-import analyzer_vars
+
 import integration_test_helpers
+from server_overview_widget import server_overview_widget
 
 
 def test():

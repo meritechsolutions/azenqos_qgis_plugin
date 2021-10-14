@@ -1,11 +1,11 @@
 import os
-import zipfile
 import sqlite3
-import azq_utils
-import preprocess_azm
+import zipfile
+
 import analyzer_vars
+import azq_utils
 import login_dialog
-import azq_server_api
+import preprocess_azm
 
 
 def unzip_azm_to_tmp_get_dbfp(azmfp):

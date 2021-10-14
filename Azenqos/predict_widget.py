@@ -1,19 +1,11 @@
-import contextlib
-import datetime
 import os
 import signal
-import sqlite3
 import sys
 import threading
-
-import pandas as pd
-from PyQt5 import QtCore
-from qgis._core import QgsProject, QgsVectorFileWriter
-
-import preprocess_azm
 import traceback
 import uuid
 
+import pandas as pd
 from PyQt5.QtCore import (
     Qt,
 )
@@ -22,13 +14,11 @@ from PyQt5.QtWidgets import (
     QWidget, QFileDialog, QInputDialog,
 )
 from PyQt5.uic import loadUi
+from qgis._core import QgsProject, QgsVectorFileWriter
 
 import azq_server_api
 import azq_utils
 import qt_utils
-import db_preprocess
-import db_layer_task
-
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 REQUIRED_COL_ALT_NAMES = {
@@ -229,7 +219,7 @@ class predict_widget(QWidget):
             if self.apply_read_server_facts:
                 self.apply_read_server_facts = False
                 models_df = self.models_df
-                params = sorted(list(models_df.param.unique()))
+                # params = sorted(list(models_df.param.unique()))
                 # not used yet - self.ui.param_combo.addItems(params)
                 models = models_df.apply(model_row_to_text_sum, axis=1)
                 print("models:", models)
@@ -264,7 +254,7 @@ class predict_widget(QWidget):
                 target=self.apply_worker_func, args=()
             )
             self.apply_thread.start()
-        except Exception as e:
+        except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             msg = "WARNING: apply failed - exception: {}".format(exstr)
@@ -331,7 +321,7 @@ class predict_widget(QWidget):
                 self.progress_update_signal.emit(100)
             self.apply_done_signal.emit(result_text)
             return 0
-        except Exception as e:
+        except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             msg = "WARNING: download_overview failed - exception: {}".format(exstr)

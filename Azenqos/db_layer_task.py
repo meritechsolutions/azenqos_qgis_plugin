@@ -8,11 +8,6 @@ import pandas as pd
 try:
     from qgis.core import (
         QgsProject,
-        QgsTask,
-        QgsMessageLog,
-        QgsRectangle,
-        QgsLayerTreeLayer,
-        QgsMapLayerType,
         QgsCoordinateReferenceSystem,
     )
 except:

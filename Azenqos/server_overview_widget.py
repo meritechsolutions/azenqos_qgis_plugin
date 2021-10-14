@@ -113,7 +113,7 @@ class server_overview_widget(QWidget):
                 target=self.apply_worker_func, args=()
             )
             self.apply_thread.start()
-        except Exception as e:
+        except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             msg = "WARNING: apply failed - exception: {}".format(exstr)
@@ -166,7 +166,7 @@ class server_overview_widget(QWidget):
             self.progress_update_signal.emit(100)
             self.apply_done_signal.emit("SUCCESS")
             return 0
-        except Exception as e:
+        except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             msg = "WARNING: download_overview failed - exception: {}".format(exstr)

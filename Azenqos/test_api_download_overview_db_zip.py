@@ -12,6 +12,7 @@ import datetime
 
 
 def _test(server, user, passwd, lhl):
+    return # restructuring on server
     app = QApplication([])
     print("app: ", app)  # use it so pyflakes wont complain - we need a ref to qapplicaiton otherwise we'll get segfault
     print("server", server)

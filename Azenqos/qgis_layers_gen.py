@@ -76,7 +76,7 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
     layer = QgsVectorLayer(uri.uri(), display_name, 'spatialite')
     if style_qml_fp is None and theme_param is not None:
         assert main_db_dbcon_for_theme_unique_values is not None
-        qml_bytes = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon)
+        qml_bytes = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, main_db_dbcon_for_theme_unique_values)
         qml_fp = azq_utils.tmp_gen_fp("tmp_theme_{}.qml".format(uuid.uuid4()))
         with open(qml_fp, "wb") as f:  # ret is a buffer so use wb
             f.write(qml_bytes)

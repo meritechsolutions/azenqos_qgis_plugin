@@ -72,10 +72,7 @@ class lte_pci_wise_dialog(QDialog):
                     per_pci_df = df.query('lte_physical_cell_id_1 == {}'.format(pci))
                     print('pci list of df :', per_pci_df.lte_physical_cell_id_1.unique())
                     layer_name = "{} per PCI: {}".format(self.param, pci)
-                    # theme_param = self.param
-                    theme_param = None
-                    if self.param not in ["lte_earfcn_1", "lte_physical_cell_id_1"]:
-                        theme_param = self.param
+                    theme_param = self.param
                     azq_utils.create_layer_in_qgis(self.gc.databasePath, per_pci_df, layer_name, theme_param = theme_param)
                     if self.param in lte_neigh_macth_param_dict.keys():
                         nb_param = lte_neigh_macth_param_dict[self.param]

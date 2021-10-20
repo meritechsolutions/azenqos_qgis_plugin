@@ -73,7 +73,8 @@ class lte_pci_wise_dialog(QDialog):
                     print('pci list of df :', per_pci_df.lte_physical_cell_id_1.unique())
                     layer_name = "{} per PCI: {}".format(self.param, pci)
                     theme_param = self.param
-                    azq_utils.create_layer_in_qgis(self.gc.databasePath, per_pci_df, layer_name, theme_param = theme_param)
+                    if len(per_pci_df) > 0:
+                        azq_utils.create_layer_in_qgis(self.gc.databasePath, per_pci_df, layer_name, theme_param = theme_param, is_indoor=self.gc.is_indoor)
                     if self.param in lte_neigh_macth_param_dict.keys():
                         nb_param = lte_neigh_macth_param_dict[self.param]
                         layer_name = "{} per PCI: {}".format(nb_param, pci)
@@ -96,5 +97,6 @@ class lte_pci_wise_dialog(QDialog):
                             all_nb_per_pci_df.append(nb_per_pci_df)
 
                         all_nb_per_pci_df = pd.concat(all_nb_per_pci_df, ignore_index=True)
-                        azq_utils.create_layer_in_qgis(self.gc.databasePath, all_nb_per_pci_df, layer_name, theme_param = theme_param)
+                        if len(all_nb_per_pci_df) > 0:
+                            azq_utils.create_layer_in_qgis(self.gc.databasePath, all_nb_per_pci_df, layer_name, theme_param = theme_param, is_indoor=self.gc.is_indoor)
         

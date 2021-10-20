@@ -360,7 +360,7 @@ class TableWindow(QWidget):
                     self, "New layer", "Please specify layer name:"
                 )
                 if layer_name:
-                    azq_utils.create_layer_in_qgis(self.gc.databasePath, self.tableModel.df, layer_name)
+                    azq_utils.create_layer_in_qgis(self.gc.databasePath, self.tableModel.df, layer_name, is_indoor=self.gc.is_indoor)
 
 
     def headerMenu(self, pos):

@@ -42,6 +42,7 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
             idf = df[["log_hash", "time", "lat", "lon"]]
             idf = idf.dropna(subset=["time"])
             idf = idf.drop_duplicates(subset='time').set_index('time')
+            idf.loc[(idf.lat.duplicated()) & (idf.lon.duplicated()) , ("lat", "lon")] = None
             idf = idf.groupby('log_hash').apply(lambda sdf: sdf.interpolate(method='time'))
             idf = idf.reset_index()
             df["lat"] = idf["lat"]

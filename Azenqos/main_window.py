@@ -426,6 +426,14 @@ Log_hash list: {}""".format(
         import system_sql_query
         self.add_param_window(system_sql_query.LTE_SYSTEM_INFO_SQL_LIST, title="LTE System Info")
 
+    @pyqtSlot()
+    def on_actionLTE_PCI_Footprint_triggered(self):
+        print("action lte system info")
+        import lte_pci_wise_dialog
+
+        dlg = lte_pci_wise_dialog.lte_pci_wise_dialog(self, self.gc)
+        dlg.show()
+
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):

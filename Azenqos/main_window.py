@@ -302,7 +302,8 @@ Log_hash list: {}""".format(
     def on_actionServerAIPrediction_triggered(self):
         if not self.is_logged_in():
             self.on_actionLogin_triggered()
-            return
+            if not self.is_logged_in():
+                return
         import predict_widget
         widget = predict_widget.predict_widget(self, self.gc)
         swa = SubWindowArea(self.mdi, self.gc)

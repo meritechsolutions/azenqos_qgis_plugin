@@ -63,11 +63,11 @@ def api_create_process(server, token, lhl, azq_report_gen_expression):
     return resp_dict
 
 
-def api_overview_db_list(server, token):
-    resp = call_api_get_resp(server, token, "uapi/overview_db", {})
-    return resp["list"]
+def api_overview_db_list_df(server, token):
+    resp = call_api_get_resp(server, token, "uapi/overview_db", {}, method="get")
+    return pd.DataFrame(resp)
 
-def api_predict_models_list(server, token):
+def api_predict_models_list_df(server, token):
     resp = call_api_get_resp(server, token, "uapi/predict", {}, method="get")
     return pd.DataFrame(resp)
 
@@ -76,7 +76,7 @@ def api_predict_df(server, token, body_dict):
     return pd.DataFrame(resp)
 
 def api_overview_db_df(server, token):
-    dbl = api_overview_db_list(server, token)
+    dbl = api_overview_db_list_df(server, token)
     df = pd.DataFrame()
     dbsr = pd.Series(dbl)
     df["fn"] = dbsr
@@ -88,7 +88,7 @@ def api_overview_db_df(server, token):
 
 def api_overview_db_download(server, token, target_fp, overview_mode_params_dict):
     body_dict = overview_mode_params_dict
-    ret_fp = call_api_get_resp(server, token, "livegen_api/overview_db", body_dict, resp_content_to_fp=target_fp)
+    ret_fp = call_api_get_resp(server, token, "uapi/overview_db", body_dict, resp_content_to_fp=target_fp)
     return ret_fp
 
 

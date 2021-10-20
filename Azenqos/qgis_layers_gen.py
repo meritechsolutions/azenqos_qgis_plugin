@@ -63,7 +63,7 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     assert os.path.isfile(dbfp)
 
 
-def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None):
+def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None, main_db_dbcon_for_theme_unique_values=None):
     print("create_qgis_layer_from_spatialite_db: table", table)
     # https://qgis-docs.readthedocs.io/en/latest/docs/pyqgis_developer_cookbook/loadlayer.html
     schema = ''
@@ -75,12 +75,12 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
         display_name = table
     layer = QgsVectorLayer(uri.uri(), display_name, 'spatialite')
     if style_qml_fp is None and theme_param is not None:
-        with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-            qml_bytes = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon)
-            qml_fp = azq_utils.tmp_gen_fp("tmp_theme_{}.qml".format(uuid.uuid4()))
-            with open(qml_fp, "wb") as f:  # ret is a buffer so use wb
-                f.write(qml_bytes)
-            style_qml_fp = qml_fp
+        assert main_db_dbcon_for_theme_unique_values is not None
+        qml_bytes = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon)
+        qml_fp = azq_utils.tmp_gen_fp("tmp_theme_{}.qml".format(uuid.uuid4()))
+        with open(qml_fp, "wb") as f:  # ret is a buffer so use wb
+            f.write(qml_bytes)
+        style_qml_fp = qml_fp
     if style_qml_fp is not None:
         print("style_qml_fp:", style_qml_fp)
         if os.path.isfile(style_qml_fp):

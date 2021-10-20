@@ -12,15 +12,14 @@ import datetime
 
 
 def _test(server, user, passwd, lhl):
-    return # restructuring on server
     app = QApplication([])
     print("app: ", app)  # use it so pyflakes wont complain - we need a ref to qapplicaiton otherwise we'll get segfault
     print("server", server)
     print("user", user)
     print("passwd", passwd)
-    overview_db_list = azq_server_api.api_overview_db_list(server, azq_server_api.api_login_get_token(server, user, passwd))
-    print("overview_db_list:", overview_db_list)
-    assert overview_db_list
+    overview_db_list_df = azq_server_api.api_overview_db_list_df(server, azq_server_api.api_login_get_token(server, user, passwd))
+    print("overview_db_list_df:", overview_db_list_df)
+    assert len(overview_db_list_df)
     gv = integration_test_helpers.get_global_vars()
 
     ################# api func test
@@ -28,7 +27,17 @@ def _test(server, user, passwd, lhl):
     if os.path.isfile(target_fp):
         os.remove(target_fp)
     assert not os.path.isfile(target_fp)
-    ret = azq_server_api.api_overview_db_download(gv.login_dialog.server, gv.login_dialog.token, target_fp, overview_mode_params_dict={"y": 2021, "m": 9, "bin": 60})
+    ret = azq_server_api.api_overview_db_download(
+        gv.login_dialog.server,
+        gv.login_dialog.token,
+        target_fp,
+        {
+            "start_date": "2021-8-03",
+            "end_date": "2021-10-15",
+            "bin": 60,
+            "filters_dict": {},
+        }
+    )
     print("ret:", ret)
     assert os.path.isfile(ret)
     assert os.path.isfile(target_fp)

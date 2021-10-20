@@ -1914,9 +1914,10 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
             df, tmpdbfp, "layer_dump", is_indoor=is_indoor
         )
         assert os.path.isfile(tmpdbfp)
-        qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-            tmpdbfp, "layer_dump", label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name
-        )
+        with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
+            qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+                tmpdbfp, "layer_dump", label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, main_db_dbcon_for_theme_unique_values=dbcon
+            )
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))

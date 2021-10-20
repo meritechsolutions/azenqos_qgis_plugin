@@ -26,6 +26,7 @@ REQUIRED_COL_ALT_NAMES = {
     "lat": ["positioning_lat", "latitude", "y"],
     "lon": ["positioning_lon", "longitude", "x"]
 }
+MAX_PREDICT_POINTS = 100 * 1000
 
 class predict_widget(QWidget):
     progress_update_signal = pyqtSignal(int)
@@ -152,6 +153,8 @@ class predict_widget(QWidget):
                 return
         assert self.input_df is not None
         assert len(self.input_df)
+        if len(self.input_df) > MAX_PREDICT_POINTS:
+            raise Exception("Too many points: {} vs max {}".format(len(self.input_df), MAX_PREDICT_POINTS))
         print("read_input_to_vars: config:", self.config)
 
     def predict_csv(self, fp, band=None):
@@ -271,7 +274,7 @@ class predict_widget(QWidget):
                 if not self.gvars.is_logged_in():
                     raise Exception("Please login to server first")
                     # avail server samplings
-                models_df = azq_server_api.api_predict_models_list(
+                models_df = azq_server_api.api_predict_models_list_df(
                     self.gvars.login_dialog.server,
                     self.gvars.login_dialog.token
                 )

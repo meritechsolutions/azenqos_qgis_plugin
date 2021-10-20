@@ -6,11 +6,9 @@ import signal
 import sqlite3
 import sys
 import threading
-import zipfile
-
-import preprocess_azm
 import traceback
 import uuid
+import zipfile
 
 from PyQt5.QtCore import (
     Qt,
@@ -21,12 +19,12 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.uic import loadUi
 
+import azm_sqlite_merge
 import azq_server_api
 import azq_utils
-import qt_utils
-import db_preprocess
 import db_layer_task
-import azm_sqlite_merge
+import db_preprocess
+import qt_utils
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
@@ -136,11 +134,8 @@ class server_overview_widget(QWidget):
         if selection_mask is not None:
             for i in range(len(selection_mask)):
                 selected = selection_mask[i]
-                originally_selected = ori_selected_mask[i]
                 g = groups[i]
-                if True:
-                    print("group {} selected != originally_selected".format(g))
-                    self.devices_selection_df.loc[self.devices_selection_df.group_name == g, "selected"] = selected
+                self.devices_selection_df.loc[self.devices_selection_df.group_name == g, "selected"] = selected
             self.update_selection_lables()
 
     def update_selection_lables(self):

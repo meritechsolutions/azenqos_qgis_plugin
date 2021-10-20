@@ -1,7 +1,6 @@
 import contextlib
 import sqlite3
 import sys
-import time
 import traceback
 
 import pandas as pd

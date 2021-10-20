@@ -387,15 +387,15 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
         subset='time').set_index('time')
     indoor_location_df_interpolated = indoor_location_df_interpolated.groupby('log_hash').apply(
         lambda sdf: sdf.interpolate(method='time')).reset_index()
-
+    
     # merge indoor lat/lon into df
 
     by = None
-    if "log_hash" in df.columns and "log_hash" in df_location.columns:
+    if "log_hash" in df.columns and "log_hash" in indoor_location_df_interpolated.columns:
         print('indoor merge df_location using by log_hash')
         by = 'log_hash'
         df['log_hash'] = df['log_hash'].astype(np.int64)
-        df_location['log_hash'] = df_location['log_hash'].astype(np.int64)
+        indoor_location_df_interpolated['log_hash'] = indoor_location_df_interpolated['log_hash'].astype(np.int64)
 
     df = pd.merge_asof(df.sort_values("time"), indoor_location_df_interpolated.sort_values("time"),
                            on="time", by=by,

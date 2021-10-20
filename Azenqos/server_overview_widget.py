@@ -1,10 +1,13 @@
 import contextlib
 import datetime
+import glob
 import os
 import signal
 import sqlite3
 import sys
 import threading
+import zipfile
+
 import preprocess_azm
 import traceback
 import uuid
@@ -23,7 +26,7 @@ import azq_utils
 import qt_utils
 import db_preprocess
 import db_layer_task
-
+import azm_sqlite_merge
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
@@ -37,9 +40,10 @@ class server_overview_widget(QWidget):
         super().__init__(parent)
         self.gvars = gvars
         self.setupUi()
-        self.config = {}
+        self.req_body = {}
         self.apply_thread = None
         self.overview_db_fp = None
+        self.devices_selection_df = None
 
     def setupUi(self):
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -54,6 +58,8 @@ class server_overview_widget(QWidget):
         self.apply_done_signal.connect(self.apply_done)
         self.progress_update_signal.connect(self.progress)
         self.status_update_signal.connect(self.status)
+        self.ui.phone_filter_pushButton.clicked.connect(self.on_click_phone_filter)
+        self.ui.group_filter_pushButton.clicked.connect(self.on_click_group_filter)
         self.apply_read_server_facts = True
         self.setMinimumSize(320,350)
         self.apply()
@@ -73,17 +79,78 @@ class server_overview_widget(QWidget):
             self.ui.progressBar.setVisible(False)
 
     def read_input_to_vars(self):
-        self.config = {}
-        self.config["start_date"] = self.ui.start_dateEdit.date().toPyDate()  # becomes like '2021-09-30'
-        self.config["end_date"] = self.ui.end_dateEdit.date().toPyDate()
-        self.config["bin"] = int(self.ui.samp_rate_comboBox.currentText())
-        print("read_input_to_vars: config:", self.config)
+        self.req_body = {}
+        self.req_body["start_date"] = self.ui.start_dateEdit.date().toPyDate().isoformat()  # becomes like '2021-09-30'
+        self.req_body["end_date"] = self.ui.end_dateEdit.date().toPyDate().isoformat()
+        self.req_body["bin"] = int(self.ui.samp_rate_comboBox.currentText())
+        self.req_body["filters_dict"] = {}
+        if (self.devices_selection_df.selected == False).any():
+            mask = self.devices_selection_df[self.devices_selection_df==True]
+            imei_list = self.devices_selection_df.loc[mask, "imei_number"].values.tolist()
+            self.req_body["filters_dict"]["imei_list"] = imei_list
+        lhl_str = self.ui.log_hash_filter_lineEdit.text().strip()
+        if lhl_str:
+            lhl = None
+            if "," in lhl_str:
+                lhl = lhl_str.split(",")
+            else:
+                lhl = [lhl_str]
+            lhl = [x.strip() for x in lhl]
+            for log_hash in lhl:
+                int(log_hash)  # log_hash must be numbers
+            self.req_body["filters_dict"]["log_hash_list"] = lhl
+        print("read_input_to_vars: req_body:", self.req_body)
 
     def status(self, msg):
         self.ui.status_label.setText(msg)
 
     def progress(self, val):
         self.ui.progressBar.setValue(val)
+
+    def on_click_phone_filter(self):
+        df = self.devices_selection_df.drop_duplicates("imei_number")
+        names = (df.alias+": "+df.imei_number).values
+        selected = (df.selected).values
+        selection_mask = qt_utils.ask_selection(self, names, selected, "Device selection", "Please select:")
+        if selection_mask is not None:
+            df_selected = df.iloc[selection_mask]
+            self.devices_selection_df["selected"] = False
+            self.devices_selection_df.loc[self.devices_selection_df.imei_number.isin(df_selected.imei_number), "selected"] = True
+            self.update_selection_lables()
+
+    def on_click_group_filter(self):
+        selected_df = self.devices_selection_df.query("selected == True")
+        groups = list(self.devices_selection_df.group_name.dropna().unique())
+        ori_selected_groups = list(selected_df.group_name.dropna().unique())
+        print("groups:", groups)
+        print("ori_selected_groups:", ori_selected_groups)
+        ori_selected_mask = [g in ori_selected_groups for g in groups]
+        print("ori_selected_mask:", ori_selected_mask)
+        selection_mask = qt_utils.ask_selection(
+            self,
+            groups,
+            ori_selected_mask,
+            "Group selection",
+            "Please select:"
+        )
+        if selection_mask is not None:
+            for i in range(len(selection_mask)):
+                selected = selection_mask[i]
+                originally_selected = ori_selected_mask[i]
+                g = groups[i]
+                if True:
+                    print("group {} selected != originally_selected".format(g))
+                    self.devices_selection_df.loc[self.devices_selection_df.group_name == g, "selected"] = selected
+            self.update_selection_lables()
+
+    def update_selection_lables(self):
+        if self.devices_selection_df is None:
+            return
+        n_devs = len(self.devices_selection_df.imei_number.unique())
+        n_groups = len(list(self.devices_selection_df.group_name.dropna().unique()))
+        selected_df = self.devices_selection_df.query("selected == True")
+        self.ui.phone_filter_pushButton.setText("{}/{} Devices".format(len(selected_df.imei_number.unique()), n_devs))
+        self.ui.group_filter_pushButton.setText("{}/{} Groups".format(len(list(selected_df.group_name.dropna().unique())), n_groups))
 
     def apply_done(self, msg):
         self.on_processing(False)
@@ -92,15 +159,20 @@ class server_overview_widget(QWidget):
             self.status(msg[:50])
         else:
             if self.apply_read_server_facts:
-                bins = sorted(list(self.overview_list_df.bin.unique()), reverse=True)
+                bins = [str(x) for x in sorted(list(self.overview_list_df.bin.unique()), reverse=True)]
                 self.ui.samp_rate_comboBox.addItems(bins)
+                self.devices_selection_df = self.devices_df.copy(deep=True)
+                self.devices_selection_df["selected"] = True
+                self.update_selection_lables()
                 self.apply_read_server_facts = False
-            if self.gvars.main_window:
-                self.gvars.main_window.add_map_layer()
-            self.status("Adding new layers to QGIS...")
-            self.progress_update_signal.emit(80)
-            db_layer_task.LayerTask(u"Add layers", self.overview_db_fp, self.gvars, None).run_blocking(select=True)
-            self.status("Adding new layers to QGIS... done")
+            else:
+                if self.gvars.main_window:
+                    self.gvars.main_window.add_map_layer()
+                self.status("Adding new layers to QGIS...")
+                self.progress_update_signal.emit(80)
+                table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer = db_layer_task.create_layers(self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_")
+                db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer)
+                self.status("Adding new layers to QGIS... done")
 
     def apply(self):
         self.ui.status_label.setText("")
@@ -125,43 +197,51 @@ class server_overview_widget(QWidget):
     def apply_worker_func(self):
         try:
             assert self.gvars.is_logged_in()
+            print("apply_worker_func: apply_read_server_facts:", self.apply_read_server_facts)
             if self.apply_read_server_facts:
-                self.overview_list_df = azq_server_api.api_overview_db_df(
+                self.overview_list_df = azq_server_api.api_overview_db_list_df(
                     self.gvars.login_dialog.server,
                     self.gvars.login_dialog.token
                 )
+                self.devices_df = azq_server_api.api_device_list_df(
+                    self.gvars.login_dialog.server,
+                    self.gvars.login_dialog.token
+                )
+                self.apply_done_signal.emit("SUCCESS")
                 return
             self.status_update_signal.emit("Preparing folder...")
-            target_fp = azq_utils.tmp_gen_fp("overview.zip")
-            if os.path.isfile(target_fp):
-                os.remove(target_fp)
-            assert not os.path.isfile(target_fp)
+            downloaded_zip_fp = azq_utils.tmp_gen_fp("overview_{}.zip".format(uuid.uuid4()))
+            assert not os.path.isfile(downloaded_zip_fp)
             self.status_update_signal.emit("Downloading data...")
-            ret = azq_server_api.api_overview_db_download(self.gvars.login_dialog.server, self.gvars.login_dialog.token, target_fp,
-                                                          overview_mode_params_dict={"y": self.config["start_date"].year, "m": self.config["start_date"].month, "bin": self.config["bin"]})
+            ret = azq_server_api.api_overview_db_download(self.gvars.login_dialog.server, self.gvars.login_dialog.token, downloaded_zip_fp,
+                                                          req_body=self.req_body)
             print("ret:", ret)
             assert os.path.isfile(ret)
-            assert os.path.isfile(target_fp)
+            assert os.path.isfile(downloaded_zip_fp)
             self.progress_update_signal.emit(50)
 
             self.status_update_signal.emit("Extracting compressed data...")
             self.progress_update_signal.emit(60)
-            db_folder = azq_utils.tmp_gen_fp("tmp_overview_db_{}".format(uuid.uuid4()))
-            assert not os.path.isdir(db_folder)
-            os.makedirs(db_folder)
-            assert os.path.isdir(db_folder)
-            overview_db_fp = os.path.join(db_folder, "azqdata.db")
-            assert not os.path.isfile(overview_db_fp)
-            preprocess_azm.extract_entry_from_zip(
-                target_fp, "azqdata.db", db_folder
-            )
-            assert os.path.isfile(overview_db_fp)
 
+            # merge all dbs in zip to the target overview_db_fp
+            tmpdir = azq_utils.tmp_gen_new_subdir()
+            with zipfile.ZipFile(downloaded_zip_fp, "r") as zip_file:
+                zip_file.extractall(tmpdir)
+            db_files = glob.glob(os.path.join(tmpdir, "*.db"))
+            assert len(db_files)
+            # combined all the db_files in the zip
+            self.status_update_signal.emit("Merging all db partitions from server...")
+            dbfp = None
+            if len(db_files) > 1:
+                dbfp = azm_sqlite_merge.merge(db_files)
+            else:
+                dbfp = db_files[0]
+            assert os.path.isfile(dbfp)
             self.status_update_signal.emit("Preparing database as per theme...")
             self.progress_update_signal.emit(70)
-            with contextlib.closing(sqlite3.connect(overview_db_fp)) as dbcon:
+            with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
                 db_preprocess.prepare_spatialite_views(dbcon)
-            self.overview_db_fp = overview_db_fp
+            self.overview_db_fp = dbfp
             self.status_update_signal.emit("DONE")
             self.progress_update_signal.emit(100)
             self.apply_done_signal.emit("SUCCESS")
@@ -169,8 +249,9 @@ class server_overview_widget(QWidget):
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
-            msg = "WARNING: download_overview failed - exception: {}".format(exstr)
-            self.apply_done_signal.emit("FAILED: "+msg)
+            msg = "FAILED - WARNING: download_overview failed - exception: {}".format(exstr)
+            print(msg)
+            self.apply_done_signal.emit(msg)
             return -1
         return -2
 

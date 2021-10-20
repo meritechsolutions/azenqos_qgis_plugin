@@ -2,6 +2,8 @@ import contextlib
 import os
 import shutil
 import sqlite3
+import sys
+import traceback
 import uuid
 
 import numpy as np
@@ -48,11 +50,18 @@ def merge(in_azm_list):
             dbfps.append(new_dbfp)
 
         # get azm app versions of each
-        azm_vers = map(preprocess_azm.get_azm_apk_ver_for_dbfp, dbfps)
+        azm_vers = None
+        try:
+            azm_vers = list(map(preprocess_azm.get_azm_apk_ver_for_dbfp, dbfps))
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: get azm_vers exception (normal for server overview db):", exstr)
 
         # sort azm apk vers, newest should be merged first as they might have more columns in same tables than older vers
         azm_df = pd.DataFrame({"azm": in_azm_list, "dbfp": dbfps, "azm_ver": azm_vers})
-        assert azm_df["azm_ver"].dtype == np.int64 or azm_df["azm_ver"].dtype == int
+        if azm_vers is not None:
+            assert azm_df["azm_ver"].dtype == np.int64 or azm_df["azm_ver"].dtype == int
         azm_df.sort_values("azm_ver", ascending=False, inplace=True)
         azm_df = azm_df.reset_index(drop=True)
         print("azm_df:\n", azm_df)
@@ -107,11 +116,16 @@ def merge(in_azm_list):
 
     # test merged dbfp
     with contextlib.closing(sqlite3.connect(out_db_fp)) as dbcon:
-        df = pd.read_sql(
-            "select count(distinct(log_hash)) from logs",
-            dbcon
-        );
-        assert df.iloc[0, 0] == len(in_azm_list)
+        try:
+            df = pd.read_sql(
+                "select count(distinct(log_hash)) from logs",
+                dbcon
+            );
+            assert df.iloc[0, 0] == len(in_azm_list)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: azm_sqlite_merge.merge() post merge check excception:", exstr)
 
     return out_db_fp
 

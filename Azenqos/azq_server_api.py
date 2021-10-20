@@ -33,6 +33,7 @@ def api_login_get_token(server, user, passwd, passwd_sha=None):
         from http.client import responses
 
         raise Exception("Got response status: %s" % responses[resp.status_code])
+    raise Exception("invalid state")
 
 
 def api_create_process(server, token, lhl, azq_report_gen_expression):
@@ -62,6 +63,13 @@ def api_create_process(server, token, lhl, azq_report_gen_expression):
     resp_dict = resp.json()
     return resp_dict
 
+def api_device_list_df(server, token):
+    resp = call_api_get_resp(server, token, "uapi/list_devices", {}, method="get")
+    print("api_device_list_df resp:", resp)
+    df = pd.DataFrame(resp)
+    print("api_device_list_df df:", df)
+    df["imei_number"] = df["imei_number"].astype(str)
+    return df
 
 def api_overview_db_list_df(server, token):
     resp = call_api_get_resp(server, token, "uapi/overview_db", {}, method="get")
@@ -75,22 +83,9 @@ def api_predict_df(server, token, body_dict):
     resp = call_api_get_resp(server, token, "uapi/predict", body_dict)
     return pd.DataFrame(resp)
 
-def api_overview_db_df(server, token):
-    dbl = api_overview_db_list_df(server, token)
-    df = pd.DataFrame()
-    dbsr = pd.Series(dbl)
-    df["fn"] = dbsr
-    df["y"] = dbsr.str.extract('overview_(\d+)_\d+_bin_\d+_secs.db', expand=False)
-    df["m"] = dbsr.str.extract('overview_\d+_(\d+)_bin_\d+_secs.db', expand=False)
-    df["bin"] = dbsr.str.extract('overview_\d+_\d+_bin_(\d+)_secs.db',expand=False)
-    return df
-
-
-def api_overview_db_download(server, token, target_fp, overview_mode_params_dict):
-    body_dict = overview_mode_params_dict
-    ret_fp = call_api_get_resp(server, token, "uapi/overview_db", body_dict, resp_content_to_fp=target_fp)
+def api_overview_db_download(server, token, target_fp, req_body):
+    ret_fp = call_api_get_resp(server, token, "uapi/overview_db", req_body, resp_content_to_fp=target_fp)
     return ret_fp
-
 
 def call_api_get_resp(server, token, path, body_dict, method='post', resp_content_to_fp=None):
     host = urlparse(server).netloc

@@ -13,6 +13,7 @@ def test():
         assert "Unauthorized" in str(exstr)
 
     assert raised == True
+    print("test passed")
 
 
 if __name__ == "__main__":

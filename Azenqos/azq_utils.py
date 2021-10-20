@@ -1473,10 +1473,15 @@ def tmp_gen_path():
         os.makedirs(dp)
     return dp
 
+def tmp_gen_new_subdir():
+    dp = tmp_gen_fp("tmp_subdir_{}".format(uuid.uuid4()))
+    assert not os.path.isdir(dp)
+    os.mkdir(dp)
+    assert os.path.isdir(dp)
+    return dp
 
 def tmp_gen_fp(fn):
     return os.path.join(tmp_gen_path(), fn)
-
 
 def cleanup_died_processes_tmp_folders():
     import psutil

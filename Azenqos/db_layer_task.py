@@ -55,17 +55,10 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix=""):
 
                     # pre-gen qml theme file
                     azq_utils.timer_start("gen_theme_qml")
-                    n_proc = psutil.cpu_count()
-                    if os.name == "nt":
-                        n_proc = 1  # in windows there will be multiple qgis instances for each fork
-                    pool = mp.Pool()
-                    args_list = []
+                    qml_tmp_fp_list = []
                     for table, param in tp_list:
-                        args_list.append((table, param, db_fp))
-                    qml_tmp_fp_list = pool.starmap(azq_utils.get_theme_qml_tmp_file_for_param, args_list)
-                    pool.close()
+                        qml_tmp_fp_list.append(azq_utils.get_theme_qml_tmp_file_for_param(table, param, db_fp))
                     azq_utils.timer_print("gen_theme_qml")
-
                     for i in range(len(table_list)):
                         table = table_list[i]
                         param = param_list[i]

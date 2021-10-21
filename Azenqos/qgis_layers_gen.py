@@ -20,8 +20,6 @@ except:
 import pathlib
 import db_preprocess
 import fill_geom_in_location_df
-import azq_utils
-import uuid
 
 
 def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
@@ -64,14 +62,14 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     assert os.path.isfile(dbfp)
 
 
-def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None, main_db_dbcon_for_theme_unique_values=None):
+def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None, main_db_dbcon_for_theme_unique_values=None, custom_sql=None):
     print("create_qgis_layer_from_spatialite_db: table", table)
     # https://qgis-docs.readthedocs.io/en/latest/docs/pyqgis_developer_cookbook/loadlayer.html
     schema = ''
     table = table
     uri = QgsDataSourceUri()
     uri.setDatabase(dbfp)
-    uri.setDataSource(schema, table, 'geom')
+    uri.setDataSource(schema, table, 'geom', custom_sql)
     if display_name is None:
         display_name = table
     layer = QgsVectorLayer(uri.uri(), display_name, 'spatialite')

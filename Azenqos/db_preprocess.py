@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import uuid
 import xml.etree.ElementTree as xet
 import struct
 
@@ -68,7 +69,7 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon, cre_table=True):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
@@ -125,6 +126,7 @@ def prepare_spatialite_views(dbcon, cre_table=True):
     # create layer_styles table if not exist
     tables_to_rm_stray_neg1_rows = ["signalling", "events"]
     layer_style_id = 0
+    tables_added_to_geom_cols = []
     for param in params_to_gen:
         layer_style_id += 1
         try:
@@ -170,10 +172,10 @@ def prepare_spatialite_views(dbcon, cre_table=True):
                 if cre_table == False:
                     cre_type = "view"
                 if "cell_meas" in table:
-                    drop_view_sqlstr = "drop table if exists {col}".format(col=view)
+                    drop_view_sqlstr = "drop {cre_type} if exists {col}".format(cre_type=cre_type, col=view)
                     sqlstr = "create {} {col} as select * from {table} where {col} is not null;".format(cre_type, col=view, table=table)   # need to create table because create view casues get nearest feature id to fail - getting only 0
                 else:
-                    drop_view_sqlstr = "drop table if exists {col}".format(col=view)
+                    drop_view_sqlstr = "drop {cre_type} if exists {col}".format(cre_type=cre_type, col=view)
                     sqlstr = "create {} {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null;".format(
                         cre_type, col=view, table=table,
                         modem_time_part="modem_time" if table_has_modem_time else "null as modem_time"
@@ -196,19 +198,30 @@ def prepare_spatialite_views(dbcon, cre_table=True):
             dbcon.execute(sqlstr)
             dbcon.commit()
 
-            # get theme df for this param
-            theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
-            print("db_preprocess theme_df:\n", theme_df)
-            if 'match_value' in theme_df.columns:
-                # id columns like pci, earfcn
-                theme_df.Lower = theme_df.match_value
-                theme_df.Upper = theme_df.match_value
-            if theme_df is None:
-                continue
-            print("param: {} got theme_df:\n{}".format(param, theme_df))
+            if not table in tables_added_to_geom_cols:
+                sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
+                    table
+                )
+                print("insert into geometry_columns table {} sqlstr: {}".format(table, sqlstr))
+                dbcon.execute(sqlstr)
+                dbcon.commit()
+                tables_added_to_geom_cols.append(table)
 
-            qml = gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon)
-            # print("qml_xml: %s" % xet.tostring(root))
+            qml = None
+            if gen_qml_styles_into_db:
+                # get theme df for this param
+                theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
+                print("db_preprocess theme_df:\n", theme_df)
+                if 'match_value' in theme_df.columns:
+                    # id columns like pci, earfcn
+                    theme_df.Lower = theme_df.match_value
+                    theme_df.Upper = theme_df.match_value
+                if theme_df is None:
+                    continue
+                print("param: {} got theme_df:\n{}".format(param, theme_df))
+
+                qml = gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon)
+                # print("qml_xml: %s" % xet.tostring(root))
 
             df = pd.DataFrame(
                 {
@@ -219,7 +232,7 @@ def prepare_spatialite_views(dbcon, cre_table=True):
                     "styleqml": [
                         "<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>\n {}".format(
                             str(qml, "utf8")
-                        )
+                        ) if qml else None
                     ],
                     "useasdefault": [1],
                     "update_time": [pd.to_datetime(pd.Timestamp.now())],
@@ -231,16 +244,13 @@ def prepare_spatialite_views(dbcon, cre_table=True):
                 }
             )
             df.to_sql("layer_styles", dbcon, if_exists="append", index=False)
-
             dbcon.execute(
                 """ INSERT INTO sqlite_sequence VALUES('layer_styles',{}); """.format(
                     layer_style_id
                 )
             )
-
             # gen theme qml for this param
             # insert into layer_styles table
-
             dbcon.commit()
             print("create view success")
         except:
@@ -402,7 +412,8 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
                            direction="backward", allow_exact_matches=True)
     return df
 
-def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, write_qml_for_param=True):
+
+def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=False):
     if theme_df is None:
         theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
     if 'match_value' in theme_df.columns:
@@ -419,11 +430,15 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, write_qml_fo
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: theme_df.sort_values exception:", exstr)
 
+    match_value_counts = (theme_df.Lower == theme_df.Upper).all()
+    if view_len is None:
+        view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, param), dbcon).iloc[0, 0]
+    match_value_counts_df = None
+    if match_value_counts:
+        match_value_counts_df = pd.read_sql("select {param} as match_val, count({param}) as match_count from {view} group by {param}".format(view=view,param=param), dbcon)
     for index, row in theme_df.iterrows():
         percent_part = ""
         try:
-            if view_len is None:
-                view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, param), dbcon).iloc[0,0]
             rsql = "select count(*) from {view} where {param} >= {lower} and {param} < {upper}".format(view=view,
                                                                                                        param=param,
                                                                                                      lower=row.Lower,
@@ -431,10 +446,16 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, write_qml_fo
             if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
                 rsql = "select count(*) from {view} where {param} = {lower}".format(
                     view=view, lower=row.Lower, param=param)
-            print("range rsql:", rsql)
-            count = pd.read_sql(
-                rsql,
-                dbcon).iloc[0, 0]
+            count = None
+            if match_value_counts_df is not None:
+                dfsl = match_value_counts_df[match_value_counts_df.match_val == row.Lower]
+                if len(dfsl) == 1:
+                    count = dfsl.iloc[0].match_count
+            else:
+                print("range rsql:", rsql)
+                count = pd.read_sql(
+                    rsql,
+                    dbcon).iloc[0, 0]
             print("view_len: {} count: {}".format(view_len, count))
             percent_part = " (%d: %.02f%%)" % (count, ((count * 100.0) / view_len))
             print("range percent_part:", percent_part)
@@ -502,11 +523,12 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, write_qml_fo
     renderer.remove(renderer.find("symbols"))
     renderer.append(xet.fromstring(symbols_xml))
     ret = xet.tostring(root)
-    if ret and write_qml_for_param:
-        qml_fp = get_qml_fp_for_view(view)
+    if ret and to_tmp_file:
+        qml_fp = get_qml_tmp_fp_for_view(view)
         with open(qml_fp, "wb") as f:  # ret is a buffer so use wb
             f.write(ret)
+        return qml_fp
     return ret
 
-def get_qml_fp_for_view(view):
-    return azq_utils.tmp_gen_fp("style_{}.qml".format(view))
+def get_qml_tmp_fp_for_view(view):
+    return azq_utils.tmp_gen_fp("style_{}_{}.qml".format(view, uuid.uuid4()))

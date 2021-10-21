@@ -50,13 +50,32 @@ def test():
         assert (
             df.f_table_schema.notnull().all()
         )  # required for qgis to apply theme autmomatically by default
-        assert df.styleqml.notnull().all()
 
         assert "lte_inst_rsrp_1" in db_preprocess.get_geom_cols_df(dbcon).f_table_name.values
         assert "lte_cell_meas" not in db_preprocess.get_geom_cols_df(dbcon).f_table_name.values
 
         ls = pd.read_sql("select styleqml from layer_styles where f_table_name = 'lte_inst_rsrp_1'", dbcon).iloc[0,0]
         print("rsrp ls:", ls)
+
+        # test gen theme range case
+        param_table_view = "lte_inst_rsrp_1"
+        qml_fp = db_preprocess.gen_style_qml_for_theme(
+            None, param_table_view, None, param_table_view,
+            dbcon,
+            to_tmp_file=True
+        )
+        assert qml_fp is not None
+        assert os.path.isfile(qml_fp)
+
+        # test gen theme match_val case
+        param_table_view = "lte_physical_cell_id_1"
+        qml_fp = db_preprocess.gen_style_qml_for_theme(
+            None, param_table_view, None, param_table_view,
+            dbcon,
+            to_tmp_file=True
+        )
+        assert qml_fp is not None
+        assert os.path.isfile(qml_fp)
 
 
 

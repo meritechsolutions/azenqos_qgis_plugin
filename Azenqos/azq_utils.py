@@ -1933,3 +1933,49 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
         )
         import qt_utils
         qt_utils.msgbox("create layer failed: " + exstr, title="Failed")
+
+
+def get_theme_qml_tmp_file_for_param(table, col, dbfp):
+    qml_fp = None
+    try:
+        assert os.path.isfile(dbfp)
+        import db_preprocess
+        with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+            qml_fp = db_preprocess.gen_style_qml_for_theme(
+                None, table, None, col,
+                dbcon,
+                to_tmp_file=True
+            )
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(
+            "WARNING: gen_style_qml_for_theme col {} failed exception: {}".format(
+                col, exstr
+            )
+        )
+    return qml_fp
+
+g_timer_start_ts_dict = {}
+
+def timer_start(tname=None):
+    global g_timer_start_ts_dict
+    if not tname:
+        tname = str(sys._getframe().f_back.f_code.co_name)
+    g_timer_start_ts_dict[tname] = datetime.datetime.now()
+
+def timer_print(tname=None, extra="now"):
+    if not tname:
+        tname = sys._getframe().f_back.f_code.co_name
+    msg = "timer: {} to {}: {} seconds".format(tname, extra, timer_get_dur(tname))
+    print(msg)
+    return msg
+
+def timer_get_dur(tname):
+    global g_timer_start_ts_dict
+    if tname in g_timer_start_ts_dict:
+        return (datetime.datetime.now()-g_timer_start_ts_dict[tname]).total_seconds()
+    else:
+        timer_start(tname)
+        return 0
+    return None

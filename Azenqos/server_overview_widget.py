@@ -165,8 +165,7 @@ class server_overview_widget(QWidget):
                     self.gvars.main_window.add_map_layer()
                 self.status("Adding new layers to QGIS...")
                 self.progress_update_signal.emit(80)
-                table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer = db_layer_task.create_layers(self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_")
-                db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer)
+                db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
                 self.status("Adding new layers to QGIS... done")
 
     def apply(self):
@@ -213,10 +212,10 @@ class server_overview_widget(QWidget):
             print("ret:", ret)
             assert os.path.isfile(ret)
             assert os.path.isfile(downloaded_zip_fp)
-            self.progress_update_signal.emit(50)
+            self.progress_update_signal.emit(30)
 
             self.status_update_signal.emit("Extracting compressed data...")
-            self.progress_update_signal.emit(60)
+            self.progress_update_signal.emit(40)
 
             # merge all dbs in zip to the target overview_db_fp
             tmpdir = azq_utils.tmp_gen_new_subdir()
@@ -232,11 +231,15 @@ class server_overview_widget(QWidget):
             else:
                 dbfp = db_files[0]
             assert os.path.isfile(dbfp)
-            self.status_update_signal.emit("Preparing database as per theme...")
-            self.progress_update_signal.emit(70)
+            self.status_update_signal.emit("Prepare db views as per theme...")
+            self.progress_update_signal.emit(50)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-                db_preprocess.prepare_spatialite_views(dbcon)
+                db_preprocess.prepare_spatialite_views(dbcon, cre_table=False)  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+            self.status_update_signal.emit("Processing layers/legends as per theme...")
+            self.progress_update_signal.emit(70)
             self.overview_db_fp = dbfp
+            self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer = db_layer_task.create_layers(
+                self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_")
             self.status_update_signal.emit("DONE")
             self.progress_update_signal.emit(100)
             self.apply_done_signal.emit("SUCCESS")

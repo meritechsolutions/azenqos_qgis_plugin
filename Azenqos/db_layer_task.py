@@ -55,7 +55,10 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix=""):
 
                     # pre-gen qml theme file
                     azq_utils.timer_start("gen_theme_qml")
-                    pool = mp.Pool(int((psutil.cpu_count()*3)/2))
+                    n_proc = psutil.cpu_count()
+                    if os.name == "nt":
+                        n_proc = 1  # in windows there will be multiple qgis instances for each fork
+                    pool = mp.Pool()
                     args_list = []
                     for table, param in tp_list:
                         args_list.append((table, param, db_fp))

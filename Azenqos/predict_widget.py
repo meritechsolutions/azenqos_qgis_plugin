@@ -232,7 +232,7 @@ class predict_widget(QWidget):
                     self.ui.result_text.setHtml(msg)
                     self.status("Adding prediction to QGIS...")
                     assert "lat" in self.ret_df.columns
-                    azq_utils.create_layer_in_qgis(self.gvars.databasePath, self.ret_df, "prediction_"+model_row_to_text_sum(self.model), theme_param=self.model.param)
+                    azq_utils.create_layer_in_qgis(None, self.ret_df, "prediction_"+model_row_to_text_sum(self.model), theme_param=self.model.param)
                     assert "lon" in self.ret_df.columns
                     self.status("Adding prediction to QGIS... done")
                 else:

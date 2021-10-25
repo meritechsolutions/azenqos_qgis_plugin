@@ -1909,19 +1909,21 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
         import preprocess_azm
         import qgis_layers_gen
         tmpdbfp = tmp_gen_fp("tmp_{}.db".format(uuid.uuid4()))
-        if ("lat" not in df.columns) or ("lon" not in df.columns):
+        assert not os.path.isfile(tmpdbfp)
+        if ("lat" not in df.columns) or ("lon" not in df.columns) and databasePath is not None:
             print("need to merge lat and lon")
             with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
                 df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
                     columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                 )
+        table = "layer_dump" if theme_param is None else preprocess_azm.get_table_for_column(theme_param)
         qgis_layers_gen.dump_df_to_spatialite_db(
-            df, tmpdbfp, "layer_dump", is_indoor=is_indoor
+            df, tmpdbfp, table, is_indoor=is_indoor
         )
         assert os.path.isfile(tmpdbfp)
-        with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
+        with contextlib.closing(sqlite3.connect(tmpdbfp)) as dbcon:
             qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-                tmpdbfp, "layer_dump", label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, main_db_dbcon_for_theme_unique_values=dbcon
+            tmpdbfp, table, label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, dbcon_for_theme_legend_counts=dbcon
             )
     except:
         type_, value_, traceback_ = sys.exc_info()
@@ -1967,9 +1969,10 @@ def timer_start(tname=None):
 def timer_print(tname=None, extra="now"):
     if not tname:
         tname = sys._getframe().f_back.f_code.co_name
-    msg = "timer: {} to {}: {} seconds".format(tname, extra, timer_get_dur(tname))
+    dur = timer_get_dur(tname)
+    msg = "timer: {} to {}: {} seconds".format(tname, extra, dur)
     print(msg)
-    return msg
+    return dur
 
 def timer_get_dur(tname):
     global g_timer_start_ts_dict
@@ -1978,4 +1981,4 @@ def timer_get_dur(tname):
     else:
         timer_start(tname)
         return 0
-    return None
+    return 0

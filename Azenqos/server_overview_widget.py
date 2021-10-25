@@ -149,6 +149,7 @@ class server_overview_widget(QWidget):
 
     def apply_done(self, msg):
         self.on_processing(False)
+        dur = azq_utils.timer_print("overview_apply")
         if not msg.startswith("SUCCESS"):
             qt_utils.msgbox(msg, "Server overview apply failed", parent=self)
             self.status(msg[:50])
@@ -160,18 +161,20 @@ class server_overview_widget(QWidget):
                 self.devices_selection_df["selected"] = True
                 self.update_selection_lables()
                 self.apply_read_server_facts = False
+                self.status("Read server facts... done in %.02f secs" % dur)
             else:
                 if self.gvars.main_window:
                     self.gvars.main_window.add_map_layer()
-                self.status("Adding new layers to QGIS...")
+                self.status("Adding layers to QGIS...")
                 self.progress_update_signal.emit(80)
                 db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
-                self.status("Adding new layers to QGIS... done")
+                self.status("Completed in %.02f secs" % dur)
 
     def apply(self):
         self.ui.status_label.setText("")
         self.on_processing(True)
         try:
+            azq_utils.timer_start("overview_apply")
             self.overview_db_fp = None
             if not self.apply_read_server_facts:
                 self.read_input_to_vars()
@@ -206,7 +209,7 @@ class server_overview_widget(QWidget):
             self.status_update_signal.emit("Preparing folder...")
             downloaded_zip_fp = azq_utils.tmp_gen_fp("overview_{}.zip".format(uuid.uuid4()))
             assert not os.path.isfile(downloaded_zip_fp)
-            self.status_update_signal.emit("Downloading data...")
+            self.status_update_signal.emit("Server processing/streaming data...")
             ret = azq_server_api.api_overview_db_download(self.gvars.login_dialog.server, self.gvars.login_dialog.token, downloaded_zip_fp,
                                                           req_body=self.req_body)
             print("ret:", ret)

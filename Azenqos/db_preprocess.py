@@ -431,38 +431,41 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         print("WARNING: theme_df.sort_values exception:", exstr)
 
     match_value_counts = (theme_df.Lower == theme_df.Upper).all()
-    if view_len is None:
+    if view_len is None and dbcon is not None:
         view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, param), dbcon).iloc[0, 0]
     match_value_counts_df = None
     if match_value_counts:
         match_value_counts_df = pd.read_sql("select {param} as match_val, count({param}) as match_count from {view} group by {param}".format(view=view,param=param), dbcon)
+
+    # add legend bucket counts and percentage
     for index, row in theme_df.iterrows():
         percent_part = ""
-        try:
-            rsql = "select count(*) from {view} where {param} >= {lower} and {param} < {upper}".format(view=view,
-                                                                                                       param=param,
-                                                                                                     lower=row.Lower,
-                                                                                                     upper=row.Upper)
-            if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
-                rsql = "select count(*) from {view} where {param} = {lower}".format(
-                    view=view, lower=row.Lower, param=param)
-            count = None
-            if match_value_counts_df is not None:
-                dfsl = match_value_counts_df[match_value_counts_df.match_val == row.Lower]
-                if len(dfsl) == 1:
-                    count = dfsl.iloc[0].match_count
-            else:
-                print("range rsql:", rsql)
-                count = pd.read_sql(
-                    rsql,
-                    dbcon).iloc[0, 0]
-            print("view_len: {} count: {}".format(view_len, count))
-            percent_part = " (%d: %.02f%%)" % (count, ((count * 100.0) / view_len))
-            print("range percent_part:", percent_part)
-        except:
-            type_, value_, traceback_ = sys.exc_info()
-            exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: calc range percent exception:", exstr)
+        if dbcon is not None:
+            try:
+                rsql = "select count(*) from {view} where {param} >= {lower} and {param} < {upper}".format(view=view,
+                                                                                                           param=param,
+                                                                                                         lower=row.Lower,
+                                                                                                         upper=row.Upper)
+                if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
+                    rsql = "select count(*) from {view} where {param} = {lower}".format(
+                        view=view, lower=row.Lower, param=param)
+                count = None
+                if match_value_counts_df is not None:
+                    dfsl = match_value_counts_df[match_value_counts_df.match_val == row.Lower]
+                    if len(dfsl) == 1:
+                        count = dfsl.iloc[0].match_count
+                else:
+                    print("range rsql:", rsql)
+                    count = pd.read_sql(
+                        rsql,
+                        dbcon).iloc[0, 0]
+                print("view_len: {} count: {}".format(view_len, count))
+                percent_part = " (%d: %.02f%%)" % (count, ((count * 100.0) / view_len))
+                print("range percent_part:", percent_part)
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: calc range percent exception:", exstr)
         ranges_xml += """<range symbol="{index}" label="{lower} to {upper}{percent}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
             index=index, lower=row.Lower, upper=row.Upper, percent=percent_part
         )

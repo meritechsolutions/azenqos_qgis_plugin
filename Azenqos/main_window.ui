@@ -104,6 +104,7 @@
      <addaction name="action5GNR_Serving_Neighbors"/>
      <addaction name="action5GNR_Beams"/>
      <addaction name="actionNR_Line_Chart"/>
+     <addaction name="actionNR_PCI_Footprint"/>
      <addaction name="actionExynosServiceMode_NR_Radio"/>
      <addaction name="actionExynosServiceMode_NR_Data"/>
      <addaction name="actionExynosServiceMode_NR_Reg"/>
@@ -128,6 +129,7 @@
      <addaction name="actionWCDMA_BLER_Summary"/>
      <addaction name="actionWCDMA_Bearers"/>
      <addaction name="actionWCDMA_Line_Chart"/>
+     <addaction name="actionWCDMA_PSC_Footprint"/>
     </widget>
     <widget class="QMenu" name="menuGSM">
      <property name="title">
@@ -138,6 +140,7 @@
      <addaction name="actionGSM_Current_Channel"/>
      <addaction name="actionGSM_C_I"/>
      <addaction name="actionGSM_Line_Chart"/>
+     <addaction name="actionGSM_BCCH_Footprint"/>
     </widget>
     <widget class="QMenu" name="menuData">
      <property name="title">
@@ -948,6 +951,21 @@
   <action name="actionLTE_PCI_Footprint">
    <property name="text">
     <string>LTE PCI Footprint</string>
+   </property>
+  </action>
+  <action name="actionNR_PCI_Footprint">
+   <property name="text">
+    <string>NR PCI Footprint</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_PSC_Footprint">
+   <property name="text">
+    <string>WCDMA PSC Footprint</string>
+   </property>
+  </action>
+  <action name="actionGSM_BCCH_Footprint">
+   <property name="text">
+    <string>GSM BCCH Footprint</string>
    </property>
   </action>
  </widget>

@@ -427,12 +427,38 @@ Log_hash list: {}""".format(
         import system_sql_query
         self.add_param_window(system_sql_query.LTE_SYSTEM_INFO_SQL_LIST, title="LTE System Info")
 
+    ############# footprint menu slots
+
+    @pyqtSlot()
+    def on_actionNR_PCI_Footprint_triggered(self):
+        print("action nr pci footprint")
+        import footprint_dialog
+
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "NR PCI Footprint", technology = "nr")
+        dlg.show()
+
     @pyqtSlot()
     def on_actionLTE_PCI_Footprint_triggered(self):
-        print("action lte system info")
-        import lte_pci_wise_dialog
+        print("action lte pci footprint")
+        import footprint_dialog
 
-        dlg = lte_pci_wise_dialog.lte_pci_wise_dialog(self, self.gc)
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "LTE PCI Footprint", technology = "lte")
+        dlg.show()
+
+    @pyqtSlot()
+    def on_actionWCDMA_PSC_Footprint_triggered(self):
+        print("action wcdma psc footprint")
+        import footprint_dialog
+
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "WCDMA PSC Footprint", technology = "wcdma")
+        dlg.show()
+
+    @pyqtSlot()
+    def on_actionGSM_BCCH_Footprint_triggered(self):
+        print("action gsm bcch footprint")
+        import footprint_dialog
+
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "GSM BCCH Footprint", technology = "gsm")
         dlg.show()
 
     ############# signalling menu slots

@@ -1,12 +1,10 @@
 import contextlib
-import multiprocessing as mp
 import os.path
 import sqlite3
 import sys
 import traceback
 
 import pandas as pd
-import psutil
 
 import azq_utils
 import preprocess_azm

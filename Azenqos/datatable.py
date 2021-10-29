@@ -552,7 +552,7 @@ class TableWindow(QWidget):
                         df = df.loc[:,~df.columns.duplicated()]
                     else:
                         print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))
-                        if self.title.lower() == "pcap":
+                        if self.title.lower() in ["pcap", "add layer"]:
                             df = self.refresh_data_from_dbcon_and_time_func
                         else:
                             df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
@@ -664,6 +664,13 @@ class TableWindow(QWidget):
             self.detailWidget = DetailWidget(
                 self.gc, self, cellContent, name, side, protocol
             )
+        elif self.title.lower() == "add layer":
+            param_name = row_sr["var_name"]
+            n_arg_max = row_sr["n_arg_max"]
+            import add_map_layer_dialog
+
+            dlg = add_map_layer_dialog.add_map_layer_dialog(self.gc, param_name, n_arg_max)
+            dlg.show()
         elif 'name' in row_sr.index and row_sr["name"].find("MOS Score") != -1:
             name = row_sr["name"]
             side = {}

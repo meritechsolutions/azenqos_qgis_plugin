@@ -1489,6 +1489,7 @@ Log_hash list: {}""".format(
                 h.setFillColor(QColor(255, 255, 255, 0))
                 # write the object to the list
                 self.gc.highlight_list.append(h)
+                break
             canvas.flashFeatureIds(layer, layer.selectedFeatureIds(), flashes=1)
 
 

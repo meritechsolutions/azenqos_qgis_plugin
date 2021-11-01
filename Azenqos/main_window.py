@@ -771,6 +771,23 @@ Log_hash list: {}""".format(
         )
         self.add_subwindow_with_widget(swa, widget)
 
+    ############# Add Layer menu slots
+
+    @pyqtSlot()
+    def on_actionAdd_Layer_triggered(self):
+        print("action add layer")
+        elm_df = preprocess_azm.get_elm_df_from_csv()
+        elm_df = elm_df.loc[(elm_df["var_type"] == "Double") | (elm_df["var_type"] == "Integer"), ("var_name", "name", "n_arg_max")].reset_index(drop=True)
+        swa = SubWindowArea(self.mdi, self.gc)
+
+        widget = TableWindow(
+            swa,
+            "Add Layer",
+            elm_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+
     ############# Data menu slots
 
     @pyqtSlot()
@@ -1450,7 +1467,7 @@ Log_hash list: {}""".format(
         self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.maptool)
         self.toolbar.addSeparator()
-        #self.toolbar.addWidget(self.layerSelect) - now we add all layers
+        self.toolbar.addWidget(self.layerSelect)
         self.toolbar.addWidget(self.cellsSelect)
         self.toolbar.addWidget(self.sync_connected_phone_button)
         self.toolbar.addSeparator()
@@ -1559,8 +1576,7 @@ Log_hash list: {}""".format(
         self.canvas.setMapTool(self.clickTool)
 
     def on_button_selectLayer(self):
-        if self.qgis_iface:
-            self.add_db_layers(select=True)
+        self.on_actionAdd_Layer_triggered()
 
     def selectCells(self):
         if not self.gc.db_fp:

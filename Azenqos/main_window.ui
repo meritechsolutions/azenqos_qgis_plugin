@@ -267,6 +267,7 @@
     <addaction name="menuCustom_Windows"/>
     <addaction name="menuMisc"/>
     <addaction name="menuMaps"/>
+    <addaction name="actionAdd_Layer"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -966,6 +967,11 @@
   <action name="actionGSM_BCCH_Footprint">
    <property name="text">
     <string>GSM BCCH Footprint</string>
+   </property>
+  </action>
+  <action name="actionAdd_Layer">
+   <property name="text">
+    <string>Add Layer</string>
    </property>
   </action>
  </widget>

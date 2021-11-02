@@ -8,10 +8,12 @@ import uuid
 
 import numpy as np
 import pandas as pd
+import psutil
 
 import azq_utils
 import preprocess_azm
-
+from multiprocessing.pool import ThreadPool
+import multiprocessing as mp
 
 def merge(in_azm_list):
     out_tmp_dir = os.path.join(azq_utils.tmp_gen_path(), "tmp_combine_db_result_{}".format(uuid.uuid4()))
@@ -65,8 +67,24 @@ def merge(in_azm_list):
         azm_df.sort_values("azm_ver", ascending=False, inplace=True)
         azm_df = azm_df.reset_index(drop=True)
         print("azm_df:\n", azm_df)
+        n_azm_vers = len(azm_df.azm_ver.unique())
+        check_col_diff = n_azm_vers > 1
+        print("n_azm_vers:", n_azm_vers)
+        print("check_col_diff:", check_col_diff)
+
+        sql_scripts = None
 
         # dump then import data of each db into target sqlite db
+        pool = mp.Pool(psutil.cpu_count()) if os.name == "posix" else ThreadPool(psutil.cpu_count())  # windows qgis if mp it will open multiple instances of qgis
+        print("=== dumping all sqlite logs concurrently...")
+        azq_utils.timer_start("perf_dump_threaded")
+        try:
+            sql_scripts = pool.map(get_sql_script, azm_df.dbfp.values.tolist())
+        finally:
+            pool.close()
+        azq_utils.timer_print("perf_dump_threaded")
+        print("=== dumping all sqlite logs concurrently... done")
+
         first_azm_table_to_cols_dict = {}
         for index, row in azm_df.iterrows():
             print("=== dumping db to merged azm [{}/{}] ===".format(index+1, len(azm_df)))
@@ -74,38 +92,33 @@ def merge(in_azm_list):
             is_last_azm = index == azm_df.index[-1]
             dbfp = row.dbfp
             assert os.path.isfile(dbfp)
+            sql_script = sql_scripts[index]
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
                 # iterdump somehow doesnt work in my system with these dbs, doing dump with sqlite3 cmd shell binaries instead
-
-                sql_script = azq_utils.dump_sqlite(dbfp)
-
-                print("... modding sql for merging - schema")
-                sql_script = sql_script.replace('CREATE TABLE IF NOT EXISTS ', 'CREATE TABLE ')
-                sql_script = sql_script.replace('CREATE TABLE ','CREATE TABLE IF NOT EXISTS ')
-                sql_script +=" delete from spatial_ref_sys;\n"
                 if is_last_azm:
                     sql_script += "INSERT INTO spatial_ref_sys VALUES(4326,'epsg',4326,'WGS 84','+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');\n"
                 assert sql_script
 
-                print("... checking if need to specify columns in INSERT of dump")
-                tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';",
-                                     dbcon).name
-                for table in tables:
-                    cols = list(pd.read_sql("select * from {} where false".format(table), dbcon).columns)  # use list as we will compare this list next
-                    if is_first_azm:
-                        first_azm_table_to_cols_dict[table] = cols
-                    else:
-                        if table not in first_azm_table_to_cols_dict.keys():
-                            print("table: {} not in first azm - no need adjust".format(table))
+                if check_col_diff:
+                    print("... checking for schema/column differences need to specify columns in INSERT of dump")
+                    tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';",
+                                         dbcon).name
+                    for table in tables:
+                        cols = list(pd.read_sql("select * from {} where false".format(table), dbcon).columns)  # use list as we will compare this list next
+                        if is_first_azm:
                             first_azm_table_to_cols_dict[table] = cols
                         else:
-                            if cols == first_azm_table_to_cols_dict[table]:
-                                pass
-                                #print("table: {} same columns - no need adjust".format(table))
+                            if table not in first_azm_table_to_cols_dict.keys():
+                                print("table: {} not in first azm - no need adjust".format(table))
+                                first_azm_table_to_cols_dict[table] = cols
                             else:
-                                print("table: {} diff columns - need adjust to specify columns".format(table))
-                                sql_script = sql_script.replace("INSERT INTO {} VALUES".format(table),
-                                                        "INSERT INTO {} ({}) VALUES".format(table, ",".join(cols)))
+                                if cols == first_azm_table_to_cols_dict[table]:
+                                    pass
+                                    #print("table: {} same columns - no need adjust".format(table))
+                                else:
+                                    print("table: {} diff columns - need adjust to specify columns".format(table))
+                                    sql_script = sql_script.replace("INSERT INTO {} VALUES".format(table),
+                                                            "INSERT INTO {} ({}) VALUES".format(table, ",".join(cols)))
 
                 #print("sql_script:", sql_script)
                 print("... merginng to target db file:", out_db_fp)
@@ -120,7 +133,7 @@ def merge(in_azm_list):
             df = pd.read_sql(
                 "select count(distinct(log_hash)) from logs",
                 dbcon
-            );
+            )
             assert df.iloc[0, 0] == len(in_azm_list)
         except:
             type_, value_, traceback_ = sys.exc_info()
@@ -130,6 +143,13 @@ def merge(in_azm_list):
     return out_db_fp
 
 
+def get_sql_script(dbfp):
+    sql_script = azq_utils.dump_sqlite(dbfp)
+    # print("... modding sql for merging - schema")
+    sql_script = sql_script.replace('CREATE TABLE IF NOT EXISTS ', 'CREATE TABLE ')
+    sql_script = sql_script.replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ')
+    sql_script += " delete from spatial_ref_sys;\n"
+    return sql_script
 
 
     

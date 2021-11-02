@@ -1938,6 +1938,7 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
 
 
 def get_theme_qml_tmp_file_for_param(table, col, dbfp):
+    print("get_theme_qml_tmp_file_for_param START")
     qml_fp = None
     try:
         assert os.path.isfile(dbfp)
@@ -1956,6 +1957,7 @@ def get_theme_qml_tmp_file_for_param(table, col, dbfp):
                 col, exstr
             )
         )
+    print("get_theme_qml_tmp_file_for_param DONE")
     return qml_fp
 
 g_timer_start_ts_dict = {}

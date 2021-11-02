@@ -301,6 +301,10 @@ class predict_widget(QWidget):
                     self.gvars.login_dialog.token,
                     body_dict=body_dict
                 )
+                invalid_geom_mask = (self.ret_df.lat == 0.0) & (self.ret_df.lon == 0.0)
+                self.ret_df.loc[invalid_geom_mask, "lat"] = None
+                self.ret_df.loc[invalid_geom_mask, "lon"] = None
+                self.ret_df.loc[invalid_geom_mask, "param"] = None
                 assert self.model.param in self.ret_df.columns
                 n = len(self.ret_df)
                 head_n = 100

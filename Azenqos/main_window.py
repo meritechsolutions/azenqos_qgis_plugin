@@ -1499,14 +1499,14 @@ Log_hash list: {}""".format(
             for sf in layer.selectedFeatures():
                 i += 1
                 print("selectChanged selectedfeature rect sf i:", i)
-                h = QgsHighlight(self.qgis_iface.mapCanvas(), sf.geometry(), layer)
+                h = QgsHighlight(canvas, sf.geometry(), layer)
                 # set highlight symbol properties
-                h.setColor(QColor(255, 0, 0, 255))
+                h.setColor(QColor(0, 0, 255, 255))
                 h.setWidth(2)
-                h.setFillColor(QColor(255, 255, 255, 0))
-                # write the object to the list
                 self.gc.highlight_list.append(h)
-            canvas.flashFeatureIds(layer, layer.selectedFeatureIds(), flashes=1)
+                canvas.flashFeatureIds(layer, layer.selectedFeatureIds(), flashes=1)
+                break
+
 
 
     def updateUi(self):

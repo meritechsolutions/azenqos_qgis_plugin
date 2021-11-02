@@ -211,8 +211,10 @@ class server_overview_widget(QWidget):
             downloaded_zip_fp = azq_utils.tmp_gen_fp("overview_{}.zip".format(uuid.uuid4()))
             assert not os.path.isfile(downloaded_zip_fp)
             self.status_update_signal.emit("Server processing/streaming data...")
+            azq_utils.timer_start("overview_perf_dl_azm")
             ret = azq_server_api.api_overview_db_download(self.gvars.login_dialog.server, self.gvars.login_dialog.token, downloaded_zip_fp,
                                                           req_body=self.req_body)
+            azq_utils.timer_print("overview_perf_dl_azm")
             print("ret:", ret)
             assert os.path.isfile(ret)
             assert os.path.isfile(downloaded_zip_fp)
@@ -221,13 +223,17 @@ class server_overview_widget(QWidget):
             self.status_update_signal.emit("Extracting compressed data...")
             self.progress_update_signal.emit(40)
 
+            azq_utils.timer_start("overview_perf_extract_azm")
             # merge all dbs in zip to the target overview_db_fp
             tmpdir = azq_utils.tmp_gen_new_subdir()
             with zipfile.ZipFile(downloaded_zip_fp, "r") as zip_file:
                 zip_file.extractall(tmpdir)
             db_files = glob.glob(os.path.join(tmpdir, "*.db"))
             assert len(db_files)
+            azq_utils.timer_print("overview_perf_extract_azm")
+
             # combined all the db_files in the zip
+            azq_utils.timer_start("overview_perf_combine_azm")
             self.status_update_signal.emit("Merging all db partitions from server...")
             dbfp = None
             if len(db_files) > 1:
@@ -235,15 +241,23 @@ class server_overview_widget(QWidget):
             else:
                 dbfp = db_files[0]
             assert os.path.isfile(dbfp)
+            azq_utils.timer_print("overview_perf_combine_azm")
+
+            azq_utils.timer_start("overview_perf_prepare_views")
             self.status_update_signal.emit("Prepare db views as per theme...")
             self.progress_update_signal.emit(50)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
                 db_preprocess.prepare_spatialite_views(dbcon, cre_table=False)  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+            azq_utils.timer_print("overview_perf_prepare_views")
+
+            azq_utils.timer_start("overview_perf_create_layers")
             self.status_update_signal.emit("Processing layers/legends as per theme...")
             self.progress_update_signal.emit(70)
             self.overview_db_fp = dbfp
             self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer = db_layer_task.create_layers(
                 self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_")
+            azq_utils.timer_print("overview_perf_create_layers")
+
             self.status_update_signal.emit("DONE")
             self.progress_update_signal.emit(100)
             self.apply_done_signal.emit("SUCCESS")

@@ -3,8 +3,11 @@ import os.path
 import sqlite3
 import sys
 import traceback
+from multiprocessing.pool import ThreadPool
+import multiprocessing as mp
 
 import pandas as pd
+import psutil
 
 import azq_utils
 import preprocess_azm
@@ -54,9 +57,23 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix=""):
                     # pre-gen qml theme file
                     azq_utils.timer_start("gen_theme_qml")
                     qml_tmp_fp_list = []
-                    for table, param in tp_list:
-                        qml_tmp_fp_list.append(azq_utils.get_theme_qml_tmp_file_for_param(table, param, db_fp))
+                    mp_mode = True
+                    if mp_mode:
+                        print("gen theme qml files mp")
+                        pool = mp.Pool(psutil.cpu_count()) if os.name == "posix" else ThreadPool(psutil.cpu_count())  # windows qgis if mp it will open multiple instances of qgis
+                        try:
+                            args = []
+                            for table, param in tp_list:
+                                args.append((table, param, db_fp))
+                            qml_tmp_fp_list = pool.starmap(azq_utils.get_theme_qml_tmp_file_for_param, args)
+                        finally:
+                            pool.close()
+                    else:
+                        print("gen theme qml files seq")
+                        for table, param in tp_list:
+                            qml_tmp_fp_list = azq_utils.get_theme_qml_tmp_file_for_param(table, param, db_fp)
                     azq_utils.timer_print("gen_theme_qml")
+
                     for i in range(len(table_list)):
                         table = table_list[i]
                         param = param_list[i]

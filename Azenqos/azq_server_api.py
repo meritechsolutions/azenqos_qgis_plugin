@@ -131,7 +131,7 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
             with open(resp_content_to_fp, "wb") as f:
                 total_len = 0
                 last_update = 0.0
-                for chunk in resp.iter_content(chunk_size=81920):
+                for chunk in resp.iter_content(chunk_size=4*1024*1024):
                     if chunk is None or len(chunk) == 0:
                         break
                     total_len += len(chunk)

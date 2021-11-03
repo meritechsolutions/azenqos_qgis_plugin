@@ -126,6 +126,7 @@ class main_window(QMainWindow):
         self.timechange_service_thread = None
         self.is_legacy_indoor = False
         self.is_leg_nr_tables = False
+        self.asked_easy_mode = False
         self.timechange_to_service_counter = atomic_int(0)
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
@@ -2415,6 +2416,7 @@ Log_hash list: {}""".format(
         self.gc.qgis_iface.zoomToActiveLayer()
         self.set_project_crs()
 
+
     def add_map_layer(self):
         layers_names = []
         for layer in QgsProject.instance().mapLayers().values():
@@ -2422,6 +2424,16 @@ Log_hash list: {}""".format(
         map_layer_name = "OSM"
         if map_layer_name in layers_names:
             return  # no need to add
+
+        if not self.asked_easy_mode:
+            self.asked_easy_mode = True
+            reply = qt_utils.ask_yes_no(None, "Easy mode wizard", "Show server overview current year?")
+            print("reply", reply)
+            if reply == 0:
+                print("show server overview")
+                self.on_actionServer_overview_layers_triggered()  # TODO open this year - 60 second bin
+                self.on_actionServerAIPrediction_triggered()
+
         urlWithParams = (
             "type=xyz&url=http://tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
         )

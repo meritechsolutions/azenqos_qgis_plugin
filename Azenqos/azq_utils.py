@@ -22,7 +22,15 @@ from PyQt5 import QtWidgets, QtCore
 import dprint
 
 TMP_FOLDER_NAME = "tmp_gen"
+CONTAINER_MODE_TMP_GEN_PATH = "/host_shared_dir/tmp_gen"
+AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY = "AZQ_WORKSTATION_CONTAINER_NAME"
 
+def is_container_mode():
+    return AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY in os.environ
+
+def get_container_name():
+    assert is_container_mode()
+    return os.environ[AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY]
 
 def debug(s):
     dprint.dprint(s)
@@ -37,7 +45,10 @@ def get_module_fp(fn):
 
 
 def get_settings_dp():
-    dp = os.path.join(get_module_parent_path(), "Azenqos_settings")
+    settings_dname = "Azenqos_settings"
+    dp = os.path.join(get_module_parent_path(), settings_dname)
+    if is_container_mode():
+        dp = tmp_gen_fp(settings_dname)
     if not os.path.isdir(dp):
         os.makedirs(dp)
     assert os.path.isdir(dp)
@@ -1455,6 +1466,9 @@ def open_and_redirect_stdout_to_last_run_log():
 
 def tmp_gen_path_parent():
     dp = os.path.join(get_module_path(), TMP_FOLDER_NAME)
+    if is_container_mode():
+        assert os.path.isdir(CONTAINER_MODE_TMP_GEN_PATH)
+        dp = os.path.join(CONTAINER_MODE_TMP_GEN_PATH, get_container_name())
     if not os.path.isdir(dp):
         os.makedirs(dp)
     return dp

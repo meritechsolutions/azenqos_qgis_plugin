@@ -55,7 +55,7 @@ class login_dialog(QDialog):
         self.ui.progressbar.setVisible(False)
         self.setWindowTitle("AZENQOS Server login")
         self.ui.server_url_le.setText(
-            azq_utils.read_settings_file("prev_login_dialog_server")
+            azq_utils.read_settings_file("prev_login_dialog_server") if not azq_utils.is_container_mode() else "https://nginx:8443"
         )
         self.ui.login_le.setText(azq_utils.read_settings_file("prev_login_dialog_user"))
         self.ui.pass_le.setText(azq_utils.read_settings_file("prev_login_dialog_passwd", decrypt=True))

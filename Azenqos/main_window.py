@@ -2425,11 +2425,12 @@ Log_hash list: {}""".format(
         if map_layer_name in layers_names:
             return  # no need to add
 
-        if not self.asked_easy_mode:
+        if not self.asked_easy_mode and azq_utils.is_container_mode():
             self.asked_easy_mode = True
-            reply = qt_utils.ask_yes_no(None, "Easy mode wizard", "Show server overview current year?")
+            reply = qt_utils.ask_yes_no(None, "Easy mode wizard", "Start Overview/AI-Predict mode?")
             print("reply", reply)
             if reply == 0:
+                self.gc.easy_overview_mode = True
                 print("show server overview")
                 self.on_actionServer_overview_layers_triggered()  # TODO open this year - 60 second bin
                 self.on_actionServerAIPrediction_triggered()

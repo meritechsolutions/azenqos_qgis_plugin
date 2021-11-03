@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import sys
@@ -83,15 +84,19 @@ def api_predict_df(server, token, body_dict):
     resp = call_api_get_resp(server, token, "uapi/predict", body_dict)
     return pd.DataFrame(resp)
 
-def api_overview_db_download(server, token, target_fp, req_body):
-    ret_fp = call_api_get_resp(server, token, "uapi/overview_db", req_body, resp_content_to_fp=target_fp)
+def api_overview_db_download(server, token, target_fp, req_body, signal_to_emit_stats=None):
+    ret_fp = call_api_get_resp(server, token, "uapi/overview_db", req_body, resp_content_to_fp=target_fp, signal_to_emit_stats=signal_to_emit_stats)
     return ret_fp
 
-def call_api_get_resp(server, token, path, body_dict, method='post', resp_content_to_fp=None):
+def call_api_get_resp(server, token, path, body_dict, method='post', resp_content_to_fp=None, signal_to_emit_stats=None):
     host = urlparse(server).netloc
     url = "https://{}/{}".format(host, path)
     headers={"Authorization": "Bearer {}".format(token),}
     resp = None
+    def update_stat(s):
+        signal_to_emit_stats.emit(s) if signal_to_emit_stats is not None else None
+
+    update_stat("Sending/waiting for server process...")
     if method == "post":
         resp = requests.post(
             url,
@@ -111,6 +116,7 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
     else:
         raise Exception("unsupported method: {}".format(method))
     with resp:
+        update_stat("Got response...")
         if resp.status_code != 200:
             raise Exception(
                 "Got failed status_code: {} resp.text: {}".format(
@@ -120,11 +126,21 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
         if resp_content_to_fp:
             resp.raise_for_status()
             with open(resp_content_to_fp, "wb") as f:
-                for chunk in resp.iter_content(chunk_size=8192):
+                total_len = 0
+                last_update = 0.0
+                for chunk in resp.iter_content(chunk_size=81920):
+                    if chunk is None or len(chunk) == 0:
+                        break
+                    total_len += len(chunk)
+                    now = time.time()
+                    if now - last_update > 1:
+                        update_stat("Downloading: %.02f MB" % float(total_len/(1000*1000)))
+                        last_update = now
                     # If you have chunk encoded response uncomment if
                     # and set chunk_size parameter to None.
                     # if chunk:
                     f.write(chunk)
+
             assert os.path.isfile(resp_content_to_fp)
             return resp_content_to_fp
         else:

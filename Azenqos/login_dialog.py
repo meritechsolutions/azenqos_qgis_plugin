@@ -59,6 +59,7 @@ class login_dialog(QDialog):
         )
         self.ui.login_le.setText(azq_utils.read_settings_file("prev_login_dialog_user"))
         self.ui.pass_le.setText(azq_utils.read_settings_file("prev_login_dialog_passwd", decrypt=True))
+        self.ui.lhl_le.setPlaceholderText("Leave blank for server overview mode")
         self.ui.lhl_le.setText(azq_utils.read_settings_file("prev_login_dialog_lhl"))
 
     def read_ui_input_to_vars(self):
@@ -94,7 +95,6 @@ class login_dialog(QDialog):
             if self.login_thread is None or (self.login_thread.is_alive() == False):
                 if not self.lhl:
                     import qt_utils
-                    qt_utils.msgbox("Skipping log download (for server overview)", "No log_hash specified", parent=self)
                     try:
                         self.login_get_token_only()
                         self.done(QtWidgets.QDialog.Accepted)

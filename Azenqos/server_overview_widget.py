@@ -212,10 +212,10 @@ class server_overview_widget(QWidget):
             self.status_update_signal.emit("Preparing folder...")
             downloaded_zip_fp = azq_utils.tmp_gen_fp("overview_{}.zip".format(uuid.uuid4()))
             assert not os.path.isfile(downloaded_zip_fp)
-            self.status_update_signal.emit("Server processing/streaming data...")
+            self.status_update_signal.emit("Server processing data...")
             azq_utils.timer_start("overview_perf_dl_azm")
             ret = azq_server_api.api_overview_db_download(self.gvars.login_dialog.server, self.gvars.login_dialog.token, downloaded_zip_fp,
-                                                          req_body=self.req_body)
+                                                          req_body=self.req_body, signal_to_emit_stats=self.status_update_signal)
             azq_utils.timer_print("overview_perf_dl_azm")
             print("ret:", ret)
             assert os.path.isfile(ret)
@@ -251,7 +251,7 @@ class server_overview_widget(QWidget):
             self.status_update_signal.emit("Prepare db views as per theme...")
             self.progress_update_signal.emit(50)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-                db_preprocess.prepare_spatialite_views(dbcon, cre_table=True)  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+                db_preprocess.prepare_spatialite_views(dbcon, cre_table=False)  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
             azq_utils.timer_print("overview_perf_prepare_views")
 
             azq_utils.timer_start("overview_perf_create_layers")

@@ -83,7 +83,7 @@ class server_overview_widget(QWidget):
         self.req_body["bin"] = int(self.ui.samp_rate_comboBox.currentText())
         self.req_body["filters_dict"] = {}
         if (self.devices_selection_df.selected == False).any():
-            mask = self.devices_selection_df[self.devices_selection_df==True]
+            mask = self.devices_selection_df.selected == True
             imei_list = self.devices_selection_df.loc[mask, "imei_number"].values.tolist()
             self.req_body["filters_dict"]["imei_list"] = imei_list
         lhl_str = self.ui.log_hash_filter_lineEdit.text().strip()
@@ -109,7 +109,7 @@ class server_overview_widget(QWidget):
         df = self.devices_selection_df.drop_duplicates("imei_number")
         names = (df.alias+": "+df.imei_number).values
         selected = (df.selected).values
-        selection_mask = qt_utils.ask_selection(self, names, selected, "Device selection", "Please select:")
+        selection_mask = qt_utils.ask_selection(self, names, selected, "Device selection", "Please select:", use_filter=True)
         if selection_mask is not None:
             df_selected = df.iloc[selection_mask]
             self.devices_selection_df["selected"] = False
@@ -129,7 +129,8 @@ class server_overview_widget(QWidget):
             groups,
             ori_selected_mask,
             "Group selection",
-            "Please select:"
+            "Please select:",
+            use_filter=True
         )
         if selection_mask is not None:
             for i in range(len(selection_mask)):

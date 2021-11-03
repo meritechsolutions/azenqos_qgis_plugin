@@ -94,9 +94,11 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
     headers={"Authorization": "Bearer {}".format(token),}
     resp = None
     def update_stat(s):
+        print("call_api_get_resp update_stat:", s)
         signal_to_emit_stats.emit(s) if signal_to_emit_stats is not None else None
 
     update_stat("Sending/waiting for server process...")
+    ts = time.time()
     if method == "post":
         resp = requests.post(
             url,
@@ -116,7 +118,7 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
     else:
         raise Exception("unsupported method: {}".format(method))
     with resp:
-        update_stat("Got response...")
+        update_stat("Got response... server process duration: %.02f secs" %(time.time() - ts))
         if resp.status_code != 200:
             raise Exception(
                 "Got failed status_code: {} resp.text: {}".format(
@@ -124,6 +126,7 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
                 )
             )
         if resp_content_to_fp:
+            ts = time.time()
             resp.raise_for_status()
             with open(resp_content_to_fp, "wb") as f:
                 total_len = 0
@@ -140,6 +143,7 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
                     # and set chunk_size parameter to None.
                     # if chunk:
                     f.write(chunk)
+            update_stat("Download completed in %.02f secs" % (time.time()-ts))
 
             assert os.path.isfile(resp_content_to_fp)
             return resp_content_to_fp

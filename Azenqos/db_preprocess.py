@@ -69,7 +69,7 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
@@ -171,14 +171,18 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                 cre_type = "table"
                 if cre_table == False:
                     cre_type = "view"
+                date_filt_where_and = ""
+                if start_date is not None and end_date is not None:
+                    date_filt_where_and = "and time >= '{}' and time <= '{} 24:00:00'".format(start_date, end_date)
                 if "cell_meas" in table:
                     drop_view_sqlstr = "drop {cre_type} if exists {col}".format(cre_type=cre_type, col=view)
-                    sqlstr = "create {} {col} as select * from {table} where {col} is not null;".format(cre_type, col=view, table=table)   # need to create table because create view casues get nearest feature id to fail - getting only 0
+                    sqlstr = "create {} {col} as select * from {table} where {col} is not null {date_filt_where_and};".format(cre_type, col=view, table=table, date_filt_where_and=date_filt_where_and)   # need to create table because create view casues get nearest feature id to fail - getting only 0
                 else:
                     drop_view_sqlstr = "drop {cre_type} if exists {col}".format(cre_type=cre_type, col=view)
-                    sqlstr = "create {} {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null;".format(
+                    sqlstr = "create {} {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null {date_filt_where_and};".format(
                         cre_type, col=view, table=table,
-                        modem_time_part="modem_time" if table_has_modem_time else "null as modem_time"
+                        modem_time_part="modem_time" if table_has_modem_time else "null as modem_time",
+                        date_filt_where_and=date_filt_where_and
                     )
             print("create view sqlstr: %s" % sqlstr)
             dbcon.execute(drop_view_sqlstr)

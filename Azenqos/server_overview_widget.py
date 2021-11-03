@@ -254,7 +254,7 @@ class server_overview_widget(QWidget):
             self.status_update_signal.emit("Prepare db views as per theme...")
             self.progress_update_signal.emit(50)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-                db_preprocess.prepare_spatialite_views(dbcon, cre_table=False)  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+                db_preprocess.prepare_spatialite_views(dbcon, cre_table=False, start_date=self.req_body["start_date"], end_date=self.req_body["end_date"])  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
             azq_utils.timer_print("overview_perf_prepare_views")
 
             azq_utils.timer_start("overview_perf_create_layers")

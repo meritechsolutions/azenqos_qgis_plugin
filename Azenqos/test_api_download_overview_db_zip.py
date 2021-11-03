@@ -45,6 +45,7 @@ def _test(server, user, passwd, lhl):
     print("ret:", ret)
     assert os.path.isfile(ret)
     assert os.path.isfile(target_fp)
+    """
     multi_db_zip_fp = ret
 
     tmpdir = azq_utils.tmp_gen_new_subdir()
@@ -56,6 +57,8 @@ def _test(server, user, passwd, lhl):
 
     # combined all the db_files in the zip
     dbfp = azm_sqlite_merge.merge(db_files)
+    """
+    dbfp = target_fp
 
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         df = pd.read_sql("select * from lte_cell_meas", dbcon)

@@ -464,7 +464,7 @@ Log_hash list: {}""".format(
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):
-        self.add_param_window("pd.read_sql('''select log_hash, time, name, symbol as dir, protocol, detail_str from signalling''',dbcon)", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
+        self.add_param_window("pd.read_sql('''select log_hash, time, name, symbol as dir, protocol, detail_str from signalling''',dbcon).sort_values(by='time')", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):

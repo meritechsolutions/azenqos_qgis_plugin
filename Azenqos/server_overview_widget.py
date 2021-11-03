@@ -9,6 +9,8 @@ import threading
 import traceback
 import uuid
 import zipfile
+import time
+
 
 from PyQt5.QtCore import (
     Qt,
@@ -171,7 +173,7 @@ class server_overview_widget(QWidget):
                 if self.gvars.qgis_iface:
                     db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
                 self.progress_update_signal.emit(100)
-                self.status("Completed in %.02f secs" % dur)
+                self.status("Completed in %.02f secs \n(%s\n%s\n%s\n%s)" % (dur, self.db_download_time, self.combine_azm_time, self.prepare_views_time, self.create_layers_time))
 
     def apply(self):
         self.ui.status_label.setText("")
@@ -214,8 +216,11 @@ class server_overview_widget(QWidget):
             assert not os.path.isfile(downloaded_db_fp)
             self.status_update_signal.emit("Server processing data...")
             azq_utils.timer_start("overview_perf_dl_azm")
+            db_download_start_time = time.perf_counter()
             ret = azq_server_api.api_overview_db_download(self.gvars.login_dialog.server, self.gvars.login_dialog.token, downloaded_db_fp,
-                                                          req_body=self.req_body, signal_to_emit_stats=self.status_update_signal)
+                                                          req_body=self.req_body, signal_to_emit_stats=self.status_update_signal)   
+            db_download_end_time = time.perf_counter()
+            self.db_download_time =  "DB Download Time: %.02f seconds" % float(db_download_end_time-db_download_start_time)
             azq_utils.timer_print("overview_perf_dl_azm")
             print("ret:", ret)
             assert os.path.isfile(ret)
@@ -240,6 +245,7 @@ class server_overview_widget(QWidget):
 
             # combined all the db_files in the zip
             azq_utils.timer_start("overview_perf_combine_azm")
+            combine_azm_start_time = time.perf_counter()
             self.status_update_signal.emit("Merging all db partitions from server...")
             dbfp = None
             if len(db_files) > 1:
@@ -248,22 +254,30 @@ class server_overview_widget(QWidget):
             else:
                 dbfp = db_files[0]
             assert os.path.isfile(dbfp)
+            combine_azm_end_time = time.perf_counter()
+            self.combine_azm_time =  "Combine azm Time: %.02f seconds" % float(combine_azm_end_time-combine_azm_start_time)
             azq_utils.timer_print("overview_perf_combine_azm")
 
             azq_utils.timer_start("overview_perf_prepare_views")
+            prepare_views_start_time = time.perf_counter()
             self.status_update_signal.emit("Prepare db views as per theme...")
             self.progress_update_signal.emit(50)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
                 db_preprocess.prepare_spatialite_views(dbcon, cre_table=False, start_date=self.req_body["start_date"], end_date=self.req_body["end_date"])  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+            prepare_views_end_time = time.perf_counter()
+            self.prepare_views_time =  "Prepare Views Time: %.02f seconds" % float(prepare_views_end_time-prepare_views_start_time)
             azq_utils.timer_print("overview_perf_prepare_views")
 
             azq_utils.timer_start("overview_perf_create_layers")
+            create_layers_start_time = time.perf_counter()
             self.status_update_signal.emit("Processing layers/legends as per theme...")
             self.progress_update_signal.emit(70)
             self.overview_db_fp = dbfp
             if self.gvars.qgis_iface:
                 self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer = db_layer_task.create_layers(
                     self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_")
+            create_layers_end_time = time.perf_counter()
+            self.create_layers_time =  "Create Layers Time: %.02f seconds" % float(create_layers_end_time-create_layers_start_time)
             azq_utils.timer_print("overview_perf_create_layers")
 
             self.status_update_signal.emit("DONE")

@@ -98,6 +98,7 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
             headers=headers,
             json=body_dict,
             verify=False,
+            stream=resp_content_to_fp is not None
         )
     elif method == "get":
         assert not body_dict
@@ -105,23 +106,30 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
             url,
             headers=headers,
             verify=False,
+            stream=resp_content_to_fp is not None
         )
     else:
         raise Exception("unsupported method: {}".format(method))
-    if resp.status_code != 200:
-        raise Exception(
-            "Got failed status_code: {} resp.text: {}".format(
-                resp.status_code, resp.text,
+    with resp:
+        if resp.status_code != 200:
+            raise Exception(
+                "Got failed status_code: {} resp.text: {}".format(
+                    resp.status_code, resp.text,
+                )
             )
-        )
-    if resp_content_to_fp:
-        with open(resp_content_to_fp, "wb") as f:
-            f.write(resp.content)
-        assert os.path.isfile(resp_content_to_fp)
-        return resp_content_to_fp
-    else:
-        resp_dict = resp.json()
-        return resp_dict
+        if resp_content_to_fp:
+            resp.raise_for_status()
+            with open(resp_content_to_fp, "wb") as f:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    # If you have chunk encoded response uncomment if
+                    # and set chunk_size parameter to None.
+                    # if chunk:
+                    f.write(chunk)
+            assert os.path.isfile(resp_content_to_fp)
+            return resp_content_to_fp
+        else:
+            resp_dict = resp.json()
+            return resp_dict
 
 
 def api_get_process(server, token, proc_uuid):

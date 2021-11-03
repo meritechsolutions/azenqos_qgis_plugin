@@ -166,8 +166,10 @@ class server_overview_widget(QWidget):
                 if self.gvars.main_window:
                     self.gvars.main_window.add_map_layer()
                 self.status("Adding layers to QGIS...")
-                self.progress_update_signal.emit(80)
-                db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
+                self.progress_update_signal.emit(90)
+                if self.gvars.qgis_iface:
+                    db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
+                self.progress_update_signal.emit(100)
                 self.status("Completed in %.02f secs" % dur)
 
     def apply(self):
@@ -230,12 +232,14 @@ class server_overview_widget(QWidget):
             db_files = glob.glob(os.path.join(tmpdir, "*.db"))
             assert len(db_files)
             azq_utils.timer_print("overview_perf_extract_azm")
+            print("got dbs from server, len(db_files):", len(db_files), "at:", downloaded_zip_fp)
 
             # combined all the db_files in the zip
             azq_utils.timer_start("overview_perf_combine_azm")
             self.status_update_signal.emit("Merging all db partitions from server...")
             dbfp = None
             if len(db_files) > 1:
+                assert len(db_files) <= 2  # max now in server, for > 2 months combines it will use yearly db so there it would be 1 db file
                 dbfp = azm_sqlite_merge.merge(db_files)
             else:
                 dbfp = db_files[0]
@@ -253,8 +257,9 @@ class server_overview_widget(QWidget):
             self.status_update_signal.emit("Processing layers/legends as per theme...")
             self.progress_update_signal.emit(70)
             self.overview_db_fp = dbfp
-            self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer = db_layer_task.create_layers(
-                self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_")
+            if self.gvars.qgis_iface:
+                self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer = db_layer_task.create_layers(
+                    self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_")
             azq_utils.timer_print("overview_perf_create_layers")
 
             self.status_update_signal.emit("DONE")

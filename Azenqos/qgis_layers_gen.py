@@ -20,6 +20,8 @@ except:
 import pathlib
 import db_preprocess
 import fill_geom_in_location_df
+import sys
+import traceback
 
 
 def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
@@ -77,7 +79,16 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
         display_name = table
     layer = QgsVectorLayer(uri.uri(), display_name, 'spatialite')
     if style_qml_fp is None and theme_param is not None:
-        qml_fp = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon_for_theme_legend_counts, to_tmp_file=True)
+        try:
+            qml_fp = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon_for_theme_legend_counts, to_tmp_file=True)
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print(
+                "WARNING: getn style_qml_fpfailed exception: {}".format(
+                    exstr
+                )
+            )
         style_qml_fp = qml_fp
     if style_qml_fp is not None:
         print("style_qml_fp:", style_qml_fp)

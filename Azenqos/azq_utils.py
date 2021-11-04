@@ -1951,18 +1951,24 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
         qt_utils.msgbox("create layer failed: " + exstr, title="Failed")
 
 
-def get_theme_qml_tmp_file_for_param(table, col, dbfp):
+def get_theme_qml_tmp_file_for_param(table, col, dbfp, gen_theme_bucket_counts=True):
     print("get_theme_qml_tmp_file_for_param START")
     qml_fp = None
     try:
         assert os.path.isfile(dbfp)
         import db_preprocess
-        with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+        dbcon = None
+        try:
+            if gen_theme_bucket_counts:
+                dbcon = sqlite3.connect(dbfp)
             qml_fp = db_preprocess.gen_style_qml_for_theme(
                 None, table, None, col,
                 dbcon,
                 to_tmp_file=True
             )
+        finally:
+            if dbcon:
+                dbcon.close()
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))

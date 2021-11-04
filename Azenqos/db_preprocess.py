@@ -445,6 +445,8 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
 def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=False):
     if theme_df is None:
         theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
+    if theme_df is None:
+        return None
     if 'match_value' in theme_df.columns:
         # id columns like pci, earfcn
         theme_df.Lower = theme_df.match_value

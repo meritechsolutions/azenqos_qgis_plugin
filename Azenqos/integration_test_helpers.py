@@ -24,16 +24,22 @@ def get_dbcon(dbfp):
 def get_global_vars(login=True):
     gv = analyzer_vars.analyzer_vars()
     if login:
-        dlg = login_dialog.login_dialog(None, gv)
-        dlg.server = "https://test0.azenqos.com"
+        server = "https://test0.azenqos.com"
         if "TEST_SERVER" in os.environ:
-            dlg.server = os.environ["TEST_SERVER"]
-        dlg.user = "trial_admin"
+            server = os.environ["TEST_SERVER"]
+        user = "trial_admin"
         if "TEST_USER" in os.environ:
-            dlg.user = os.environ["TEST_USER"]
-        dlg.passwd = "3.14isnotpina"
+            user = os.environ["TEST_USER"]
+        passwd = "3.14isnotpina"
         if "TEST_PASS" in os.environ:
-            dlg.passwd = os.environ["TEST_PASS"]
-        dlg.login_get_token_only()
-        gv.login_dialog = dlg
+            passwd = os.environ["TEST_PASS"]
+        silent_login(gv, server, user, passwd)
     return gv
+
+def silent_login(gv, server, user, passwd):
+    dlg = login_dialog.login_dialog(None, gv)
+    dlg.server = server
+    dlg.user = user
+    dlg.passwd = passwd
+    dlg.login_get_token_only()
+    gv.login_dialog = dlg

@@ -175,6 +175,7 @@ class server_overview_widget(QWidget):
                     db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
                 self.progress_update_signal.emit(100)
                 self.status("Completed in %.02f secs \n(%s\n%s\n%s\n%s)" % (dur, self.db_download_time, self.combine_azm_time, self.prepare_views_time, self.create_layers_time))
+                self.gvars.main_window.trigger_zoom_to_active_layer()
 
     def apply(self):
         self.ui.status_label.setText("")

@@ -2232,7 +2232,7 @@ Log_hash list: {}""".format(
             import system_sql_query
             #if name in system_sql_query.rat_to_main_param_dict.values():
             if self.gc.qgis_iface.activeLayer() is not None:
-                self.gc.main_window.trigger_zoom_to_active_layer()
+                pass
             print("renamingLayers layer:", name)
             if "azqdata " in name:
                 try:
@@ -2392,6 +2392,7 @@ Log_hash list: {}""".format(
         table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer = obj
         db_layer_task.ui_thread_add_layers_to_qgis(self.gc, table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer)
         self.qgis_msgbar("Done", "Loading layers completed")
+        self.trigger_zoom_to_active_layer()
 
     def trigger_zoom_to_active_layer(self, wait_secs=0.6):
         print("trigger_zoom_to_active_layer")
@@ -2425,16 +2426,6 @@ Log_hash list: {}""".format(
         if map_layer_name in layers_names:
             return  # no need to add
 
-        if not self.asked_easy_mode and azq_utils.is_container_mode():
-            self.asked_easy_mode = True
-            reply = qt_utils.ask_yes_no(None, "Easy mode wizard", "Start Overview/AI-Predict mode?")
-            print("reply", reply)
-            if reply == 0:
-                self.gc.easy_overview_mode = True
-                print("show server overview")
-                self.on_actionServer_overview_layers_triggered()  # TODO open this year - 60 second bin
-                self.on_actionServerAIPrediction_triggered()
-
         urlWithParams = (
             "type=xyz&url=http://tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
         )
@@ -2444,8 +2435,25 @@ Log_hash list: {}""".format(
             QgsProject.instance().addMapLayer(rlayer)
         else:
             QgsMessageLog.logMessage("Invalid layer")
-        self.trigger_zoom_to_active_layer()
 
+        if azq_utils.is_container_mode():
+            # server mode login to self must work
+            import integration_test_helpers
+            import login_dialog
+            integration_test_helpers.silent_login(self.gc, login_dialog.DOCKER_NW_SERVER_URL,
+                                                  os.environ["DASHBOARD_USER"], os.environ["DASHBOARD_PASS"])
+            assert self.gc.is_logged_in()
+
+
+        if not self.asked_easy_mode and azq_utils.is_container_mode():
+            self.asked_easy_mode = True
+            reply = qt_utils.ask_yes_no(None, "Easy mode", "Start Overview/AI-Predict mode?")
+            print("reply", reply)
+            if reply == 0:
+                self.gc.easy_overview_mode = True
+                print("show server overview")
+                self.on_actionServer_overview_layers_triggered()  # TODO open this year - 60 second bin
+                self.on_actionServerAIPrediction_triggered()
 
     def add_spider_layer(self):
         import spider_plot

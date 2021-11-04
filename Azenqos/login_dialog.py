@@ -17,6 +17,7 @@ import azq_utils
 
 MAX_LHL_LEN = 100
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
+DOCKER_NW_SERVER_URL = "https://nginx:8443"
 import signal
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
@@ -55,7 +56,7 @@ class login_dialog(QDialog):
         self.ui.progressbar.setVisible(False)
         self.setWindowTitle("AZENQOS Server login")
         self.ui.server_url_le.setText(
-            azq_utils.read_settings_file("prev_login_dialog_server") if not azq_utils.is_container_mode() else "https://nginx:8443"
+            azq_utils.read_settings_file("prev_login_dialog_server") if not azq_utils.is_container_mode() else DOCKER_NW_SERVER_URL
         )
         self.ui.login_le.setText(azq_utils.read_settings_file("prev_login_dialog_user"))
         self.ui.pass_le.setText(azq_utils.read_settings_file("prev_login_dialog_passwd", decrypt=True))

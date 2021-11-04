@@ -119,6 +119,7 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
         raise Exception("unsupported method: {}".format(method))
     with resp:
         update_stat("Got response... server process duration: %.02f secs" %(time.time() - ts))
+        print("resp.headers:", resp.headers)
         if resp.status_code != 200:
             raise Exception(
                 "Got failed status_code: {} resp.text: {}".format(
@@ -131,13 +132,20 @@ def call_api_get_resp(server, token, path, body_dict, method='post', resp_conten
             with open(resp_content_to_fp, "wb") as f:
                 total_len = 0
                 last_update = 0.0
+                last_report_bytes = 0
                 for chunk in resp.iter_content(chunk_size=4*1024*1024):
                     if chunk is None or len(chunk) == 0:
                         break
                     total_len += len(chunk)
                     now = time.time()
-                    if now - last_update > 1:
-                        update_stat("Downloading: %.02f MB" % float(total_len/(1000*1000)))
+                    dur = now - last_update
+                    if dur >= 1.0:
+                        bytes_rx_last_loop = total_len - last_report_bytes
+                        bits_per_sec = (bytes_rx_last_loop*8)/dur
+                        k_bits_per_sec = bits_per_sec / 1000.0
+                        m_bits_per_sec = bits_per_sec / (1000.0*1000.0)
+                        last_report_bytes = total_len
+                        update_stat("Downloading: %.02f MB" % (float(total_len/(1000*1000))) + (" (speed %.02f Mbps)" % m_bits_per_sec if m_bits_per_sec > 1 else "(speed %.02f Kbps)" % k_bits_per_sec))
                         last_update = now
                     # If you have chunk encoded response uncomment if
                     # and set chunk_size parameter to None.

@@ -27,9 +27,9 @@ def _test(server, user, passwd, lhl):
 
     ################# api func test
     req_body = {
-    "start_date": "2021-8-03",
-    "end_date": "2021-10-15",
-    "bin": 60,
+    "start_date": "2021-01-01",
+    "end_date": "2021-12-31",
+    "bin": 1,
     "filters_dict": {},
     }
     target_fp = azq_utils.tmp_gen_fp("o.zip")

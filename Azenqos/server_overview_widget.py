@@ -50,9 +50,10 @@ class server_overview_widget(QWidget):
         self.ui = loadUi(azq_utils.get_module_fp("server_overview_widget.ui"), self)
         self.setWindowTitle("Server logs overview")
         now = azq_utils.datetime_now()
-        last_month = now - datetime.timedelta(days=30)
-        self.ui.start_dateEdit.setDateTime(last_month)
-        self.ui.end_dateEdit.setDateTime(now)
+        last_day = now.replace(month=12, day=31)
+        first_day = now.replace(month=1, day=1)
+        self.ui.start_dateEdit.setDateTime(first_day)
+        self.ui.end_dateEdit.setDateTime(last_day)
 
         self.applyButton.clicked.connect(self.apply)
         self.apply_done_signal.connect(self.apply_done)
@@ -61,7 +62,7 @@ class server_overview_widget(QWidget):
         self.ui.phone_filter_pushButton.clicked.connect(self.on_click_phone_filter)
         self.ui.group_filter_pushButton.clicked.connect(self.on_click_group_filter)
         self.apply_read_server_facts = True
-        self.setMinimumSize(320,350)
+        self.setMinimumSize(320, 350)
         self.apply()
 
 

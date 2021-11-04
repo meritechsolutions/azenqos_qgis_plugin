@@ -11,6 +11,7 @@ import psutil
 
 import azq_utils
 import preprocess_azm
+import system_sql_query
 
 try:
     from qgis.core import (
@@ -21,7 +22,7 @@ except:
     pass
 
 
-def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_theme_bucket_counts=True):
+def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_theme_bucket_counts=True, main_rat_params_only=False):
     azq_utils.timer_start("create_layers")
     try:
         if db_fp is None:
@@ -41,11 +42,13 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                 with contextlib.closing(sqlite3.connect(db_fp)) as dbcon:
                     db_created_views_mode = True  # if false then qgis seems to create/show only the last created layer per same table
                     custom_sql = None
-                    param_list = pd.read_sql("select f_table_name from geometry_columns", dbcon).f_table_name.values
+                    if main_rat_params_only:
+                        param_list = list(system_sql_query.rat_to_main_param_dict.values())
+                    else:
+                        param_list = pd.read_sql("select f_table_name from geometry_columns", dbcon).f_table_name.values
                     if db_created_views_mode:
                         table_list = param_list
                     else:
-                        param_list = pd.read_sql("select f_table_name from geometry_columns", dbcon).f_table_name.values
                         table_list = [preprocess_azm.get_table_for_column(param) for param in param_list]
                     tp_list = zip(table_list, param_list)
                     import qgis_layers_gen
@@ -83,7 +86,6 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                             continue
                         print("Adding layer to UI:", param)
                         try:
-                            import system_sql_query
                             visible = False
                             if table in system_sql_query.rat_to_main_param_dict.values():
                                 visible = True

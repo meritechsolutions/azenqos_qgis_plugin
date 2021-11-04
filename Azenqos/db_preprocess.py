@@ -11,6 +11,7 @@ import numpy as np
 import azq_theme_manager
 import azq_utils
 import preprocess_azm
+import system_sql_query
 
 elm_table_main_col_types = {
     "log_hash": "BIGINT",
@@ -69,7 +70,7 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
@@ -117,12 +118,14 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
-    params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
+    params_to_gen = []
+    if main_rat_params_only:
+        params_to_gen = list(system_sql_query.rat_to_main_param_dict.values())
+    else:
+        params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
+
     print("params_to_gen:", params_to_gen)
-
-
     dbcon.commit()
-
     # create layer_styles table if not exist
     tables_to_rm_stray_neg1_rows = ["signalling", "events"]
     layer_style_id = 0

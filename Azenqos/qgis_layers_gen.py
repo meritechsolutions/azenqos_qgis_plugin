@@ -77,8 +77,11 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
     uri.setDataSource(schema, table, 'geom', custom_sql)
     if display_name is None:
         display_name = table
+    print("create QgsVectorLayer for uri start")
     layer = QgsVectorLayer(uri.uri(), display_name, 'spatialite')
+    print("create QgsVectorLayer for uri done")
     if style_qml_fp is None and theme_param is not None:
+        print("create qml for uri start")
         try:
             qml_fp = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon_for_theme_legend_counts, to_tmp_file=True)
         except:
@@ -89,6 +92,7 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
                     exstr
                 )
             )
+        print("create qml for uri done:", qml_fp)
         style_qml_fp = qml_fp
     if style_qml_fp is not None:
         print("style_qml_fp:", style_qml_fp)

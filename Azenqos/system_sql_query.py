@@ -10,7 +10,7 @@ rat_to_table_and_primary_where_dict = {
 rat_to_main_param_dict = {
     "NR": "nr_servingbeam_ss_rsrp_1",
     "LTE": "lte_inst_rsrp_1",
-    "WCDMA": "wcdma_aset_ecio_1",
+    "WCDMA": "wcdma_aset_rscp_1",
     "GSM": "gsm_rxlev_sub_dbm",
 }
 for rat in rat_to_table_and_primary_where_dict:

@@ -119,7 +119,7 @@
    <item>
     <widget class="QPushButton" name="applyButton">
      <property name="text">
-      <string>DOWNLOAD</string>
+      <string>Download</string>
      </property>
     </widget>
    </item>

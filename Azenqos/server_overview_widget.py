@@ -75,7 +75,7 @@ class server_overview_widget(QWidget):
             self.ui.progressBar.setVisible(True)
         else:
             self.ui.groupBox.setVisible(True)
-            self.ui.applyButton.setText("Apply")
+            self.ui.applyButton.setText("Download")
             self.ui.applyButton.setEnabled(True)
             self.ui.progressBar.setVisible(False)
 
@@ -264,7 +264,7 @@ class server_overview_widget(QWidget):
             self.status_update_signal.emit("Prepare db views as per theme...")
             self.progress_update_signal.emit(50)
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-                db_preprocess.prepare_spatialite_views(dbcon, cre_table=False, start_date=self.req_body["start_date"], end_date=self.req_body["end_date"])  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+                db_preprocess.prepare_spatialite_views(dbcon, main_rat_params_only=True, cre_table=False, start_date=self.req_body["start_date"], end_date=self.req_body["end_date"])  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
             prepare_views_end_time = time.perf_counter()
             self.prepare_views_time =  "Prepare Views Time: %.02f seconds" % float(prepare_views_end_time-prepare_views_start_time)
             azq_utils.timer_print("overview_perf_prepare_views")
@@ -276,7 +276,7 @@ class server_overview_widget(QWidget):
             self.overview_db_fp = dbfp
             if self.gvars.qgis_iface:
                 self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer = db_layer_task.create_layers(
-                    self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_", gen_theme_bucket_counts=False)
+                    self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_", gen_theme_bucket_counts=False, main_rat_params_only=True)
             create_layers_end_time = time.perf_counter()
             self.create_layers_time =  "Create Layers Time: %.02f seconds" % float(create_layers_end_time-create_layers_start_time)
             azq_utils.timer_print("overview_perf_create_layers")

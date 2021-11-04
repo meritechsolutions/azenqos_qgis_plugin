@@ -48,10 +48,13 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
             if "geom" in df.columns:
                 del df["geom"]
         if 'geom' not in df.columns:
+            print("fill geom start")
             df = fill_geom_in_location_df.fill_geom_in_location_df(df)
+            print("fill geom done")
         assert 'geom' in df
-        print("to_sql dbfp:", dbfp)
+        print("to_sql dbfp:", dbfp, "START")
         df.to_sql(table, dbcon, dtype=db_preprocess.elm_table_main_col_types)
+        print("to_sql dbfp:", dbfp, "DONE")
         sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
             table
         )

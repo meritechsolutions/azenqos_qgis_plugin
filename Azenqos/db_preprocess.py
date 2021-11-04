@@ -138,9 +138,14 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
             table_has_geom = "geom" in table_cols
             table_has_modem_time = "modem_time" in table_cols
             print("table: {} table_has_geom {}".format(table, table_has_geom))
-            table_len = pd.read_sql("select count(*) from {}".format(table), dbcon).iloc[0,0]
-            if not table_len:
-                continue  # skip this param as no rows
+            if cre_table:
+                print("read count")
+                table_len = pd.read_sql("select count(*) from {}".format(table), dbcon).iloc[0,0]
+                if not table_len:
+                    continue  # skip this param as no rows
+            else:
+                if is_table_empty(dbcon, table, param):
+                    continue
             if not table_has_geom:
                 print("not table_has_geom so gen sql merge in from location table by time - START")
                 '''
@@ -168,32 +173,42 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                 )
                 print("not table_has_geom so gen sql merge in from location table by time - DONE")
             else:
+                print("start cre")
                 cre_type = "table"
                 if cre_table == False:
                     cre_type = "view"
                 date_filt_where_and = ""
                 if start_date is not None and end_date is not None:
                     date_filt_where_and = "and time >= '{}' and time <= '{} 24:00:00'".format(start_date, end_date)
-                date_filt_where_and = ""
+                drop_view_sqlstr = "drop {cre_type} if exists {view}".format(cre_type=cre_type, view=view)
                 if "cell_meas" in table:
-                    drop_view_sqlstr = "drop {cre_type} if exists {col}".format(cre_type=cre_type, col=view)
                     sqlstr = "create {} {col} as select * from {table} where {col} is not null {date_filt_where_and};".format(cre_type, col=view, table=table, date_filt_where_and=date_filt_where_and)   # need to create table because create view casues get nearest feature id to fail - getting only 0
                 else:
-                    drop_view_sqlstr = "drop {cre_type} if exists {col}".format(cre_type=cre_type, col=view)
                     sqlstr = "create {} {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null {date_filt_where_and};".format(
                         cre_type, col=view, table=table,
                         modem_time_part="modem_time" if table_has_modem_time else "null as modem_time",
                         date_filt_where_and=date_filt_where_and
                     )
             print("create view sqlstr: %s" % sqlstr)
-            dbcon.execute(drop_view_sqlstr)
+            if table_or_view_exists(dbcon, view):
+                print("exec drop view")
+                dbcon.execute(drop_view_sqlstr)
+            print("exec sql")
             dbcon.execute(sqlstr)
+            print("read cols")
             view_cols = pd.read_sql("select * from {} where false".format(view), dbcon).columns
             assert "geom" in view_cols
             assert param in view_cols
-            view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, view), dbcon).iloc[0,0]
-            if not view_len:
-                continue
+            if cre_table:
+                print("read count")
+                view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, view), dbcon).iloc[0,0]
+                if not view_len:
+                    continue
+            else:
+                print("read first row")
+                if is_table_empty(dbcon, view, param):
+                    continue
+
             tables_to_rm_stray_neg1_rows.append(view)
 
             sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
@@ -201,6 +216,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
             )
             print("insert into geometry_columns view {} sqlstr: {}".format(view, sqlstr))
             dbcon.execute(sqlstr)
+            print("commit")
             dbcon.commit()
 
             if not table in tables_added_to_geom_cols:
@@ -382,6 +398,14 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     # create param QML theme based on default_style.qml
     # put qml entry into 'layer_styles' table
 
+def is_table_empty(dbcon, table, col):
+    df_first_row = pd.read_sql("select {} from {} where {} is not null limit 1".format(col, table, col), dbcon)
+    if not len(df_first_row):
+        return True
+    return False
+
+def table_or_view_exists(dbcon, table_or_view):
+    return bool(len(pd.read_sql("SELECT name FROM sqlite_master WHERE (type='table' or type='view') AND name='{}';".format(table_or_view), dbcon)))
 
 def get_geom_cols_df(dbcon):
     df = pd.read_sql("select * from geometry_columns", dbcon)

@@ -48,6 +48,7 @@ class server_overview_widget(QWidget):
         self.overview_db_fp = None
         self.devices_selection_df = None
         self.main_params_only = True
+        self.auto_zoom = True
 
     def setupUi(self):
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -66,10 +67,16 @@ class server_overview_widget(QWidget):
         self.ui.phone_filter_pushButton.clicked.connect(self.on_click_phone_filter)
         self.ui.group_filter_pushButton.clicked.connect(self.on_click_group_filter)
         self.main_params_only_checkBox.setChecked(True)
-        enable_main_params_only = partial(self.use_main_params_only, self.main_params_only_checkBox)
-        disable_main_params_only = partial(self.use_all_params, self.main_params_only_checkBox)
+        enable_main_params_slot = partial(self.use_main_params_only, self.main_params_only_checkBox)
+        disable_main_params_slot = partial(self.use_all_params, self.main_params_only_checkBox)
         self.main_params_only_checkBox.stateChanged.connect(
-            lambda x: enable_main_params_only() if x else disable_main_params_only()
+            lambda x: enable_main_params_slot() if x else disable_main_params_slot()
+        )
+        self.auto_zoom_checkBox.setChecked(True)
+        enable_auto_zoom_slot = partial(self.auto_zoom_enable, self.auto_zoom_checkBox)
+        disable_auto_zoom_slot = partial(self.auto_zoom_enable, self.auto_zoom_checkBox)
+        self.auto_zoom_checkBox.stateChanged.connect(
+            lambda x: enable_auto_zoom_slot() if x else disable_auto_zoom_slot()
         )
         self.apply_read_server_facts = True
         self.setMinimumSize(320, 350)
@@ -80,6 +87,12 @@ class server_overview_widget(QWidget):
 
     def use_all_params(self, checkbox):
         self.main_params_only = False
+
+    def auto_zoom_enable(self, checkbox):
+        self.auto_zoom = True
+
+    def auto_zoom_disable(self, checkbox):
+        self.auto_zoom = False
 
     def on_processing(self, processing, processing_text="Processing..."):
         if processing:
@@ -190,7 +203,8 @@ class server_overview_widget(QWidget):
                     db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
                 self.progress_update_signal.emit(100)
                 self.status("Completed in %.02f secs \n(%s\n%s\n%s\n%s)" % (dur, self.db_download_time, self.combine_azm_time, self.prepare_views_time, self.create_layers_time))
-                self.gvars.main_window.trigger_zoom_to_active_layer()
+                if self.auto_zoom:
+                    self.gvars.main_window.trigger_zoom_to_active_layer()
 
     def apply(self):
         self.ui.status_label.setText("")

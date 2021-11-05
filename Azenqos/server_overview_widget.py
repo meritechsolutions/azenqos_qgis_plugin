@@ -258,7 +258,7 @@ class server_overview_widget(QWidget):
             downloaded_db_fp_is_json_resp = False
             json_resp = None
             if self.gvars.login_dialog.is_local_container_nw_server():
-                self.req_body["ret_tmp_dir_fp_for_container_use_and_delete"] = True
+                self.req_body["target_dir"] = azq_utils.tmp_gen_new_subdir()
                 downloaded_db_fp_is_json_resp = True
 
             if self.closed:
@@ -275,17 +275,12 @@ class server_overview_widget(QWidget):
             assert os.path.isfile(ret)
             assert os.path.isfile(downloaded_db_fp)
             if downloaded_db_fp_is_json_resp:
-                print("downloaded_db_fp_is_json_resp - mv db file from uapi's tmp to our tmp - START")
+                print("downloaded_db_fp_is_json_resp - mv db file from uapi's tmp to our tmp - START downloaded_db_fp:", downloaded_db_fp)
                 with open(downloaded_db_fp, "r") as f:
                     json_resp = json.loads(f.read())
-                    assert "tmp_dir_needs_delete" in json_resp
                     assert "db_fps" in json_resp
                     assert len(json_resp["db_fps"]) == 1
-                    assert os.path.isdir(json_resp["tmp_dir_needs_delete"])
-                    src_db_fp = json_resp["db_fps"][0]
-                    assert os.path.isfile(src_db_fp)
-                    shutil.move(src_db_fp, downloaded_db_fp)
-                    shutil.rmtree(json_resp["tmp_dir_needs_delete"])
+                    downloaded_db_fp = json_resp["db_fps"][0]
                 print("downloaded_db_fp_is_json_resp - mv db file from uapi's tmp to our tmp - DONE")
             if self.closed:
                 raise Exception("window closed")

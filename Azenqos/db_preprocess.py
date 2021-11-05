@@ -112,7 +112,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
-        print("WARNING: indoor prepare failed exception: ", exstr)
+        print("WARNING: prepare_spatialite_views indoor failed exception: ", exstr)
 
     # gps_cancel_list = []
 

@@ -1250,9 +1250,12 @@ class PdTableModel(QAbstractTableModel):
             regex = filters[col_index].pattern()  # QRegExp
             if col and regex:
                 print("setStrColFilters col: {} regex: {}".format(col, regex))
-                self.df = self.df[
-                    self.df[col].astype(str).str.contains(regex, case=False)
-                ]
+                try:
+                    self.df = self.df[
+                        self.df[col].astype(str).str.contains(regex, case=False)
+                    ]
+                except Exception as exe:
+                    print("WARNING: datatable regex filter exception:", exe)
         if changed:
             """
             index_topleft = self.index(0, 0)

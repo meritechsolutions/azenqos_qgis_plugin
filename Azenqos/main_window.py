@@ -127,6 +127,7 @@ class main_window(QMainWindow):
         self.is_legacy_indoor = False
         self.is_leg_nr_tables = False
         self.asked_easy_mode = False
+        self.close_all_layers = True
         self.timechange_to_service_counter = atomic_int(0)
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
@@ -1846,14 +1847,20 @@ Log_hash list: {}""".format(
         if not (self.gc.log_mode and self.gc.log_mode == "adb"):
             qt_utils.msgbox("This button is for re-sync data from phone in 'Connected phone mode' (chosen in 'Open logs') only.", "Not in 'Connected phone mode'", parent=self)
             return
-        self.open_logs(connected_mode_refresh=True)
+        self.open_logs(connected_mode_refresh=True, ask_close_all_layers=False)
         print("sync_connecter_phone DONE")
 
 
-    def open_logs(self, connected_mode_refresh=False):
+    def open_logs(self, connected_mode_refresh=False, ask_close_all_layers=True):
         if self.gc.databasePath:
             self.gc.databasePath = None
             self.gc.db_fp = None
+            if ask_close_all_layers:
+                reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?")
+                print("reply", reply)
+                self.close_all_layers = False
+                if reply == 0:
+                    self.close_all_layers = True
             self.cleanup()
             '''
             msgBox = QMessageBox()
@@ -1879,7 +1886,8 @@ Log_hash list: {}""".format(
             return
         if self.gc.db_fp and self.qgis_iface:
             print("starting layertask")
-            self.add_map_layer()
+            if self.close_all_layers:
+                self.add_map_layer()
             self.add_spider_layer()
             self.add_indoor_map_layers()
             self.add_cell_layers()
@@ -2151,8 +2159,17 @@ Log_hash list: {}""".format(
                     project.removeMapLayer(to_be_deleted.id())
                     del layer
                 '''
-                project.removeAllMapLayers()
-                project.clear()
+                
+                if self.close_all_layers:
+                    project.removeAllMapLayers()
+                    project.clear()
+                else:
+                    for layer in project.mapLayers().values():
+                        if layer.name() == "OSM":
+                            # project.removeMapLayer(project.mapLayersByName(layer.name())[0].id())
+                            continue
+                        new_layer_name = layer.name()+"_old"
+                        layer.setName(new_layer_name)
 
             print("cleanup: len(self.gc.openedWindows)", len(self.gc.openedWindows))
             for widget in self.gc.openedWindows:

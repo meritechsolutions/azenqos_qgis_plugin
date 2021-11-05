@@ -121,6 +121,7 @@ class login_dialog(QDialog):
                             self.on_zip_downloaded,
                             self.download_db_zip,
                         ),
+                        daemon=True
                     )
                     self.login_thread.start()
             else:

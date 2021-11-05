@@ -1357,6 +1357,7 @@ def create_table_window_from_api_expression_ret(
     gen_thread = threading.Thread(
         target=run_api_expression_and_set_results_to_table_window,
         args=(window, server, token, lhl, azq_report_gen_expression),
+        daemon=True
     )
     gen_thread.start()
     return window

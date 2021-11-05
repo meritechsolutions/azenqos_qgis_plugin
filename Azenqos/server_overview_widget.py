@@ -1,7 +1,9 @@
 import contextlib
 import datetime
 import glob
+import json
 import os
+import shutil
 import signal
 import sqlite3
 import sys
@@ -232,6 +234,13 @@ class server_overview_widget(QWidget):
             self.status_update_signal.emit("Server processing data...")
             azq_utils.timer_start("overview_perf_dl_azm")
             db_download_start_time = time.perf_counter()
+
+            downloaded_db_fp_is_json_resp = False
+            json_resp = None
+            if self.gvars.login_dialog.is_local_container_nw_server():
+                self.req_body["ret_tmp_dir_fp_for_container_use_and_delete"] = True
+                downloaded_db_fp_is_json_resp = True
+
             ret = azq_server_api.api_overview_db_download(self.gvars.login_dialog.server, self.gvars.login_dialog.token, downloaded_db_fp,
                                                           req_body=self.req_body, signal_to_emit_stats=self.status_update_signal)   
             db_download_end_time = time.perf_counter()
@@ -240,24 +249,21 @@ class server_overview_widget(QWidget):
             print("ret:", ret)
             assert os.path.isfile(ret)
             assert os.path.isfile(downloaded_db_fp)
+            if downloaded_db_fp_is_json_resp:
+                with open(downloaded_db_fp, "r") as f:
+                    json_resp = json.loads(f.read())
+                    assert "tmp_dir_needs_delete" in json_resp
+                    assert "db_fps" in json_resp
+                    assert len(json_resp["db_fps"]) == 1
+                    assert os.path.isdir(json_resp["tmp_dir_needs_delete"])
+                    src_db_fp = json_resp["db_fps"][0]
+                    assert os.path.isfile(src_db_fp)
+                    shutil.move(src_db_fp, downloaded_db_fp)
+                    shutil.rmtree(json_resp["tmp_dir_needs_delete"])
             self.progress_update_signal.emit(30)
-            '''
-            self.status_update_signal.emit("Extracting compressed data...")
-            self.progress_update_signal.emit(40)
-
-            azq_utils.timer_start("overview_perf_extract_azm")
-            # merge all dbs in zip to the target overview_db_fp
-            tmpdir = azq_utils.tmp_gen_new_subdir()
-            with zipfile.ZipFile(downloaded_db_fp, "r") as zip_file:
-                zip_file.extractall(tmpdir)
-            db_files = glob.glob(os.path.join(tmpdir, "*.db"))
-            assert len(db_files)
-            '''
             db_files = [downloaded_db_fp]  # uapi now rets direct and signle db, no zips
-
             azq_utils.timer_print("overview_perf_extract_azm")
             print("got dbs from server, len(db_files):", len(db_files), "at:", downloaded_db_fp)
-
             # combined all the db_files in the zip
             azq_utils.timer_start("overview_perf_combine_azm")
             combine_azm_start_time = time.perf_counter()

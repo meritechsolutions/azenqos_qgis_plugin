@@ -29,7 +29,7 @@ def _test(server, user, passwd, lhl):
     req_body = {
     "start_date": "2021-01-01",
     "end_date": "2021-12-31",
-    "bin": 1,
+    "bin": 60,
     "filters_dict": {},
     }
     target_fp = azq_utils.tmp_gen_fp("o.zip")

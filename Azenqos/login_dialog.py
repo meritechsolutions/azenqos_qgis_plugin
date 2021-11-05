@@ -225,3 +225,6 @@ class login_dialog(QDialog):
 
     def login_get_token_only(self):
         self.token = azq_server_api.api_login_get_token(self.server, self.user, self.passwd)
+
+    def is_local_container_nw_server(self):
+        return self.server == DOCKER_NW_SERVER_URL

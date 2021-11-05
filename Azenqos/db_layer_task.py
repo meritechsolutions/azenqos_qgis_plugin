@@ -114,6 +114,15 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
         azq_utils.timer_print("create_layers")
     return None
 
+def set_active_layer(gc, layer_name=None):
+    try:
+        if gc.qgis_iface:
+            layer =  QgsProject.instance().mapLayersByName(layer_name)[0]
+            gc.qgis_iface.setActiveLayer(layer)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: set_active_layer - exception: {}".format(exstr))
 
 def ui_thread_add_layers_to_qgis(gc, table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer):
     azq_utils.timer_start("ui_thread_add_layers_to_qgis")

@@ -43,10 +43,10 @@ def ask_selection(parent, items, items_selected=None, title="Please select", msg
             self.select_all_check_box = QCheckBox("Select All")
             form.addRow(self.select_all_check_box)
             self.select_all_check_box.setChecked(True)
-            enabl_select_all_check_box = partial(self.select_all, self.select_all_check_box)
+            enable_select_all_check_box = partial(self.select_all, self.select_all_check_box)
             disable_select_all_check_box = partial(self.unselect_all, self.select_all_check_box)
             self.select_all_check_box.stateChanged.connect(
-                lambda x: enabl_select_all_check_box() if x else disable_select_all_check_box()
+                lambda x: enable_select_all_check_box() if x else disable_select_all_check_box()
             )
             form.addRow(QLabel(message))
             self.listView = QListView(self)

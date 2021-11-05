@@ -68,7 +68,7 @@ class server_overview_widget(QWidget):
         )
         self.auto_zoom_checkBox.setChecked(True)
         enable_auto_zoom_slot = partial(self.auto_zoom_enable, self.auto_zoom_checkBox)
-        disable_auto_zoom_slot = partial(self.auto_zoom_enable, self.auto_zoom_checkBox)
+        disable_auto_zoom_slot = partial(self.auto_zoom_disable, self.auto_zoom_checkBox)
         self.auto_zoom_checkBox.stateChanged.connect(
             lambda x: enable_auto_zoom_slot() if x else disable_auto_zoom_slot()
         )

@@ -169,7 +169,7 @@ class main_window(QMainWindow):
         except:
             pass
 
-        self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
+        self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple(), daemon=True)
         self.timechange_service_thread.start()
         self.setMinimumSize(50, 50)
         azq_utils.adb_kill_server_threaded()  # otherwise cant update plugin as adb files would be locked
@@ -2400,7 +2400,8 @@ Log_hash list: {}""".format(
             print("trigger_zoom_to_active_layer create")
             self.zoom_thread = threading.Thread(
             target=self.zoom_after_secs,
-            args=(wait_secs,)
+            args=(wait_secs,),
+                daemon=True
             )
             self.zoom_thread.start()
         else:

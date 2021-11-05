@@ -254,8 +254,10 @@ class predict_widget(QWidget):
                 self.read_input_to_vars()
             self.ret_df = None
             self.apply_thread = threading.Thread(
-                target=self.apply_worker_func, args=()
+                target=self.apply_worker_func, args=(),
+                daemon=True
             )
+            # daemon threads close when program closes
             self.apply_thread.start()
         except:
             type_, value_, traceback_ = sys.exc_info()

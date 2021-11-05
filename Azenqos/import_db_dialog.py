@@ -379,7 +379,7 @@ class import_db_dialog(QDialog):
                 self.buttonBox.setEnabled(False)
                 print("start import db zip thread...")
                 self.import_thread = threading.Thread(
-                    target=self.import_thread_run, args=()
+                    target=self.import_thread_run, args=(), daemon=True
                 )
                 self.import_thread.start()
             else:

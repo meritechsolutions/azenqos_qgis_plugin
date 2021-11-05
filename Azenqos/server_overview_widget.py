@@ -46,9 +46,10 @@ class server_overview_widget(QWidget):
         self.apply_thread = None
         self.overview_db_fp = None
         self.devices_selection_df = None
+        self.closed = False
 
     def setupUi(self):
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        # keep incase thread calls self after closed - self.setAttribute(Qt.WA_DeleteOnClose)
         self.ui = loadUi(azq_utils.get_module_fp("server_overview_widget.ui"), self)
         self.setWindowTitle("Server logs overview")
         now = azq_utils.datetime_now()
@@ -153,6 +154,10 @@ class server_overview_widget(QWidget):
         self.ui.phone_filter_pushButton.setText("{}/{} Devices".format(len(selected_df.imei_number.unique()), n_devs))
         self.ui.group_filter_pushButton.setText("{}/{} Groups".format(len(list(selected_df.group_name.dropna().unique())), n_groups))
 
+    def closeEvent(self, event):
+        self.closed = True
+        self.qgis_iface = None
+
     def apply_done(self, msg):
         self.on_processing(False)
         dur = azq_utils.timer_print("overview_apply")
@@ -188,8 +193,9 @@ class server_overview_widget(QWidget):
             if not self.apply_read_server_facts:
                 self.read_input_to_vars()
             self.apply_thread = threading.Thread(
-                target=self.apply_worker_func, args=()
+                target=self.apply_worker_func, args=(), daemon=True
             )
+            # daemon threads close when program closes
             self.apply_thread.start()
         except:
             type_, value_, traceback_ = sys.exc_info()
@@ -203,6 +209,8 @@ class server_overview_widget(QWidget):
     def apply_worker_func(self):
         try:
             assert self.gvars.is_logged_in()
+            if self.closed:
+                raise Exception("window closed")
             print("apply_worker_func: apply_read_server_facts:", self.apply_read_server_facts)
             if self.apply_read_server_facts:
                 self.overview_list_df = azq_server_api.api_overview_db_list_df(
@@ -237,6 +245,7 @@ class server_overview_widget(QWidget):
             assert os.path.isfile(ret)
             assert os.path.isfile(downloaded_db_fp)
             if downloaded_db_fp_is_json_resp:
+                print("downloaded_db_fp_is_json_resp - mv db file from uapi's tmp to our tmp - START")
                 with open(downloaded_db_fp, "r") as f:
                     json_resp = json.loads(f.read())
                     assert "tmp_dir_needs_delete" in json_resp
@@ -247,6 +256,7 @@ class server_overview_widget(QWidget):
                     assert os.path.isfile(src_db_fp)
                     shutil.move(src_db_fp, downloaded_db_fp)
                     shutil.rmtree(json_resp["tmp_dir_needs_delete"])
+                print("downloaded_db_fp_is_json_resp - mv db file from uapi's tmp to our tmp - DONE")
             self.progress_update_signal.emit(30)
             db_files = [downloaded_db_fp]  # uapi now rets direct and signle db, no zips
             azq_utils.timer_print("overview_perf_extract_azm")

@@ -1,6 +1,4 @@
 import contextlib
-import datetime
-import glob
 import json
 import os
 import shutil
@@ -8,16 +6,11 @@ import signal
 import sqlite3
 import sys
 import threading
+import time
 import traceback
 import uuid
-import zipfile
-import time
 from functools import partial
 
-
-from PyQt5.QtCore import (
-    Qt,
-)
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
     QWidget,
@@ -41,13 +34,13 @@ class server_overview_widget(QWidget):
 
     def __init__(self, parent, gvars):
         super().__init__(parent)
+        self.closed = False
         self.gvars = gvars
         self.setupUi()
         self.req_body = {}
         self.apply_thread = None
         self.overview_db_fp = None
         self.devices_selection_df = None
-        self.closed = False
         self.main_params_only = True
         self.auto_zoom = True
 
@@ -208,6 +201,7 @@ class server_overview_widget(QWidget):
                     db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
                 self.progress_update_signal.emit(100)
                 self.status("Completed in %.02f secs \n(%s\n%s\n%s\n%s)" % (dur, self.db_download_time, self.combine_azm_time, self.prepare_views_time, self.create_layers_time))
+                print("self.auto_zoom", self.auto_zoom)
                 if self.auto_zoom:
                     self.gvars.main_window.trigger_zoom_to_active_layer()
 
@@ -250,6 +244,8 @@ class server_overview_widget(QWidget):
                 )
                 self.apply_done_signal.emit("SUCCESS")
                 return
+            if self.closed:
+                raise Exception("window closed")
             self.status_update_signal.emit("Preparing folder...")
             downloaded_db_fp = azq_utils.tmp_gen_fp("overview_{}.db".format(uuid.uuid4()))
             assert not os.path.isfile(downloaded_db_fp)
@@ -257,17 +253,24 @@ class server_overview_widget(QWidget):
             azq_utils.timer_start("overview_perf_dl_azm")
             db_download_start_time = time.perf_counter()
 
+            if self.closed:
+                raise Exception("window closed")
             downloaded_db_fp_is_json_resp = False
             json_resp = None
             if self.gvars.login_dialog.is_local_container_nw_server():
                 self.req_body["ret_tmp_dir_fp_for_container_use_and_delete"] = True
                 downloaded_db_fp_is_json_resp = True
 
+            if self.closed:
+                raise Exception("window closed")
             ret = azq_server_api.api_overview_db_download(self.gvars.login_dialog.server, self.gvars.login_dialog.token, downloaded_db_fp,
                                                           req_body=self.req_body, signal_to_emit_stats=self.status_update_signal)   
             db_download_end_time = time.perf_counter()
             self.db_download_time =  "DB Download Time: %.02f seconds" % float(db_download_end_time-db_download_start_time)
             azq_utils.timer_print("overview_perf_dl_azm")
+            if self.closed:
+                raise Exception("window closed")
+
             print("ret:", ret)
             assert os.path.isfile(ret)
             assert os.path.isfile(downloaded_db_fp)
@@ -284,6 +287,9 @@ class server_overview_widget(QWidget):
                     shutil.move(src_db_fp, downloaded_db_fp)
                     shutil.rmtree(json_resp["tmp_dir_needs_delete"])
                 print("downloaded_db_fp_is_json_resp - mv db file from uapi's tmp to our tmp - DONE")
+            if self.closed:
+                raise Exception("window closed")
+
             self.progress_update_signal.emit(30)
             db_files = [downloaded_db_fp]  # uapi now rets direct and signle db, no zips
             azq_utils.timer_print("overview_perf_extract_azm")
@@ -303,6 +309,8 @@ class server_overview_widget(QWidget):
             self.combine_azm_time =  "Combine azm Time: %.02f seconds" % float(combine_azm_end_time-combine_azm_start_time)
             azq_utils.timer_print("overview_perf_combine_azm")
 
+            if self.closed:
+                raise Exception("window closed")
             azq_utils.timer_start("overview_perf_prepare_views")
             prepare_views_start_time = time.perf_counter()
             self.status_update_signal.emit("Prepare db views as per theme...")
@@ -312,7 +320,8 @@ class server_overview_widget(QWidget):
             prepare_views_end_time = time.perf_counter()
             self.prepare_views_time =  "Prepare Views Time: %.02f seconds" % float(prepare_views_end_time-prepare_views_start_time)
             azq_utils.timer_print("overview_perf_prepare_views")
-
+            if self.closed:
+                raise Exception("window closed")
             azq_utils.timer_start("overview_perf_create_layers")
             create_layers_start_time = time.perf_counter()
             self.status_update_signal.emit("Processing layers/legends as per theme...")
@@ -324,7 +333,8 @@ class server_overview_widget(QWidget):
             create_layers_end_time = time.perf_counter()
             self.create_layers_time =  "Create Layers Time: %.02f seconds" % float(create_layers_end_time-create_layers_start_time)
             azq_utils.timer_print("overview_perf_create_layers")
-
+            if self.closed:
+                raise Exception("window closed")
             self.status_update_signal.emit("DONE")
             self.progress_update_signal.emit(100)
             self.apply_done_signal.emit("SUCCESS")

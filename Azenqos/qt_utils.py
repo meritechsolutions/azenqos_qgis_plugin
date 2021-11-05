@@ -1,8 +1,9 @@
-from PyQt5.QtCore import Qt, QVariant, QRegExp, QSortFilterProxyModel
+from functools import partial
+
+from PyQt5.QtCore import Qt, QRegExp, QSortFilterProxyModel
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QMessageBox, QPushButton, QInputDialog, QLineEdit, QDialog, QFormLayout, QLabel, QListView, \
     QDialogButtonBox, QHBoxLayout, QCheckBox
-from functools import partial
 
 
 def msgbox(msg, title="Message", parent=None):

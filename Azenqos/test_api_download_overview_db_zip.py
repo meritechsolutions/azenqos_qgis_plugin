@@ -1,14 +1,11 @@
 import contextlib
-import glob
 import os
 import sqlite3
 import sys
-import zipfile
 
 import pandas as pd
 from PyQt5.QtWidgets import QApplication
 
-import azm_sqlite_merge
 import azq_server_api
 import azq_utils
 import integration_test_helpers

@@ -1,19 +1,19 @@
 import contextlib
+import multiprocessing as mp
 import os
 import shutil
 import sqlite3
 import sys
 import traceback
 import uuid
+from multiprocessing.pool import ThreadPool
 
 import numpy as np
 import pandas as pd
-import psutil
 
 import azq_utils
 import preprocess_azm
-from multiprocessing.pool import ThreadPool
-import multiprocessing as mp
+
 
 def merge(in_azm_list, n_proc=3):
     out_tmp_dir = os.path.join(azq_utils.tmp_gen_path(), "tmp_combine_db_result_{}".format(uuid.uuid4()))

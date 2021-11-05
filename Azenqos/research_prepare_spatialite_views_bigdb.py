@@ -1,12 +1,12 @@
-import sqlite3
 import contextlib
-import db_preprocess
-import shutil
-import os
-import azq_utils
 import datetime
-import db_layer_task
+import os
+import sqlite3
+
 import analyzer_vars
+import azq_utils
+import db_layer_task
+import db_preprocess
 
 
 def test():

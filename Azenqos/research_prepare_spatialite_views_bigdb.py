@@ -13,10 +13,12 @@ def test():
     ori_dbfp = "/data/overview_db_optimize/o_ori.db"
     dbfp = "research_prepare_views.db"
     gvars = analyzer_vars.analyzer_vars()
-    if os.path.isfile(dbfp):
-        os.remove(dbfp)
-    print("copy ori db to tmp")
-    assert 0 == os.system("cat {} > {}".format(ori_dbfp, dbfp))
+    recopy = True
+    if recopy:
+        if os.path.isfile(dbfp):
+            os.remove(dbfp)
+        print("copy ori db to tmp")
+        assert 0 == os.system("cat {} > {}".format(ori_dbfp, dbfp))
     assert os.path.isfile(dbfp)
     print("open dbcon")
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:

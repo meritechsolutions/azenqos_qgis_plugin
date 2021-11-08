@@ -108,7 +108,7 @@
         <item row="6" column="1">
          <widget class="QCheckBox" name="main_params_only_checkBox">
           <property name="text">
-           <string> </string>
+           <string/>
           </property>
          </widget>
         </item>
@@ -122,7 +122,21 @@
         <item row="7" column="1">
          <widget class="QCheckBox" name="auto_zoom_checkBox">
           <property name="text">
-           <string> </string>
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QPushButton" name="showDbStatsButton">
+          <property name="text">
+           <string>Show</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="dBStatsLabel">
+          <property name="text">
+           <string>DB Stats</string>
           </property>
          </widget>
         </item>

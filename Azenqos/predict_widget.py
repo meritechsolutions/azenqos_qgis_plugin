@@ -222,8 +222,7 @@ class predict_widget(QWidget):
             if self.apply_read_server_facts:
                 self.apply_read_server_facts = False
                 models_df = self.models_df
-                # params = sorted(list(models_df.param.unique()))
-                # not used yet - self.ui.param_combo.addItems(params)
+                models_df = sort_models_df(models_df)
                 models = models_df.apply(model_row_to_text_sum, axis=1)
                 print("models:", models)
                 self.ui.model_combo.addItems(models)
@@ -280,6 +279,7 @@ class predict_widget(QWidget):
                     self.gvars.login_dialog.server,
                     self.gvars.login_dialog.token
                 )
+                print("models_df:", models_df)
                 self.models_df = models_df
                 print("models_df:", models_df)
                 result_text = "SUCCESS - server ai models list read successfully."
@@ -343,9 +343,26 @@ class predict_widget(QWidget):
             self.gvars.main_window.dereg_map_tool_click_point(self.map_tool_click_point)
         self.closed = True
 
-
+def sort_models_df(models_df):
+    models_df["rat_g"] = models_df.param.apply(lambda param: param_to_rat_g(param))
+    models_df = models_df.sort_values(["y", "m", "rat_g", "grid_size_meters"], ascending=[False, False, False, True])
+    return models_df
 
 def model_row_to_text_sum(row):
-    return "{}_{}-{} ({} logs) {}".format(row.param.replace("_1", ""), "%04d" % int(row.y), "%02d" % int(row.m), row.n_logs,
+    ret = "{}G_{}_{}-{} ({} logs) {}".format(int(row.rat_g), row.param.replace("_1", ""), "%04d" % int(row.y), "%02d" % int(row.m) if row.m != 0 else "whole_year", row.n_logs,
                                     "combined model" if row.grid_size_meters == -1 else "model per grid: {} m.".format(
                                         row.grid_size_meters))
+
+    return ret
+
+
+def param_to_rat_g(param):
+    if param.startswith("lte_"):
+        return 4
+    if param.startswith("wcdma_"):
+        return 3
+    if param.startswith("nr_"):
+        return 5
+    if param.startswith("gsm_"):
+        return 2
+    return -1

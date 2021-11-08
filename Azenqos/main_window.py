@@ -1500,7 +1500,7 @@ Log_hash list: {}""".format(
             i = -1
             for sf in layer.selectedFeatures():
                 i += 1
-                print("selectChanged selectedfeature rect sf i:", i)
+                print("selectChanged selectedfeature rect sf i:", i, sf)
                 h = QgsHighlight(canvas, sf.geometry(), layer)
                 # set highlight symbol properties
                 h.setColor(QColor(0, 0, 255, 255))

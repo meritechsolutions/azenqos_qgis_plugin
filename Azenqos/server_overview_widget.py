@@ -10,6 +10,7 @@ import time
 import traceback
 import uuid
 from functools import partial
+from datatable import TableWindow
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
@@ -60,6 +61,7 @@ class server_overview_widget(QWidget):
         self.status_update_signal.connect(self.status)
         self.ui.phone_filter_pushButton.clicked.connect(self.on_click_phone_filter)
         self.ui.group_filter_pushButton.clicked.connect(self.on_click_group_filter)
+        self.ui.showDbStatsButton.clicked.connect(self.showDbStats)
         self.main_params_only_checkBox.setChecked(True)
         enable_main_params_slot = partial(self.use_main_params_only, self.main_params_only_checkBox)
         disable_main_params_slot = partial(self.use_all_params, self.main_params_only_checkBox)
@@ -227,6 +229,21 @@ class server_overview_widget(QWidget):
             self.ui.status_label.setText(msg)
             self.on_processing(False)
 
+    def showDbStats(self):
+        print("self.overview_list_df", self.overview_list_df)
+        print("len:", len(self.overview_list_df))
+        df = self.overview_list_df.copy()
+        df.rename(columns={"start_time":"gen_start_time","end_time":"gen_done_time"}, inplace=True)
+        widget = TableWindow(
+            self,
+            "Server overview DB list",
+            custom_df=df,
+            gc=self.gvars
+        )
+        wd = WidgetDialog(widget, self)
+        wd.resize(600,400)
+        wd.exec()
+
     def apply_worker_func(self):
         try:
             assert self.gvars.is_logged_in()
@@ -343,6 +360,13 @@ class server_overview_widget(QWidget):
             return -1
         return -2
 
-
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout)
+class WidgetDialog(QDialog):
+    def __init__(self, widget, parent=None):
+        super(WidgetDialog, self).__init__(parent)
+        layout = QVBoxLayout(self)
+        # nice widget for editing the date
+        self.widget = widget
+        layout.addWidget(self.widget)
 
     

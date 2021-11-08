@@ -345,7 +345,11 @@ class predict_widget(QWidget):
 
 def sort_models_df(models_df):
     models_df["rat_g"] = models_df.param.apply(lambda param: param_to_rat_g(param))
-    models_df = models_df.sort_values(["y", "m", "rat_g", "grid_size_meters"], ascending=[False, False, False, True])
+    models_df["disp_order"] = models_df.param.apply(lambda param: param_to_disp_order(param))
+    models_df = models_df.sort_values(["y", "m", "disp_order", "grid_size_meters"], ascending=[False, False, True, True])
+    whole_year_part = models_df[models_df.m == 0]
+    monthly_part = models_df[~(models_df.m == 0)]
+    models_df = pd.concat([whole_year_part, monthly_part], ignore_index=True)
     return models_df
 
 def model_row_to_text_sum(row):
@@ -366,3 +370,14 @@ def param_to_rat_g(param):
     if param.startswith("gsm_"):
         return 2
     return -1
+
+def param_to_disp_order(param):
+    if param.startswith("lte_"):
+        return 1
+    if param.startswith("wcdma_"):
+        return 2
+    if param.startswith("nr_"):
+        return 3
+    if param.startswith("gsm_"):
+        return 4
+    return 99

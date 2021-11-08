@@ -201,6 +201,7 @@ class server_overview_widget(QWidget):
                 self.progress_update_signal.emit(90)
                 if self.gvars.qgis_iface:
                     db_layer_task.ui_thread_add_layers_to_qgis(self.gvars, self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer)
+                    db_layer_task.set_active_layer(self.gvars, layer_name="overview_lte_inst_rsrp_1")
                 self.progress_update_signal.emit(100)
                 self.status("Completed in %.02f secs \n(%s\n%s\n%s\n%s)" % (dur, self.db_download_time, self.combine_azm_time, self.prepare_views_time, self.create_layers_time))
                 print("self.auto_zoom", self.auto_zoom)

@@ -221,9 +221,8 @@ class predict_widget(QWidget):
         else:
             if self.apply_read_server_facts:
                 self.apply_read_server_facts = False
-                models_df = self.models_df
-                models_df = sort_models_df(models_df)
-                models = models_df.apply(model_row_to_text_sum, axis=1)
+                self.models_df = sort_models_df(self.models_df)
+                models = self.models_df.apply(model_row_to_text_sum, axis=1)
                 print("models:", models)
                 self.ui.model_combo.addItems(models)
             else:

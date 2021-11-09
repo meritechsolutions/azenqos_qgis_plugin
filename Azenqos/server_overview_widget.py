@@ -12,9 +12,11 @@ import uuid
 from functools import partial
 from datatable import TableWindow
 
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QDir
 from PyQt5.QtWidgets import (
     QWidget,
+    QFileDialog,
+    QMessageBox
 )
 from PyQt5.uic import loadUi
 
@@ -24,6 +26,7 @@ import azq_utils
 import db_layer_task
 import db_preprocess
 import qt_utils
+import import_db_dialog
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
@@ -74,8 +77,10 @@ class server_overview_widget(QWidget):
         self.auto_zoom_checkBox.stateChanged.connect(
             lambda x: enable_auto_zoom_slot() if x else disable_auto_zoom_slot()
         )
+        self.select_theme_lineEdit.setText("Default")
+        self.select_theme_pushButton.clicked.connect(self.choose_theme)
         self.apply_read_server_facts = True
-        self.setMinimumSize(320, 350)
+        self.setMinimumSize(403, 500)
         self.apply()
 
     def use_main_params_only(self, checkbox):
@@ -89,6 +94,14 @@ class server_overview_widget(QWidget):
 
     def auto_zoom_disable(self, checkbox):
         self.auto_zoom = False
+
+    def choose_theme(self):
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Select file", QDir.rootPath(), "*.xml"
+        )
+        self.select_theme_lineEdit.setText(
+            fileName
+        ) if fileName else self.select_theme_lineEdit.setText("Default")
 
     def on_processing(self, processing, processing_text="Processing..."):
         if processing:
@@ -210,6 +223,17 @@ class server_overview_widget(QWidget):
 
     def apply(self):
         self.ui.status_label.setText("")
+        if self.select_theme_lineEdit.text() != "Default" and not os.path.isfile(
+            self.select_theme_lineEdit.text()
+        ):
+            QMessageBox.critical(
+                None,
+                "Theme file not found",
+                "Please choose a theme xml to use...",
+                QMessageBox.Cancel,
+            )
+            return
+        import_db_dialog.check_theme(theme_fp = self.select_theme_lineEdit.text())
         self.on_processing(True)
         try:
             azq_utils.timer_start("overview_apply")

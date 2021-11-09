@@ -10,6 +10,12 @@
     <height>401</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -126,6 +132,13 @@
           </property>
          </widget>
         </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="dBStatsLabel">
+          <property name="text">
+           <string>DB Stats</string>
+          </property>
+         </widget>
+        </item>
         <item row="8" column="1">
          <widget class="QPushButton" name="showDbStatsButton">
           <property name="text">
@@ -133,10 +146,27 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="0">
-         <widget class="QLabel" name="dBStatsLabel">
+        <item row="9" column="0">
+         <widget class="QLabel" name="label_8">
           <property name="text">
-           <string>DB Stats</string>
+           <string>Theme file</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1">
+         <widget class="QLineEdit" name="select_theme_lineEdit"/>
+        </item>
+        <item row="10" column="0">
+         <widget class="QLabel" name="label_10">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="1">
+         <widget class="QPushButton" name="select_theme_pushButton">
+          <property name="text">
+           <string>Select Theme...</string>
           </property>
          </widget>
         </item>

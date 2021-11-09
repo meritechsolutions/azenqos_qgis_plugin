@@ -1,7 +1,6 @@
 import contextlib
 import json
 import os
-import shutil
 import signal
 import sqlite3
 import sys

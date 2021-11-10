@@ -2558,7 +2558,7 @@ Log_hash list: {}""".format(
                     df = azq_cell_file.read_cellfiles(self.gc.cell_files, rat, add_sector_polygon_wkt_sector_size_meters=sector_size_meters)
                     csv_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_" + rat + ".csv")
                     if len(df):
-                        df.to_csv(csv_fp)
+                        df.to_csv(csv_fp, encoding='utf-8')
                         uri = pathlib.Path(csv_fp).as_uri()
                         uri += "?crs=epsg:4326&wktField={}".format('sector_polygon_wkt')
                         print("csv uri: {}".format(uri))

@@ -30,7 +30,20 @@ import db_preprocess
 import azq_theme_manager
 import login_dialog
 
-
+def check_theme(theme_fp):
+    if theme_fp == "Default":
+        theme_fp = azq_theme_manager.get_ori_default_theme()
+    azq_theme_manager.set_default_theme_file(theme_fp)
+    params_in_theme = (
+        azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
+    )
+    if not params_in_theme:
+        raise Exception(
+            "Invalid theme file: failed to read any params from theme file: {}".format(
+                theme_fp
+            )
+        )
+    print("params_in_theme:", params_in_theme)
 
 class import_db_dialog(QDialog):
     import_done_signal = pyqtSignal(str)
@@ -528,7 +541,6 @@ class import_db_dialog(QDialog):
         self.setIncrementValue()
         return True
 
-
     def addDatabase(self):
         # check db
         assert os.path.isfile(self.databasePath)
@@ -547,20 +559,7 @@ class import_db_dialog(QDialog):
                     print("WARNING: check db failed exception:", exstr)
 
                 # check theme
-                theme_fp = self.themePathLineEdit.text()
-                if theme_fp == "Default":
-                    theme_fp = azq_theme_manager.get_ori_default_theme()
-                azq_theme_manager.set_default_theme_file(theme_fp)
-                params_in_theme = (
-                    azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
-                )
-                if not params_in_theme:
-                    raise Exception(
-                        "Invalid theme file: failed to read any params from theme file: {}".format(
-                            theme_fp
-                        )
-                    )
-                print("params_in_theme:", params_in_theme)
+                check_theme(theme_fp = self.themePathLineEdit.text())
                 db_preprocess.prepare_spatialite_views(dbcon)
                 dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
 

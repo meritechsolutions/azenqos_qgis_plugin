@@ -479,9 +479,9 @@ Log_hash list: {}""".format(
             except:
                 pass
         if has_wave_file:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
         else:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
 
     ############# NR menu slots
     @pyqtSlot()

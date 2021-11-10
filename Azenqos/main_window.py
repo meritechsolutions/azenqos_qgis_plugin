@@ -2563,33 +2563,37 @@ Log_hash list: {}""".format(
                         uri += "?crs=epsg:4326&wktField={}".format('sector_polygon_wkt')
                         print("csv uri: {}".format(uri))
                         layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
-                        param_att_rat = {'gsm': 'bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
-                        param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'wcdma_aset_sc_1', 'lte': 'lte_physical_cell_id_1', 'nr': 'nr_servingbeam_pci_1'}
-                        param_name_in_cell = param_att_rat[rat]
-                        param_name_in_db = param_db_rat[rat]
-                        color_range_list = []
-                        param_with_color_df = cell_layer_task.cell_in_logs_with_color(self.gc.cell_files, self.gc.databasePath, rat)
-                        param_with_color_df[param_name_in_db] = param_with_color_df[param_name_in_db].astype(int)
-                        print(param_with_color_df)
-                        fes = layer.getFeatures()
-                        for fe in fes:
-                            param_val_in_fe = int(fe.attribute(param_name_in_cell))
-                            print(param_val_in_fe, list(param_with_color_df[param_name_in_db]))
-                            if param_val_in_fe in list(param_with_color_df[param_name_in_db]):
-                                tmp_df = param_with_color_df[param_with_color_df[param_name_in_db] == param_val_in_fe].reset_index()
-                                color = tmp_df.loc[0, 'ColorXml']
-                            else:
-                                color = '#666666'
+                        try:
+                            param_att_rat = {'gsm': 'bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
+                            param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'wcdma_aset_sc_1', 'lte': 'lte_physical_cell_id_1', 'nr': 'nr_servingbeam_pci_1'}
+                            param_name_in_cell = param_att_rat[rat]
+                            param_name_in_db = param_db_rat[rat]
+                            color_range_list = []
+                            param_with_color_df = cell_layer_task.cell_in_logs_with_color(self.gc.cell_files, self.gc.databasePath, rat)
+                            param_with_color_df[param_name_in_db] = param_with_color_df[param_name_in_db].astype(int)
+                            print(param_with_color_df)
+                            fes = layer.getFeatures()
+                            for fe in fes:
+                                param_val_in_fe = int(fe.attribute(param_name_in_cell))
+                                print(param_val_in_fe, list(param_with_color_df[param_name_in_db]))
+                                if param_val_in_fe in list(param_with_color_df[param_name_in_db]):
+                                    tmp_df = param_with_color_df[param_with_color_df[param_name_in_db] == param_val_in_fe].reset_index()
+                                    color = tmp_df.loc[0, 'ColorXml']
+                                else:
+                                    color = '#666666'
 
-                            symbol = QgsSymbol.defaultSymbol(layer.geometryType())
-                            symbol.setColor(QColor(color))
-                            color_per_param = QgsRendererRange(param_val_in_fe, param_val_in_fe, symbol, str(param_val_in_fe))
-                            color_range_list.append(color_per_param)
+                                symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+                                symbol.setColor(QColor(color))
+                                color_per_param = QgsRendererRange(param_val_in_fe, param_val_in_fe, symbol, str(param_val_in_fe))
+                                color_range_list.append(color_per_param)
 
-                        renderer = QgsGraduatedSymbolRenderer(param_name_in_cell, color_range_list)
-                        renderer.setMode(QgsGraduatedSymbolRenderer.Custom)
-
-                        layer.setRenderer(renderer)
+                            renderer = QgsGraduatedSymbolRenderer(param_name_in_cell, color_range_list)
+                            renderer.setMode(QgsGraduatedSymbolRenderer.Custom)
+                            layer.setRenderer(renderer)
+                        except:
+                            type_, value_, traceback_ = sys.exc_info()
+                            exstr = str(traceback.format_exception(type_, value_, traceback_))
+                            print("WARNING: add cell file color for rat {} - exception: {}".format(rat, exstr))
                         QgsProject.instance().addMapLayers([layer])
                         pass
                 except:

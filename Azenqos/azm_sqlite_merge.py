@@ -15,7 +15,7 @@ import azq_utils
 import preprocess_azm
 
 
-def merge(in_azm_list, n_proc=3):
+def merge(in_azm_list, n_proc=3, progress_update_signal=None):
     out_tmp_dir = os.path.join(azq_utils.tmp_gen_path(), "tmp_combine_db_result_{}".format(uuid.uuid4()))
     os.makedirs(out_tmp_dir)
     assert os.path.isdir(out_tmp_dir)
@@ -30,9 +30,12 @@ def merge(in_azm_list, n_proc=3):
         tmp_dirs = []
         dbfps = []
         n = len(in_azm_list)
+        extract_progress = 15 / n
 
         # extract dbs of all azms to their own temp dirs
         for i in range(n):
+            if progress_update_signal is not None:
+                progress_update_signal.emit(extract_progress*(i+1))
             is_last_azm = i == n-1
             tmp_dir = os.path.join(azq_utils.tmp_gen_path(), "tmp_combine_{}_azm_{}".format(combine_uuid, i))
             os.makedirs(tmp_dir)
@@ -71,6 +74,8 @@ def merge(in_azm_list, n_proc=3):
         check_col_diff = n_azm_vers > 1
         print("n_azm_vers:", n_azm_vers)
         print("check_col_diff:", check_col_diff)
+        if progress_update_signal is not None:
+            progress_update_signal.emit(20)
 
         sql_scripts = None
 
@@ -84,9 +89,13 @@ def merge(in_azm_list, n_proc=3):
             pool.close()
         azq_utils.timer_print("perf_dump_threaded")
         print("=== dumping all sqlite logs concurrently... done")
+        merge_progress = 30 / len(azm_df)
 
         first_azm_table_to_cols_dict = {}
         for index, row in azm_df.iterrows():
+            if progress_update_signal is not None:
+
+                progress_update_signal.emit(merge_progress*(index+1)+20)
             print("=== dumping db to merged azm [{}/{}] ===".format(index+1, len(azm_df)))
             is_first_azm = index == azm_df.index[0]
             is_last_azm = index == azm_df.index[-1]

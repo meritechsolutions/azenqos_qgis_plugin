@@ -50,7 +50,8 @@ class server_overview_widget(QWidget):
     def setupUi(self):
         # keep incase thread calls self after closed - self.setAttribute(Qt.WA_DeleteOnClose)
         self.ui = loadUi(azq_utils.get_module_fp("server_overview_widget.ui"), self)
-        self.setWindowTitle("Server logs overview")
+        title = "ภาพรวมผลการวัดสัญญาณ" if azq_utils.is_lang_th() else "Server logs overview"
+        self.setWindowTitle(title)
         now = azq_utils.datetime_now()
         last_day = now.replace(month=12, day=31)
         first_day = now.replace(month=1, day=1)

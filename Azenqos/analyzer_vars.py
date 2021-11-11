@@ -94,6 +94,9 @@ class analyzer_vars:
     def is_logged_in(self):
         return self.login_dialog and self.login_dialog.token
 
+    def is_easy_mode(self):
+        return self.easy_overview_mode
+
 def get_pref_fp():
     import azq_utils
     return azq_utils.get_settings_fp("preferences.ini")

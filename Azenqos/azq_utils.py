@@ -2004,3 +2004,32 @@ def timer_get_dur(tname):
         timer_start(tname)
         return 0
     return 0
+
+
+def get_env_azq_lang():
+    key = "AZQ_LANG"
+    if key in os.environ:
+        return os.environ[key]
+    return "en"
+
+def is_lang_th():
+    return get_env_azq_lang() == "th"
+
+th_translate_replace_dict = {
+    "combined model": "ชุดทำนายร่วม",
+    "model per grid": "ชุดทำนายแยกตาราง",
+    "whole_year": "ทั้งปี",
+    "lte_inst_rsrp": "ความแรงสัญญาณ",
+    "wcdma_aset_rscp": "ความแรงสัญญาณ",
+    "nr_servingbeam_ss_rsrp": "ความแรงสัญญาณ",
+    "prediction_from": "ผลทำนายจาก",
+}
+
+def th_translate(msg):
+    if msg is None:
+        return None
+    assert isinstance(msg, str)
+    for key in th_translate_replace_dict:
+        val = th_translate_replace_dict[key]
+        msg = msg.replace(key, val)
+    return msg

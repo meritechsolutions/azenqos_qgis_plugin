@@ -165,6 +165,7 @@ class main_window(QMainWindow):
             self.canvas.selectionChanged.connect(self.selectChanged)
             self.add_created_layers_signal.connect(self._add_created_layers)
             self.add_map_layer()
+            self.set_project_crs()
         try:
             QgsProject.instance().layersAdded.connect(self.on_layers_added)
         except:
@@ -2433,8 +2434,6 @@ Log_hash list: {}""".format(
     def slot_trigger_zoom_to_active_layer(self, msg):
         print("slot_trigger_zoom_to_active_layer")
         self.gc.qgis_iface.zoomToActiveLayer()
-        self.set_project_crs()
-
 
     def add_map_layer(self):
         layers_names = []

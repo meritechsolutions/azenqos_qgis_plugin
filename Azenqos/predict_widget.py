@@ -49,11 +49,14 @@ class predict_widget(QWidget):
     def setupUi(self):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.ui = loadUi(azq_utils.get_module_fp("server_predict_widget.ui"), self)
-        self.setWindowTitle("Server AI prediction")
+        title = "ทำนายความแรงสัญญาณด้วย AI" if azq_utils.is_lang_th() else "Server AI prediction"
+        self.setWindowTitle(title)
         self.ui.mode_combo.addItems(["Single point", "Multi point from CSV", "Multi point from QGIS Layer"])
         self.ui.lat_lon_le.setText(azq_utils.read_settings_file("prev_predict_lat_lon"))
-        self.ui.band_le.setText(azq_utils.read_settings_file("prev_predict_band"))
-
+        pb = azq_utils.read_settings_file("prev_predict_band")
+        if not pb:
+            pb = "40"
+        self.ui.band_le.setText(pb)
         self.ui.mode_combo.currentIndexChanged.connect(self.on_input_mode_changed)
         self.applyButton.clicked.connect(self.apply)
         self.apply_done_signal.connect(self.apply_done)
@@ -222,7 +225,7 @@ class predict_widget(QWidget):
             if self.apply_read_server_facts:
                 self.apply_read_server_facts = False
                 self.models_df = sort_models_df(self.models_df)
-                models = self.models_df.apply(model_row_to_text_sum, axis=1)
+                models = self.models_df.apply(self.model_row_to_text_sum, axis=1)
                 print("models:", models)
                 self.ui.model_combo.addItems(models)
             else:
@@ -230,7 +233,8 @@ class predict_widget(QWidget):
                     self.ui.result_text.setHtml(msg)
                     self.status("Adding prediction to QGIS...")
                     assert "lat" in self.ret_df.columns
-                    azq_utils.create_layer_in_qgis(None, self.ret_df, "prediction_"+model_row_to_text_sum(self.model), theme_param=self.model.param)
+                    ln = (azq_utils.th_translate("prediction_from_") if self.gvars.is_easy_mode() else "prediction_from_") + self.model_row_to_text_sum(self.model)
+                    azq_utils.create_layer_in_qgis(None, self.ret_df, ln, theme_param=self.model.param)
                     assert "lon" in self.ret_df.columns
                     self.status("Adding prediction to QGIS... done")
                 else:
@@ -257,12 +261,13 @@ class predict_widget(QWidget):
             )
             # daemon threads close when program closes
             self.apply_thread.start()
-        except:
+        except Exception as ex:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             msg = "WARNING: apply failed - exception: {}".format(exstr)
+            msg_short = "Error: {}".format(ex)
             print(msg)
-            qt_utils.msgbox(msg, "Failed", self)
+            qt_utils.msgbox(msg_short, "Failed", self)
             self.ui.result_text.setText(msg)
             self.on_processing(False)
 
@@ -325,7 +330,7 @@ class predict_widget(QWidget):
                  <br/>
                  <br/> 
                  For all samples please see/export the attribute table of the created qgis layer.
-                """.format(model_row_to_text_sum(self.model), self.gvars.login_dialog.server, n, head_n, self.ret_df.head(head_n).to_html(), self.ret_df.describe().to_html())
+                """.format(self.model_row_to_text_sum(self.model), self.gvars.login_dialog.server, n, head_n, self.ret_df.head(head_n).to_html(), self.ret_df.describe().to_html())
                 self.progress_update_signal.emit(100)
             self.apply_done_signal.emit(result_text)
             return 0
@@ -342,6 +347,18 @@ class predict_widget(QWidget):
             self.gvars.main_window.dereg_map_tool_click_point(self.map_tool_click_point)
         self.closed = True
 
+    def model_row_to_text_sum(self, row):
+        ret = "{}G_{}_{}-{} ({} logs) {}".format(int(row.rat_g), row.param.replace("_1", ""), "%04d" % int(row.y),
+                                                 "%02d" % int(row.m) if row.m != 0 else "whole_year", row.n_logs,
+                                                 "combined model" if row.grid_size_meters == -1 else "model per grid: {} m.".format(
+                                                     row.grid_size_meters))
+
+        if azq_utils.is_lang_th() and self.gvars.is_easy_mode():
+            ret = azq_utils.th_translate(ret)
+
+        return ret
+
+
 def sort_models_df(models_df):
     models_df["rat_g"] = models_df.param.apply(lambda param: param_to_rat_g(param))
     models_df["disp_order"] = models_df.param.apply(lambda param: param_to_disp_order(param))
@@ -350,13 +367,6 @@ def sort_models_df(models_df):
     monthly_part = models_df[~(models_df.m == 0)]
     models_df = pd.concat([whole_year_part, monthly_part], ignore_index=True)
     return models_df
-
-def model_row_to_text_sum(row):
-    ret = "{}G_{}_{}-{} ({} logs) {}".format(int(row.rat_g), row.param.replace("_1", ""), "%04d" % int(row.y), "%02d" % int(row.m) if row.m != 0 else "whole_year", row.n_logs,
-                                    "combined model" if row.grid_size_meters == -1 else "model per grid: {} m.".format(
-                                        row.grid_size_meters))
-
-    return ret
 
 
 def param_to_rat_g(param):

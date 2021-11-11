@@ -2019,10 +2019,12 @@ th_translate_replace_dict = {
     "combined model": "ชุดทำนายร่วม",
     "model per grid": "ชุดทำนายแยกตาราง",
     "whole_year": "ทั้งปี",
-    "lte_inst_rsrp": "ความแรงสัญญาณ",
-    "wcdma_aset_rscp": "ความแรงสัญญาณ",
-    "nr_servingbeam_ss_rsrp": "ความแรงสัญญาณ",
+    "lte_inst_rsrp": "ความแรงสัญญาณ_4G",
+    "wcdma_aset_rscp": "ความแรงสัญญาณ_3G",
+    "nr_servingbeam_ss_rsrp": "ความแรงสัญญาณ_5G",
+    "gsm_rxlev_sub_dbm": "ความแรงสัญญาณ_2G",
     "prediction_from": "ผลทำนายจาก",
+    "overview":"ภาพรวม",
 }
 
 def th_translate(msg):

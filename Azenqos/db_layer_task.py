@@ -89,9 +89,13 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                             visible = False
                             if table in system_sql_query.rat_to_main_param_dict.values():
                                 visible = True
+                            dn = display_name_prefix+param
+                            if azq_utils.is_lang_th() and gc.is_easy_mode():
+                                dn = dn.replace("_1", "", 1) # rm trailing _1
+                                dn = azq_utils.th_translate(dn)
                             layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
                                 db_fp, table, visible=visible,
-                                style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=display_name_prefix+param, theme_param=param, custom_sql=custom_sql
+                                style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=dn, theme_param=param, custom_sql=custom_sql
                             )
                             layer_id_to_visible_flag_dict[layer.id()] = visible
                             table_to_layer_dict[table] = layer

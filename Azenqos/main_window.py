@@ -1918,6 +1918,7 @@ Log_hash list: {}""".format(
         self.is_leg_nr_tables = preprocess_azm.is_leg_nr_tables()
 
     def timeChange(self):
+        self.gc.selected_row_log_hash = None  # this change comes from the timeslider so set selected_row_log_hash to None
         ret = self.timechange_to_service_counter.inc_and_get()
         print(
             "%s: timeChange: timechange_to_service_counter: %d"

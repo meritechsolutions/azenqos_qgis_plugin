@@ -5,6 +5,7 @@ import pathlib
 import shutil
 import threading
 import traceback
+import azq_cell_file
 
 import PyQt5
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -1504,8 +1505,8 @@ Log_hash list: {}""".format(
                 print("selectChanged selectedfeature rect sf i:", i, sf)
                 h = QgsHighlight(canvas, sf.geometry(), layer)
                 # set highlight symbol properties
-                h.setColor(QColor(0, 0, 255, 255))
-                h.setWidth(2)
+                h.setColor(QColor(0, 0, 0, 255))
+                h.setWidth(3)
                 self.gc.highlight_list.append(h)
                 canvas.flashFeatureIds(layer, layer.selectedFeatureIds(), flashes=1)
                 break
@@ -1581,9 +1582,6 @@ Log_hash list: {}""".format(
         self.on_actionAdd_Layer_triggered()
 
     def selectCells(self):
-        if not self.gc.db_fp:
-            qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
-            return
         if self.qgis_iface:
 
             fileNames, _ = QFileDialog.getOpenFileNames(
@@ -1604,7 +1602,12 @@ Log_hash list: {}""".format(
                 return
             assert self.gc.cell_files
             self.add_cell_layers()  # this will set cellfiles
-            self.add_spider_layer()
+            if self.gc.db_fp:
+                self.add_spider_layer()
+            else:
+                pass
+                # qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
+                # return
 
     def pauseTime(self):
         self.gc.timeSlider.setEnabled(True)
@@ -1662,7 +1665,8 @@ Log_hash list: {}""".format(
                     continue
                 print("layer.name()", layer.name())
                 # Loop through all features in a rect near point xy
-                offset = 0.000180
+                offset_meters = 300
+                offset = azq_cell_file.METER_IN_WGS84 * offset_meters
                 if self.is_legacy_indoor:
                     offset = 0.01
                 p1 = QgsPointXY(point.x() - offset, point.y() - offset)
@@ -2047,7 +2051,7 @@ Log_hash list: {}""".format(
                 layer.removeSelection()
                 end_dt = datetime.datetime.fromtimestamp(self.gc.currentTimestamp)
                 start_dt = end_dt - datetime.timedelta(
-                    seconds=(params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS / 1000.0)
+                    seconds=10.0
                 )
                 # 2020-10-08 15:35:55.431000
                 filt_expr = ""
@@ -2071,7 +2075,6 @@ Log_hash list: {}""".format(
                     if isinstance(lft, PyQt5.QtCore.QDateTime):
                         print("ltf2: {} type: {}".format(lft, type(lft)))  # - sometimes comes as qdatetime we cant add
                         time_list.append(lft.toMSecsSinceEpoch())
-
 
                 if len(fids) and len(time_list):
                     print("time_list: {}".format(time_list))

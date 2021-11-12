@@ -481,9 +481,9 @@ Log_hash list: {}""".format(
             except:
                 pass
         if has_wave_file:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
         else:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
 
     ############# NR menu slots
     @pyqtSlot()
@@ -498,7 +498,7 @@ Log_hash list: {}""".format(
         import nr_data_query
         self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
         widget = TableWindow(
@@ -507,7 +507,8 @@ Log_hash list: {}""".format(
             refresh_func_or_py_eval_str_or_sql_str,
             time_list_mode=time_list_mode,
             stretch_last_row=stretch_last_row,
-            options=options
+            options=options,
+            func_key=func_key
         )
         self.add_subwindow_with_widget(swa, widget)
         #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -617,20 +618,20 @@ Log_hash list: {}""".format(
         print("action old nr radio params")
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
+            self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
+            self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name)
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
         print("action nr serving neigh")
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
+            self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
+            self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name)
 
     @pyqtSlot()
     def on_action5GNR_Beams_triggered(self):
@@ -643,10 +644,10 @@ Log_hash list: {}""".format(
         print("action old nr data")
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
+            self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data")
+            self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name)
 
     ############# LTE menu slots
     @pyqtSlot()
@@ -2641,7 +2642,7 @@ Log_hash list: {}""".format(
                         )
 
                         hh_state = self.current_workspace_settings.value(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i)
+                            GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i)
                         )
 
                         refresh_df_func_or_py_eval_str = self.current_workspace_settings.value(
@@ -2656,7 +2657,7 @@ Log_hash list: {}""".format(
                                                                                                              options))
                         if func is not None:
                             # on..._triggered func like on L3 triggered etc
-                            func_key = "self." + func + "()"
+                            func_key = "self." + func + "()" 
                             print(func_key)
                             eval(func_key)
                         else:

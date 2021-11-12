@@ -1921,7 +1921,7 @@ Log_hash list: {}""".format(
 
         ######### this change comes from the timeslider so set selected_row_log_hash
         self.gc.selected_row_log_hash = None
-        if self.gc.single_point_match_dict is not None:
+        if self.gc.selected_point_match_dict is not None:
             self.gc.selected_point_match_dict["log_hash"] = None
         #################
 

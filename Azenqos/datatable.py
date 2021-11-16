@@ -8,6 +8,9 @@ import sqlite3
 import sys
 import threading
 import traceback
+import pyqtgraph as pg
+import wave
+import datetime
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
@@ -681,6 +684,7 @@ class TableWindow(QWidget):
                 azq_utils.tmp_gen_path(),
                 row_sr["wave_file"].replace(".wav", "_polqa.txt"),
             )
+            side["time"] = row_sr["time"]
             self.detailWidget = DetailWidget(
                 self.gc, self, cellContent, name, side
             )
@@ -1121,13 +1125,23 @@ class DetailWidget(QDialog):
             QIcon(QPixmap(os.path.join(dirname, "res", "save_wav.png")))
         )
         self.saveBtn.setText("Save file")
+        self.start_time_s = azq_utils.datetimeStringtoTimestamp(str(self.side["time"]))
+        self.framerate = 0
+        
+        pg.setConfigOptions(background="#c0c0c0", foreground="k", antialias=True)
+        self.wave_sine = pg.GraphicsWindow()
+        self.wave_sine.scene().sigMouseClicked.connect(self.on_click)
+        self.v_line = pg.InfiniteLine(
+            angle=90, movable=False, pen=pg.mkPen("k")
+        )
 
         self.textEdit = QTextEdit()
         self.textEdit.setReadOnly(True)
 
         gridlayout.addWidget(self.playBtn, 0, 0, 1, 2)
         gridlayout.addWidget(self.saveBtn, 0, 2, 1, 1)
-        gridlayout.addWidget(self.textEdit, 1, 0, 1, 3)
+        gridlayout.addWidget(self.wave_sine, 1, 0, 1, 3)
+        gridlayout.addWidget(self.textEdit, 2, 0, 2, 3)
 
         self.playBtn.clicked.connect(self.playWavFile)
         self.saveBtn.clicked.connect(self.saveWaveFile)
@@ -1138,10 +1152,43 @@ class DetailWidget(QDialog):
         f.close()
 
         self.polqaWavFile = (self.side["wav_file"])
+        self.setWave()
         self.resize(self.width, self.height)
         self.show()
         self.raise_()
         self.activateWindow()
+
+    def draw_cursor(self, x):
+        self.v_line.setPos(x)
+        
+    def on_click(self, event):
+        x = self.wave_sine.axes.vb.mapSceneToView(event.scenePos()).x()
+        self.draw_cursor(x)
+        sliderValue = (x/self.framerate)+self.start_time_s - self.gc.minTimeValue
+        sliderValue = round(sliderValue, 3)
+        self.gc.timeSlider.setValue(sliderValue)
+        # self.timeSelected.emit(x)
+        
+    def setWave(self):
+        if self.polqaWavFile:
+            if os.path.isfile(self.polqaWavFile):
+                wf = wave.open(self.polqaWavFile, 'rb')
+                self.framerate = float(wf.getframerate())
+                buf = wf.readframes(wf.getnframes())
+                data = np.frombuffer(buf, dtype="int16")
+                self.wave_sine.axes = self.wave_sine.addPlot(
+                    axisItems={"bottom": TimeAxisItem(orientation="bottom", framerate=self.framerate, start_time = self.start_time_s)}
+                )
+                self.wave_sine.axes.addItem(self.v_line, ignoreBounds=True)
+                self.wave_sine.axes.plot(data,
+                    pen=pg.mkPen("b"),)
+                self.wave_sine.axes.setLimits(
+                    xMin=0,
+                    xMax=wf.getnframes(),
+                    yMin=-100000,
+                    yMax=100000
+                )
+                self.draw_cursor(0)
 
     def saveWaveFile(self):
         wavfilepath = str(self.polqaWavFile)
@@ -1223,6 +1270,22 @@ class TableModel(QAbstractTableModel):
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
+def epochToDateString(epoch):
+    try:
+        return datetime.datetime.fromtimestamp(epoch).strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
+    except:
+        return ""
+
+class TimeAxisItem(pg.AxisItem):
+    """Internal timestamp for x-axis"""
+
+    def __init__(self, framerate, start_time, *args, **kwargs):
+        super(TimeAxisItem, self).__init__(*args, **kwargs)
+        self.framerate = framerate
+        self.start_time = start_time
+
+    def tickStrings(self, values, scale, spacing):
+        return [epochToDateString(self.start_time+(value/self.framerate)) for value in values]
 
 class PdTableModel(QAbstractTableModel):
     def __init__(self, df, parent=None, *args):

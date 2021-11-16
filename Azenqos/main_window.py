@@ -1602,8 +1602,10 @@ Log_hash list: {}""".format(
             else:
                 return
             assert self.gc.cell_files
+            print("selectCells add_cell_layers()")
             self.add_cell_layers()  # this will set cellfiles
             if self.gc.db_fp:
+                print("selectCells add_spider_layer()")
                 self.add_spider_layer()
             else:
                 pass
@@ -2488,6 +2490,10 @@ Log_hash list: {}""".format(
         import azq_cell_file
         print("add_spider_layer self.gc.cell_files:", self.gc.cell_files)
         if not self.gc.cell_files:
+            print("add_spider_layer self.gc.cell_files no cellfiles so omit")
+            return
+        if not self.gc.overview_opened:  # dont add spider in overview mode
+            print("add_spider_layer overview_opened so omit otherwise will draw too many lines")
             return
         try:
             azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
@@ -2579,6 +2585,11 @@ Log_hash list: {}""".format(
                             param_name_in_cell = param_att_rat[rat]
                             param_name_in_db = param_db_rat[rat]
                             color_range_list = []
+                            if not self.gc.db_fp:
+                                raise Exception(
+                                    "not self.gc.db_fp so raise exception here to omit cell color/spider match as it will fail")
+                            if self.gc.overview_opened:
+                                raise Exception("self.gc.overview_opened so raise exception here to omit cell color/spider match as it will fail")
                             param_with_color_df = cell_layer_task.cell_in_logs_with_color(self.gc.cell_files, self.gc.databasePath, rat)
                             param_with_color_df[param_name_in_db] = param_with_color_df[param_name_in_db].astype(int)
                             print(param_with_color_df)

@@ -366,7 +366,9 @@ class server_overview_widget(QWidget):
             self.overview_db_fp = dbfp
             if self.gvars.qgis_iface:
                 self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer = db_layer_task.create_layers(
-                    self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_", gen_theme_bucket_counts=False, main_rat_params_only=self.main_params_only)
+                    self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_", gen_theme_bucket_counts=False, main_rat_params_only=self.main_params_only
+                )
+                self.gvars.overview_opened = True
             create_layers_end_time = time.perf_counter()
             self.create_layers_time =  "Create Layers Time: %.02f seconds" % float(create_layers_end_time-create_layers_start_time)
             azq_utils.timer_print("overview_perf_create_layers")

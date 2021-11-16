@@ -52,6 +52,7 @@ class analyzer_vars:
         self.isSliderPlay = False
         self.is_indoor = False
         self.easy_overview_mode = False
+        self.overview_opened = False
         self.allLayers = []
         # tableList = []
         self.highlight_list = []

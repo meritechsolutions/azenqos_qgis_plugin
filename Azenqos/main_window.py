@@ -124,6 +124,8 @@ class main_window(QMainWindow):
         self.gc = analyzer_vars.analyzer_vars()
         self.gc.qgis_iface = qgis_iface
         self.gc.main_window = self
+        self.gc.has_wave_file = False
+        self.gc.is_mos_nb = False
         self.timechange_service_thread = None
         self.is_legacy_indoor = False
         self.is_leg_nr_tables = False
@@ -472,16 +474,18 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):
-        has_wave_file = False
         with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
             try:
                 mos_df = pd.read_sql("select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos", dbcon)
                 if len(mos_df) > 0 and "wave_file" in mos_df.columns:
-                    has_wave_file = True
+                    self.gc.has_wave_file = True
+                check_nb_df = pd.read_sql("select info from events where info = 'is_mos_test_polqa_nb'", dbcon)
+                if len(check_nb_df) > 0:
+                    self.gc.is_mos_nb = True
             except:
                 pass
-        if has_wave_file:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
+        if self.gc.has_wave_file == True:
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos where polqa_mos is not null order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
         else:
             self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
 

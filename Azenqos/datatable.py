@@ -11,6 +11,7 @@ import traceback
 import pyqtgraph as pg
 import wave
 import datetime
+from functools import partial
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
@@ -606,11 +607,15 @@ class TableWindow(QWidget):
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
-
-
         find_row_time_string = str(sampledate)
         find_row_time = azq_utils.datetimeStringtoTimestamp(find_row_time_string)
         find_row_log_hash = self.gc.selected_point_match_dict["log_hash"]
+
+        if self.gc.has_wave_file == True:
+            try:
+                self.detailWidget.move_cursor(find_row_time)
+            except:
+                pass
 
         ######### check same timestamp from last select propagate back to us - dont drift to last row with same ts
         print("hilightRow: find_row_time: {} self.selected_row_time: {}".format(find_row_time, self.selected_row_time))
@@ -1128,7 +1133,16 @@ class DetailWidget(QDialog):
         self.start_time_s = azq_utils.datetimeStringtoTimestamp(str(self.side["time"]))
         self.framerate = 0
         
+        self.show_ref_wave_check_box = QCheckBox("Show reference")
+        self.show_ref_wave_check_box.setChecked(False)
+        enable_show_ref_wave_check_box = partial(self.show_ref_wave, self.show_ref_wave_check_box)
+        disable_show_ref_wave_check_box = partial(self.hide_ref_wave, self.show_ref_wave_check_box)
+        self.show_ref_wave_check_box.stateChanged.connect(
+            lambda x: enable_show_ref_wave_check_box() if x else disable_show_ref_wave_check_box()
+        )
+
         pg.setConfigOptions(background="#c0c0c0", foreground="k", antialias=True)
+        
         self.wave_sine = pg.GraphicsWindow()
         self.wave_sine.scene().sigMouseClicked.connect(self.on_click)
         self.v_line = pg.InfiniteLine(
@@ -1139,9 +1153,10 @@ class DetailWidget(QDialog):
         self.textEdit.setReadOnly(True)
 
         gridlayout.addWidget(self.playBtn, 0, 0, 1, 2)
-        gridlayout.addWidget(self.saveBtn, 0, 2, 1, 1)
-        gridlayout.addWidget(self.wave_sine, 1, 0, 1, 3)
-        gridlayout.addWidget(self.textEdit, 2, 0, 2, 3)
+        gridlayout.addWidget(self.show_ref_wave_check_box, 0, 2, 1, 1)
+        gridlayout.addWidget(self.saveBtn, 0, 3, 1, 1)
+        gridlayout.addWidget(self.wave_sine, 1, 0, 1, 4)
+        gridlayout.addWidget(self.textEdit, 2, 0, 2, 4)
 
         self.playBtn.clicked.connect(self.playWavFile)
         self.saveBtn.clicked.connect(self.saveWaveFile)
@@ -1152,7 +1167,10 @@ class DetailWidget(QDialog):
         f.close()
 
         self.polqaWavFile = (self.side["wav_file"])
-        self.setWave()
+        self.set_ref_wave()
+        self.set_wave()
+        self.show_ref_wave_check_box.setChecked(False)
+        self.hide_ref_wave(self.show_ref_wave_check_box)
         self.resize(self.width, self.height)
         self.show()
         self.raise_()
@@ -1160,33 +1178,70 @@ class DetailWidget(QDialog):
 
     def draw_cursor(self, x):
         self.v_line.setPos(x)
+
+    def show_ref_wave(self, checkbox):
+        self.wave_sine.axes1.show()
+
+    def hide_ref_wave(self, checkbox):
+        self.wave_sine.axes1.hide()
+    
+    def move_cursor(self, current_time_s):
+        time_s = current_time_s-self.start_time_s
+        x = time_s * self.framerate
+        self.draw_cursor(x)
         
     def on_click(self, event):
-        x = self.wave_sine.axes.vb.mapSceneToView(event.scenePos()).x()
+        x = self.wave_sine.axes0.vb.mapSceneToView(event.scenePos()).x()
         self.draw_cursor(x)
         sliderValue = (x/self.framerate)+self.start_time_s - self.gc.minTimeValue
         sliderValue = round(sliderValue, 3)
         self.gc.timeSlider.setValue(sliderValue)
-        # self.timeSelected.emit(x)
-        
-    def setWave(self):
+    
+    def set_ref_wave(self):
+        ref_wave_file_name = "polqaref_np"
+        ref_framerate = 48000.0
+        ref_nframes = 305732
+        if self.gc.is_mos_nb == True:
+            print("is_mos_nb")
+            ref_wave_file_name = "polqarefnb_np"
+            ref_framerate = 8000.0
+            ref_nframes = 50956
+        ref_wave_file_path = azq_utils.get_module_fp(ref_wave_file_name)
+        if os.path.isfile(ref_wave_file_path):
+            data = np.fromfile(ref_wave_file_path, dtype="int16")
+            self.wave_sine.axes1 = self.wave_sine.addPlot(
+                0, 0,axisItems={"bottom": RefTimeAxisItem(orientation="bottom", framerate=ref_framerate)}
+            )
+            self.wave_sine.axes1.plot(data,
+                pen=pg.mkPen("b"),)
+            self.wave_sine.axes1.setTitle("Reference")
+            self.wave_sine.axes1.setLimits(
+                xMin=-0,
+                xMax=ref_nframes,
+                yMin=-40000,
+                yMax=40000
+            )
+
+    def set_wave(self):
         if self.polqaWavFile:
             if os.path.isfile(self.polqaWavFile):
                 wf = wave.open(self.polqaWavFile, 'rb')
                 self.framerate = float(wf.getframerate())
-                buf = wf.readframes(wf.getnframes())
+                self.nframe = wf.getnframes()
+                buf = wf.readframes(self.nframe)
                 data = np.frombuffer(buf, dtype="int16")
-                self.wave_sine.axes = self.wave_sine.addPlot(
-                    axisItems={"bottom": TimeAxisItem(orientation="bottom", framerate=self.framerate, start_time = self.start_time_s)}
+                self.wave_sine.axes0 = self.wave_sine.addPlot(
+                    1, 0, axisItems={"bottom": TimeAxisItem(orientation="bottom", framerate=self.framerate, start_time = self.start_time_s)}
                 )
-                self.wave_sine.axes.addItem(self.v_line, ignoreBounds=True)
-                self.wave_sine.axes.plot(data,
+                self.wave_sine.axes0.addItem(self.v_line, ignoreBounds=True)
+                self.wave_sine.axes0.plot(data,
                     pen=pg.mkPen("b"),)
-                self.wave_sine.axes.setLimits(
-                    xMin=0,
-                    xMax=wf.getnframes(),
-                    yMin=-100000,
-                    yMax=100000
+                self.wave_sine.axes0.setTitle("Degraded")
+                self.wave_sine.axes0.setLimits(
+                    xMin=-0,
+                    xMax=self.nframe,
+                    yMin=-40000,
+                    yMax=40000
                 )
                 self.draw_cursor(0)
 
@@ -1272,7 +1327,7 @@ class TableModel(QAbstractTableModel):
 
 def epochToDateString(epoch):
     try:
-        return datetime.datetime.fromtimestamp(epoch).strftime("%m-%d-%Y %H:%M:%S.%f")[:-3]
+        return datetime.datetime.fromtimestamp(epoch).strftime("%H:%M:%S.%f")[:-3]
     except:
         return ""
 
@@ -1286,6 +1341,16 @@ class TimeAxisItem(pg.AxisItem):
 
     def tickStrings(self, values, scale, spacing):
         return [epochToDateString(self.start_time+(value/self.framerate)) for value in values]
+
+class RefTimeAxisItem(pg.AxisItem):
+    """Internal timestamp for x-axis"""
+
+    def __init__(self, framerate, *args, **kwargs):
+        super(RefTimeAxisItem, self).__init__(*args, **kwargs)
+        self.framerate = framerate
+
+    def tickStrings(self, values, scale, spacing):
+        return [(value/self.framerate) for value in values]
 
 class PdTableModel(QAbstractTableModel):
     def __init__(self, df, parent=None, *args):

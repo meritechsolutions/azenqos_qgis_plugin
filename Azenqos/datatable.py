@@ -613,7 +613,8 @@ class TableWindow(QWidget):
 
         if self.gc.has_wave_file == True:
             try:
-                self.detailWidget.move_cursor(find_row_time)
+                if self.detailWidget:
+                    self.detailWidget.move_cursor(find_row_time)
             except:
                 pass
 

@@ -6,69 +6,56 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>76</height>
+    <width>400</width>
+    <height>300</height>
    </rect>
-  </property>
-  <property name="minimumSize">
-   <size>
-    <width>500</width>
-    <height>0</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>500</width>
-    <height>100</height>
-   </size>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <layout class="QHBoxLayout" name="conboBoxHorizontalLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QLabel" name="paramLabel">
+        <widget class="QPushButton" name="addButton">
          <property name="text">
-          <string>param</string>
+          <string>Add</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="paramComboBox">
-         <property name="minimumSize">
+        <widget class="QPushButton" name="editButton">
+         <property name="text">
+          <string>Edit</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="removeButton">
+         <property name="text">
+          <string>Remove</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
           <size>
-           <width>200</width>
-           <height>0</height>
+           <width>40</width>
+           <height>20</height>
           </size>
          </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="argLabel">
-         <property name="text">
-          <string>arg</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="argComboBox"/>
+        </spacer>
        </item>
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="checkBoxHorizontalLayout">
-       <item>
-        <widget class="QCheckBox" name="custom_checkbox">
-         <property name="text">
-          <string>custom</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="QTableView" name="tableView"/>
      </item>
      <item>
       <widget class="QDialogButtonBox" name="buttonBox">

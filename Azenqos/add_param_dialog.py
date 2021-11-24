@@ -2,7 +2,7 @@ import PyQt5
 from PyQt5.QtWidgets import QDialog, QCompleter, QComboBox
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import QSortFilterProxyModel
+from PyQt5.QtCore import QSortFilterProxyModel, QStringListModel, QRegExp, Qt
 import os
 from functools import partial
 import azq_utils
@@ -26,7 +26,7 @@ class AddParamDialog(QDialog):
 
     def setupUi(self):
         dirname = os.path.dirname(__file__)
-        self.ui = loadUi(azq_utils.get_module_fp("add_param_dialog.ui"), self)
+        self.ui = loadUi(azq_utils.get_module_fp("add_param_dialog_old.ui"), self)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         self.setWindowTitle("Add Parameter")
         self.ui.comboBox_2.addItem(self.arg)
@@ -110,24 +110,44 @@ class CustomQCompleter(QCompleter):
 
     def setModel(self, model):
         self.source_model = model
-        super(CustomQCompleter, self).setModel(self.source_model)
+        self.filterProxyModel = QSortFilterProxyModel(self)
+        self.filterProxyModel.setSourceModel(self.source_model)
+        super(CustomQCompleter, self).setModel(self.filterProxyModel)
+        self.usingOriginalModel = True
 
     def updateModel(self):
-        local_completion_prefix = self.local_completion_prefix
+        if not self.usingOriginalModel:
+            self.filterProxyModel.setSourceModel(self.source_model)
 
-        class InnerProxyModel(QSortFilterProxyModel):
-            def filterAcceptsRow(self, sourceRow, sourceParent):
-                index0 = self.sourceModel().index(sourceRow, 0, sourceParent)
-                return (
-                    local_completion_prefix.lower()
-                    in self.sourceModel().data(index0).lower()
-                )
+        pattern = QRegExp(self.local_completion_prefix,
+                                Qt.CaseInsensitive,
+                                QRegExp.FixedString)
 
-        proxy_model = InnerProxyModel()
-        proxy_model.setSourceModel(self.source_model)
-        super(CustomQCompleter, self).setModel(proxy_model)
+        self.filterProxyModel.setFilterRegExp(pattern)
+
+        # local_completion_prefix = self.local_completion_prefix
+
+        # class InnerProxyModel(QSortFilterProxyModel):
+        #     def filterAcceptsRow(self, sourceRow, sourceParent):
+        #         index0 = self.sourceModel().index(sourceRow, 0, sourceParent)
+        #         return (
+        #             local_completion_prefix.lower()
+        #             in self.sourceModel().data(index0).lower()
+        #         )
+
+        # proxy_model = InnerProxyModel()
+        # proxy_model.setSourceModel(self.source_model)
+        # super(CustomQCompleter, self).setModel(proxy_model)
 
     def splitPath(self, path):
         self.local_completion_prefix = path
         self.updateModel()
+        if self.filterProxyModel.rowCount() == 0:
+            self.usingOriginalModel = False
+            self.filterProxyModel.setSourceModel(QStringListModel([path]))
+            return [path]
+
         return [""]
+        # self.local_completion_prefix = path
+        # self.updateModel()
+        # return [""]

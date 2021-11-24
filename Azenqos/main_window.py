@@ -502,7 +502,7 @@ Log_hash list: {}""".format(
         import nr_data_query
         self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
         widget = TableWindow(
@@ -512,7 +512,9 @@ Log_hash list: {}""".format(
             time_list_mode=time_list_mode,
             stretch_last_row=stretch_last_row,
             options=options,
-            func_key=func_key
+            func_key=func_key,
+            custom_df=custom_df,
+            custom_table_param_list=custom_table_param_list
         )
         self.add_subwindow_with_widget(swa, widget)
         #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -551,29 +553,33 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionCustom_Table_View_triggered(self):
-        import textwrap
-        expression = azq_utils.ask_custom_sql_or_py_expression(
-            self,
-            table_view_mode=True,
-            existing_content= textwrap.dedent(
-            '''
-            select
-            log_hash, time,
-            name, detail_str 
-            from signalling
-            union
-            select log_hash, time,
-            name, info
-            from events
-            order by log_hash, time
-            '''.strip()
-            ).strip()
-        )
-        print("on_actionCustom_Table_View_triggered new expression:", expression)
-        if expression:
-            title = qt_utils.ask_text(self, title="New window title", msg="Please enter desired title of new window",
-                                      existing_content="Custom table view")
-            self.add_param_window(expression, title=title, time_list_mode=True, stretch_last_row=True)
+        import custom_table_dialog
+        dlg = custom_table_dialog.custom_table_dialog(self.gc)
+        dlg.on_result.connect(lambda df, param_list: self.add_param_window(custom_df=df, time_list_mode=True, custom_table_param_list=param_list))
+        dlg.show()
+        # import textwrap
+        # expression = azq_utils.ask_custom_sql_or_py_expression(
+        #     self,
+        #     table_view_mode=True,
+        #     existing_content= textwrap.dedent(
+        #     '''
+        #     select
+        #     log_hash, time,
+        #     name, detail_str 
+        #     from signalling
+        #     union
+        #     select log_hash, time,
+        #     name, info
+        #     from events
+        #     order by log_hash, time
+        #     '''.strip()
+        #     ).strip()
+        # )
+        # print("on_actionCustom_Table_View_triggered new expression:", expression)
+        # if expression:
+        #     title = qt_utils.ask_text(self, title="New window title", msg="Please enter desired title of new window",
+        #                               existing_content="Custom table view")
+        #     self.add_param_window(expression, title=title, time_list_mode=True, stretch_last_row=True)
 
 
     @pyqtSlot()
@@ -2352,6 +2358,14 @@ Log_hash list: {}""".format(
                             window.widget().func_key,
                         )
                         self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_df".format(i),
+                            window.widget().custom_df,
+                        )
+                        self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_table_param_list".format(i),
+                            window.widget().custom_table_param_list,
+                        )
+                        self.current_workspace_settings.setValue(
                             GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
                             window.saveGeometry(),
                         )
@@ -2663,6 +2677,14 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
                         )
 
+                        custom_df = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_df".format(i)
+                        )
+
+                        custom_table_param_list = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_table_param_list".format(i)
+                        )
+
                         hh_state = self.current_workspace_settings.value(
                             GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i)
                         )
@@ -2682,6 +2704,9 @@ Log_hash list: {}""".format(
                             func_key = "self." + func + "()" 
                             print(func_key)
                             eval(func_key)
+                        elif custom_df is not None and custom_table_param_list is not None:
+                            print("hhhhhhhhhhhhhh", custom_df, custom_table_param_list)
+                            self.add_param_window(custom_df = custom_df, custom_table_param_list=custom_table_param_list, title=title, options=options)
                         else:
                             # like for custom windows - newer style
                             self.add_param_window(refresh_df_func_or_py_eval_str, title=title, options=options)

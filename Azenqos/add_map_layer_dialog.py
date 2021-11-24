@@ -26,7 +26,7 @@ class add_map_layer_dialog(QDialog):
 
     def setupUi(self):
         dirname = os.path.dirname(__file__)
-        self.ui = loadUi(azq_utils.get_module_fp("add_param_dialog.ui"), self)
+        self.ui = loadUi(azq_utils.get_module_fp("add_param_dialog_old.ui"), self)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         self.setWindowTitle("Select Parameter Argument")
         self.ui.not_null_checkbox.hide()

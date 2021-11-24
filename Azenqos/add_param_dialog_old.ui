@@ -29,16 +29,16 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <layout class="QHBoxLayout" name="conboBoxHorizontalLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="QLabel" name="paramLabel">
+        <widget class="QLabel" name="label">
          <property name="text">
           <string>param</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="paramComboBox">
+        <widget class="QComboBox" name="comboBox">
          <property name="minimumSize">
           <size>
            <width>200</width>
@@ -48,23 +48,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="argLabel">
+        <widget class="QLabel" name="label_2">
          <property name="text">
           <string>arg</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="argComboBox"/>
+        <widget class="QComboBox" name="comboBox_2"/>
        </item>
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="checkBoxHorizontalLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QCheckBox" name="custom_checkbox">
+        <widget class="QCheckBox" name="data_checkbox">
          <property name="text">
-          <string>custom</string>
+          <string>is data param</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="not_null_checkbox">
+         <property name="text">
+          <string>is nr param</string>
          </property>
         </widget>
        </item>

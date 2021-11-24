@@ -87,6 +87,7 @@ class TableWindow(QWidget):
         skip_setup_ui=False,
         mdi=None,
         func_key=None,
+        custom_table_param_list=None,
 
         # these params will be written to options_dict
         time_list_mode=False,
@@ -101,6 +102,7 @@ class TableWindow(QWidget):
         self.skip_setup_ui = skip_setup_ui
         self.mdi = mdi
         self.func_key = func_key
+        self.custom_table_param_list = custom_table_param_list
 
         ################ support old params not put in options dict
         print("options0:", options)
@@ -291,11 +293,13 @@ class TableWindow(QWidget):
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
-        actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None}
+        actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None, "custom_table": None}
         if self.time_list_mode and self.df is not None and 'log_hash' in self.df.columns and 'time' in self.df.columns:
             actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
         if isinstance(self.refresh_data_from_dbcon_and_time_func, (str, list, dict)):
             actions_dict["custom_expression"] = menu.addAction("Customize SQL/Python expression...")
+        if self.custom_table_param_list:
+            actions_dict["custom_table"] = menu.addAction("Customize table...")
         if self.tableModel.df is not None:
             actions_dict["to_csv"] = menu.addAction("Dump to CSV...")
             actions_dict["to_parquet"] = menu.addAction("Dump to Parquet...")
@@ -307,6 +311,15 @@ class TableWindow(QWidget):
             if expression:
                 self.refresh_data_from_dbcon_and_time_func = expression
                 self.refreshTableContents()
+        if action == actions_dict["custom_table"]:
+            import custom_table_dialog
+            dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list)
+            def on_result(df, param_list):
+                self.custom_df=df
+                self.custom_table_param_list=param_list
+                self.refreshTableContents()
+            dlg.on_result.connect(on_result)
+            dlg.show()
         elif action == actions_dict["to_csv"] or action == actions_dict["to_parquet"]:
             df = self.tableModel.df
             try:

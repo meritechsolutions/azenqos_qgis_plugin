@@ -3,7 +3,7 @@ from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QDialog, QMessageBox, QComboBox, QCompleter
 
-import azq_cosmetic_map_option_setting
+import os
 from functools import partial
 
 import azq_utils

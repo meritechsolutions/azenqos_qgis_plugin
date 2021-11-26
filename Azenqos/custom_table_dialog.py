@@ -1,5 +1,4 @@
 import contextlib
-import datetime
 import sqlite3
 import os
 from pathlib import Path
@@ -8,7 +7,6 @@ import copy
 
 import numpy as np
 import pandas as pd
-import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QMenu, QFont, QIcon, QPixmap, QAbstractItemView

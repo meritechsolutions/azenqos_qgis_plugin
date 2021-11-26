@@ -1,4 +1,3 @@
-import pandas as pd
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QCheckBox, QItemDelegate
 

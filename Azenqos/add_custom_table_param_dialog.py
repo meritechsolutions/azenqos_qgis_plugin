@@ -3,15 +3,11 @@ from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QDialog, QMessageBox, QComboBox, QCompleter
 
-import os
-import contextlib
-import sqlite3
-import pandas as pd
+import azq_cosmetic_map_option_setting
 from functools import partial
 
 import azq_utils
 import preprocess_azm
-import db_preprocess
 from add_param_dialog import CustomQCompleter
 
 

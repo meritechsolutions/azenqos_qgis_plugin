@@ -1,7 +1,7 @@
 import PyQt5
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QPixmap, QIntValidator
-from PyQt5.QtWidgets import QDialog, QMessageBox, QComboBox, QCompleter
+from PyQt5.QtWidgets import QDialog, QComboBox, QCompleter
 
 import os
 from functools import partial

@@ -555,7 +555,7 @@ Log_hash list: {}""".format(
     def on_actionCustom_Table_View_triggered(self):
         import custom_table_dialog
         dlg = custom_table_dialog.custom_table_dialog(self.gc)
-        dlg.on_result.connect(lambda df, param_list: self.add_param_window(custom_df=df, time_list_mode=True, custom_table_param_list=param_list))
+        dlg.on_result.connect(lambda df, param_list, title: self.add_param_window(custom_df=df, title=title, time_list_mode=True, custom_table_param_list=param_list))
         dlg.show()
         # import textwrap
         # expression = azq_utils.ask_custom_sql_or_py_expression(
@@ -2705,7 +2705,6 @@ Log_hash list: {}""".format(
                             print(func_key)
                             eval(func_key)
                         elif custom_df is not None and custom_table_param_list is not None:
-                            print("hhhhhhhhhhhhhh", custom_df, custom_table_param_list)
                             self.add_param_window(custom_df = custom_df, custom_table_param_list=custom_table_param_list, title=title, options=options)
                         else:
                             # like for custom windows - newer style

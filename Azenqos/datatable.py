@@ -313,10 +313,13 @@ class TableWindow(QWidget):
                 self.refreshTableContents()
         if action == actions_dict["custom_table"]:
             import custom_table_dialog
-            dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list)
-            def on_result(df, param_list):
+            dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list, self.title)
+            def on_result(df, param_list, title):
                 self.custom_df=df
                 self.custom_table_param_list=param_list
+                self.title=title
+                self.setObjectName(self.title)
+                self.setWindowTitle(self.title)
                 self.refreshTableContents()
             dlg.on_result.connect(on_result)
             dlg.show()

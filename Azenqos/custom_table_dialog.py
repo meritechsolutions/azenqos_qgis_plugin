@@ -107,7 +107,7 @@ class custom_table_dialog(QtWidgets.QDialog):
                     with open(filepath, 'r') as f:
                         self.param_list = json.load(f)
                         self.model.setItems(self.param_list)
-                except Exception as e:
+                except:
                     pass
 
     def on_param_added(self, param_dict):

@@ -268,6 +268,7 @@
     <addaction name="menuMisc"/>
     <addaction name="menuMaps"/>
     <addaction name="actionAdd_Layer"/>
+    <addaction name="actionAdd_POI_Layer"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -972,6 +973,11 @@
   <action name="actionAdd_Layer">
    <property name="text">
     <string>Add Layer</string>
+   </property>
+  </action>
+  <action name="actionAdd_POI_Layer">
+   <property name="text">
+    <string>Add POI Layer</string>
    </property>
   </action>
  </widget>

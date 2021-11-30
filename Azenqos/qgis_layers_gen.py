@@ -1,6 +1,7 @@
 import contextlib
 import os
 import sqlite3
+import pandas as pd
 
 from PyQt5.QtCore import QVariant
 
@@ -131,6 +132,13 @@ def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="la
         layer.setCustomProperty("labeling/placement", "2")
     QgsProject.instance().addMapLayers([layer])
     print("create_qgis_layer_csv() DONE")
+
+def create_qgis_poi_layer(gc, poi_fp, layer_name="layer"):
+    if poi_fp.endswith("csv"):
+        create_qgis_layer_csv(poi_fp, layer_name)
+    else:
+        if gc.qgis_iface:
+            gc.qgis_iface.addVectorLayer(poi_fp, layer_name, "ogr")
 
 
 def create_test_qgis_layer_py_objs():

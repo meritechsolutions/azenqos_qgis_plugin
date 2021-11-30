@@ -803,6 +803,24 @@ Log_hash list: {}""".format(
         )
         self.add_subwindow_with_widget(swa, widget)
 
+    ############# Add POI Layer menu slots
+
+    @pyqtSlot()
+    def on_actionAdd_POI_Layer_triggered(self):
+        print("action add poi layer")
+        from pathlib import Path
+        import qgis_layers_gen
+        pot_file_name = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open POI file ...", os.path.join(Path.home(),""), "POI file(*.csv *.kml *.mif *.tab);;All file(*)"
+        )
+        if pot_file_name:
+            if pot_file_name[0]:
+                pot_file_path = pot_file_name[0]
+                try:
+                    qgis_layers_gen.create_qgis_poi_layer(self.gc, pot_file_path)
+                except:
+                    pass
+
     ############# Data menu slots
 
     @pyqtSlot()
@@ -2502,7 +2520,23 @@ Log_hash list: {}""".format(
                 print("show server overview")
                 self.on_actionServer_overview_layers_triggered()  # TODO open this year - 60 second bin
                 self.on_actionServerAIPrediction_triggered()
+                print("load POI layer")
+                self.pre_load_poi_layer()
 
+    def pre_load_poi_layer(self):
+        import qgis_layers_gen
+        print("load POI layer start")
+        qgis_poi_preload_path = "/host_shared_dir/resource/viewPreference/qgis_poi_preload/"
+        if os.path.exists(qgis_poi_preload_path):
+            for root, dirs, files in os.walk(qgis_poi_preload_path):
+                for file in files:
+                    poi_path = os.path.join(root,file)
+                    pot_layer_name = os.path.splitext(poi_path)[0]
+                    print(poi_path, pot_layer_name)
+                    qgis_layers_gen.create_qgis_poi_layer(self.gc, poi_path, layer_name=pot_layer_name)
+
+
+    
     def add_spider_layer(self):
         import spider_plot
         import azq_cell_file

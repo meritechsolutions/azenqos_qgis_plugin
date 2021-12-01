@@ -168,7 +168,6 @@ class main_window(QMainWindow):
             self.canvas.selectionChanged.connect(self.selectChanged)
             self.add_created_layers_signal.connect(self._add_created_layers)
             self.add_map_layer()
-            self.set_project_crs()
         try:
             QgsProject.instance().layersAdded.connect(self.on_layers_added)
         except:
@@ -178,6 +177,13 @@ class main_window(QMainWindow):
         self.timechange_service_thread.start()
         self.setMinimumSize(50, 50)
         azq_utils.adb_kill_server_threaded()  # otherwise cant update plugin as adb files would be locked
+
+        def emit_init_done(delay=0.5):
+            time.sleep(delay)
+            self.task_done_signal.emit("init")
+        t = threading.Thread(target=emit_init_done)
+        t.start()
+
         print("main_window __init__() done")
 
     @pyqtSlot()
@@ -1663,6 +1669,10 @@ Log_hash list: {}""".format(
             self.cell_layer_task.add_layers_from_ui_thread()
         elif msg == "db_layer_task.py":
             self.db_layer_task.add_layers_from_ui_thread()
+        elif msg == "init":
+            print("task_done_slot init start")
+            self.set_project_crs()
+            print("task_done_slot init done")
 
 
     def ui_thread_emit_time_slider_updated(self, timestamp):

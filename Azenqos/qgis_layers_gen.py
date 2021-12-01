@@ -133,12 +133,56 @@ def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="la
     QgsProject.instance().addMapLayers([layer])
     print("create_qgis_layer_csv() DONE")
 
-def create_qgis_poi_layer(gc, poi_fp, layer_name="layer"):
-    if poi_fp.endswith("csv"):
-        create_qgis_layer_csv(poi_fp, layer_name)
+def check_poi_file(gc, poi_fp, layer_name=None):
+    import qt_utils
+    ret = create_qgis_poi_layer(gc, poi_fp, layer_name=layer_name)
+    if ret != "success":
+        print("aaaaaaaaaaaaaa")
+        qt_utils.msgbox(ret, title="Invalid POI file")
+
+def create_qgis_poi_layer(gc, poi_fp, layer_name=None):
+    import csv
+    x_field=None
+    y_field=None
+    file_name = os.path.basename(poi_fp)
+    layer_name = os.path.splitext(file_name)[0]
+    extension = os.path.splitext(file_name)[1]
+    if extension == ".csv":
+        with open(poi_fp, "r") as f:
+            d_reader = csv.DictReader(f)
+            headers = d_reader.fieldnames
+            headers= [header.lower() for header in headers]
+            if "long" in headers and "lat" in headers:
+                x_field="long"
+                y_field="lat"
+            elif "lon" in headers and "lat" in headers:
+                x_field="lon"
+                y_field="lat"
+            elif "positioning_long" in headers and "positioning_lat" in headers:
+                x_field="positioning_long"
+                y_field="positioning_lat"
+            elif "positioning_lon" in headers and "positioning_lat" in headers:
+                x_field="positioning_lon"
+                y_field="positioning_lat"
+            elif "longitude" in headers and "latitude" in headers:
+                x_field="longitude"
+                y_field="latitude"
+            elif "x" in headers and "y" in headers:
+                x_field="x"
+                y_field="y"
+        if x_field is not None and y_field is not None:
+            create_qgis_layer_csv(poi_fp, layer_name, x_field=x_field, y_field=y_field)
+            return "success"
+        else:
+            return "Please make sure that there are longitude and latitude in your csv file."
     else:
-        if gc.qgis_iface:
-            gc.qgis_iface.addVectorLayer(poi_fp, layer_name, "ogr")
+        layer = QgsVectorLayer(poi_fp, layer_name, 'ogr')
+        if layer.isValid():
+            if gc.qgis_iface:
+                gc.qgis_iface.addVectorLayer(poi_fp, layer_name, 'ogr')
+                return "success"
+        else:
+            return "{} file type not supported".format(extension)
 
 
 def create_test_qgis_layer_py_objs():

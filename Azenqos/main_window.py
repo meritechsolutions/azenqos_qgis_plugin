@@ -817,7 +817,7 @@ Log_hash list: {}""".format(
             if pot_file_name[0]:
                 pot_file_path = pot_file_name[0]
                 try:
-                    qgis_layers_gen.create_qgis_poi_layer(self.gc, pot_file_path)
+                    qgis_layers_gen.check_poi_file(self.gc, pot_file_path)
                 except:
                     pass
 
@@ -2531,9 +2531,7 @@ Log_hash list: {}""".format(
             for root, dirs, files in os.walk(qgis_poi_preload_path):
                 for file in files:
                     poi_path = os.path.join(root,file)
-                    pot_layer_name = os.path.splitext(file)[0]
-                    print(poi_path, pot_layer_name)
-                    qgis_layers_gen.create_qgis_poi_layer(self.gc, poi_path, layer_name=pot_layer_name)
+                    qgis_layers_gen.create_qgis_poi_layer(self.gc, poi_path)
 
 
     

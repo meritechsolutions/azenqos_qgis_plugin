@@ -821,6 +821,16 @@ Log_hash list: {}""".format(
                 except:
                     pass
 
+    ############# Add POI Layer menu slots
+
+    @pyqtSlot()
+    def on_actionCalculate_POI_Coverage_triggered(self):
+        print("action calculate poi coverage")
+        import calculate_poi_dialog
+        dlg = calculate_poi_dialog.calculate_poi()
+        dlg.on_result.connect(lambda df, title: self.add_param_window(custom_df=df, title=title))
+        dlg.show()
+
     ############# Data menu slots
 
     @pyqtSlot()

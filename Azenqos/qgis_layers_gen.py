@@ -151,25 +151,7 @@ def create_qgis_poi_layer(gc, poi_fp, layer_name=None):
         with open(poi_fp, "r") as f:
             d_reader = csv.DictReader(f)
             headers = d_reader.fieldnames
-            headers= [header.lower() for header in headers]
-            if "long" in headers and "lat" in headers:
-                x_field="long"
-                y_field="lat"
-            elif "lon" in headers and "lat" in headers:
-                x_field="lon"
-                y_field="lat"
-            elif "positioning_long" in headers and "positioning_lat" in headers:
-                x_field="positioning_long"
-                y_field="positioning_lat"
-            elif "positioning_lon" in headers and "positioning_lat" in headers:
-                x_field="positioning_lon"
-                y_field="positioning_lat"
-            elif "longitude" in headers and "latitude" in headers:
-                x_field="longitude"
-                y_field="latitude"
-            elif "x" in headers and "y" in headers:
-                x_field="x"
-                y_field="y"
+            x_field, y_field = get_lon_lat_column_name(headers)
         if x_field is not None and y_field is not None:
             create_qgis_layer_csv(poi_fp, layer_name, x_field=x_field, y_field=y_field)
             return "success"
@@ -184,6 +166,29 @@ def create_qgis_poi_layer(gc, poi_fp, layer_name=None):
         else:
             return "{} file type not supported".format(extension)
 
+def get_lon_lat_column_name(column_list):
+    column_list= [column.lower() for column in column_list]
+    x_field=None
+    y_field=None
+    if "long" in column_list and "lat" in column_list:
+        x_field="long"
+        y_field="lat"
+    elif "lon" in column_list and "lat" in column_list:
+        x_field="lon"
+        y_field="lat"
+    elif "positioning_long" in column_list and "positioning_lat" in column_list:
+        x_field="positioning_long"
+        y_field="positioning_lat"
+    elif "positioning_lon" in column_list and "positioning_lat" in column_list:
+        x_field="positioning_lon"
+        y_field="positioning_lat"
+    elif "longitude" in column_list and "latitude" in column_list:
+        x_field="longitude"
+        y_field="latitude"
+    elif "x" in column_list and "y" in column_list:
+        x_field="x"
+        y_field="y"
+    return x_field, y_field
 
 def create_test_qgis_layer_py_objs():
     print("create_test_qgis_layer_action() impl START")

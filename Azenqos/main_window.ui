@@ -269,6 +269,7 @@
     <addaction name="menuMaps"/>
     <addaction name="actionAdd_Layer"/>
     <addaction name="actionAdd_POI_Layer"/>
+    <addaction name="actionCalculate_POI_Coverage"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -978,6 +979,11 @@
   <action name="actionAdd_POI_Layer">
    <property name="text">
     <string>Add POI Layer</string>
+   </property>
+  </action>
+  <action name="actionCalculate_POI_Coverage">
+   <property name="text">
+    <string>Calculate POI Coverage</string>
    </property>
   </action>
  </widget>

@@ -510,7 +510,7 @@ Log_hash list: {}""".format(
         import nr_data_query
         self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, allow_no_log_opened=False):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
         widget = TableWindow(
@@ -524,7 +524,7 @@ Log_hash list: {}""".format(
             custom_df=custom_df,
             custom_table_param_list=custom_table_param_list
         )
-        self.add_subwindow_with_widget(swa, widget)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=allow_no_log_opened)
         #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
@@ -828,6 +828,16 @@ Log_hash list: {}""".format(
                     qgis_layers_gen.check_poi_file(self.gc, pot_file_path)
                 except:
                     pass
+
+    ############# Add POI Layer menu slots
+
+    @pyqtSlot()
+    def on_actionCalculate_POI_Coverage_triggered(self):
+        print("action calculate poi coverage")
+        import calculate_poi_dialog
+        dlg = calculate_poi_dialog.calculate_poi()
+        dlg.on_result.connect(lambda df, title: self.add_param_window(custom_df=df, title=title, allow_no_log_opened=True))
+        dlg.show()
 
     ############# Data menu slots
 

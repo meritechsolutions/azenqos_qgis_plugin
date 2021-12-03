@@ -8,7 +8,8 @@ try:
     from qgis.core import (
         QgsProject,
         QgsPointXY,
-        QgsRectangle
+        QgsRectangle,
+        QgsFeatureRequest
     )
 except:
     pass
@@ -56,35 +57,35 @@ class calculate_poi(QDialog):
     def on_ok_button_click(self):
         self.layer_name = self.ui.poiComboBox.currentText()
         self.radius = self.ui.radiusLineEdit.text()
+        offset_meters = int(self.radius)
+        self.offset = azq_cell_file.METER_IN_WGS84 * offset_meters
         layer = QgsProject.instance().mapLayersByName(self.layer_name)[0]
         columns = [f.name() for f in layer.fields()]
+        self.lon_col, self.lat_col = qgis_layers_gen.get_lon_lat_column_name(columns)
+
         row_list = []
-        for f in layer.getFeatures():
+        for f in layer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
             row_list.append(dict(zip(columns, f.attributes())))
-        
         df = pd.DataFrame(row_list, columns=columns)
         df.columns= df.columns.str.lower()
-        lon_col, lat_col = qgis_layers_gen.get_lon_lat_column_name(columns)
-        
+        df["radius"] = None
         for index, row in df.iterrows():
-            offset_meters = int(self.radius)
-            offset = azq_cell_file.METER_IN_WGS84 * offset_meters
-            lon = row[lon_col]
-            lat = row[lat_col]
+            lon = row[self.lon_col]
+            lat = row[self.lat_col]
             if not isinstance(lon, float) or not isinstance(lat, float):
                 continue
-            p1 = QgsPointXY(lon - offset, lat - offset)
-            p2 = QgsPointXY(lon + offset, lat + offset)
+            p1 = QgsPointXY(lon - self.offset, lat - self.offset)
+            p2 = QgsPointXY(lon + self.offset, lat + self.offset)
             rect = QgsRectangle(p1, p2)
             for cov_layer_name in COVERAGE_LAYER_DICT:
                 try:
                     cov_layer = QgsProject.instance().mapLayersByName(cov_layer_name)[0]
-                    nearby_features = cov_layer.getFeatures(rect)
                     cov_col = COVERAGE_LAYER_DICT[cov_layer_name]
                     cov_value_list = []
-                    cov_value_list = [feat[cov_col] for feat in nearby_features]
+                    for feat in cov_layer.getFeatures(QgsFeatureRequest(rect).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([cov_col], cov_layer.fields())):
+                        cov_value_list.append(feat[cov_col])
                     if len(cov_value_list) > 0:
-                        df.loc[index, "radius"] = self.radius
+                        df.loc[index, "radius"] = str(int(self.radius)/1000) + " km."
                         df.loc[index, cov_col+"_average"] = statistics.mean(cov_value_list)
                         df.loc[index, cov_col+"_max"] = max(cov_value_list)
                         df.loc[index, cov_col+"_min"] = min(cov_value_list)

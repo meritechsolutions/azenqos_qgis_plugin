@@ -23,6 +23,7 @@ except:
 
 
 def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_theme_bucket_counts=True, main_rat_params_only=False):
+    print("create_layers main_rat_params_only:", main_rat_params_only)
     azq_utils.timer_start("create_layers")
     try:
         if db_fp is None:

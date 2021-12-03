@@ -178,11 +178,13 @@ class main_window(QMainWindow):
         self.setMinimumSize(50, 50)
         azq_utils.adb_kill_server_threaded()  # otherwise cant update plugin as adb files would be locked
 
+        ##### set project crs to 4326 - this wont work if we call it here, need to call it from a delayed signal
         def emit_init_done(delay=0.5):
             time.sleep(delay)
             self.task_done_signal.emit("init")
         t = threading.Thread(target=emit_init_done)
         t.start()
+        ######################################################################################################
 
         print("main_window __init__() done")
 

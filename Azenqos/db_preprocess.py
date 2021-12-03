@@ -184,12 +184,14 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                 if start_date is not None and end_date is not None:
                     date_filt_where_and = "and time >= '{}' and time <= '{} 24:00:00'".format(start_date, end_date)
                 drop_view_sqlstr = "drop {cre_type} if exists {view}".format(cre_type=cre_type, view=view)
-                if "cell_meas" in table:
+                if "cell_meas" in table or table in ["ping"]:
                     sqlstr = "create {} {col} as select * from {table} where {col} is not null {date_filt_where_and};".format(cre_type, col=view, table=table, date_filt_where_and=date_filt_where_and)   # need to create table because create view casues get nearest feature id to fail - getting only 0
                 else:
-                    sqlstr = "create {} {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null {date_filt_where_and};".format(
+                    optional_cols_as = [(x if x in table_cols else "null as {}".format(x)) for x in ["modem_time", "posid", "seqid"]]
+                    optional_cols_part = ",".join(optional_cols_as)
+                    sqlstr = "create {} {col} as select log_hash, time, {optional_cols_part}, geom, {col} from {table} where {col} is not null {date_filt_where_and};".format(
                         cre_type, col=view, table=table,
-                        modem_time_part="modem_time" if table_has_modem_time else "null as modem_time",
+                        optional_cols_part=optional_cols_part,
                         date_filt_where_and=date_filt_where_and
                     )
             print("create view sqlstr: %s" % sqlstr)

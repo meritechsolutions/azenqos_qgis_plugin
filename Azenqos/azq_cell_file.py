@@ -883,19 +883,37 @@ def add_projection(df, distance_meters, dir_col, ret_lat_col, ret_lon_col):
 
 def add_sector_polygon_wkt_to_cellfile_df(df, add_sector_polygon_wkt_sector_size_meters):
     print("add_sector_polygon_wkt_to_cellfile_df: distance_meters: {}".format(add_sector_polygon_wkt_sector_size_meters))
-    df["point2"] = df["dir"] + (df.ant_bw / 2)
-    df["point3"] = df["dir"] - (df.ant_bw / 2)
-    tmp_cols = ["point2", "point3"]
+    df["point1"] = 30
+    df.loc[df.ant_bw == 360,"point2"] = 90
+    df.loc[df.ant_bw == 360,"point3"] = 150
+    df["point4"] = 210
+    df["point5"] = 270
+    df["point6"] = 330
+    df.loc[df.ant_bw != 360,"point2"] = df["dir"] + (df.ant_bw / 2)
+    df.loc[df.ant_bw != 360,"point3"] = df["dir"] - (df.ant_bw / 2)
+    tmp_cols = ["point1", "point2", "point3", "point4", "point5", "point6"]
+
     for tmp_col in tmp_cols:
         add_projection(df, add_sector_polygon_wkt_sector_size_meters, tmp_col, tmp_col+"_lat", tmp_col+"_lon")
         del df[tmp_col]
-    df["sector_polygon_wkt"] = "POLYGON(("+\
-                               df.lon.astype(str) + " "+df.lat.astype(str) + ","+\
-                               df.point2_lon.astype(str)+" "+df.point2_lat.astype(str)+","+\
-                               df.point3_lon.astype(str)+" "+df.point3_lat.astype(str)+","+\
-                               df.lon.astype(str) + " " + df.lat.astype(str)+\
-                               "))"
-    for tmp_col in tmp_cols:
-        del df[tmp_col+"_lat"]
-        del df[tmp_col +"_lon"]
 
+    df.loc[df.ant_bw != 360, "sector_polygon_wkt"] = "POLYGON((" + \
+                                                     df.lon.astype(str) + " "+df.lat.astype(str) + "," +\
+                                                     df.point2_lon.astype(str)+" "+df.point2_lat.astype(str)+"," +\
+                                                     df.point3_lon.astype(str)+" "+df.point3_lat.astype(str)+"," +\
+                                                     df.lon.astype(str) + " " + df.lat.astype(str) +\
+                                                     "))"
+
+    df.loc[df.ant_bw == 360, "sector_polygon_wkt"] = "POLYGON((" + \
+                                                     df.point1_lon.astype(str) + " "+df.point1_lat.astype(str) + "," +\
+                                                     df.point2_lon.astype(str) + " "+df.point2_lat.astype(str) + "," +\
+                                                     df.point3_lon.astype(str) + " "+df.point3_lat.astype(str) + "," +\
+                                                     df.point4_lon.astype(str) + " "+df.point4_lat.astype(str) + "," +\
+                                                     df.point5_lon.astype(str) + " "+df.point5_lat.astype(str) + "," +\
+                                                     df.point6_lon.astype(str) + " "+df.point6_lat.astype(str) + "," +\
+                                                     df.point1_lon.astype(str) + " "+df.point1_lat.astype(str) +\
+                                                     "))"
+
+    for tmp_col in tmp_cols:
+        del df[tmp_col + "_lat"]
+        del df[tmp_col + "_lon"]

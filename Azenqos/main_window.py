@@ -835,7 +835,7 @@ Log_hash list: {}""".format(
     def on_actionCalculate_POI_Coverage_triggered(self):
         print("action calculate poi coverage")
         import calculate_poi_dialog
-        dlg = calculate_poi_dialog.calculate_poi()
+        dlg = calculate_poi_dialog.calculate_poi(self.gc)
         dlg.on_result.connect(lambda df, title: self.add_param_window(custom_df=df, title=title, allow_no_log_opened=True))
         dlg.show()
 

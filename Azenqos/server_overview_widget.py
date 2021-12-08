@@ -342,6 +342,7 @@ class server_overview_widget(QWidget):
             else:
                 dbfp = db_files[0]
             assert os.path.isfile(dbfp)
+            self.gvars.databasePath = dbfp
             combine_azm_end_time = time.perf_counter()
             self.combine_azm_time =  "Combine azm Time: %.02f seconds" % float(combine_azm_end_time-combine_azm_start_time)
             azq_utils.timer_print("overview_perf_combine_azm")

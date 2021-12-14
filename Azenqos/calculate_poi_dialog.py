@@ -30,6 +30,19 @@ from add_param_dialog import CustomQCompleter
 
 COVERAGE_LAYER_DICT = {"nr_servingbeam_ss_rsrp_1":"nr_servingbeam_ss_rsrp_1", "lte_inst_rsrp_1":"lte_inst_rsrp_1", "wcdma_aset_rscp_1":"wcdma_aset_rscp_1", "gsm_rxlev_sub_dbm":"gsm_rxlev_sub_dbm", "overview_nr_servingbeam_ss_rsrp_1":"nr_servingbeam_ss_rsrp_1", "overview_lte_inst_rsrp_1":"lte_inst_rsrp_1", "overview_wcdma_aset_rscp_1":"wcdma_aset_rscp_1", "overview_gsm_rxlev_sub_dbm":"gsm_rxlev_sub_dbm", "ภาพรวม_ความแรงสัญญาณ_5G":"nr_servingbeam_ss_rsrp_1", "ภาพรวม_ความแรงสัญญาณ_4G":"lte_inst_rsrp_1", "ภาพรวม_ความแรงสัญญาณ_3G":"wcdma_aset_rscp_1", "ภาพรวม_ความแรงสัญญาณ_2G":"gsm_rxlev_sub_dbm"}
 
+rat_to_table_and_primary_where_dict = {
+        "NR": "nr_cell_meas",
+        "LTE": "lte_cell_meas",
+        "WCDMA": "wcdma_cell_meas",
+        "GSM": "gsm_cell_meas",
+    }
+rat_to_main_param_dict = {
+    "NR": "nr_servingbeam_ss_rsrp_1",
+    "LTE": "lte_inst_rsrp_1",
+    "WCDMA": "wcdma_aset_rscp_1",
+    "GSM": "gsm_rxlev_sub_dbm",
+}
+
 def haversine(lat1, lon1, lat2, lon2, to_radians=True, earth_radius=6371):
     if to_radians:
         lat1, lon1, lat2, lon2 = np.radians([lat1, lon1, lat2, lon2])
@@ -47,18 +60,6 @@ def geomToLatLon(geomBlob):
     return lat, lon
 
 def get_technology_df(dbcon, cov_column_name_list):
-    rat_to_table_and_primary_where_dict = {
-        "NR": "nr_cell_meas",
-        "LTE": "lte_cell_meas",
-        "WCDMA": "wcdma_cell_meas",
-        "GSM": "gsm_cell_meas",
-    }
-    rat_to_main_param_dict = {
-        "NR": "nr_servingbeam_ss_rsrp_1",
-        "LTE": "lte_inst_rsrp_1",
-        "WCDMA": "wcdma_aset_rscp_1",
-        "GSM": "gsm_rxlev_sub_dbm",
-    }
     per_rat_df_list = []
     for rat in rat_to_table_and_primary_where_dict:
         try:
@@ -144,15 +145,38 @@ class calculate_poi(QDialog):
         df = pd.DataFrame()
         cov_column_name_list = []
         print(self.offset)
-        row_df_list = []
         if self.gc.databasePath is not None:
-            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                cov_df, cov_column_name_list = get_technology_df(dbcon, cov_column_name_list)
-                cov_df["lat"] = cov_df["geom"].apply(lambda x: geomToLatLon(x)[0])
-                cov_df["lon"] = cov_df["geom"].apply(lambda x: geomToLatLon(x)[1])
-                if len(poi_list) > 0:
-                   row_df_list = self.calculate_poi_cov(poi_list, cov_df, cov_column_name_list, self.lat_col, self.lon_col, self.offset )
-                df = pd.DataFrame(row_df_list)
+            if os.name == "nt":
+                row_df_list = []
+                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                    cov_df, cov_column_name_list = get_technology_df(dbcon, cov_column_name_list)
+                    cov_df["lat"] = cov_df["geom"].apply(lambda x: geomToLatLon(x)[0])
+                    cov_df["lon"] = cov_df["geom"].apply(lambda x: geomToLatLon(x)[1])
+                    if len(poi_list) > 0:
+                        row_df_list = self.calculate_poi_cov(poi_list, cov_df, cov_column_name_list, self.lat_col, self.lon_col, self.offset )
+                    df = pd.DataFrame(row_df_list)
+            else:
+                poi_df = pd.DataFrame(poi_list)
+                poi_df = poi_df.rename(columns={self.lat_col: "lat", self.lon_col: "lon"})
+                poi_df = fill_geom_in_location_df.fill_geom_in_location_df(poi_df)
+                poi_df = poi_df.reset_index()
+                import spatialite
+                import fill_geom_in_location_df
+                import db_preprocess
+                with spatialite.connect(self.gc.databasePath) as dbcon:
+                    poi_df.to_sql("poi", dbcon, index=False, if_exists="replace", dtype=db_preprocess.elm_table_main_col_types)
+                    cov_df_list = []
+                    try:
+                        for rat in rat_to_table_and_primary_where_dict:
+                            sql = "select avg(cov.{}) as {}_average from poi ,{} as cov where ST_Intersects(ST_Buffer(poi.geom, {}), cov.geom)".format(
+                                rat_to_main_param_dict[rat], rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat], self.offset
+                            )
+                            cov_df = pd.read_sql(sql, dbcon)
+                            cov_df_list.append(cov_df)
+                            print(cov_df)
+                    except:
+                        pass
+
 
         window_name = "Coverage " + str(self.offset_meters / 1000.0) + "km. around poi: " + self.layer_name
         self.on_result.emit(df, window_name)

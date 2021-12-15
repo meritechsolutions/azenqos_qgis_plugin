@@ -677,7 +677,7 @@ def read_cell_file(
         dprint("read_cell_file: df pre filt out nan len {}".format(len(df)))
 
         # filter only rows that required column is not null/empty
-        df.to_csv("/home/suthat/Desktop/b.csv")
+        # df.to_csv("/home/suthat/Desktop/b.csv")
         for rc in rcs:
             df = df[pd.notnull(df[rc])]
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>321</width>
-    <height>54</height>
+    <width>283</width>
+    <height>86</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,38 +17,60 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLabel" name="poiLabel">
-       <property name="text">
-        <string>POI Layer Name </string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="poiComboBox">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>0</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="radiusLabel">
-       <property name="text">
-        <string>Radius (m.) </string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="radiusLineEdit">
-       <property name="maximumSize">
-        <size>
-         <width>100</width>
-         <height>16777215</height>
-        </size>
-       </property>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="poiLabel">
+           <property name="text">
+            <string>POI Layer Name </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="poiComboBox">
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QLabel" name="radiusLabel">
+           <property name="text">
+            <string>Radius (m.) </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="radiusLineEdit">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="limitLabel">
+           <property name="text">
+            <string>Limit </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="limitLineEdit"/>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>

@@ -2564,7 +2564,7 @@ Log_hash list: {}""".format(
         if not self.gc.cell_files:
             print("add_spider_layer self.gc.cell_files no cellfiles so omit")
             return
-        if not self.gc.overview_opened:  # dont add spider in overview mode
+        if self.gc.overview_opened:  # dont add spider in overview mode
             print("add_spider_layer overview_opened so omit otherwise will draw too many lines")
             return
         try:

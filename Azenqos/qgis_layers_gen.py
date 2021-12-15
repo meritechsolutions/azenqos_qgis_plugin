@@ -29,11 +29,13 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     assert df is not None
 
     if "lat" not in df.columns:
-        if "positioning_lat" in df.columns:
-            df["lat"] = df["positioning_lat"]
+        for alt in ["positioning_lat", "latitude", "Y"]:
+            if alt in df.columns:
+                df["lat"] = df[alt]
     if "lon" not in df.columns:
-        if "positioning_lon" in df.columns:
-            df["lon"] = df["positioning_lon"]
+        for alt in ["positioning_lon", "longitude", "X"]:
+            if alt in df.columns:
+                df["lon"] = df[alt]
 
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         assert "lat" in df.columns and "lon" in df.columns

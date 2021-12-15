@@ -1918,13 +1918,13 @@ def resample_per_log_hash_time(param_df, resample_param, use_last=False):
     return param_df
 
 
-def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None):
+def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None, add_to_qgis=True):
     try:
         import preprocess_azm
         import qgis_layers_gen
         tmpdbfp = tmp_gen_fp("tmp_{}.db".format(uuid.uuid4()))
         assert not os.path.isfile(tmpdbfp)
-        if ("lat" not in df.columns) or ("lon" not in df.columns) and databasePath is not None:
+        if (("lat" not in df.columns) or ("lon" not in df.columns)) and databasePath is not None:
             print("need to merge lat and lon")
             with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
                 df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
@@ -1936,8 +1936,8 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
         )
         assert os.path.isfile(tmpdbfp)
         with contextlib.closing(sqlite3.connect(tmpdbfp)) as dbcon:
-            qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-            tmpdbfp, table, label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, dbcon_for_theme_legend_counts=dbcon
+            return qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+            tmpdbfp, table, label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, dbcon_for_theme_legend_counts=dbcon, add_to_qgis=add_to_qgis
             )
     except:
         type_, value_, traceback_ = sys.exc_info()
@@ -1947,8 +1947,6 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
                 exstr
             )
         )
-        import qt_utils
-        qt_utils.msgbox("create layer failed: " + exstr, title="Failed")
 
 
 def get_theme_qml_tmp_file_for_param(table, col, dbfp, gen_theme_bucket_counts=True):

@@ -65,9 +65,9 @@ def api_create_process(server, token, lhl, azq_report_gen_expression):
 
 def api_device_list_df(server, token):
     resp = call_api_get_resp(server, token, "uapi/list_devices", {}, method="get")
-    print("api_device_list_df resp:", resp)
+    #print("api_device_list_df resp:", resp)
     df = pd.DataFrame(resp)
-    print("api_device_list_df df:", df)
+    #print("api_device_list_df df:", df)
     df["imei_number"] = df["imei_number"].astype(str)
     return df
 

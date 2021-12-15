@@ -8,6 +8,8 @@ import threading
 import time
 import traceback
 import uuid
+import pandas as pd
+import numpy as np
 from functools import partial
 from datatable import TableWindow
 
@@ -373,6 +375,27 @@ class server_overview_widget(QWidget):
             create_layers_end_time = time.perf_counter()
             self.create_layers_time =  "Create Layers Time: %.02f seconds" % float(create_layers_end_time-create_layers_start_time)
             azq_utils.timer_print("overview_perf_create_layers")
+
+            ############## create kpi stats layers if present
+            # get all tables starting with
+            with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+                tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name
+                for table in tables:
+                    if table.startswith("kpi_"):
+                        tdf = pd.read_sql("select * from {}".format(table), dbcon)
+                        layer = azq_utils.create_layer_in_qgis(None, tdf, table, add_to_qgis=False)
+                        if layer is not None:
+                            self.table_to_layer_dict[table] = layer
+                            self.layer_id_to_visible_flag_dict[layer.id()] = False
+                try:
+                    derived_dfs_= gen_derived_dfs(dbcon)
+                    # TODO create and add layers for each derived table
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                    print("WARNING: gen derived table failed - exception: {}".format(exstr))
+            ############## create kpi stats summary table if present
+
             if self.closed:
                 raise Exception("window closed")
             self.status_update_signal.emit("DONE")
@@ -397,4 +420,50 @@ class WidgetDialog(QDialog):
         self.widget = widget
         layout.addWidget(self.widget)
 
-    
+
+def gen_tp_stats_per_cell(cell_df, tp_col, kbps_to_mbps=False):
+    max_tp = None
+    max_tp_lh = None
+    if len(cell_df):
+        idxmax = cell_df[tp_col].idxmax()
+        max_tp = cell_df[tp_col].loc[idxmax]
+        max_tp_lh = cell_df.log_hash.loc[idxmax]
+        if max_tp is not None and kbps_to_mbps:
+            max_tp /= 1000.0
+    return pd.Series({"max_tp": max_tp, "max_tp_log_hash": max_tp_lh})
+
+def gen_volte_stats_per_cell(cell_df):
+    #print("cell_df", cell_df)
+    n_init = len(cell_df)
+    n_blocks = len(cell_df[cell_df.call_end_type == "Call Block"])
+    n_drops = len(cell_df[cell_df.call_end_type == "Call Drop"])
+    n_end = len(cell_df[cell_df.call_end_type == "Call End"])
+    n_setup = len(cell_df[pd.notnull(cell_df.call_setup_time)])
+    cssr = None
+    if n_init:
+        cssr = n_setup/n_init
+    return pd.Series({"cssr": cssr, "n_init": n_init, "n_setup": n_setup, "n_blocks": n_blocks, "n_drops": n_drops, "n_end": n_end, "log_list": cell_df.log_hash.unique()})
+
+def gen_derived_dfs(dbcon):
+    ret = {}
+    tables = list(pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name)
+    print("tables:", tables)
+    if "kpi_volte" in list(tables):
+        print("kv enter")
+        df = pd.read_sql("select * from kpi_volte", dbcon)
+        df["log_hash"] = df["log_hash"].astype(np.int64)
+        df = df.groupby(["lte_sib1_mcc","lte_sib1_mnc","lte_sib1_tac","lte_sib1_eci"], as_index=False).apply(
+            lambda cell_df: gen_volte_stats_per_cell(cell_df)
+        )
+        ret["cell_stats_volte"] = df
+        print("kv df\n:", df)
+    if "kpi_ftp_dl" in list(tables):
+        print("ftp enter")
+        df = pd.read_sql("select * from kpi_ftp_dl", dbcon)
+        df["log_hash"] = df["log_hash"].astype(np.int64)
+        df = df.groupby(["lte_sib1_mcc", "lte_sib1_mnc", "lte_sib1_tac", "lte_sib1_eci"], as_index=False).apply(
+            lambda cell_df: gen_tp_stats_per_cell(cell_df, "ftp_dl", kbps_to_mbps=True)
+        )
+        ret["cell_stats_volte"] = df
+        print("kv df\n:", df)
+    return ret

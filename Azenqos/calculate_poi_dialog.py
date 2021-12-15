@@ -31,11 +31,11 @@ from add_param_dialog import CustomQCompleter
 COVERAGE_LAYER_DICT = {"nr_servingbeam_ss_rsrp_1":"nr_servingbeam_ss_rsrp_1", "lte_inst_rsrp_1":"lte_inst_rsrp_1", "wcdma_aset_rscp_1":"wcdma_aset_rscp_1", "gsm_rxlev_sub_dbm":"gsm_rxlev_sub_dbm", "overview_nr_servingbeam_ss_rsrp_1":"nr_servingbeam_ss_rsrp_1", "overview_lte_inst_rsrp_1":"lte_inst_rsrp_1", "overview_wcdma_aset_rscp_1":"wcdma_aset_rscp_1", "overview_gsm_rxlev_sub_dbm":"gsm_rxlev_sub_dbm", "ภาพรวม_ความแรงสัญญาณ_5G":"nr_servingbeam_ss_rsrp_1", "ภาพรวม_ความแรงสัญญาณ_4G":"lte_inst_rsrp_1", "ภาพรวม_ความแรงสัญญาณ_3G":"wcdma_aset_rscp_1", "ภาพรวม_ความแรงสัญญาณ_2G":"gsm_rxlev_sub_dbm"}
 
 rat_to_table_and_primary_where_dict = {
-        "NR": "nr_cell_meas",
-        "LTE": "lte_cell_meas",
-        "WCDMA": "wcdma_cell_meas",
-        "GSM": "gsm_cell_meas",
-    }
+    "NR": "nr_cell_meas",
+    "LTE": "lte_cell_meas",
+    "WCDMA": "wcdma_cell_meas",
+    "GSM": "gsm_cell_meas",
+}
 rat_to_main_param_dict = {
     "NR": "nr_servingbeam_ss_rsrp_1",
     "LTE": "lte_inst_rsrp_1",
@@ -107,17 +107,17 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset):
     import spatialite
     with spatialite.connect(db_path) as dbcon:
         for index, row in poi_df.iterrows():
-            print(index)
+            x = row["lon"]
+            y = row["lat"]
             for rat in rat_to_table_and_primary_where_dict:
                 cov_list = []
                 try:
-                    cov_list = dbcon.execute("SELECT {} FROM {} WHERE ST_Intersects(ST_Buffer(makepoint({},{}), {}), geom) LIMIT 10".format(
-                        rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat], row["lon"], row["lat"], offset)).fetchall()
+                    cov_list = dbcon.execute("SELECT {} FROM {} WHERE st_intersects(st_buffer(makepoint({},{}), {}), geom) limit 10".format(
+                        rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat], x, y, offset)).fetchall()
                     cov_list = [x[0] for x in cov_list]
                 except Exception as e:
                     print(e)
                 avg = Average(cov_list)
-                # avg = cov_list
                 print(avg)
                 df.loc[index, rat_to_main_param_dict[rat]+"_average"] = avg
     return df

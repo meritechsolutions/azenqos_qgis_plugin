@@ -31,11 +31,11 @@ from add_param_dialog import CustomQCompleter
 COVERAGE_LAYER_DICT = {"nr_servingbeam_ss_rsrp_1":"nr_servingbeam_ss_rsrp_1", "lte_inst_rsrp_1":"lte_inst_rsrp_1", "wcdma_aset_rscp_1":"wcdma_aset_rscp_1", "gsm_rxlev_sub_dbm":"gsm_rxlev_sub_dbm", "overview_nr_servingbeam_ss_rsrp_1":"nr_servingbeam_ss_rsrp_1", "overview_lte_inst_rsrp_1":"lte_inst_rsrp_1", "overview_wcdma_aset_rscp_1":"wcdma_aset_rscp_1", "overview_gsm_rxlev_sub_dbm":"gsm_rxlev_sub_dbm", "ภาพรวม_ความแรงสัญญาณ_5G":"nr_servingbeam_ss_rsrp_1", "ภาพรวม_ความแรงสัญญาณ_4G":"lte_inst_rsrp_1", "ภาพรวม_ความแรงสัญญาณ_3G":"wcdma_aset_rscp_1", "ภาพรวม_ความแรงสัญญาณ_2G":"gsm_rxlev_sub_dbm"}
 
 rat_to_table_and_primary_where_dict = {
-        "NR": "nr_cell_meas",
-        "LTE": "lte_cell_meas",
-        "WCDMA": "wcdma_cell_meas",
-        "GSM": "gsm_cell_meas",
-    }
+    "NR": "nr_cell_meas",
+    "LTE": "lte_cell_meas",
+    "WCDMA": "wcdma_cell_meas",
+    "GSM": "gsm_cell_meas",
+}
 rat_to_main_param_dict = {
     "NR": "nr_servingbeam_ss_rsrp_1",
     "LTE": "lte_inst_rsrp_1",
@@ -89,8 +89,6 @@ def calculate_poi_cov(poi_list, cov_df, cov_column_name_list, lat_col, lon_col, 
             cov_df["poi_lat"] = poi_lat
             cov_df["poi_lon"] = poi_lon
             cov_df_loc = cov_df.loc[(abs(cov_df["lat"] - cov_df["poi_lat"]) <= offset) & (abs(cov_df["lon"] - cov_df["poi_lon"]) <= offset) ]
-            # cov_df["dist"] = haversine(cov_df["poi_lat"], cov_df["poi_lon"], cov_df["lat"], cov_df["lon"]) * 1000.0
-            # cov_df_loc = cov_df.loc[cov_df["dist"] <= self.offset_meters]
             if len(cov_df_loc) > 0:
                 for cov_column_name in cov_column_name_list:
                     avg_cov_col = cov_column_name+"_average"
@@ -98,6 +96,31 @@ def calculate_poi_cov(poi_list, cov_df, cov_column_name_list, lat_col, lon_col, 
 
                 row_df_list.append(row)
     return row_df_list
+
+def Average(lst):
+    if len(lst) > 0:
+        return sum(lst) / len(lst)
+    return
+
+def calculate_poi_cov_spatialite(poi_df, db_path, offset):
+    df = poi_df.copy()
+    import spatialite
+    with spatialite.connect(db_path) as dbcon:
+        for index, row in poi_df.iterrows():
+            x = row["lon"]
+            y = row["lat"]
+            for rat in rat_to_table_and_primary_where_dict:
+                cov_list = []
+                try:
+                    cov_list = dbcon.execute("SELECT {} FROM {} WHERE st_intersects(st_buffer(makepoint({},{}), {}), geom) limit 10".format(
+                        rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat], x, y, offset)).fetchall()
+                    cov_list = [x[0] for x in cov_list]
+                except Exception as e:
+                    print(e)
+                avg = Average(cov_list)
+                print(avg)
+                df.loc[index, rat_to_main_param_dict[rat]+"_average"] = avg
+    return df
 
 class calculate_poi(QDialog):
     on_result = pyqtSignal(object, object)
@@ -141,7 +164,8 @@ class calculate_poi(QDialog):
         columns = [column.lower() for column in columns]
         poi_list = []
         for feat in layer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
-            poi_list.append(dict(zip(columns, feat.attributes())))
+            if isinstance(feat[self.lon_col], float) and isinstance(feat[self.lat_col], float):
+                poi_list.append(dict(zip(columns, feat.attributes())))
         df = pd.DataFrame()
         cov_column_name_list = []
         print(self.offset)
@@ -153,30 +177,12 @@ class calculate_poi(QDialog):
                     cov_df["lat"] = cov_df["geom"].apply(lambda x: geomToLatLon(x)[0])
                     cov_df["lon"] = cov_df["geom"].apply(lambda x: geomToLatLon(x)[1])
                     if len(poi_list) > 0:
-                        row_df_list = self.calculate_poi_cov(poi_list, cov_df, cov_column_name_list, self.lat_col, self.lon_col, self.offset )
+                        row_df_list = calculate_poi_cov(poi_list, cov_df, cov_column_name_list, self.lat_col, self.lon_col, self.offset )
                     df = pd.DataFrame(row_df_list)
             else:
                 poi_df = pd.DataFrame(poi_list)
                 poi_df = poi_df.rename(columns={self.lat_col: "lat", self.lon_col: "lon"})
-                poi_df = fill_geom_in_location_df.fill_geom_in_location_df(poi_df)
-                poi_df = poi_df.reset_index()
-                import spatialite
-                import fill_geom_in_location_df
-                import db_preprocess
-                with spatialite.connect(self.gc.databasePath) as dbcon:
-                    poi_df.to_sql("poi", dbcon, index=False, if_exists="replace", dtype=db_preprocess.elm_table_main_col_types)
-                    cov_df_list = []
-                    try:
-                        for rat in rat_to_table_and_primary_where_dict:
-                            sql = "select avg(cov.{}) as {}_average from poi ,{} as cov where ST_Intersects(ST_Buffer(poi.geom, {}), cov.geom)".format(
-                                rat_to_main_param_dict[rat], rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat], self.offset
-                            )
-                            cov_df = pd.read_sql(sql, dbcon)
-                            cov_df_list.append(cov_df)
-                            print(cov_df)
-                    except:
-                        pass
-
+                df = calculate_poi_cov_spatialite(poi_df, self.gc.databasePath, self.offset)
 
         window_name = "Coverage " + str(self.offset_meters / 1000.0) + "km. around poi: " + self.layer_name
         self.on_result.emit(df, window_name)

@@ -15,6 +15,9 @@ DEFAULT_PREF = {
     "point_to_site_match_max_distance_meters": "15000",
     "point_to_site_serving_match_cgi": "0",
 
+    "default_mnc": "15",
+    "default_mcc": "520"
+
 }
 SELECTED_POINT_MATCH_PARAMS = ("log_hash", "posid", "seqid", "time", "lat", "lon")
 

@@ -48,6 +48,7 @@ class server_overview_widget(QWidget):
         self.devices_selection_df = None
         self.main_params_only = True
         self.auto_zoom = True
+        self.derived_dfs = None
 
     def setupUi(self):
         # keep incase thread calls self after closed - self.setAttribute(Qt.WA_DeleteOnClose)
@@ -380,20 +381,43 @@ class server_overview_widget(QWidget):
             # get all tables starting with
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
                 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name
+                has_kpi_tables = False
                 for table in tables:
+                    if self.closed:
+                        raise Exception("window closed")
                     if table.startswith("kpi_"):
+                        has_kpi_tables = True
+                        self.status_update_signal.emit("Create KPI layer: {}".format(table))
                         tdf = pd.read_sql("select * from {}".format(table), dbcon)
                         layer = azq_utils.create_layer_in_qgis(None, tdf, table, add_to_qgis=False)
                         if layer is not None:
                             self.table_to_layer_dict[table] = layer
                             self.layer_id_to_visible_flag_dict[layer.id()] = False
-                try:
-                    derived_dfs_= gen_derived_dfs(dbcon)
-                    # TODO create and add layers for each derived table
-                except:
-                    type_, value_, traceback_ = sys.exc_info()
-                    exstr = str(traceback.format_exception(type_, value_, traceback_))
-                    print("WARNING: gen derived table failed - exception: {}".format(exstr))
+                if self.closed:
+                    raise Exception("window closed")
+                if has_kpi_tables:
+                    try:
+                        self.status_update_signal.emit("Create Cell-wise stats...")
+                        self.derived_dfs = gen_cell_kpi_dfs(dbcon, self.status_update_signal)
+                        self.status_update_signal.emit("Create Cell-wise stats... done")
+                        if self.derived_dfs is not None:
+                            for table, tdf in self.derived_dfs.items():
+                                try:
+                                    self.status_update_signal.emit("Creating Cell-wise layer: {}".format(table))
+                                    layer = azq_utils.create_layer_in_qgis(None, tdf, table, add_to_qgis=False)
+                                    if layer is not None:
+                                        self.table_to_layer_dict[table] = layer
+                                        self.layer_id_to_visible_flag_dict[layer.id()] = False
+                                    self.status_update_signal.emit("Creating Cell-wise layer: {}... done".format(table))
+                                except Exception as ce:
+                                    self.status_update_signal.emit("Creating Cell-wise layer: {}... failed: {}".format(table, ce))
+                                    type_, value_, traceback_ = sys.exc_info()
+                                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                                    print("WARNING: gen cell wise layer failed - exception: {}".format(exstr))
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print("WARNING: gen derived table failed - exception: {}".format(exstr))
             ############## create kpi stats summary table if present
 
             if self.closed:
@@ -420,50 +444,190 @@ class WidgetDialog(QDialog):
         self.widget = widget
         layout.addWidget(self.widget)
 
+def get_common_df_lh_time_stats_sr(cell_df):
+    lh = None
+    time = None
+    time_first = None
+    lat = None
+    lon = None
+    lhl = None
+    if len(cell_df):
+        idxmaxtime = cell_df["time"].idxmax()
+        time_first = cell_df["time"].min()
+        lh = cell_df.log_hash.loc[idxmaxtime]
+        time = cell_df.time.loc[idxmaxtime]
+        lat = cell_df.lat.loc[idxmaxtime]
+        lon = cell_df.lon.loc[idxmaxtime]
+        lhl = cell_df.log_hash.unique()
+    return pd.Series(
+        {
+            "log_hash": lh,
+            "time": time,
+            "time_first": time_first,
+            "lat": lat,
+            "lon": lon,
+            "n_samples": len(cell_df),
+            "n_logs": len(lhl),
+            "log_list": ",".join(pd.Series(lhl).astype(str).values)
+        }
+    )
 
-def gen_tp_stats_per_cell(cell_df, tp_col, kbps_to_mbps=False):
+
+def gen_tp_stats_per_cell(cell_df, tp_col):
+    common_sr = get_common_df_lh_time_stats_sr(cell_df)
     max_tp = None
     max_tp_lh = None
     if len(cell_df):
         idxmax = cell_df[tp_col].idxmax()
         max_tp = cell_df[tp_col].loc[idxmax]
         max_tp_lh = cell_df.log_hash.loc[idxmax]
+        kbps_to_mbps = True
+        if tp_col.endswith("_mbps"):
+            kbps_to_mbps = False
         if max_tp is not None and kbps_to_mbps:
             max_tp /= 1000.0
-    return pd.Series({"max_tp": max_tp, "max_tp_log_hash": max_tp_lh})
+    return pd.concat(
+        [
+            common_sr,
+            pd.Series(
+                {
+                    "max_tp_mbps": max_tp,
+                    "max_tp_log_hash": max_tp_lh
+                }
+            )
+        ]
+    )
 
-def gen_volte_stats_per_cell(cell_df):
-    #print("cell_df", cell_df)
-    n_init = len(cell_df)
-    n_blocks = len(cell_df[cell_df.call_end_type == "Call Block"])
-    n_drops = len(cell_df[cell_df.call_end_type == "Call Drop"])
-    n_end = len(cell_df[cell_df.call_end_type == "Call End"])
-    n_setup = len(cell_df[pd.notnull(cell_df.call_setup_time)])
+
+def gen_call_stats_per_cell(cell_df, unused_param):
+    common_sr = get_common_df_lh_time_stats_sr(cell_df)
     cssr = None
+    n_init = None
+    n_blocks = None
+    n_drops = None
+    n_end = None
+    n_setup = None
+    csd_avg = None
+    csd_min = None
+    csd_max = None
+    if len(cell_df):
+        n_init = len(cell_df)
+        n_blocks = len(cell_df[cell_df.call_end_type == "Call Block"])
+        n_drops = len(cell_df[cell_df.call_end_type == "Call Drop"])
+        n_end = len(cell_df[cell_df.call_end_type == "Call End"])
+        n_setup = len(cell_df[pd.notnull(cell_df.call_setup_time)])
+        csd_avg = cell_df.call_setup_duration.mean()
+        csd_max = cell_df.call_setup_duration.max()
+        csd_min = cell_df.call_setup_duration.min()
     if n_init:
-        cssr = n_setup/n_init
-    return pd.Series({"cssr": cssr, "n_init": n_init, "n_setup": n_setup, "n_blocks": n_blocks, "n_drops": n_drops, "n_end": n_end, "log_list": cell_df.log_hash.unique()})
+        cssr = (n_setup*100.0)/n_init
+    return pd.concat(
+        [
+            common_sr,
+            pd.Series(
+                {
+                "cssr": cssr,
+                "csd_avg": csd_avg,
+                "csd_min": csd_min,
+                "csd_max": csd_max,
+                "n_init": n_init,
+                "n_setup": n_setup,
+                "n_blocks": n_blocks,
+                "n_drops": n_drops,
+                "n_end": n_end,
+                }
+            )
+        ]
+    )
 
-def gen_derived_dfs(dbcon):
+
+def gen_dur_stats_per_cell(cell_df, dur_col):
+    cell_df = cell_df[pd.notnull(cell_df[dur_col])]  # rm empty rows
+    common_sr = get_common_df_lh_time_stats_sr(cell_df)
+    max_dur = None
+    max_dur_lh = None
+    min_dur = None
+    min_dur_lh = None
+    avg_dur = None
+    if len(cell_df):
+        idxmax = cell_df[dur_col].idxmax()
+        max_dur = cell_df[dur_col].loc[idxmax]
+        max_dur_lh = cell_df.log_hash.loc[idxmax]
+        avg_dur = cell_df[dur_col].mean()
+    return pd.concat(
+        [
+            common_sr,
+            pd.Series(
+                {
+                    "avg_dur": avg_dur,
+                    "max_dur": max_dur,
+                    "max_dur_log_hash": max_dur_lh,
+                    "min_dur": min_dur,
+                    "min_dur_log_hash": min_dur_lh,
+                }
+            )
+        ]
+    )
+
+
+def print_and_emit(msg, update_signal=None):
+    print(msg)
+    update_signal.emit(msg) if update_signal is not None else None
+
+
+def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False):
     ret = {}
     tables = list(pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name)
-    print("tables:", tables)
-    if "kpi_volte" in list(tables):
-        print("kv enter")
-        df = pd.read_sql("select * from kpi_volte", dbcon)
-        df["log_hash"] = df["log_hash"].astype(np.int64)
-        df = df.groupby(["lte_sib1_mcc","lte_sib1_mnc","lte_sib1_tac","lte_sib1_eci"], as_index=False).apply(
-            lambda cell_df: gen_volte_stats_per_cell(cell_df)
-        )
-        ret["cell_stats_volte"] = df
-        print("kv df\n:", df)
-    if "kpi_ftp_dl" in list(tables):
-        print("ftp enter")
-        df = pd.read_sql("select * from kpi_ftp_dl", dbcon)
-        df["log_hash"] = df["log_hash"].astype(np.int64)
-        df = df.groupby(["lte_sib1_mcc", "lte_sib1_mnc", "lte_sib1_tac", "lte_sib1_eci"], as_index=False).apply(
-            lambda cell_df: gen_tp_stats_per_cell(cell_df, "ftp_dl", kbps_to_mbps=True)
-        )
-        ret["cell_stats_volte"] = df
-        print("kv df\n:", df)
+    #print("tables:", tables)
+
+    kpi_table_to_apply_func_and_param = {
+        "kpi_ims_reg": (gen_dur_stats_per_cell, "duration"),
+        "kpi_attach": (gen_dur_stats_per_cell, "dur"),
+        "kpi_detach": (gen_dur_stats_per_cell, "dur"),
+        "kpi_fdd_to_tdd": (gen_dur_stats_per_cell, "duration"),
+        "kpi_ftp_dl": (gen_tp_stats_per_cell, "ftp_dl"),
+        "kpi_ftp_ul": (gen_tp_stats_per_cell, "ftp_ul"),
+        "kpi_gsm_to_lte": (gen_dur_stats_per_cell, "duration"),
+        "kpi_interfreq": (gen_dur_stats_per_cell, "duration"),
+        "kpi_intersite": (gen_dur_stats_per_cell, "duration"),
+        "kpi_intersite_volte": (gen_dur_stats_per_cell, "duration"),
+        "kpi_intrasite": (gen_dur_stats_per_cell, "duration"),
+        "kpi_intrasite_volte": (gen_dur_stats_per_cell, "duration"),
+        "kpi_lte_to_gsm": (gen_dur_stats_per_cell, "duration"),
+        "kpi_ping_rtt": (gen_dur_stats_per_cell, "ping_rtt_each"),
+        "kpi_ping_rtp": (gen_dur_stats_per_cell, "prev_time_diff_rx_mute"),
+        "kpi_srvcc": (gen_dur_stats_per_cell, "duration_millis"),
+        "kpi_tdd_to_fdd": (gen_dur_stats_per_cell, "duration"),
+    }
+    for t in ["kpi_csfb", "kpi_csfb_gsm", "kpi_volte"]:
+        kpi_table_to_apply_func_and_param[t] = (gen_call_stats_per_cell, None)
+
+    nt = len(kpi_table_to_apply_func_and_param)
+    it = 0
+    for table, fp in kpi_table_to_apply_func_and_param.items():
+        if table in tables:
+            it += 1
+            try:
+                print_and_emit("Calc Cell-wise stats for {} [{}/{}]".format(table, it, nt), update_signal)
+                afunc, aparam = fp
+                df = get_table_df_gb_lte_sib1_cgi(table, dbcon).apply(
+                    lambda cell_df: afunc(cell_df, aparam)
+                )
+                df = df.reset_index()
+                ret[table.replace("kpi_", "cell_kpi_", 1)] = df
+            except Exception as ex:
+                if raise_if_failed:
+                    raise ex
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: gen_cell_stats_dfs table: {} failed - exception: {}".format(table, exstr))
+
     return ret
+
+
+def get_table_df_gb_lte_sib1_cgi(table, dbcon):
+    df = pd.read_sql("select * from {}".format(table), dbcon, parse_dates=["time"])
+    df["log_hash"] = df["log_hash"].astype(np.int64)
+    gb = df.groupby(["lte_sib1_mcc", "lte_sib1_mnc", "lte_sib1_tac", "lte_sib1_eci"], as_index=False)
+    return gb
+

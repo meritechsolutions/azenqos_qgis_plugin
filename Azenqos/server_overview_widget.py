@@ -380,6 +380,7 @@ class server_overview_widget(QWidget):
             ############## create kpi stats layers if present
             # get all tables starting with
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+                map_log_hash_imei_df = pd.read_sql("SELECT log_hash, log_imei FROM dumped_logs", dbcon)
                 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name
                 has_kpi_tables = False
                 for table in tables:
@@ -403,6 +404,7 @@ class server_overview_widget(QWidget):
                         if self.derived_dfs is not None:
                             for table, tdf in self.derived_dfs.items():
                                 try:
+                                    tdf = tdf.merge(map_log_hash_imei_df, left_on="log_hash", right_on='log_hash')
                                     self.status_update_signal.emit("Creating Cell-wise layer: {}".format(table))
                                     layer = azq_utils.create_layer_in_qgis(None, tdf, table, add_to_qgis=False)
                                     if layer is not None:

@@ -139,7 +139,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
             view = param
             table_cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns
             table_has_geom = "geom" in table_cols
-            table_has_modem_time = "modem_time" in table_cols
+            # table_has_modem_time = "modem_time" in table_cols
             print("table: {} table_has_geom {}".format(table, table_has_geom))
             if cre_table:
                 print("read count")

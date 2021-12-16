@@ -7,11 +7,7 @@ from PyQt5.QtGui import QIcon, QPixmap, QIntValidator
 try:
     from qgis.core import (
         QgsProject,
-        QgsPointXY,
-        QgsRectangle,
         QgsFeatureRequest,
-        QgsSpatialIndex,
-        QgsFeature
     )
 except:
     pass
@@ -109,7 +105,6 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset):
     df = poi_df.copy()
     import spatialite
     import fill_geom_in_location_df
-    import db_preprocess
     poi_df = fill_geom_in_location_df.fill_geom_in_location_df(poi_df)
     poi_df = poi_df.dropna().reset_index(drop=True)
     # poi_df = poi_df.reset_index()

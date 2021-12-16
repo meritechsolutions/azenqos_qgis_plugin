@@ -68,6 +68,8 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                         try:
                             args = []
                             for table, param in tp_list:
+                                if table == "ping":
+                                    param = "ping_rtt"
                                 args.append((table, param, db_fp, gen_theme_bucket_counts))
                             qml_tmp_fp_list = pool.starmap(azq_utils.get_theme_qml_tmp_file_for_param, args)
                         finally:
@@ -75,6 +77,8 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                     else:
                         print("gen theme qml files seq")
                         for table, param in tp_list:
+                            if table == "ping":
+                                param = "ping_rtt"
                             qml_tmp_fp_list.append(azq_utils.get_theme_qml_tmp_file_for_param(table, param, db_fp, gen_theme_bucket_counts=gen_theme_bucket_counts))
                     azq_utils.timer_print("gen_theme_qml")
                     assert qml_tmp_fp_list is not None

@@ -105,8 +105,7 @@ def Average(lst):
         return sum(lst) / len(lst)
     return
 
-def calculate_poi_cov_spatialite(poi_df, db_path, offset, limit = 10):
-    limit = int(limit)
+def calculate_poi_cov_spatialite(poi_df, db_path, offset):
     df = poi_df.copy()
     import spatialite
     import fill_geom_in_location_df
@@ -115,6 +114,7 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, limit = 10):
     poi_df = poi_df.dropna().reset_index(drop=True)
     # poi_df = poi_df.reset_index()
     with contextlib.closing(spatialite.connect(db_path)) as dbcon:
+        col_name_list = []
         for rat in rat_to_table_and_primary_where_dict:
             dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(rat_to_table_and_primary_where_dict[rat]))
             dbcon.commit()
@@ -126,9 +126,10 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, limit = 10):
             ymax = y+offset
             ymin = y-offset
             for rat in rat_to_table_and_primary_where_dict:
-                cov_list = []
+                # cov_list = []
+                avg = None
                 try:
-                    idx =  dbcon.execute("SELECT avg({}) FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(rat_to_main_param_dict[rat],rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], xmin, xmax, ymin, ymax)).fetchone()
+                    avg =  dbcon.execute("SELECT avg({}) FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(rat_to_main_param_dict[rat],rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], xmin, xmax, ymin, ymax)).fetchone()
                     # idx =  dbcon.execute("SELECT * FROM idx_{}_geom ".format(rat_to_table_and_primary_where_dict[rat])).fetchone()
                     # print(idx)
                     # exit()
@@ -141,12 +142,15 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, limit = 10):
                     # cov_list = dbcon.execute("SELECT {} FROM {} WHERE abs(st_x(geom) - {}) <= {} and abs(st_y(geom) - {}) <= {} limit {}".format(
                     #     rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat], x, offset, y, offset, limit)).fetchall()
                     # print(cov_list)
-                    cov_list = [x[0] for x in cov_list]
+                    # cov_list = [x[0] for x in cov_list]
                 except Exception as e:
                     print(e)
                 # avg = Average(cov_list)
-                avg = idx
-                df.loc[index, rat_to_main_param_dict[rat]+"_average"] = avg
+                col_name = rat_to_main_param_dict[rat]+"_average"
+                if col_name not in col_name_list:
+                    col_name_list.append(col_name)
+                df.loc[index, col_name] = avg
+        df = df.dropna(subset=col_name_list, how='all')
     return df
 
 class calculate_poi(QDialog):
@@ -155,7 +159,6 @@ class calculate_poi(QDialog):
         super(calculate_poi, self).__init__(None)
         self.apply_mode = apply_mode
         self.radius = "1000"
-        self.limit = "10"
         self.gc = gc
         self.names = [layer.name() for layer in QgsProject.instance().mapLayers().values()]
         self.layer_name = self.names[0]
@@ -169,8 +172,6 @@ class calculate_poi(QDialog):
         self.setWindowTitle("Calculate POI Coverage")
         self.ui.radiusLineEdit.setValidator(QIntValidator())
         self.ui.radiusLineEdit.setText(self.radius) 
-        self.ui.limitLineEdit.setValidator(QIntValidator())
-        self.ui.limitLineEdit.setText(self.limit) 
         self.ui.poiComboBox.setEditable(True)
         self.ui.poiComboBox.setInsertPolicy(QComboBox.NoInsert)
         completer = CustomQCompleter(self.ui.poiComboBox)
@@ -185,7 +186,6 @@ class calculate_poi(QDialog):
     def on_ok_button_click(self):
         self.layer_name = self.ui.poiComboBox.currentText()
         self.radius = self.ui.radiusLineEdit.text()
-        self.limit = self.ui.limitLineEdit.text()
         self.offset_meters = int(self.radius)
         self.offset = azq_cell_file.METER_IN_WGS84 * self.offset_meters
         self.avg_col_list = []
@@ -195,7 +195,8 @@ class calculate_poi(QDialog):
         columns = [column.lower() for column in columns]
         poi_list = []
         for feat in layer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry)):
-            poi_list.append(dict(zip(columns, feat.attributes())))
+            if isinstance(feat[self.lon_col], float) and isinstance(feat[self.lon_col], float):
+                poi_list.append(dict(zip(columns, feat.attributes())))
         df = pd.DataFrame()
         cov_column_name_list = []
         print(self.offset)
@@ -213,7 +214,7 @@ class calculate_poi(QDialog):
             else:
                 poi_df = pd.DataFrame(poi_list)
                 poi_df = poi_df.rename(columns={self.lat_col: "lat", self.lon_col: "lon"})
-                df = calculate_poi_cov_spatialite(poi_df, self.gc.databasePath, self.offset, self.limit)
+                df = calculate_poi_cov_spatialite(poi_df, self.gc.databasePath, self.offset)
 
         window_name = "Coverage " + str(self.offset_meters / 1000.0) + "km. around poi: " + self.layer_name
         self.on_result.emit(df, window_name)

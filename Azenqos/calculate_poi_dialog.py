@@ -117,7 +117,6 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset):
         col_name_list = []
         for rat in rat_to_table_and_primary_where_dict:
             dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(rat_to_table_and_primary_where_dict[rat]))
-            dbcon.commit()
         for index, row in poi_df.iterrows():
             x = row["lon"]
             y = row["lat"]

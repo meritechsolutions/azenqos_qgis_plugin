@@ -347,7 +347,7 @@ class server_overview_widget(QWidget):
             assert os.path.isfile(dbfp)
             self.gvars.databasePath = dbfp
             combine_azm_end_time = time.perf_counter()
-            self.combine_azm_time =  "Combine azm Time: %.02f seconds" % float(combine_azm_end_time-combine_azm_start_time)
+            self.combine_azm_time =  "DB combine combine time: %.02f seconds" % float(combine_azm_end_time-combine_azm_start_time)
             azq_utils.timer_print("overview_perf_combine_azm")
 
             if self.closed:
@@ -373,9 +373,6 @@ class server_overview_widget(QWidget):
                     self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_", gen_theme_bucket_counts=False, main_rat_params_only=self.main_params_only
                 )
                 self.gvars.overview_opened = True
-            create_layers_end_time = time.perf_counter()
-            self.create_layers_time =  "Create Layers Time: %.02f seconds" % float(create_layers_end_time-create_layers_start_time)
-            azq_utils.timer_print("overview_perf_create_layers")
 
             ############## create kpi stats layers if present
             # get all tables starting with
@@ -421,6 +418,11 @@ class server_overview_widget(QWidget):
                         exstr = str(traceback.format_exception(type_, value_, traceback_))
                         print("WARNING: gen derived table failed - exception: {}".format(exstr))
             ############## create kpi stats summary table if present
+
+            create_layers_end_time = time.perf_counter()
+            self.create_layers_time = "Create Layers Time: %.02f seconds" % float(
+                create_layers_end_time - create_layers_start_time)
+            azq_utils.timer_print("overview_perf_create_layers")
 
             if self.closed:
                 raise Exception("window closed")
@@ -553,8 +555,11 @@ def gen_dur_stats_per_cell(cell_df, dur_col):
     avg_dur = None
     if len(cell_df):
         idxmax = cell_df[dur_col].idxmax()
+        idxmin = cell_df[dur_col].idxmin()
         max_dur = cell_df[dur_col].loc[idxmax]
         max_dur_lh = cell_df.log_hash.loc[idxmax]
+        min_dur = cell_df[dur_col].loc[idxmin]
+        min_dur_lh = cell_df.log_hash.loc[idxmin]
         avg_dur = cell_df[dur_col].mean()
     return pd.concat(
         [

@@ -403,11 +403,6 @@ class server_overview_widget(QWidget):
                         if self.derived_dfs is not None:
                             for table, tdf in self.derived_dfs.items():
                                 try:
-                                    tdf = tdf.merge(map_log_hash_imei_df, left_on="log_hash", right_on='log_hash')
-                                    tdf["last_log_hash"] = tdf["log_hash"]
-                                    tdf = tdf.merge(map_imei_devices_df, left_on="log_imei", right_on='imei_number')
-                                    tdf["group_name"] = tdf["group_name"].apply(lambda x: ",".join(pd.Series(x).astype(str).values))
-                                    tdf = tdf.rename(columns={"log_imei": "last_log_imei", "group_name": "last_group_name", "alias": "last_phone_name"}, errors="raise")
                                     self.status_update_signal.emit("Creating Cell-wise layer: {}".format(table))
                                     layer = azq_utils.create_layer_in_qgis(None, tdf, table, add_to_qgis=False)
                                     if layer is not None:
@@ -465,6 +460,9 @@ def get_common_df_lh_time_stats_sr(cell_df):
         idxmaxtime = cell_df["time"].idxmax()
         time_first = cell_df["time"].min()
         lh = cell_df.log_hash.loc[idxmaxtime]
+        last_log_imei = cell_df.log_imei.loc[idxmaxtime]
+        last_phone = cell_df.alias.loc[idxmaxtime]
+        last_group = cell_df.group_name.loc[idxmaxtime]
         time = cell_df.time.loc[idxmaxtime]
         lat = cell_df.lat.loc[idxmaxtime]
         lon = cell_df.lon.loc[idxmaxtime]
@@ -476,6 +474,9 @@ def get_common_df_lh_time_stats_sr(cell_df):
         {
             "log_hash": lh,
             "time": time,
+            "last_log_imei": last_log_imei,
+            "last_phone_name": last_phone,
+            "last_group_name": ",".join(pd.Series(last_group).astype(str).values),
             "time_first": time_first,
             "lat": lat,
             "lon": lon,

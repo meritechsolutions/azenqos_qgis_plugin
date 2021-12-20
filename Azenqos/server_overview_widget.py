@@ -379,6 +379,7 @@ class server_overview_widget(QWidget):
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
                 map_imei_devices_df = self.devices_df.copy(deep=True)
                 map_imei_devices_df = map_imei_devices_df[["imei_number","alias","group_name"]].groupby(["imei_number","alias"]).agg({"group_name": lambda x: list(x)}).reset_index()
+                map_log_hash_imei_df = pd.read_sql("SELECT log_hash, log_imei FROM dumped_logs", dbcon)
                 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name
                 has_kpi_tables = False
                 for table in tables:
@@ -397,11 +398,16 @@ class server_overview_widget(QWidget):
                 if has_kpi_tables:
                     try:
                         self.status_update_signal.emit("Create Cell-wise stats...")
-                        self.derived_dfs = gen_cell_kpi_dfs(dbcon, self.status_update_signal, map_imei_devices_df=map_imei_devices_df)
+                        self.derived_dfs = gen_cell_kpi_dfs(dbcon, self.status_update_signal, map_imei_devices_df=map_imei_devices_df, map_log_hash_imei_df=map_log_hash_imei_df)
                         self.status_update_signal.emit("Create Cell-wise stats... done")
                         if self.derived_dfs is not None:
                             for table, tdf in self.derived_dfs.items():
                                 try:
+                                    tdf["last_log_hash"] = tdf["log_hash"]
+                                    tdf = tdf.merge(map_log_hash_imei_df, left_on="last_log_hash", right_on='log_hash')
+                                    tdf = tdf.merge(map_imei_devices_df, left_on="log_imei", right_on='imei_number')
+                                    tdf["group_name"] = tdf["group_name"].apply(lambda x: ",".join(pd.Series(x).astype(str).values))
+                                    tdf = tdf.rename(columns={"log_imei": "last_log_imei", "group_name": "last_group_name", "alias": "last_phone_name"}, errors="raise")
                                     self.status_update_signal.emit("Creating Cell-wise layer: {}".format(table))
                                     layer = azq_utils.create_layer_in_qgis(None, tdf, table, add_to_qgis=False)
                                     if layer is not None:
@@ -588,7 +594,7 @@ def print_and_emit(msg, update_signal=None):
     update_signal.emit(msg) if update_signal is not None else None
 
 
-def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False, map_imei_devices_df=None):
+def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False, map_imei_devices_df=None, map_log_hash_imei_df=None):
     ret = {}
     tables = list(pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name)
     #print("tables:", tables)
@@ -623,7 +629,7 @@ def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False, map_imei_
             try:
                 print_and_emit("Calc Cell-wise stats for {} [{}/{}]".format(table, it, nt), update_signal)
                 afunc, aparam = fp
-                df = get_table_df_gb_lte_sib1_cgi(table, dbcon, map_imei_devices_df=map_imei_devices_df).apply(
+                df = get_table_df_gb_lte_sib1_cgi(table, dbcon, map_imei_devices_df=map_imei_devices_df, map_log_hash_imei_df=map_log_hash_imei_df).apply(
                     lambda cell_df: afunc(cell_df, aparam)
                 )
                 df = df.reset_index()
@@ -638,9 +644,7 @@ def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False, map_imei_
     return ret
 
 
-def get_table_df_gb_lte_sib1_cgi(table, dbcon, map_imei_devices_df=None):
-    map_log_hash_imei_df = pd.read_sql("SELECT log_hash, log_imei FROM dumped_logs", dbcon)
-    map_log_hash_imei_df["log_hash"] = map_log_hash_imei_df["log_hash"].astype(np.int64)
+def get_table_df_gb_lte_sib1_cgi(table, dbcon, map_imei_devices_df=None, map_log_hash_imei_df=None):
     df = pd.read_sql("select * from {}".format(table), dbcon, parse_dates=["time"])
     df["log_hash"] = df["log_hash"].astype(np.int64)
     df = df.merge(map_log_hash_imei_df, left_on="log_hash", right_on='log_hash')

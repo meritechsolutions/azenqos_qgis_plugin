@@ -451,6 +451,9 @@ class WidgetDialog(QDialog):
 
 def get_common_df_lh_time_stats_sr(cell_df):
     lh = None
+    last_log_imei = None
+    last_phone = None
+    last_group = None
     time = None
     time_first = None
     lat = None

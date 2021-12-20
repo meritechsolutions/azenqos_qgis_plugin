@@ -11,6 +11,7 @@ from matplotlib.path import Path
 import azq_utils as utils
 import plot_param_zorders
 from dprint import dprint
+from analyzer_vars import analyzer_vars
 
 import itertools
 
@@ -36,7 +37,7 @@ RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["lte"] = ("earfcn", "ch")
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["wcdma"] = ("uarfcn", "ch")
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["gsm"] = ["bcch", "arfcn", "ch"]
 
-CELL_FILE_REQUIRED_COLUMNS = ("dir", "lat", "lon", "ant_bw", "system", "site")
+CELL_FILE_REQUIRED_COLUMNS = ("dir", "lat", "lon", "ant_bw", "system", "site", "mcc", "mnc")
 CELL_FILE_NUMERIC_COLUMNS = tuple(["dir", "lat", "lon", "ant_bw"]\
                             + list(itertools.chain.from_iterable(RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT.keys())) \
                             + list(itertools.chain.from_iterable(RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT.keys())))
@@ -576,16 +577,51 @@ def read_cell_file(
         df = pd.read_csv(fp, sep=get_csv_separator_for_file(fp))
         df.columns = list(map(str.lower, df.columns))
         # df.columns = map(str.strip(), df.columns) # problem about str.strip()
+        rename_dict = {"dir": ["direction","azimuth"],
+                       "lat": "latitude",
+                       "lon": ["longitude", "long"],
+                       "site": ["site name", "site_name"],
+                       "psc": "psc/pci",
+                       "pci": "psc/pci",
+                       "uarfcn": "dl uarfcn",
+                       "earfcn": ["dl uarfcn", "euarfcn"]
+                       }
+        auto_add_dict = {"ant_bw": 60,
+                         "system": fp.lower(),
+                         "mcc": analyzer_vars().pref["default_mcc"],
+                         "mnc": analyzer_vars().pref["default_mnc"]
+                         }
+
         rcs = list(CELL_FILE_REQUIRED_COLUMNS) + list(extra_required_columns)
         dprint("read_cell_file: df cols:", df.columns)
         # check if cell file has all required columns:
         for rc in rcs:
             if not rc in df.columns:
-                raise Exception(
-                    "\n\nERROR: INVALID CELLFILE: can't find column: {} - file: {}\n\n\n".format(
-                        rc, fp
+                if rc in rename_dict.keys():
+                    if isinstance(rename_dict[rc], list):
+                        for name in rename_dict[rc]:
+                            if name in df.columns:
+                                df[rc] = df[name]
+                    else:
+                        df[rc] = df[rename_dict[rc]]
+                    # del df[rename_dict[rc]]
+                elif rc in auto_add_dict.keys():
+                    df[rc] = auto_add_dict[rc]
+                    if rc == "system":
+                        if "2g" in auto_add_dict[rc]:
+                            df[rc] = "gsm"
+                        elif "3g" in auto_add_dict[rc]:
+                            df[rc] = "wcdma"
+                        elif "4g" in auto_add_dict[rc]:
+                            df[rc] = "lte"
+                        elif "5g" in auto_add_dict[rc]:
+                            df[rc] = "nr"
+                else:
+                    raise Exception(
+                        "\n\nERROR: INVALID CELLFILE: can't find column: {} - file: {}\n\n\n".format(
+                            rc, fp
+                        )
                     )
-                )
 
         for nc in CELL_FILE_NUMERIC_COLUMNS:
             try:
@@ -616,6 +652,16 @@ def read_cell_file(
                     if mc in df.columns:
                         matched_col = mc
                         break
+                    else:
+                        if mc in rename_dict.keys():
+                            if isinstance(rename_dict[mc], list):
+                                for name in rename_dict[mc]:
+                                    if name in df.columns:
+                                        df[mc] = df[name]
+                            else:
+                                df[mc] = df[rename_dict[mc]]
+                            # del df[rename_dict[mc]]
+                            matched_col = mc
                 if not matched_col:
                     raise Exception(
                         "invalid cellfile: it has system (RAT) value: {} but does not have the required column: {}".format(
@@ -631,6 +677,7 @@ def read_cell_file(
         dprint("read_cell_file: df pre filt out nan len {}".format(len(df)))
 
         # filter only rows that required column is not null/empty
+        # df.to_csv("/home/suthat/Desktop/b.csv")
         for rc in rcs:
             df = df[pd.notnull(df[rc])]
 
@@ -809,8 +856,8 @@ def df_cellfile_check_and_convert(df, fp_for_error_report=None):
 
     rename_dicts = [
         # one dict in list per each required col
-        {"tac": "lac"},
-        {"cid": "cell_id", "eci": "cell_id", "cell_id": "cell_id"},
+        {"tac": "lac", "lac/enodeb id": "lac"},
+        {"cid": "cell_id", "eci": "cell_id", "cell_id": "cell_id", "cellid": "cell_id"},
     ]
 
     for rename_dict in rename_dicts:

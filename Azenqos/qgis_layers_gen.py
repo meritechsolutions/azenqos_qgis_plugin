@@ -1,7 +1,6 @@
 import contextlib
 import os
 import sqlite3
-import pandas as pd
 
 from PyQt5.QtCore import QVariant
 

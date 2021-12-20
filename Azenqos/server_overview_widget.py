@@ -377,6 +377,8 @@ class server_overview_widget(QWidget):
             ############## create kpi stats layers if present
             # get all tables starting with
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+                map_imei_devices_df = self.devices_df.copy(deep=True)
+                map_imei_devices_df = map_imei_devices_df[["imei_number","alias","group_name"]].groupby(["imei_number","alias"]).agg({"group_name": lambda x: list(x)}).reset_index()
                 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name
                 has_kpi_tables = False
                 for table in tables:
@@ -395,7 +397,7 @@ class server_overview_widget(QWidget):
                 if has_kpi_tables:
                     try:
                         self.status_update_signal.emit("Create Cell-wise stats...")
-                        self.derived_dfs = gen_cell_kpi_dfs(dbcon, self.status_update_signal)
+                        self.derived_dfs = gen_cell_kpi_dfs(dbcon, self.status_update_signal, map_imei_devices_df=map_imei_devices_df)
                         self.status_update_signal.emit("Create Cell-wise stats... done")
                         if self.derived_dfs is not None:
                             for table, tdf in self.derived_dfs.items():
@@ -461,6 +463,9 @@ def get_common_df_lh_time_stats_sr(cell_df):
         lat = cell_df.lat.loc[idxmaxtime]
         lon = cell_df.lon.loc[idxmaxtime]
         lhl = cell_df.log_hash.unique()
+        log_imei_list = cell_df.log_imei.unique()
+        phone_list = cell_df.alias.unique()
+        group_list = list(set([item for sublist in cell_df.group_name.values.tolist() for item in sublist]))
     return pd.Series(
         {
             "log_hash": lh,
@@ -470,7 +475,10 @@ def get_common_df_lh_time_stats_sr(cell_df):
             "lon": lon,
             "n_samples": len(cell_df),
             "n_logs": len(lhl),
-            "log_list": ",".join(pd.Series(lhl).astype(str).values)
+            "log_list": ",".join(pd.Series(lhl).astype(str).values),
+            "log_imei_list": ",".join(pd.Series(log_imei_list).astype(str).values),
+            "phone_list": ",".join(pd.Series(phone_list).astype(str).values),
+            "group_list": ",".join(pd.Series(group_list).astype(str).values)
         }
     )
 
@@ -580,7 +588,7 @@ def print_and_emit(msg, update_signal=None):
     update_signal.emit(msg) if update_signal is not None else None
 
 
-def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False):
+def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False, map_imei_devices_df=None):
     ret = {}
     tables = list(pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name)
     #print("tables:", tables)
@@ -615,7 +623,8 @@ def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False):
             try:
                 print_and_emit("Calc Cell-wise stats for {} [{}/{}]".format(table, it, nt), update_signal)
                 afunc, aparam = fp
-                df = get_table_df_gb_lte_sib1_cgi(table, dbcon).apply(
+                print("jjjjjjjjjjjjjjjj", fp)
+                df = get_table_df_gb_lte_sib1_cgi(table, dbcon, map_imei_devices_df=map_imei_devices_df).apply(
                     lambda cell_df: afunc(cell_df, aparam)
                 )
                 df = df.reset_index()
@@ -630,9 +639,13 @@ def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False):
     return ret
 
 
-def get_table_df_gb_lte_sib1_cgi(table, dbcon):
+def get_table_df_gb_lte_sib1_cgi(table, dbcon, map_imei_devices_df=None):
+    map_log_hash_imei_df = pd.read_sql("SELECT log_hash, log_imei FROM dumped_logs", dbcon)
+    map_log_hash_imei_df["log_hash"] = map_log_hash_imei_df["log_hash"].astype(np.int64)
     df = pd.read_sql("select * from {}".format(table), dbcon, parse_dates=["time"])
     df["log_hash"] = df["log_hash"].astype(np.int64)
+    df = df.merge(map_log_hash_imei_df, left_on="log_hash", right_on='log_hash')
+    df = df.merge(map_imei_devices_df, left_on="log_imei", right_on='imei_number')
     gb = df.groupby(["lte_sib1_mcc", "lte_sib1_mnc", "lte_sib1_tac", "lte_sib1_eci"], as_index=False)
     return gb
 

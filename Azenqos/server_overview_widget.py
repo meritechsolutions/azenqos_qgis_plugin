@@ -451,6 +451,9 @@ class WidgetDialog(QDialog):
 
 def get_common_df_lh_time_stats_sr(cell_df):
     lh = None
+    last_log_imei = None
+    last_phone = None
+    last_group = None
     time = None
     time_first = None
     lat = None
@@ -633,6 +636,7 @@ def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False, map_imei_
                 df = get_table_df_gb_lte_sib1_cgi(table, dbcon, map_imei_devices_df=map_imei_devices_df, map_log_hash_imei_df=map_log_hash_imei_df).apply(
                     lambda cell_df: afunc(cell_df, aparam)
                 )
+                df = df.drop(["lte_sib1_mcc", "lte_sib1_mnc", "lte_sib1_tac", "lte_sib1_eci"], axis=1, errors='ignore')
                 df = df.reset_index()
                 ret[table.replace("kpi_", "cell_kpi_", 1)] = df
             except Exception as ex:

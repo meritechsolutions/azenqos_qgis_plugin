@@ -532,7 +532,7 @@ def gen_call_stats_per_cell(cell_df, unused_param):
         n_blocks = len(cell_df[cell_df.call_end_type == "Call Block"])
         n_drops = len(cell_df[cell_df.call_end_type == "Call Drop"])
         n_end = len(cell_df[cell_df.call_end_type == "Call End"])
-        n_setup = len(cell_df[pd.notnull(cell_df.call_setup_time)])
+        n_setup = len(cell_df[pd.notnull(cell_df.call_setup_time) | pd.notnull(cell_df.call_established_time)])
         csd_avg = cell_df.call_setup_duration.mean()
         csd_max = cell_df.call_setup_duration.max()
         csd_min = cell_df.call_setup_duration.min()

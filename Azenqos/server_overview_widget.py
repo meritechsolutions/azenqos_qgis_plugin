@@ -623,7 +623,6 @@ def gen_cell_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False, map_imei_
             try:
                 print_and_emit("Calc Cell-wise stats for {} [{}/{}]".format(table, it, nt), update_signal)
                 afunc, aparam = fp
-                print("jjjjjjjjjjjjjjjj", fp)
                 df = get_table_df_gb_lte_sib1_cgi(table, dbcon, map_imei_devices_df=map_imei_devices_df).apply(
                     lambda cell_df: afunc(cell_df, aparam)
                 )

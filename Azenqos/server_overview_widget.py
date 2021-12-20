@@ -403,8 +403,8 @@ class server_overview_widget(QWidget):
                         if self.derived_dfs is not None:
                             for table, tdf in self.derived_dfs.items():
                                 try:
+                                    tdf = tdf.merge(map_log_hash_imei_df, left_on="log_hash", right_on='log_hash')
                                     tdf["last_log_hash"] = tdf["log_hash"]
-                                    tdf = tdf.merge(map_log_hash_imei_df, left_on="last_log_hash", right_on='log_hash')
                                     tdf = tdf.merge(map_imei_devices_df, left_on="log_imei", right_on='imei_number')
                                     tdf["group_name"] = tdf["group_name"].apply(lambda x: ",".join(pd.Series(x).astype(str).values))
                                     tdf = tdf.rename(columns={"log_imei": "last_log_imei", "group_name": "last_group_name", "alias": "last_phone_name"}, errors="raise")

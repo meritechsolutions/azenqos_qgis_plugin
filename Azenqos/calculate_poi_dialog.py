@@ -100,15 +100,18 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
     df = poi_df.copy()
     import spatialite
     import fill_geom_in_location_df
-    poi_df = fill_geom_in_location_df.fill_geom_in_location_df(poi_df)
-    poi_df = poi_df.dropna().reset_index(drop=True)
+    # poi_df = fill_geom_in_location_df.fill_geom_in_location_df(poi_df)
+    # poi_df = poi_df.dropna().reset_index(drop=True)
     with contextlib.closing(spatialite.connect(db_path)) as dbcon:
         col_name_list = []
+        n = 0
         for rat in rat_to_table_and_primary_where_dict:
             dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(rat_to_table_and_primary_where_dict[rat]))
+            progress_signal.emit(int(6*(n+1)))
+            n += 1
             
         len_poi=  len(poi_df)
-        calculate_progress = 100/len_poi
+        calculate_progress = 76/len_poi
         for index, row in poi_df.iterrows():
             x = row["lon"]
             y = row["lat"]
@@ -116,7 +119,7 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
             xmin = x-offset
             ymax = y+offset
             ymin = y-offset
-            progress_signal.emit(int(calculate_progress*(index+1)))
+            progress_signal.emit(int(calculate_progress*(index+1)+24))
             for rat in rat_to_table_and_primary_where_dict:
                 avg = None
                 try:

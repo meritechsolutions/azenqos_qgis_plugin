@@ -109,7 +109,6 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
             
         len_poi=  len(poi_df)
         calculate_progress = 100/len_poi
-        n = 0
         for index, row in poi_df.iterrows():
             x = row["lon"]
             y = row["lat"]
@@ -117,8 +116,7 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
             xmin = x-offset
             ymax = y+offset
             ymin = y-offset
-            progress_signal.emit(int(calculate_progress*(n+1)))
-            n += 1
+            progress_signal.emit(int(calculate_progress*(index+1)))
             for rat in rat_to_table_and_primary_where_dict:
                 avg = None
                 try:
@@ -200,7 +198,7 @@ class calculate_poi(QDialog):
         self.result_signal.emit(df, window_name)
 
     def calculate_poi_linux(self):
-        df = calculate_poi_cov_spatialite(self.poi_df, self.gc.databasePath, self.offset, self.result_signal)
+        df = calculate_poi_cov_spatialite(self.poi_df, self.gc.databasePath, self.offset, self.progress_signal)
         window_name = "Coverage " + str(self.offset / 1000.0) + "km. around poi: " + self.layer_name
         self.progress_signal.emit(100)
         self.result_signal.emit(df, window_name)

@@ -187,9 +187,9 @@ class calculate_poi(QDialog):
                         worker = Worker(self.calculate_poi_window)
                         self.gc.threadpool.start(worker)
             else:
-                self.poi_df = pd.DataFrame(poi_list)
+                self.poi_df = pd.DataFrame(self.poi_list)
                 if len(self.poi_df) > 0:
-                    self.poi_df = poi_df.rename(columns={self.lat_col: "lat", self.lon_col: "lon"})
+                    self.poi_df = self.poi_df.rename(columns={self.lat_col: "lat", self.lon_col: "lon"})
                     worker = Worker(self.calculate_poi_linux)
                     self.gc.threadpool.start(worker)
 

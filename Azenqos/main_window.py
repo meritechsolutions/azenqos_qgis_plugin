@@ -105,6 +105,8 @@ class main_window(QMainWindow):
 
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
     task_done_signal = pyqtSignal(str)
+    poi_result_signal = pyqtSignal(object, object)
+    poi_progress_signal = pyqtSignal(int)
     signal_trigger_zoom_to_active_layer = pyqtSignal(str)
     add_created_layers_signal = pyqtSignal(str, object)
     curInstance = None
@@ -154,6 +156,10 @@ class main_window(QMainWindow):
         self.current_workspace_settings = QSettings(
             azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN), QSettings.IniFormat
         )
+        import progress_dialog
+        self.poi_progress = progress_dialog.progress_dialog("Calculating...")
+        self.poi_progress_signal.connect(self.set_poi_progress)
+        self.poi_result_signal.connect(self.create_poi_window)
         ########################
         self.setupUi()
 
@@ -187,6 +193,14 @@ class main_window(QMainWindow):
         ######################################################################################################
 
         print("main_window __init__() done")
+
+    def set_poi_progress(self, value):
+        self.poi_progress.show()
+        self.poi_progress.set_value(value)
+    
+    def create_poi_window(self, df, title):
+        self.add_param_window(custom_df=df, title=title, allow_no_log_opened=True)
+        self.poi_progress.hide()
 
     @pyqtSlot()
     def on_actionTile_triggered(self):
@@ -561,34 +575,36 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionCustom_Table_View_triggered(self):
+        import textwrap
+        expression = azq_utils.ask_custom_sql_or_py_expression(
+            self,
+            table_view_mode=True,
+            existing_content= textwrap.dedent(
+            '''
+            select
+            log_hash, time,
+            name, detail_str 
+            from signalling
+            union
+            select log_hash, time,
+            name, info
+            from events
+            order by log_hash, time
+            '''.strip()
+            ).strip()
+        )
+        print("on_actionCustom_Table_View_triggered new expression:", expression)
+        if expression:
+            title = qt_utils.ask_text(self, title="New window title", msg="Please enter desired title of new window",
+                                      existing_content="Custom table view")
+            self.add_param_window(expression, title=title, time_list_mode=True, stretch_last_row=True)
+
+    @pyqtSlot()
+    def on_actionCustom_Table_View_UI_triggered(self):
         import custom_table_dialog
         dlg = custom_table_dialog.custom_table_dialog(self.gc)
         dlg.on_result.connect(lambda df, param_list, title: self.add_param_window(custom_df=df, title=title, time_list_mode=True, custom_table_param_list=param_list))
         dlg.show()
-        # import textwrap
-        # expression = azq_utils.ask_custom_sql_or_py_expression(
-        #     self,
-        #     table_view_mode=True,
-        #     existing_content= textwrap.dedent(
-        #     '''
-        #     select
-        #     log_hash, time,
-        #     name, detail_str 
-        #     from signalling
-        #     union
-        #     select log_hash, time,
-        #     name, info
-        #     from events
-        #     order by log_hash, time
-        #     '''.strip()
-        #     ).strip()
-        # )
-        # print("on_actionCustom_Table_View_triggered new expression:", expression)
-        # if expression:
-        #     title = qt_utils.ask_text(self, title="New window title", msg="Please enter desired title of new window",
-        #                               existing_content="Custom table view")
-        #     self.add_param_window(expression, title=title, time_list_mode=True, stretch_last_row=True)
-
 
     @pyqtSlot()
     def on_actionExynosServiceMode_BasicInfo_2_triggered(self):
@@ -831,12 +847,13 @@ Log_hash list: {}""".format(
 
     ############# Add POI Layer menu slots
 
+    
     @pyqtSlot()
     def on_actionCalculate_POI_Coverage_triggered(self):
         print("action calculate poi coverage")
+        # result_signal = pyqtSignal(object, object)
         import calculate_poi_dialog
-        dlg = calculate_poi_dialog.calculate_poi(self.gc)
-        dlg.on_result.connect(lambda df, title: self.add_param_window(custom_df=df, title=title, allow_no_log_opened=True))
+        dlg = calculate_poi_dialog.calculate_poi(self.gc, self.poi_result_signal, self.poi_progress_signal)
         dlg.show()
 
     ############# Data menu slots

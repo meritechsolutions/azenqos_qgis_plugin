@@ -1966,7 +1966,7 @@ def resample_per_log_hash_time(param_df, resample_param, use_last=False):
     return param_df
 
 
-def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None):
+def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None, svg_icon_fp=None):
     try:
         import preprocess_azm
         import qgis_layers_gen
@@ -1985,8 +1985,7 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
         assert os.path.isfile(tmpdbfp)
         with contextlib.closing(sqlite3.connect(tmpdbfp)) as dbcon:
             qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-            tmpdbfp, table, label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, dbcon_for_theme_legend_counts=dbcon
-            )
+            tmpdbfp, table, label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, dbcon_for_theme_legend_counts=dbcon, svg_icon_fp=svg_icon_fp)
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))

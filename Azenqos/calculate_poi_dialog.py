@@ -86,6 +86,7 @@ def calculate_poi_cov(poi_list, cov_df, cov_column_name_list, lat_col, lon_col, 
 
                 row_df_list.append(row)
     df = pd.DataFrame(row_df_list)
+    df = df.rename(columns={lat_col: "lat", lon_col: "lon"})
     return df
 
 def Average(lst):

@@ -13,7 +13,8 @@ try:
         QgsPointXY,
         QgsGeometry,
         QgsVectorLayer,
-        QgsDataSourceUri
+        QgsDataSourceUri,
+        QgsSvgMarkerSymbolLayer
     )
 except:
     pass
@@ -67,7 +68,7 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     assert os.path.isfile(dbfp)
 
 
-def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None, dbcon_for_theme_legend_counts=None, custom_sql=None):
+def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None, dbcon_for_theme_legend_counts=None, custom_sql=None, svg_icon_fp=None):
     print("create_qgis_layer_from_spatialite_db: table", table)
     # https://qgis-docs.readthedocs.io/en/latest/docs/pyqgis_developer_cookbook/loadlayer.html
     schema = ''
@@ -102,6 +103,10 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
             print("loading style file done")
         else:
             print("not loading style file as file not found")
+    if svg_icon_fp is not None:
+        symLyr1 = QgsSvgMarkerSymbolLayer(svg_icon_fp)
+        symLyr1.setSize(6)
+        layer.renderer().symbol().changeSymbolLayer(0, symLyr1)
     if add_to_qgis:
         print("adding map layer")
         QgsProject.instance().addMapLayer(layer)

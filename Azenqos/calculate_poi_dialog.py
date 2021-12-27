@@ -100,6 +100,7 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
         col_name_list = []
         n = 0
         for rat in rat_to_table_and_primary_where_dict:
+            progress_signal.emit(int(6*(n+1)-3))
             dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(rat_to_table_and_primary_where_dict[rat]))
             progress_signal.emit(int(6*(n+1)))
             n += 1

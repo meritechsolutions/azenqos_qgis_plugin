@@ -1,7 +1,6 @@
 import PyQt5
-from PyQt5.QtWidgets import QDialog, QComboBox, QCompleter, QProgressDialog
+from PyQt5.QtWidgets import QDialog, QComboBox, QCompleter
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap, QIntValidator
 
 try:
@@ -16,10 +15,8 @@ import os
 import contextlib
 import sqlite3
 import pandas as pd
-import numpy as np
 import struct
 from worker import Worker
-from PyQt5.QtCore import pyqtSignal
 
 import azq_cell_file
 import azq_utils
@@ -99,9 +96,6 @@ def Average(lst):
 def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
     df = poi_df.copy()
     import spatialite
-    import fill_geom_in_location_df
-    # poi_df = fill_geom_in_location_df.fill_geom_in_location_df(poi_df)
-    # poi_df = poi_df.dropna().reset_index(drop=True)
     with contextlib.closing(spatialite.connect(db_path)) as dbcon:
         col_name_list = []
         n = 0

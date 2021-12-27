@@ -1883,6 +1883,54 @@ def get_sqlite_bin():
         ),
     )
 
+def get_spatialite_bin():
+    return os.path.join(
+        get_module_path(),
+        os.path.join(
+            "sqlite_" + os.name,
+            "spatialite" + ("" if os.name == "posix" else ".exe"),
+        ),
+    )
+
+def get_create_cellfile_spatialite_header(rat):
+    sql_str = """PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+INSERT INTO "geometry_columns" VALUES('{}','geometry',3,2,4326,0);\n""".format(rat)
+
+    return sql_str
+
+def get_create_cellfile_spatialite_create_table(rat, columns):
+    start_str = """CREATE TABLE '{}' ( "ogc_fid" INTEGER PRIMARY KEY AUTOINCREMENT,""".format(rat)
+    for col in columns:
+        if col == "index":
+            pass
+        elif col != "sector_polygon_wkt":
+            start_str += " '{}' VARCHAR, ".format(col)
+        else:
+            start_str += ''' "GEOMETRY" POLYGON '''
+    start_str += ");"
+    return start_str
+
+def get_create_cellfile_spatialite_insert_cell(rat, df):
+    df_col = list(df.columns)
+    df["spatial"] = '''INSERT INTO "{}" VALUES('''.format(rat)
+
+    for col in df_col:
+        df[col] = df[col].astype(str)
+        if col == "index":
+            df["spatial"] = df["spatial"] + " " + df[col] + ","
+        elif col != "sector_polygon_wkt":
+            df["spatial"] = df["spatial"] + " '" + df[col] + "',"
+        else:
+            df["spatial"] = df["spatial"] + " ST_GeomFromText('" + df[col] + "')"
+
+    df["spatial"] += ");"
+    return "\n".join(list(df["spatial"]))
+
+def get_create_cellfile_spatialite_footer():
+    ret = """\nPRAGMA writable_schema=OFF;
+COMMIT;"""
+    return ret
 
 def set_none_to_repetetive_rows(df, cols):
     # set None to repetetive rows - https://stackoverflow.com/questions/19463985/pandas-drop-consecutive-duplicates

@@ -5,6 +5,11 @@ import os
 
 def test():
     cell_files = ["../example_logs/large_cell/4g_large.csv"]
+    for cell_file in cell_files:
+        if not os.path.isfile(cell_file):
+            print("file not found: {} - abort test".format(cell_file))
+            return
+            
     rat = 'lte'
     azq_utils.timer_start("cell_spatial")
     df = azq_cell_file.read_cellfiles(cell_files, "lte", add_sector_polygon_wkt_sector_size_meters=40)
@@ -31,6 +36,7 @@ def test():
 
     cmd = [spatialite_bin, "-init", cell_sql_fp, cel_spatial_db_fp, ".quit"]
     ret = azq_utils.call_no_shell(cmd)
+    print("ret", ret)
     azq_utils.timer_print("cell_spatial")
 
 

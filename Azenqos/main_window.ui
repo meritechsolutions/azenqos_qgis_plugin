@@ -178,6 +178,7 @@
      </property>
      <addaction name="actionCustom_Instant_View"/>
      <addaction name="actionCustom_Table_View"/>
+     <addaction name="actionCustom_Table_View_UI"/>
     </widget>
     <widget class="QMenu" name="menuMisc">
      <property name="title">
@@ -984,6 +985,11 @@
   <action name="actionCalculate_POI_Coverage">
    <property name="text">
     <string>Calculate POI Coverage</string>
+   </property>
+  </action>
+  <action name="actionCustom_Table_View_UI">
+   <property name="text">
+    <string>Custom Table View</string>
    </property>
   </action>
  </widget>

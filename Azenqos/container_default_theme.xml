@@ -3,7 +3,7 @@
   <reportSettingList>
     <ArrayOfReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="10n">polqa_mos</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -47,7 +47,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="7005n">detected_radio_voice_call_setup_duration</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -97,7 +97,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="2010n">gsm_rxlev_sub_dbm</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -141,7 +141,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="2014n">gsm_rxqual_sub</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -173,12 +173,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="2007n">gsm_arfcn_bcch</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -186,12 +186,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="2214n">gsm_missing_neighbor</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -199,7 +199,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3066n">wcdma_aset_ecio</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -255,7 +255,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3032n">wcdma_aset_ecio_avg</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -311,7 +311,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3067n">wcdma_aset_rscp</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -373,7 +373,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3010n">wcdma_rssi</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -423,7 +423,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3008n">wcdma_txagc</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -479,7 +479,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3043n">wcdma_n_pilot_polluting_cells</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -523,7 +523,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3038n">wcdma_n_aset_cells</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -555,7 +555,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3041n">wcdma_n_dset_cells</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -593,7 +593,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="4117n">data_wcdma_rlc_dl_throughput</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -661,7 +661,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="4128n">data_hsdpa_cqi_number_avg</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -717,12 +717,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="3022n">wcdma_bler_average_percent_all_channels</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -730,7 +730,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="4167n">data_hsupa_total_e_dpdch_throughput</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -804,7 +804,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="4025n">data_trafficstat_dl</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -866,7 +866,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="4026n">data_trafficstat_ul</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -940,7 +940,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5503n">lte_inst_rsrp</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -1002,7 +1002,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5505n">lte_inst_rsrq</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -1046,12 +1046,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5507n">lte_inst_rssi</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1059,7 +1059,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5613n">lte_sinr</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -1109,12 +1109,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID>lte_band</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1122,12 +1122,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID>lte_earfcn</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1135,12 +1135,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID>lte_physical_cell_id</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1148,12 +1148,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID>nr_band</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1161,12 +1161,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID>nr_dl_arfcn</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1174,12 +1174,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID>nr_servingbeam_pci</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1187,12 +1187,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID>wcdma_aset_cellfreq</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1200,12 +1200,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID>wcdma_aset_sc</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1213,7 +1213,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5656n">lte_prb_alloc_in_bandwidth_percent_latest</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -1257,7 +1257,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5512n">lte_cqi_cw0</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -1289,7 +1289,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5633n">lte_l1_dl_n_active_carriers</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -1321,12 +1321,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5501n">lte_earfcn</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1334,7 +1334,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5617n">lte_l1_dl_throughput_all_carriers_mbps</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -1396,12 +1396,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5733n">lte_volte_rtp_jitter_dl_ms</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1409,12 +1409,12 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="5021n">cm_system_mode</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
         <isUseDefaultRangeSetting>true</isUseDefaultRangeSetting>
-        <rangeList/>
+        <rangeList />
         <isMS1>true</isMS1>
         <isMS2>false</isMS2>
         <isMS3>false</isMS3>
@@ -1422,7 +1422,95 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
+        <elementID>ping_rtt_each</elementID>
+        <argument>1</argument>
+        <isReverseComulative>false</isReverseComulative>
+        <isUseDefaultRangeSetting>false</isUseDefaultRangeSetting>
+        <rangeList>
+          <ColorTheme.Bin>
+            <ColorXml>#38761d</ColorXml>
+            <Lower>0</Lower>
+            <Upper>30</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#00ff00</ColorXml>
+            <Lower>30</Lower>
+            <Upper>60</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#ffff00</ColorXml>
+            <Lower>60</Lower>
+            <Upper>90</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#ff0000</ColorXml>
+            <Lower>90</Lower>
+            <Upper>150</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#000000</ColorXml>
+            <Lower>150</Lower>
+            <Upper>10000</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+        </rangeList>
+        <isMS1>true</isMS1>
+        <isMS2>false</isMS2>
+        <isMS3>false</isMS3>
+        <isMS4>false</isMS4>
+        <exportMap>true</exportMap>
+      </ReportGeneratorSetting>
+      <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+        <colorThemeList />
+        <elementID>ping_rtt</elementID>
+        <argument>1</argument>
+        <isReverseComulative>false</isReverseComulative>
+        <isUseDefaultRangeSetting>false</isUseDefaultRangeSetting>
+        <rangeList>
+          <ColorTheme.Bin>
+            <ColorXml>#38761d</ColorXml>
+            <Lower>0</Lower>
+            <Upper>30</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#00ff00</ColorXml>
+            <Lower>30</Lower>
+            <Upper>60</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#ffff00</ColorXml>
+            <Lower>60</Lower>
+            <Upper>90</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#ff0000</ColorXml>
+            <Lower>90</Lower>
+            <Upper>150</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#000000</ColorXml>
+            <Lower>150</Lower>
+            <Upper>10000</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+        </rangeList>
+        <isMS1>true</isMS1>
+        <isMS2>false</isMS2>
+        <isMS3>false</isMS3>
+        <isMS4>false</isMS4>
+        <exportMap>true</exportMap>
+      </ReportGeneratorSetting>
+      <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+        <colorThemeList />
         <elementID element_id_int="5632n">lte_l1_ul_throughput_all_carriers_mbps</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -1484,7 +1572,7 @@
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
       <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <colorThemeList/>
+        <colorThemeList />
         <elementID element_id_int="4125n">data_hsdpa_thoughput</elementID>
         <argument>1</argument>
         <isReverseComulative>false</isReverseComulative>
@@ -5004,7 +5092,7 @@
     </value>
   </mapEventVisibleDict>
   <mapFileList>
-    <ArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+    <ArrayOfString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" />
   </mapFileList>
   <useCellRef>
     <boolean>false</boolean>
@@ -5021,7 +5109,7 @@
     </DRect>
   </manualZoomRect>
   <cellRef>
-    <string/>
+    <string />
   </cellRef>
   <customReportID>
     <CustomReportID>DEFAULT</CustomReportID>

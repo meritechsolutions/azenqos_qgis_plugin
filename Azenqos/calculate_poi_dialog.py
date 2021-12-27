@@ -191,13 +191,13 @@ class calculate_poi(QDialog):
 
     def calculate_poi_window(self):
         df = calculate_poi_cov(self.poi_list, self.cov_df, self.cov_column_name_list, self.lat_col, self.lon_col, self.offset, self.progress_signal)
-        window_name = "Coverage " + str(self.offset / 1000.0) + "km. around poi: " + self.layer_name
+        window_name = "Coverage " + str(self.offset_meters / 1000.0) + "km. around poi: " + self.layer_name
         self.progress_signal.emit(100)
         self.result_signal.emit(df, window_name)
 
     def calculate_poi_linux(self):
         df = calculate_poi_cov_spatialite(self.poi_df, self.gc.databasePath, self.offset, self.progress_signal)
-        window_name = "Coverage " + str(self.offset / 1000.0) + "km. around poi: " + self.layer_name
+        window_name = "Coverage " + str(self.offset_meters / 1000.0) + "km. around poi: " + self.layer_name
         self.progress_signal.emit(100)
         self.result_signal.emit(df, window_name)
 

@@ -70,7 +70,7 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
@@ -396,13 +396,14 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: indoor prepare failed exception:", exstr)
     main_param_list = ["nr_cell_meas","lte_cell_meas","wcdma_cell_meas","gsm_cell_meas"]
-    try:
-        n = 0
-        for param in main_param_list:
-            dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(param))
-            n += 1
-    except:
-        pass
+    if pre_create_index:
+        try:
+            n = 0
+            for param in main_param_list:
+                dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(param))
+                n += 1
+        except:
+            pass
 
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
     ## for each param

@@ -99,12 +99,14 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
     import spatialite
     with contextlib.closing(spatialite.connect(db_path)) as dbcon:
         col_name_list = []
-        # n = 0
-        # for rat in rat_to_table_and_primary_where_dict:
-        #     progress_signal.emit(int(6*(n+1)-3))
-        #     dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(rat_to_table_and_primary_where_dict[rat]))
-        #     progress_signal.emit(int(6*(n+1)))
-        #     n += 1
+        for rat in rat_to_table_and_primary_where_dict:
+            try:
+                dbcon.execute("select ROWID from idx_{}_geom".format(rat_to_table_and_primary_where_dict[rat])).fetchone()
+            except:
+                try:
+                    dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(rat_to_table_and_primary_where_dict[rat]))
+                except:
+                    pass
             
         len_poi=  len(poi_df)
         calculate_progress = 100/len_poi

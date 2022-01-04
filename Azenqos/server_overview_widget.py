@@ -353,8 +353,13 @@ class server_overview_widget(QWidget):
             prepare_views_start_time = time.perf_counter()
             self.status_update_signal.emit("Prepare db views as per theme...")
             self.progress_update_signal.emit(50)
-            with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-                db_preprocess.prepare_spatialite_views(dbcon, main_rat_params_only=self.main_params_only, cre_table=False, start_date=self.req_body["start_date"], end_date=self.req_body["end_date"])  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+            if os.name == "nt":
+                with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+                    db_preprocess.prepare_spatialite_views(dbcon, main_rat_params_only=self.main_params_only, cre_table=False, start_date=self.req_body["start_date"], end_date=self.req_body["end_date"])  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+            else:
+                import spatialite
+                with contextlib.closing(spatialite.connect(db_path)) as dbcon:
+                    db_preprocess.prepare_spatialite_views(dbcon, main_rat_params_only=self.main_params_only, cre_table=False, start_date=self.req_body["start_date"], end_date=self.req_body["end_date"])
             prepare_views_end_time = time.perf_counter()
             self.prepare_views_time =  "Prepare Views Time: %.02f seconds" % float(prepare_views_end_time-prepare_views_start_time)
             azq_utils.timer_print("overview_perf_prepare_views")

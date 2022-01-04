@@ -107,7 +107,7 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
         #     n += 1
             
         len_poi=  len(poi_df)
-        calculate_progress = 76/len_poi
+        calculate_progress = 100/len_poi
         for index, row in poi_df.iterrows():
             x = row["lon"]
             y = row["lat"]
@@ -115,7 +115,7 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
             xmin = x-offset
             ymax = y+offset
             ymin = y-offset
-            progress_signal.emit(int(calculate_progress*(index+1)+24))
+            progress_signal.emit(int(calculate_progress*(index+1)))
             for rat in rat_to_table_and_primary_where_dict:
                 avg = None
                 try:

@@ -539,8 +539,16 @@ def read_cellfiles(cell_files, rat, add_cell_lat_lon_sector_distance_meters=None
     if len(df_list) == 0:
         raise Exception("no successfully read cellfiles")
     df = pd.concat(df_list)
+
+    if not len(df):
+        raise Exception("no cells read from specified cellfiles")
+
     rat = check_rat_alias(rat)
     df = df[df["system"].str.lower() == rat].copy()
+
+    if not len(df):
+        raise Exception("no cells read from specified cellfiles for specified rat: {}".format(rat))
+
     if add_cell_lat_lon_sector_distance_meters:
         add_cell_lat_lon_to_cellfile_df(df, distance_meters=add_cell_lat_lon_sector_distance_meters)
     if add_sector_polygon_wkt_sector_size_meters:

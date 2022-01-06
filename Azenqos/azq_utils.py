@@ -1920,7 +1920,7 @@ def get_create_cellfile_spatialite_insert_cell(rat, df):
         if col == "index":
             df["spatial"] = df["spatial"] + " " + df[col] + ","
         elif col != "sector_polygon_wkt":
-            df["spatial"] = df["spatial"] + " '" + df[col] + "',"
+            df["spatial"] = df["spatial"] + " '" + df[col].astype(str).str.replace("'","''") + "',"
         else:
             df["spatial"] = df["spatial"] + " ST_GeomFromText('" + df[col] + "')"
 

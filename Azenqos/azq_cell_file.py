@@ -930,6 +930,14 @@ def add_projection(df, distance_meters, dir_col, ret_lat_col, ret_lon_col):
 
 def add_sector_polygon_wkt_to_cellfile_df(df, add_sector_polygon_wkt_sector_size_meters):
     print("add_sector_polygon_wkt_to_cellfile_df: distance_meters: {}".format(add_sector_polygon_wkt_sector_size_meters))
+
+    site_type_col = ['station type', 'site_type']
+    ibc_list = ['Pico', 'IBC']
+    for ibc in ibc_list:
+        for site_type in site_type_col:
+            if site_type in df.columns:
+                df.loc[df[site_type] == ibc, "ant_bw"] = 360
+
     df["point1"] = 30
     df.loc[df.ant_bw == 360,"point2"] = 90
     df.loc[df.ant_bw == 360,"point3"] = 150

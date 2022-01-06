@@ -2675,6 +2675,7 @@ Log_hash list: {}""".format(
                     f.close()
                     spatialite_bin = azq_utils.get_spatialite_bin()
                     cel_spatial_db_fp = cell_sql_fp[:-3]+"db"
+                    azq_utils.call_no_shell(['rm', cel_spatial_db_fp])
                     cmd = [spatialite_bin, "-init", cell_sql_fp, cel_spatial_db_fp, ".quit"]
                     azq_utils.call_no_shell(cmd)
                     if len(df):

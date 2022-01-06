@@ -87,7 +87,7 @@ class server_overview_widget(QWidget):
         self.select_theme_lineEdit.setText("Default")
         self.select_theme_pushButton.clicked.connect(self.choose_theme)
         self.apply_read_server_facts = True
-        self.setMinimumSize(500, 250)
+        self.setMinimumSize(450, 250)
         self.apply()
 
     def use_main_params_only(self, checkbox):

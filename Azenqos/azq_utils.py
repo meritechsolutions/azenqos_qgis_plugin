@@ -2072,6 +2072,14 @@ th_translate_replace_dict = {
     "gsm_rxlev_sub_dbm": "ความแรงสัญญาณ_2G",
     "prediction_from": "ผลทำนายจาก",
     "overview":"ภาพรวม",
+    "gsm_rxqual_sub":"คุณภาพสัญญาณ 2G",
+    "wcdma_aset_ecio":"คุณภาพสัญญาณ 3G",
+    "lte_inst_rsrq":"คุณภาพสัญญาณ 4G",
+    "lte_sinr":"คุณภาพสัญญาณเทียบสัญญาณอื่น 4G",
+    "data_hsupa_total_e_dpdch_throughput":"ความเร็วในการส่งข้อมูล 3G",
+    "lte_l1_dl_throughput_all_carriers_mbps": "ความเร็วในการรับข้อมูล 4G",
+    "lte_l1_ul_throughput_all_carriers_mbps": "ความเร็วในการส่งข้อมูล 4G",
+    "data_hsdpa_thoughput": "เร็วในการรับข้อมูล 3G",
 }
 
 def th_translate(msg):

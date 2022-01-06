@@ -87,7 +87,7 @@ class server_overview_widget(QWidget):
         self.select_theme_lineEdit.setText("Default")
         self.select_theme_pushButton.clicked.connect(self.choose_theme)
         self.apply_read_server_facts = True
-        self.setMinimumSize(403, 500)
+        self.setMinimumSize(500, 400)
         self.apply()
 
     def use_main_params_only(self, checkbox):
@@ -119,12 +119,12 @@ class server_overview_widget(QWidget):
     def on_processing(self, processing, processing_text="Processing..."):
         if processing:
             self.progress(0)
-            self.ui.groupBox.setVisible(False)
+            self.ui.scrollArea.setVisible(False)
             self.ui.applyButton.setEnabled(False)
             self.ui.applyButton.setText(processing_text)
             self.ui.progressBar.setVisible(True)
         else:
-            self.ui.groupBox.setVisible(True)
+            self.ui.scrollArea.setVisible(True)
             self.ui.applyButton.setText("Download")
             self.ui.applyButton.setEnabled(True)
             self.ui.progressBar.setVisible(False)

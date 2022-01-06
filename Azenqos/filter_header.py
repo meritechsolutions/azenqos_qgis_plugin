@@ -17,7 +17,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
         )
         self.filters[column] = regex
         print("type(self.sourceModel())", type(self.sourceModel()))
-        self.sourceModel().setStrColFilters(self.filters)
+        self.sourceModel().setFilters(self.filters)
         # self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
@@ -26,20 +26,26 @@ class SortFilterProxyModel(QSortFilterProxyModel):
                 source_row, source_parent
             )
         )'''
-        for key, regex in self.filters.items():
-            ix = self.sourceModel().index(source_row, key, source_parent)
-            if ix.isValid():
-                if regex.indexIn(str(self.sourceModel().dataString(ix))) == -1:
-                    return False
 
-        if self.filterFromMenu:
-            for key, regexlist in self.filterFromMenu.items():
-                ix = self.sourceModel().index(source_row, key, source_parent)
-                if ix.isValid():
-                    if str(self.sourceModel().dataString(ix)) not in regexlist:
-                        return False
+        # if self.filterFromMenu:
+        #     for key, regexlist in self.filterFromMenu.items():
+        #         ix = self.sourceModel().index(source_row, key, source_parent)
+        #         if ix.isValid():
+        #             if str(self.sourceModel().dataString(ix)) not in regexlist:
+        #                 return False
+
+        # for key, regex in self.filters.items():
+        #     ix = self.sourceModel().index(source_row, key, source_parent)
+        #     if ix.isValid():
+        #         if regex.indexIn(str(self.sourceModel().dataString(ix))) == -1:
+        #             return False
+
 
         return True
+
+    def setFilterListModel(self, columnIndex, checkedRegexList):
+        self.filterFromMenu[columnIndex] = checkedRegexList
+        self.sourceModel().setFilterFromMenu(self.filterFromMenu)
 
 
 class FilterHeader(QHeaderView):

@@ -412,8 +412,8 @@ class TableWindow(QWidget):
                 columnIndex, checkedRegexList
             )
         )
-        self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
-        self.proxyModel.invalidateFilter()
+        self.proxyModel.setFilterListModel(columnIndex, checkedRegexList)
+        # self.proxyModel.invalidateFilter()
 
     def ui_thread_new_model(self):
         self.setTableModel(self.dataList)
@@ -907,7 +907,7 @@ class FilterMenuWidget(QWidget):
                 item.setCheckState(Qt.Checked)
                 self.model.appendRow(item)
 
-        self.proxyModel = QSortFilterProxyModel()
+        self.proxyModel = SortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         self.proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.proxyModel.setFilterKeyColumn(self.columnIndex)
@@ -1383,6 +1383,16 @@ class PdTableModel(QAbstractTableModel):
         self.df_full = df
         self.df = df  # filtered data for display
         self.parent = parent
+        self.filters = {}
+        self.filterFromMenu = {}
+
+    def setFilters(self, filters):
+        self.filters = filters
+        self.filter()
+    
+    def setFilterFromMenu(self, filterFromMenu):
+        self.filterFromMenu = filterFromMenu
+        self.filter()
 
     def rowCount(self, parent):
         return len(self.df)
@@ -1390,18 +1400,29 @@ class PdTableModel(QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.df.columns)
 
-    def setStrColFilters(self, filters):
-        print("pdtablemodel setStrColFilters filteres START")
+    def filter(self):
+        print("pdtablemodel filteres START")
         self.df = self.df_full
         changed = True
-        for col_index in filters.keys():
+        for col_index in self.filters.keys():
             col = self.df.columns[col_index]
-            regex = filters[col_index].pattern()  # QRegExp
+            regex = self.filters[col_index].pattern()  # QRegExp
             if col and regex:
-                print("setStrColFilters col: {} regex: {}".format(col, regex))
+                print("filters col: {} regex: {}".format(col, regex))
                 try:
                     self.df = self.df[
                         self.df[col].astype(str).str.contains(regex, case=False)
+                    ]
+                except Exception as exe:
+                    print("WARNING: datatable regex filter exception:", exe)
+        for col_index in self.filterFromMenu.keys():
+            col = self.df.columns[col_index]
+            regexlist = self.filterFromMenu[col_index]  # QRegExp
+            if col and regexlist:
+                print("filterFromMenu col: {} regex: {}".format(col, regexlist))
+                try:
+                    self.df = self.df[
+                        self.df[col].isin(regexlist)
                     ]
                 except Exception as exe:
                     print("WARNING: datatable regex filter exception:", exe)

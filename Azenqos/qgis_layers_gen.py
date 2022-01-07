@@ -39,6 +39,7 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
 
     with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
         assert "lat" in df.columns and "lon" in df.columns
+        df = df.reset_index(drop=True)
         if is_indoor:
             assert "log_hash" in df.columns
             assert "time" in df.columns
@@ -143,7 +144,6 @@ def check_poi_file(gc, poi_fp, layer_name=None):
     import qt_utils
     ret = create_qgis_poi_layer(gc, poi_fp, layer_name=layer_name)
     if ret != "success":
-        print("aaaaaaaaaaaaaa")
         qt_utils.msgbox(ret, title="Invalid POI file")
 
 def create_qgis_poi_layer(gc, poi_fp, layer_name=None):

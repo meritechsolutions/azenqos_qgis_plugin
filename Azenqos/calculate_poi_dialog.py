@@ -132,12 +132,13 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
     return df
 
 class calculate_poi(QDialog):
-    def __init__(self, gc, result_signal, progress_signal):
+    def __init__(self, gc, result_signal, progress_signal, open_signal):
         super(calculate_poi, self).__init__(None)
         self.radius = "1000"
         self.gc = gc
         self.result_signal = result_signal
         self.progress_signal = progress_signal
+        self.open_signal = open_signal
         self.names = [layer.name() for layer in QgsProject.instance().mapLayers().values()]
         self.layer_name = self.names[0]
         self.setAttribute(PyQt5.QtCore.Qt.WA_DeleteOnClose)
@@ -161,6 +162,7 @@ class calculate_poi(QDialog):
         self.accepted.connect(self.on_ok_button_click)
 
     def on_ok_button_click(self):
+        self.open_signal.emit()
         self.progress_signal.emit(0)
         self.layer_name = self.ui.poiComboBox.currentText()
         self.radius = self.ui.radiusLineEdit.text()

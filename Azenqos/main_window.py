@@ -106,8 +106,12 @@ class main_window(QMainWindow):
 
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
     task_done_signal = pyqtSignal(str)
+    poi_open_signal = pyqtSignal()
     poi_result_signal = pyqtSignal(object, object)
     poi_progress_signal = pyqtSignal(int)
+    open_cellfile_progress_signal = pyqtSignal(int)
+    open_cellfile_complete_signal = pyqtSignal()
+    cellfile_layer_created_signal = pyqtSignal(object)
     signal_trigger_zoom_to_active_layer = pyqtSignal(str)
     add_created_layers_signal = pyqtSignal(str, object)
     curInstance = None
@@ -159,6 +163,11 @@ class main_window(QMainWindow):
         )
         import progress_dialog
         self.poi_progress = progress_dialog.progress_dialog("Calculating...")
+        self.open_cellfile_progress = progress_dialog.progress_dialog("Load Cell Files...")
+        self.open_cellfile_progress_signal.connect(self.set_open_cellfile_progress)
+        self.open_cellfile_complete_signal.connect(self.open_cellfile_complete)
+        self.cellfile_layer_created_signal.connect(self.on_cell_layer_created)
+        self.poi_open_signal.connect(self.on_poi_open)
         self.poi_progress_signal.connect(self.set_poi_progress)
         self.poi_result_signal.connect(self.create_poi_window)
         ########################
@@ -195,8 +204,19 @@ class main_window(QMainWindow):
 
         print("main_window __init__() done")
 
-    def set_poi_progress(self, value):
+    def set_open_cellfile_progress(self, value):
+        self.open_cellfile_progress.set_value(value)
+
+    def open_cellfile_complete(self):
+        self.open_cellfile_progress.hide()
+
+    def on_cell_layer_created(self, layer):
+        QgsProject.instance().addMapLayers([layer])
+
+    def on_poi_open(self):
         self.poi_progress.show()
+
+    def set_poi_progress(self, value):
         self.poi_progress.set_value(value)
     
     def create_poi_window(self, df, title):
@@ -854,7 +874,7 @@ Log_hash list: {}""".format(
         print("action calculate poi coverage")
         # result_signal = pyqtSignal(object, object)
         import calculate_poi_dialog
-        dlg = calculate_poi_dialog.calculate_poi(self.gc, self.poi_result_signal, self.poi_progress_signal)
+        dlg = calculate_poi_dialog.calculate_poi(self.gc, self.poi_result_signal, self.poi_progress_signal, self.poi_open_signal)
         dlg.show()
 
     ############# Data menu slots
@@ -1652,7 +1672,10 @@ Log_hash list: {}""".format(
             fileNames, _ = QFileDialog.getOpenFileNames(
                 self, "Select cell files", QtCore.QDir.rootPath(), "*.*"
             )
-
+            
+            self.open_cellfile_progress.show()
+            self.open_cellfile_progress.set_value(0)
+            self.open_cellfile_progress_signal.emit(0)
             if fileNames:
                 try:
                     import azq_cell_file
@@ -1667,7 +1690,9 @@ Log_hash list: {}""".format(
                 return
             assert self.gc.cell_files
             print("selectCells add_cell_layers()")
-            self.add_cell_layers()  # this will set cellfiles
+            worker = Worker(self.add_cell_layers)
+            self.gc.threadpool.start(worker)
+            # self.add_cell_layers()  # this will set cellfiles
             if self.gc.db_fp:
                 print("selectCells add_spider_layer()")
                 self.add_spider_layer()
@@ -2656,6 +2681,9 @@ Log_hash list: {}""".format(
             import cell_layer_task
             rrv = azq_cell_file.CELL_FILE_RATS.copy()
             rrv.reverse()  # by default gsm is biggest so put it at the bottom
+            rat_count = len(rrv)
+            current_rat_index = 0
+            load_cellfile_progress = 100 / rat_count
             for rat in rrv:
                 try:
                     layer_name = rat.upper() + "_cells"
@@ -2663,6 +2691,7 @@ Log_hash list: {}""".format(
                     sector_size_meters = float(self.gc.pref[pref_key])
                     df = azq_cell_file.read_cellfiles(self.gc.cell_files, rat, add_sector_polygon_wkt_sector_size_meters=sector_size_meters)
                     df = df.reset_index()
+                    self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.4))
 
                     create_cellfile_sql_str = azq_utils.get_create_cellfile_spatialite_header(rat)
                     create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_create_table(rat,
@@ -2674,6 +2703,7 @@ Log_hash list: {}""".format(
                     f.write(create_cellfile_sql_str)
                     f.close()
                     spatialite_bin = azq_utils.get_spatialite_bin()
+                    self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.5))
                     cel_spatial_db_fp = cell_sql_fp[:-3]+"db"
                     if os.path.isfile(cel_spatial_db_fp):
                         os.remove(cel_spatial_db_fp)
@@ -2687,6 +2717,7 @@ Log_hash list: {}""".format(
                         geom_column = 'geometry'
                         uri.setDataSource(schema, table, geom_column)
                         layer = QgsVectorLayer(uri.uri(), layer_name, 'spatialite')
+                        self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.6))
                         try:
                             param_att_rat = {'gsm': 'bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
                             param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'wcdma_aset_sc_1', 'lte': 'lte_physical_cell_id_1', 'nr': 'nr_servingbeam_pci_1'}
@@ -2700,6 +2731,7 @@ Log_hash list: {}""".format(
                                 raise Exception("self.gc.overview_opened so raise exception here to omit cell color/spider match as it will fail")
                             param_with_color_df = cell_layer_task.cell_in_logs_with_color(self.gc.cell_files, self.gc.databasePath, rat)
                             param_with_color_df[param_name_in_db] = param_with_color_df[param_name_in_db].astype(int)
+                            self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.7))
                             print(param_with_color_df)
                             fes = layer.getFeatures()
                             for fe in fes:
@@ -2719,16 +2751,20 @@ Log_hash list: {}""".format(
                             renderer = QgsGraduatedSymbolRenderer(param_name_in_cell, color_range_list)
                             renderer.setMode(QgsGraduatedSymbolRenderer.Custom)
                             layer.setRenderer(renderer)
+                            self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.8))
                         except:
                             type_, value_, traceback_ = sys.exc_info()
                             exstr = str(traceback.format_exception(type_, value_, traceback_))
                             print("WARNING: add cell file color for rat {} - exception: {}".format(rat, exstr))
-                        QgsProject.instance().addMapLayers([layer])
+                        self.cellfile_layer_created_signal.emit(layer)
                         pass
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: add cell file for rat {} - exception: {}".format(rat, exstr))
+                self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 1))
+                current_rat_index += 1
+            self.open_cellfile_complete_signal.emit()
             return
         else:
             qt_utils.msgbox("No cell-files specified", parent=self)

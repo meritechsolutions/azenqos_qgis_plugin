@@ -10,7 +10,6 @@ import azq_utils
 class progress_dialog(QDialog):
     def __init__(self, title="Progress Bar"):
         super(progress_dialog, self).__init__(None)
-        self.setAttribute(PyQt5.QtCore.Qt.WA_DeleteOnClose)
         self.title = title
         self.setupUi()
 
@@ -22,3 +21,7 @@ class progress_dialog(QDialog):
     
     def set_value(self, value):
         self.ui.progressBar.setValue(value)
+    
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()

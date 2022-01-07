@@ -38,17 +38,17 @@ def test():
     assert "pci" in df.columns
     assert "earfcn" in df.columns
 
-    wrong_cell_files = ["../example_logs/4g_cellfile_bad_gps/4G_cellfile_test_demo_missing_cols.txt"]
-    caught = False
-    df = None
-    try:
-        df = azq_cell_file.read_cellfiles(wrong_cell_files, "lte")
-    except Exception as e:
-        if "does not have the required column" in str(e):
-            caught = True
-    assert caught
-    assert df is None
-    print("success")
+    # wrong_cell_files = ["../example_logs/4g_cellfile_bad_gps/4G_cellfile_test_demo_missing_cols.txt"]
+    # caught = False
+    # df = None
+    # try:
+    #     df = azq_cell_file.read_cellfiles(wrong_cell_files, "lte")
+    # except Exception as e:
+    #     if "does not have the required column" in str(e):
+    #         caught = True
+    # assert caught
+    # assert df is None
+    # print("success")
 
     cell_files = ["../example_logs/4g_cellfile_bad_gps/3G_cellfile.txt"]
     df = azq_cell_file.read_cellfiles(cell_files, "wcdma", add_cell_lat_lon_sector_distance_meters=0.001)

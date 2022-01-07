@@ -22,7 +22,6 @@ from PyQt5.QtCore import (
     pyqtSignal,
     Qt,
     QItemSelection,
-    QSortFilterProxyModel,
     QAbstractTableModel,
 )
 import PyQt5.QtGui as QtGui

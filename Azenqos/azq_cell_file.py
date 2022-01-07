@@ -667,7 +667,10 @@ def read_cell_file(
                                     if name in df.columns:
                                         df[mc] = df[name]
                             else:
-                                df[mc] = df[rename_dict[mc]]
+                                print("mc", mc, "rename_dict[mc]", rename_dict[mc])
+                                name = rename_dict[mc]
+                                if name in df.columns:
+                                    df[mc] = df[name]
                             # del df[rename_dict[mc]]
                             matched_col = mc
                 if not matched_col:

@@ -8,6 +8,8 @@ import threading
 import time
 import traceback
 import uuid
+import pandas as pd
+import numpy as np
 from functools import partial
 from datatable import TableWindow
 
@@ -47,6 +49,8 @@ class server_overview_widget(QWidget):
         self.main_params_only = True
         self.auto_zoom = True
         self.pre_create_index = False
+        self.derived_dfs = None
+
 
     def setupUi(self):
         # keep incase thread calls self after closed - self.setAttribute(Qt.WA_DeleteOnClose)
@@ -357,7 +361,7 @@ class server_overview_widget(QWidget):
             assert os.path.isfile(dbfp)
             self.gvars.databasePath = dbfp
             combine_azm_end_time = time.perf_counter()
-            self.combine_azm_time =  "Combine azm Time: %.02f seconds" % float(combine_azm_end_time-combine_azm_start_time)
+            self.combine_azm_time =  "DB combine combine time: %.02f seconds" % float(combine_azm_end_time-combine_azm_start_time)
             azq_utils.timer_print("overview_perf_combine_azm")
 
             if self.closed:
@@ -388,9 +392,59 @@ class server_overview_widget(QWidget):
                     self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_", gen_theme_bucket_counts=False, main_rat_params_only=self.main_params_only
                 )
                 self.gvars.overview_opened = True
+
+            ############## create kpi stats layers if present
+            # get all tables starting with
+            with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+                map_imei_devices_df = self.devices_df.copy(deep=True)
+                map_imei_devices_df = map_imei_devices_df[["imei_number","alias","group_name"]].groupby(["imei_number","alias"]).agg({"group_name": lambda x: list(x)}).reset_index()
+                map_log_hash_imei_df = pd.read_sql("SELECT log_hash, log_imei FROM dumped_logs", dbcon)
+                tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name
+                has_kpi_tables = False
+                for table in tables:
+                    if self.closed:
+                        raise Exception("window closed")
+                    if table.startswith("kpi_"):
+                        has_kpi_tables = True
+                        self.status_update_signal.emit("Create KPI layer: {}".format(table))
+                        tdf = pd.read_sql("select * from {}".format(table), dbcon)
+                        layer = azq_utils.create_layer_in_qgis(None, tdf, table, add_to_qgis=False)
+                        if layer is not None:
+                            self.table_to_layer_dict[table] = layer
+                            self.layer_id_to_visible_flag_dict[layer.id()] = False
+                if self.closed:
+                    raise Exception("window closed")
+                if has_kpi_tables:
+                    try:
+                        self.status_update_signal.emit("Create Cell-wise stats...")
+                        self.derived_dfs = gen_site_kpi_dfs(dbcon, self.status_update_signal, map_imei_devices_df=map_imei_devices_df, map_log_hash_imei_df=map_log_hash_imei_df)
+                        self.status_update_signal.emit("Create Cell-wise stats... done")
+                        if self.derived_dfs is not None:
+                            for table, tdf in self.derived_dfs.items():
+                                try:
+                                    self.status_update_signal.emit("Creating Cell-wise layer: {}".format(table))
+                                    layer = azq_utils.create_layer_in_qgis(None, tdf, table, add_to_qgis=False)
+                                    if layer is not None:
+                                        self.table_to_layer_dict[table] = layer
+                                        self.layer_id_to_visible_flag_dict[layer.id()] = False
+                                    self.status_update_signal.emit("Creating Cell-wise layer: {}... done".format(table))
+                                except Exception as ce:
+                                    self.status_update_signal.emit("Creating Cell-wise layer: {}... failed: {}".format(table, ce))
+                                    type_, value_, traceback_ = sys.exc_info()
+                                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                                    print("WARNING: gen cell wise layer failed - exception: {}".format(exstr))
+                        # calc example pass/fail report
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print("WARNING: gen derived table failed - exception: {}".format(exstr))
+            ############## create kpi stats summary table if present
+
             create_layers_end_time = time.perf_counter()
-            self.create_layers_time =  "Create Layers Time: %.02f seconds" % float(create_layers_end_time-create_layers_start_time)
+            self.create_layers_time = "Create Layers Time: %.02f seconds" % float(
+                create_layers_end_time - create_layers_start_time)
             azq_utils.timer_print("overview_perf_create_layers")
+
             if self.closed:
                 raise Exception("window closed")
             self.status_update_signal.emit("DONE")
@@ -415,4 +469,235 @@ class WidgetDialog(QDialog):
         self.widget = widget
         layout.addWidget(self.widget)
 
-    
+def get_common_df_lh_time_stats_sr(cell_df):
+    lh = None
+    last_log_imei = None
+    last_phone = None
+    last_group = None
+    time = None
+    time_first = None
+    lat = None
+    lon = None
+    lhl = []
+    log_imei_list = []
+    group_list = []
+    phone_list = []
+    if len(cell_df):
+        idxmaxtime = cell_df["time"].idxmax()
+        time_first = cell_df["time"].min()
+        lh = cell_df.log_hash.loc[idxmaxtime]
+        if "log_imei" in cell_df.columns:
+            last_log_imei = cell_df.log_imei.loc[idxmaxtime]
+        if "alias" in cell_df.columns:
+            last_phone = cell_df.alias.loc[idxmaxtime]
+        if "group_name" in cell_df.columns:
+            last_group = cell_df.group_name.loc[idxmaxtime]
+        time = cell_df.time.loc[idxmaxtime]
+        lat = cell_df.lat.loc[idxmaxtime]
+        lon = cell_df.lon.loc[idxmaxtime]
+        lhl = cell_df.log_hash.unique()
+        if "log_imei" in cell_df.columns:
+            log_imei_list = cell_df.log_imei.unique()
+        if "alias" in cell_df.columns:
+            phone_list = cell_df.alias.unique()
+        if "group_name" in cell_df.columns:
+            group_list = list(set([item for sublist in cell_df.group_name.values.tolist() for item in sublist]))
+    return pd.Series(
+        {
+            "log_hash": lh,
+            "time": time,
+            "last_log_imei": last_log_imei,
+            "last_phone_name": last_phone,
+            "last_group_name": ",".join(pd.Series(last_group).astype(str).values),
+            "time_first": time_first,
+            "lat": lat,
+            "lon": lon,
+            "n_samples": len(cell_df),
+            "n_logs": len(lhl),
+            "log_list": ",".join(pd.Series(lhl).astype(str).values),
+            "log_imei_list": ",".join(pd.Series(log_imei_list).astype(str).values),
+            "phone_list": ",".join(pd.Series(phone_list).astype(str).values),
+            "group_list": ",".join(pd.Series(group_list).astype(str).values)
+        }
+    )
+
+
+def gen_tp_stats_per_group(cell_df, tp_col):
+    common_sr = get_common_df_lh_time_stats_sr(cell_df)
+    max_tp = None
+    max_tp_lh = None
+    if len(cell_df):
+        idxmax = cell_df[tp_col].idxmax()
+        max_tp = cell_df[tp_col].loc[idxmax]
+        max_tp_lh = cell_df.log_hash.loc[idxmax]
+        kbps_to_mbps = True
+        if tp_col.endswith("_mbps"):
+            kbps_to_mbps = False
+        if max_tp is not None and kbps_to_mbps:
+            max_tp /= 1000.0
+    return pd.concat(
+        [
+            common_sr,
+            pd.Series(
+                {
+                    "max_tp_mbps": max_tp,
+                    "max_tp_log_hash": max_tp_lh
+                }
+            )
+        ]
+    )
+
+
+def gen_call_stats_per_group(cell_df, unused_param):
+    common_sr = get_common_df_lh_time_stats_sr(cell_df)
+    cssr = None
+    n_init = None
+    n_blocks = None
+    n_drops = None
+    n_end = None
+    n_setup = None
+    csd_avg = None
+    csd_min = None
+    csd_max = None
+    if len(cell_df):
+        n_init = len(cell_df)
+        n_blocks = len(cell_df[cell_df.call_end_type == "Call Block"])
+        n_drops = len(cell_df[cell_df.call_end_type == "Call Drop"])
+        n_end = len(cell_df[cell_df.call_end_type == "Call End"])
+        n_setup = len(cell_df[pd.notnull(cell_df.call_setup_time) | pd.notnull(cell_df.call_established_time)])
+        csd_avg = cell_df.call_setup_duration.mean()
+        csd_max = cell_df.call_setup_duration.max()
+        csd_min = cell_df.call_setup_duration.min()
+    if n_init:
+        cssr = (n_setup*100.0)/n_init
+    return pd.concat(
+        [
+            common_sr,
+            pd.Series(
+                {
+                "cssr": cssr,
+                "csd_avg": csd_avg,
+                "csd_min": csd_min,
+                "csd_max": csd_max,
+                "n_init": n_init,
+                "n_setup": n_setup,
+                "n_blocks": n_blocks,
+                "n_drops": n_drops,
+                "n_end": n_end,
+                }
+            )
+        ]
+    )
+
+
+def gen_dur_stats_per_group(cell_df, dur_col):
+    cell_df = cell_df[pd.notnull(cell_df[dur_col])]  # rm empty rows
+    common_sr = get_common_df_lh_time_stats_sr(cell_df)
+    max_dur = None
+    max_dur_lh = None
+    min_dur = None
+    min_dur_lh = None
+    avg_dur = None
+    if len(cell_df):
+        idxmax = cell_df[dur_col].idxmax()
+        idxmin = cell_df[dur_col].idxmin()
+        max_dur = cell_df[dur_col].loc[idxmax]
+        max_dur_lh = cell_df.log_hash.loc[idxmax]
+        min_dur = cell_df[dur_col].loc[idxmin]
+        min_dur_lh = cell_df.log_hash.loc[idxmin]
+        avg_dur = cell_df[dur_col].mean()
+    return pd.concat(
+        [
+            common_sr,
+            pd.Series(
+                {
+                    "avg_dur": avg_dur,
+                    "max_dur": max_dur,
+                    "max_dur_log_hash": max_dur_lh,
+                    "min_dur": min_dur,
+                    "min_dur_log_hash": min_dur_lh,
+                }
+            )
+        ]
+    )
+
+
+def print_and_emit(msg, update_signal=None):
+    print(msg)
+    update_signal.emit(msg) if update_signal is not None else None
+
+
+def gen_site_kpi_dfs(dbcon, update_signal=None, raise_if_failed=False, map_imei_devices_df=None, map_log_hash_imei_df=None):
+    ret = {}
+    tables = list(pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';", dbcon).name)
+    #print("tables:", tables)
+
+    kpi_table_to_apply_func_and_param = {
+        "kpi_ims_reg": (gen_dur_stats_per_group, "duration"),
+        "kpi_attach": (gen_dur_stats_per_group, "dur"),
+        "kpi_detach": (gen_dur_stats_per_group, "dur"),
+        "kpi_fdd_to_tdd": (gen_dur_stats_per_group, "duration"),
+        "kpi_ftp_dl": (gen_tp_stats_per_group, "ftp_dl"),
+        "kpi_ftp_ul": (gen_tp_stats_per_group, "ftp_ul"),
+        "kpi_gsm_to_lte": (gen_dur_stats_per_group, "duration"),
+        "kpi_interfreq": (gen_dur_stats_per_group, "duration"),
+        "kpi_intersite": (gen_dur_stats_per_group, "duration"),
+        "kpi_intersite_volte": (gen_dur_stats_per_group, "duration"),
+        "kpi_intrasite": (gen_dur_stats_per_group, "duration"),
+        "kpi_intrasite_volte": (gen_dur_stats_per_group, "duration"),
+        "kpi_lte_to_gsm": (gen_dur_stats_per_group, "duration"),
+        "kpi_ping_rtt": (gen_dur_stats_per_group, "ping_rtt_each"),
+        "kpi_ping_rtp": (gen_dur_stats_per_group, "prev_time_diff_rx_mute"),
+        "kpi_srvcc": (gen_dur_stats_per_group, "duration_millis"),
+        "kpi_tdd_to_fdd": (gen_dur_stats_per_group, "duration"),
+    }
+    for t in ["kpi_csfb", "kpi_csfb_gsm", "kpi_volte"]:
+        kpi_table_to_apply_func_and_param[t] = (gen_call_stats_per_group, None)
+
+    nt = len(kpi_table_to_apply_func_and_param)
+    it = 0
+    for table, fp in kpi_table_to_apply_func_and_param.items():
+        if table in tables:
+            it += 1
+            try:
+                print_and_emit("Calc site-wise stats for {} [{}/{}]".format(table, it, nt), update_signal)
+                afunc, aparam = fp
+                #assert map_imei_devices_df is not None
+                #assert map_log_hash_imei_df is not None
+                df = get_table_df_gb_lte_sib1_enbid(table, dbcon, map_imei_devices_df=map_imei_devices_df, map_log_hash_imei_df=map_log_hash_imei_df).apply(
+                    lambda cell_df: afunc(cell_df, aparam)
+                )
+                df = df.drop(["lte_sib1_mcc", "lte_sib1_mnc", "lte_sib1_tac", "lte_sib1_enb_id"], axis=1, errors='ignore')
+                df = df.reset_index()
+                new_table_name = table.replace("kpi_", "site_kpi_", 1)
+
+                if new_table_name == "site_kpi_volte":
+                    df["criteria_n_init_above_5"] = df.n_init > 5
+                    df["criteria_cssr_above_95"] = df.cssr > 95
+                    df["criteria_drop_rate_less_5"] = ((df.n_drops*100.0)/df.n_init) < 5
+                    df["criterias_passed"] = df["criteria_n_init_above_5"] & df["criteria_cssr_above_95"] & df["criteria_drop_rate_less_5"]
+                elif new_table_name == "site_kpi_ftp_dl":
+                    df["criteria_max_tp_above_15_mbps"] = df.max_tp_mbps > 5
+                    df["criterias_passed"] = df["criteria_max_tp_above_15_mbps"]
+
+                ret[new_table_name] = df
+            except Exception as ex:
+                if raise_if_failed:
+                    raise ex
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: gen_cell_stats_dfs table: {} failed - exception: {}".format(table, exstr))
+
+    return ret
+
+
+def get_table_df_gb_lte_sib1_enbid(table, dbcon, map_imei_devices_df=None, map_log_hash_imei_df=None):
+    df = pd.read_sql("select * from {}".format(table), dbcon, parse_dates=["time"])
+    df["log_hash"] = df["log_hash"].astype(np.int64)
+    if map_log_hash_imei_df is not None:
+        df = df.merge(map_log_hash_imei_df, left_on="log_hash", right_on='log_hash')
+    if map_imei_devices_df is not None:
+        df = df.merge(map_imei_devices_df, left_on="log_imei", right_on='imei_number')
+    gb = df.groupby(["lte_sib1_mcc", "lte_sib1_mnc", "lte_sib1_tac", "lte_sib1_enb_id"], as_index=False)
+    return gb
+

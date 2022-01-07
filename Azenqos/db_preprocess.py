@@ -4,6 +4,7 @@ import traceback
 import uuid
 import xml.etree.ElementTree as xet
 import struct
+import datetime
 
 import pandas as pd
 import numpy as np
@@ -70,7 +71,7 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False, time_bin_secs=None):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
@@ -182,8 +183,15 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                     cre_type = "view"
                 date_filt_where_and = ""
                 if start_date is not None and end_date is not None:
-                    pass
-                    #date_filt_where_and = "and time >= '{}' and time <= '{} 24:00:00'".format(start_date, end_date)
+                    if "time_bin" in table_cols and time_bin_secs:
+                        sd = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+                        ed = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
+                        stb = int(sd.timestamp()/time_bin_secs)
+                        etb = int(ed.timestamp()/time_bin_secs)
+                        date_filt_where_and = "and time_bin >= {} and time_bin < {}".format(stb, etb)
+                    else:
+                        date_filt_where_and = "and time >= '{}' and time <= '{} 24:00:00'".format(start_date, end_date)
+                print("date_filt_where_and:", date_filt_where_and)
                 drop_view_sqlstr = "drop {cre_type} if exists {view}".format(cre_type=cre_type, view=view)
                 if "cell_meas" in table or table in ["ping"]:
                     sqlstr = "create {} {col} as select * from {table} where {col} is not null {date_filt_where_and};".format(cre_type, col=view, table=table, date_filt_where_and=date_filt_where_and)   # need to create table because create view casues get nearest feature id to fail - getting only 0

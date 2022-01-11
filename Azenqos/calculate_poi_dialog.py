@@ -35,6 +35,17 @@ rat_to_main_param_dict = {
     "WCDMA": "wcdma_aset_rscp_1",
     "GSM": "gsm_rxlev_sub_dbm",
 }
+rat_to_main_param_list_dict = {
+    "NR": ["nr_servingbeam_ss_rsrp_1", "nr_servingbeam_ss_rsrq_1", "nr_servingbeam_ss_sinr_1"],
+    "LTE": ["lte_inst_rsrp_1", "lte_inst_rsrq_1", "lte_sinr_1"],
+    "WCDMA": ["wcdma_aset_ecio_1", "wcdma_aset_rscp_1"],
+    "GSM": ["gsm_rxlev_sub_dbm", "gsm_rxqual_sub"],
+}
+other_table_param_dict = {
+    "ping": ["ping_rtt"],
+    "android_info_1sec": ["data_trafficstat_dl_mbps", "data_trafficstat_ul_mbps"],
+}
+
 
 def geom_to_lat_lon(geomBlob):
     if geomBlob is None:
@@ -107,6 +118,15 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
                     dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(rat_to_table_and_primary_where_dict[rat]))
                 except:
                     pass
+        
+        for table in other_table_param_dict:
+            try:
+                dbcon.execute("select ROWID from idx_{}_geom".format(table)).fetchone()
+            except:
+                try:
+                    dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(table))
+                except:
+                    pass
             
         len_poi=  len(poi_df)
         calculate_progress = 100/len_poi
@@ -119,25 +139,49 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
             ymin = y-offset
             progress_signal.emit(int(calculate_progress*(index+1)))
             for rat in rat_to_table_and_primary_where_dict:
-                avg = None
+                avg = []
+                avg_sql_list = []
+                for main_param in rat_to_main_param_list_dict[rat]:
+                    avg_sql_list.append("avg({})".format(main_param))
                 try:
-                    avg =  dbcon.execute("SELECT avg({}) FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(rat_to_main_param_dict[rat],rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], xmin, xmax, ymin, ymax)).fetchone()
+                    avg =  dbcon.execute("SELECT {} FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(",".join(avg_sql_list), rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], xmin, xmax, ymin, ymax)).fetchone()
                 except Exception as e:
                     print(e)
-                col_name = rat_to_main_param_dict[rat]+"_average"
-                if col_name not in col_name_list:
-                    col_name_list.append(col_name)
-                df.loc[index, col_name] = avg
+                n = 0
+                if len(avg) > 0:
+                    for main_param in rat_to_main_param_list_dict[rat]:
+                        col_name = main_param+"_average"
+                        if col_name not in col_name_list:
+                            col_name_list.append(col_name)
+                        df.loc[index, col_name] = avg[n]
+                        n += 1
+            for table in other_table_param_dict:
+                avg_sql_list = []
+                for main_param in other_table_param_dict[table]:
+                    avg_sql_list.append("avg({})".format(main_param))
+                try:
+                    avg =  dbcon.execute("SELECT {} FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(",".join(avg_sql_list), table, table, table, xmin, xmax, ymin, ymax)).fetchone()
+                except Exception as e:
+                    print(e)
+                n = 0
+                if len(avg) > 0:
+                    for main_param in other_table_param_dict[table]:
+                        col_name = main_param+"_average"
+                        if col_name not in col_name_list:
+                            col_name_list.append(col_name)
+                        df.loc[index, col_name] = avg[n]
+                        n += 1
         df = df.dropna(subset=col_name_list, how='all')
     return df
 
 class calculate_poi(QDialog):
-    def __init__(self, gc, result_signal, progress_signal):
+    def __init__(self, gc, result_signal, progress_signal, open_signal):
         super(calculate_poi, self).__init__(None)
         self.radius = "1000"
         self.gc = gc
         self.result_signal = result_signal
         self.progress_signal = progress_signal
+        self.open_signal = open_signal
         self.names = [layer.name() for layer in QgsProject.instance().mapLayers().values()]
         self.layer_name = self.names[0]
         self.setAttribute(PyQt5.QtCore.Qt.WA_DeleteOnClose)
@@ -161,6 +205,7 @@ class calculate_poi(QDialog):
         self.accepted.connect(self.on_ok_button_click)
 
     def on_ok_button_click(self):
+        self.open_signal.emit()
         self.progress_signal.emit(0)
         self.layer_name = self.ui.poiComboBox.currentText()
         self.radius = self.ui.radiusLineEdit.text()

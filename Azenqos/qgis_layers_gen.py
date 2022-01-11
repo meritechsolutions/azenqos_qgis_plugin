@@ -14,7 +14,8 @@ try:
         QgsGeometry,
         QgsVectorLayer,
         QgsDataSourceUri,
-        QgsSvgMarkerSymbolLayer
+        QgsSvgMarkerSymbolLayer,
+        QgsSimpleMarkerSymbolLayer
     )
 except:
     pass
@@ -124,7 +125,7 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
     return layer
 
 
-def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="lat", label_col=None):
+def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="lat", label_col=None, add_poi_icon=False):
     print("create_qgis_layer_csv() label_col: {} START".format(label_col))
     uri = pathlib.Path(csv_fp).as_uri()
     uri += "?crs=epsg:4326&xField={}&yField={}".format(x_field, y_field)
@@ -137,6 +138,11 @@ def create_qgis_layer_csv(csv_fp, layer_name="layer", x_field="lon", y_field="la
         layer.setCustomProperty("labeling/fontSize", "10")
         layer.setCustomProperty("labeling/fieldName", label_col)
         layer.setCustomProperty("labeling/placement", "2")
+    
+    if add_poi_icon is not None:
+        symLyr1 = QgsSimpleMarkerSymbolLayer(QgsSimpleMarkerSymbolLayer.Star, 10)
+        symLyr1.setSize(6)
+        layer.renderer().symbol().changeSymbolLayer(0, symLyr1)
     QgsProject.instance().addMapLayers([layer])
     print("create_qgis_layer_csv() DONE")
 
@@ -159,7 +165,7 @@ def create_qgis_poi_layer(gc, poi_fp, layer_name=None):
             headers = d_reader.fieldnames
             x_field, y_field = get_lon_lat_column_name(headers)
         if x_field is not None and y_field is not None:
-            create_qgis_layer_csv(poi_fp, layer_name, x_field=x_field, y_field=y_field)
+            create_qgis_layer_csv(poi_fp, layer_name, x_field=x_field, y_field=y_field, add_poi_icon=True)
             return "success"
         else:
             return "Please make sure that there are longitude and latitude in your csv file."

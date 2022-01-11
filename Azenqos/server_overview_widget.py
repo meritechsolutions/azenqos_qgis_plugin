@@ -20,6 +20,15 @@ from PyQt5.QtWidgets import (
     QMessageBox
 )
 from PyQt5.uic import loadUi
+try:
+    # noinspection PyUnresolvedReferences
+    from qgis.core import (
+        QgsProject,
+    )
+    print("mainwindow working in qgis mode")
+except:
+    print("mainwindow working in standalone mode")
+    pass
 
 import azm_sqlite_merge
 import azq_server_api
@@ -50,6 +59,7 @@ class server_overview_widget(QWidget):
         self.auto_zoom = True
         self.pre_create_index = False
         self.derived_dfs = None
+        self.close_all_layers = True
 
 
     def setupUi(self):
@@ -228,7 +238,8 @@ class server_overview_widget(QWidget):
                 self.status("Read server facts... done in %.02f secs" % dur)
             else:
                 if self.gvars.main_window:
-                    self.gvars.main_window.add_map_layer()
+                    if self.close_all_layers:
+                        self.gvars.main_window.add_map_layer()
                 self.status("Adding layers to QGIS...")
                 self.progress_update_signal.emit(90)
                 if self.gvars.qgis_iface:
@@ -241,6 +252,25 @@ class server_overview_widget(QWidget):
                     self.gvars.main_window.trigger_zoom_to_active_layer()
 
     def apply(self):
+        if self.gvars.databasePath:
+            self.gvars.databasePath = None
+            reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?")
+            print("reply", reply)
+            self.close_all_layers = False
+            if reply == 0:
+                self.close_all_layers = True
+            
+            if self.gvars.qgis_iface:
+                project = QgsProject.instance()
+                if self.close_all_layers:
+                    project.removeAllMapLayers()
+                    project.clear()
+                else:
+                    for layer in project.mapLayers().values():
+                        if layer.name() == "OSM":
+                            continue
+                        new_layer_name = layer.name()+"_old"
+                        layer.setName(new_layer_name)
         self.ui.status_label.setText("")
         if self.select_theme_lineEdit.text() != "Default" and not os.path.isfile(
             self.select_theme_lineEdit.text()

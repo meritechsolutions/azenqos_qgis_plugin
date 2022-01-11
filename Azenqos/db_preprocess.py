@@ -404,7 +404,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: indoor prepare failed exception:", exstr)
-    main_param_list = ["nr_cell_meas","lte_cell_meas","wcdma_cell_meas","gsm_cell_meas"]
+    main_param_list = ["nr_cell_meas", "lte_cell_meas", "wcdma_cell_meas", "gsm_cell_meas", "ping", "android_info_1sec"]
     if pre_create_index:
         try:
             n = 0

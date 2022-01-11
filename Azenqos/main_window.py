@@ -1673,8 +1673,8 @@ Log_hash list: {}""".format(
                 self, "Select cell files", QtCore.QDir.rootPath(), "*.*"
             )
             
-            self.open_cellfile_progress.show()
-            self.open_cellfile_progress.set_value(0)
+            # self.open_cellfile_progress.show()
+            # self.open_cellfile_progress.set_value(0)
             self.open_cellfile_progress_signal.emit(0)
             if fileNames:
                 try:
@@ -1690,9 +1690,9 @@ Log_hash list: {}""".format(
                 return
             assert self.gc.cell_files
             print("selectCells add_cell_layers()")
-            worker = Worker(self.add_cell_layers)
-            self.gc.threadpool.start(worker)
-            # self.add_cell_layers()  # this will set cellfiles
+            # worker = Worker(self.add_cell_layers)
+            # self.gc.threadpool.start(worker)
+            self.add_cell_layers()  # this will set cellfiles
             if self.gc.db_fp:
                 print("selectCells add_spider_layer()")
                 self.add_spider_layer()

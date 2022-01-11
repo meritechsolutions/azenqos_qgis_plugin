@@ -2670,12 +2670,6 @@ Log_hash list: {}""".format(
         print("add_cell_layers self.gc.cell_files:", self.gc.cell_files)
         if not self.gc.cell_files:
             return
-        import azq_cell_file
-        try:
-            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
-        except Exception as e:
-            qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
-            return
         if self.gc.cell_files:
             import azq_cell_file
             import azq_utils

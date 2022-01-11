@@ -254,7 +254,7 @@ class server_overview_widget(QWidget):
     def apply(self):
         if self.gvars.databasePath:
             self.gvars.databasePath = None
-            reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?")
+            reply = qt_utils.ask_yes_no(None, "Overview", "Close all existing layers?")
             print("reply", reply)
             self.close_all_layers = False
             if reply == 0:

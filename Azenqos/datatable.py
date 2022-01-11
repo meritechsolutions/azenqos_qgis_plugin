@@ -341,8 +341,12 @@ class TableWindow(QWidget):
                 )
                 if fp:
                     if action == actions_dict["to_csv"]:
+                        if not fp.endswith(".csv"):
+                            fp += ".csv"
                         df.to_csv(fp, index=False, quoting=csv.QUOTE_ALL)
                     else:
+                        if not fp.endswith(".parquet"):
+                            fp += ".parquet"
                         df.to_parquet(fp)
                     qt_utils.msgbox("Dumped to file: {}".format(fp))
             except:

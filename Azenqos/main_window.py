@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import json
+import uuid
 import pathlib
 import shutil
 import threading
@@ -2698,7 +2699,7 @@ Log_hash list: {}""".format(
                                                                                                      list(df.columns))
                     create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_insert_cell(rat, df)
                     create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_footer()
-                    cell_sql_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_" + rat + ".sql")
+                    cell_sql_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_{}_".format(uuid.uuid4()) + rat + ".sql")
                     f = open(cell_sql_fp, 'w')
                     f.write(create_cellfile_sql_str)
                     f.close()

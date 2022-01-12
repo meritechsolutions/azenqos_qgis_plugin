@@ -112,6 +112,7 @@ class main_window(QMainWindow):
     poi_progress_signal = pyqtSignal(int)
     open_cellfile_progress_signal = pyqtSignal(int)
     open_cellfile_complete_signal = pyqtSignal()
+    on_load_cellfile_error_signal = pyqtSignal(str)
     cellfile_layer_created_signal = pyqtSignal(object)
     signal_trigger_zoom_to_active_layer = pyqtSignal(str)
     add_created_layers_signal = pyqtSignal(str, object)
@@ -167,6 +168,7 @@ class main_window(QMainWindow):
         self.open_cellfile_progress = progress_dialog.progress_dialog("Load Cell Files...")
         self.open_cellfile_progress_signal.connect(self.set_open_cellfile_progress)
         self.open_cellfile_complete_signal.connect(self.open_cellfile_complete)
+        self.on_load_cellfile_error_signal.connect(self.open_cellfile_fail)
         self.cellfile_layer_created_signal.connect(self.on_cell_layer_created)
         self.poi_open_signal.connect(self.on_poi_open)
         self.poi_progress_signal.connect(self.set_poi_progress)
@@ -207,6 +209,9 @@ class main_window(QMainWindow):
 
     def set_open_cellfile_progress(self, value):
         self.open_cellfile_progress.set_value(value)
+
+    def open_cellfile_fail(self, msg_str):
+        qt_utils.msgbox(msg_str, parent=self)
 
     def open_cellfile_complete(self):
         self.open_cellfile_progress.hide()
@@ -1674,8 +1679,8 @@ Log_hash list: {}""".format(
                 self, "Select cell files", QtCore.QDir.rootPath(), "*.*"
             )
             
-            # self.open_cellfile_progress.show()
-            # self.open_cellfile_progress.set_value(0)
+            self.open_cellfile_progress.show()
+            self.open_cellfile_progress.set_value(0)
             self.open_cellfile_progress_signal.emit(0)
             if fileNames:
                 try:
@@ -1691,9 +1696,9 @@ Log_hash list: {}""".format(
                 return
             assert self.gc.cell_files
             print("selectCells add_cell_layers()")
-            # worker = Worker(self.add_cell_layers)
-            # self.gc.threadpool.start(worker)
-            self.add_cell_layers()  # this will set cellfiles
+            worker = Worker(self.add_cell_layers)
+            self.gc.threadpool.start(worker)
+            # self.add_cell_layers()  # this will set cellfiles
             if self.gc.db_fp:
                 print("selectCells add_spider_layer()")
                 self.add_spider_layer()
@@ -2668,8 +2673,6 @@ Log_hash list: {}""".format(
 
     def add_cell_layers(self):
         print("add_cell_layers self.gc.cell_files:", self.gc.cell_files)
-        if not self.gc.cell_files:
-            return
         if self.gc.cell_files:
             import azq_cell_file
             import azq_utils
@@ -2762,7 +2765,7 @@ Log_hash list: {}""".format(
             self.open_cellfile_complete_signal.emit()
             return
         else:
-            qt_utils.msgbox("No cell-files specified", parent=self)
+            self.on_load_cellfile_error_signal.emit("No cell-files specified")
 
 
     def load_current_workspace(self):

@@ -14,6 +14,7 @@ import uuid
 import json 
 from pathlib import Path
 import base64
+import re
 
 import pandas as pd
 import requests
@@ -1719,6 +1720,19 @@ def check_and_recover_db(dbfp, tmp_path, write_debug_sql_file=False):
             out_dbcon.commit()
         dbfp = out_db_fp
     return dbfp
+
+def live_mode(dbfp):
+    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+        process = popen_no_shell((get_adb_command(), "shell", "tail", "-f",  "/sdcard/diag_logs/azqdata.db.sql"))
+        n = 0
+        for line in iter(process.stdout.readline, b''):
+            if n >= 10:
+                break 
+            print(line)
+            line = line.decode("utf-8")
+            match = re.search(r"SQLiteProgram: (.*)", line)
+            print(match.group(1))
+            n+=1
 
 def pull_latest_log_db_from_phone(parent=None):
     close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows

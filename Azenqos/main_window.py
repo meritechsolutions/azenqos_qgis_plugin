@@ -1956,7 +1956,8 @@ Log_hash list: {}""".format(
         if not (self.gc.log_mode and self.gc.log_mode == "adb"):
             qt_utils.msgbox("This button is for re-sync data from phone in 'Connected phone mode' (chosen in 'Open logs') only.", "Not in 'Connected phone mode'", parent=self)
             return
-        self.open_logs(connected_mode_refresh=True, ask_close_all_layers=False)
+        azq_utils.live_mode(self.gc.databasePath)
+        # self.open_logs(connected_mode_refresh=True, ask_close_all_layers=False)
         print("sync_connecter_phone DONE")
 
 

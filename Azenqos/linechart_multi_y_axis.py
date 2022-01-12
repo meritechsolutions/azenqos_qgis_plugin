@@ -50,7 +50,7 @@ class LineChart(QtWidgets.QDialog):
         super(LineChart, self).__init__(None)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
-        pg.setConfigOptions(background="w", antialias=True)
+        pg.setConfigOptions(background="w", useOpenGL=True, antialias=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.paramListDict = {}
         for paramDict in paramList:

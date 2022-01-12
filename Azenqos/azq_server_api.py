@@ -33,6 +33,7 @@ def api_login_get_token(server, user, passwd, passwd_sha=None):
         from http.client import responses
 
         raise Exception("Got response status: %s" % responses[resp.status_code])
+    raise Exception("invalid state")
 
 
 def api_create_process(server, token, lhl, azq_report_gen_expression):
@@ -61,6 +62,103 @@ def api_create_process(server, token, lhl, azq_report_gen_expression):
         )
     resp_dict = resp.json()
     return resp_dict
+
+def api_device_list_df(server, token):
+    resp = call_api_get_resp(server, token, "uapi/list_devices", {}, method="get")
+    #print("api_device_list_df resp:", resp)
+    df = pd.DataFrame(resp)
+    print("api_device_list_df df:", df)
+    if len(df) == 0:
+        raise Exception("No devices added for this account")
+    df["imei_number"] = df["imei_number"].astype(str)
+    return df
+
+def api_overview_db_list_df(server, token):
+    resp = call_api_get_resp(server, token, "uapi/overview_db", {}, method="get")
+    return pd.DataFrame(resp)
+
+def api_predict_models_list_df(server, token):
+    resp = call_api_get_resp(server, token, "uapi/predict", {}, method="get")
+    return pd.DataFrame(resp)
+
+def api_predict_df(server, token, body_dict):
+    resp = call_api_get_resp(server, token, "uapi/predict", body_dict)
+    return pd.DataFrame(resp)
+
+def api_overview_db_download(server, token, target_fp, req_body, signal_to_emit_stats=None):
+    ret_fp = call_api_get_resp(server, token, "uapi/overview_db", req_body, resp_content_to_fp=target_fp, signal_to_emit_stats=signal_to_emit_stats)
+    return ret_fp
+
+def call_api_get_resp(server, token, path, body_dict, method='post', resp_content_to_fp=None, signal_to_emit_stats=None):
+    host = urlparse(server).netloc
+    url = "https://{}/{}".format(host, path)
+    headers={"Authorization": "Bearer {}".format(token),}
+    resp = None
+    def update_stat(s):
+        print("call_api_get_resp update_stat:", s)
+        signal_to_emit_stats.emit(s) if signal_to_emit_stats is not None else None
+
+    update_stat("Sending/waiting for server process...")
+    ts = time.time()
+    if method == "post":
+        resp = requests.post(
+            url,
+            headers=headers,
+            json=body_dict,
+            verify=False,
+            stream=resp_content_to_fp is not None
+        )
+    elif method == "get":
+        assert not body_dict
+        resp = requests.get(
+            url,
+            headers=headers,
+            verify=False,
+            stream=resp_content_to_fp is not None
+        )
+    else:
+        raise Exception("unsupported method: {}".format(method))
+    with resp:
+        update_stat("Got response... server process duration: %.02f secs" %(time.time() - ts))
+        print("resp.headers:", resp.headers)
+        if resp.status_code != 200:
+            raise Exception(
+                "Got failed status_code: {} resp.text: {}".format(
+                    resp.status_code, resp.text,
+                )
+            )
+        if resp_content_to_fp:
+            ts = time.time()
+            resp.raise_for_status()
+            with open(resp_content_to_fp, "wb") as f:
+                total_len = 0
+                last_update = 0.0
+                last_report_bytes = 0
+                for chunk in resp.iter_content(chunk_size=4*1024*1024):
+                    if chunk is None or len(chunk) == 0:
+                        break
+                    total_len += len(chunk)
+                    now = time.time()
+                    dur = now - last_update
+                    if dur >= 1.0:
+                        bytes_rx_last_loop = total_len - last_report_bytes
+                        bits_per_sec = (bytes_rx_last_loop*8)/dur
+                        k_bits_per_sec = bits_per_sec / 1000.0
+                        m_bits_per_sec = bits_per_sec / (1000.0*1000.0)
+                        last_report_bytes = total_len
+                        update_stat("Downloading: %.02f MB" % (float(total_len/(1000*1000))) + (" (speed %.02f Mbps)" % m_bits_per_sec if m_bits_per_sec > 1 else "(speed %.02f Kbps)" % k_bits_per_sec))
+                        last_update = now
+                    # If you have chunk encoded response uncomment if
+                    # and set chunk_size parameter to None.
+                    # if chunk:
+                    f.write(chunk)
+            update_stat("Download completed in %.02f secs" % (time.time()-ts))
+
+            assert os.path.isfile(resp_content_to_fp)
+            return resp_content_to_fp
+        else:
+            resp_dict = resp.json()
+            return resp_dict
 
 
 def api_get_process(server, token, proc_uuid):
@@ -186,6 +284,7 @@ def api_login_and_dl_db_zip(
     done_signal=None,
     on_zip_downloaded_func=None,
     download_db_zip=True,
+    overview_mode_params_dict = None, # dict
 ):
 
     try:
@@ -198,40 +297,43 @@ def api_login_and_dl_db_zip(
         signal_emit(status_update_signal, "Login success...")
         signal_emit(progress_update_signal, 10)
 
-        py_eval_ret_dict = api_py_eval_get_parsed_ret_dict(
-            server,
-            token,
-            lhl,
-            "PY_EVAL sql_helpers.read_sql('select * from logs', dbcon)"
-            if (not download_db_zip)
-            else api_dump_db_expression(),
-            progress_update_signal,
-            status_update_signal,
-        )
-        print("login py_eval_ret_dict: {}".format(py_eval_ret_dict))
+        # prepare for download db zip from server
+        azq_utils.cleanup_died_processes_tmp_folders()
+        tmp_dir = azq_utils.tmp_gen_path()
+        target_fp = os.path.join(tmp_dir, "server_db.zip")
+        if os.path.isfile(target_fp):
+            os.remove(target_fp)
+        zip_url = None
 
-        assert py_eval_ret_dict is not None
-
-        target_fp = None
-        if download_db_zip:
+        if overview_mode_params_dict:
+            signal_emit(status_update_signal, "Downloading overview db zip from server...")
+            target_fp = api_overview_db_download(server, token, target_fp, overview_mode_params_dict)
+        else:
+            py_eval_ret_dict = api_py_eval_get_parsed_ret_dict(
+                server,
+                token,
+                lhl,
+                "PY_EVAL sql_helpers.read_sql('select * from logs', dbcon)"
+                if (not download_db_zip)
+                else api_dump_db_expression(),
+                progress_update_signal,
+                status_update_signal,
+            )
+            print("login py_eval_ret_dict: {}".format(py_eval_ret_dict))
+            assert py_eval_ret_dict is not None
+            zip_url = api_relative_path_to_url(server, py_eval_ret_dict["ret_dump"])
             # check that server process succeeded
             signal_emit(status_update_signal, "Check server response for db zip...")
-            zip_url = api_relative_path_to_url(server, py_eval_ret_dict["ret_dump"])
             print("zip_url:", zip_url)
             signal_emit(progress_update_signal, 60)
-
-            # download db zip from server
-            azq_utils.cleanup_died_processes_tmp_folders()
             signal_emit(status_update_signal, "Downloading db zip from server...")
-            tmp_dir = azq_utils.tmp_gen_path()
-            target_fp = os.path.join(tmp_dir, "server_db.zip")
-            if os.path.isfile(target_fp):
-                os.remove(target_fp)
             azq_utils.download_file(zip_url, target_fp)
+
+        if download_db_zip and zip_url:
+            assert target_fp
             assert os.path.isfile(target_fp) == True
             signal_emit(progress_update_signal, 80)
             signal_emit(status_update_signal, "Download complete...")
-
             if on_zip_downloaded_func:
                 signal_emit(status_update_signal, "Processing downloaded zip/data...")
                 on_zip_downloaded_func(target_fp)

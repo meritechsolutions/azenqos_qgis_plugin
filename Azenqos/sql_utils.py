@@ -1,4 +1,6 @@
 import pandas as pd
+import traceback
+import sys
 
 
 LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_PREFIX = '''pd.read_sql(
@@ -42,27 +44,36 @@ def sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time):
 
 def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
     print(sql)
-    df = pd.read_sql(sql, dbcon)
-    if len(df) > 0:
-        if df.last_valid_index() is not None:
-            last_valid_each_col = df.apply(pd.Series.last_valid_index)
-            valid_df_dict = {}
-            for index, value in last_valid_each_col.items():
-                value_index = 0
-                if not pd.isna(value):
-                    value_index = int(value)
-                valid_df_dict[index] = df[index][value_index]
-            df = pd.DataFrame.from_dict(valid_df_dict, orient='index').T
-        else:
-            df = df.iloc[[0]].reset_index(drop=True)
+    try:
+        df = pd.read_sql(sql, dbcon)
+        if len(df) > 0:
+            if df.last_valid_index() is not None:
+                last_valid_each_col = df.apply(pd.Series.last_valid_index)
+                valid_df_dict = {}
+                for index, value in last_valid_each_col.items():
+                    value_index = 0
+                    if not pd.isna(value):
+                        value_index = int(value)
+                    valid_df_dict[index] = df[index][value_index]
+                df = pd.DataFrame.from_dict(valid_df_dict, orient='index').T
+            else:
+                df = df.iloc[[0]].reset_index(drop=True)
 
-    if trasposed:
-        if len(df) == 0:
-            df.loc[0] = None  # add new row so wont be empty df when transpose (otherwise datatable.py show would be different n columns and wont get refreshed when n columns increased)
-        df = df.T.reset_index()  # pop out as column
-        if col_name is not None:
-            df = df.rename(columns={df.columns[1]: col_name})
-    return df
+        if trasposed:
+            if len(df) == 0:
+                df.loc[0] = None  # add new row so wont be empty df when transpose (otherwise datatable.py show would be different n columns and wont get refreshed when n columns increased)
+            df = df.T.reset_index()  # pop out as column
+            if col_name is not None:
+                df = df.rename(columns={df.columns[1]: col_name})
+        return df
+    except Exception:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(
+            "WARNING: exception invalid sql:"
+            + exstr
+        )
+        return
 
 
 def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash, time, col_name=None, trasposed=True):

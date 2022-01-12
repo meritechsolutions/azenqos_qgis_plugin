@@ -11,6 +11,7 @@ from matplotlib.path import Path
 import azq_utils as utils
 import plot_param_zorders
 from dprint import dprint
+from analyzer_vars import analyzer_vars
 
 import itertools
 
@@ -36,7 +37,7 @@ RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["lte"] = ("earfcn", "ch")
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["wcdma"] = ("uarfcn", "ch")
 RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT["gsm"] = ["bcch", "arfcn", "ch"]
 
-CELL_FILE_REQUIRED_COLUMNS = ("dir", "lat", "lon", "ant_bw", "system", "site")
+CELL_FILE_REQUIRED_COLUMNS = ("dir", "lat", "lon", "ant_bw", "system", "site", "mcc", "mnc")
 CELL_FILE_NUMERIC_COLUMNS = tuple(["dir", "lat", "lon", "ant_bw"]\
                             + list(itertools.chain.from_iterable(RAT_TO_MAIN_CELL_COL_KNOWN_NAMES_DICT.keys())) \
                             + list(itertools.chain.from_iterable(RAT_TO_MAIN_CELL_CHANNEL_COL_KNOWN_NAMES_DICT.keys())))
@@ -538,8 +539,16 @@ def read_cellfiles(cell_files, rat, add_cell_lat_lon_sector_distance_meters=None
     if len(df_list) == 0:
         raise Exception("no successfully read cellfiles")
     df = pd.concat(df_list)
+
+    if not len(df):
+        raise Exception("no cells read from specified cellfiles")
+
     rat = check_rat_alias(rat)
     df = df[df["system"].str.lower() == rat].copy()
+
+    if not len(df):
+        raise Exception("no cells read from specified cellfiles for specified rat: {}".format(rat))
+
     if add_cell_lat_lon_sector_distance_meters:
         add_cell_lat_lon_to_cellfile_df(df, distance_meters=add_cell_lat_lon_sector_distance_meters)
     if add_sector_polygon_wkt_sector_size_meters:
@@ -576,16 +585,51 @@ def read_cell_file(
         df = pd.read_csv(fp, sep=get_csv_separator_for_file(fp))
         df.columns = list(map(str.lower, df.columns))
         # df.columns = map(str.strip(), df.columns) # problem about str.strip()
+        rename_dict = {"dir": ["direction","azimuth"],
+                       "lat": "latitude",
+                       "lon": ["longitude", "long"],
+                       "site": ["site name", "site_name"],
+                       "psc": "psc/pci",
+                       "pci": "psc/pci",
+                       "uarfcn": "dl uarfcn",
+                       "earfcn": ["dl uarfcn", "euarfcn"]
+                       }
+        auto_add_dict = {"ant_bw": 60,
+                         "system": fp.lower(),
+                         "mcc": analyzer_vars().pref["default_mcc"],
+                         "mnc": analyzer_vars().pref["default_mnc"]
+                         }
+
         rcs = list(CELL_FILE_REQUIRED_COLUMNS) + list(extra_required_columns)
         dprint("read_cell_file: df cols:", df.columns)
         # check if cell file has all required columns:
         for rc in rcs:
             if not rc in df.columns:
-                raise Exception(
-                    "\n\nERROR: INVALID CELLFILE: can't find column: {} - file: {}\n\n\n".format(
-                        rc, fp
+                if rc in rename_dict.keys():
+                    if isinstance(rename_dict[rc], list):
+                        for name in rename_dict[rc]:
+                            if name in df.columns:
+                                df[rc] = df[name]
+                    else:
+                        df[rc] = df[rename_dict[rc]]
+                    # del df[rename_dict[rc]]
+                elif rc in auto_add_dict.keys():
+                    df[rc] = auto_add_dict[rc]
+                    if rc == "system":
+                        if "2g" in auto_add_dict[rc]:
+                            df[rc] = "gsm"
+                        elif "3g" in auto_add_dict[rc]:
+                            df[rc] = "wcdma"
+                        elif "4g" in auto_add_dict[rc]:
+                            df[rc] = "lte"
+                        elif "5g" in auto_add_dict[rc]:
+                            df[rc] = "nr"
+                else:
+                    raise Exception(
+                        "\n\nERROR: INVALID CELLFILE: can't find column: {} - file: {}\n\n\n".format(
+                            rc, fp
+                        )
                     )
-                )
 
         for nc in CELL_FILE_NUMERIC_COLUMNS:
             try:
@@ -616,6 +660,19 @@ def read_cell_file(
                     if mc in df.columns:
                         matched_col = mc
                         break
+                    else:
+                        if mc in rename_dict.keys():
+                            if isinstance(rename_dict[mc], list):
+                                for name in rename_dict[mc]:
+                                    if name in df.columns:
+                                        df[mc] = df[name]
+                            else:
+                                print("mc", mc, "rename_dict[mc]", rename_dict[mc])
+                                name = rename_dict[mc]
+                                if name in df.columns:
+                                    df[mc] = df[name]
+                            # del df[rename_dict[mc]]
+                            matched_col = mc
                 if not matched_col:
                     raise Exception(
                         "invalid cellfile: it has system (RAT) value: {} but does not have the required column: {}".format(
@@ -631,6 +688,7 @@ def read_cell_file(
         dprint("read_cell_file: df pre filt out nan len {}".format(len(df)))
 
         # filter only rows that required column is not null/empty
+        # df.to_csv("/home/suthat/Desktop/b.csv")
         for rc in rcs:
             df = df[pd.notnull(df[rc])]
 
@@ -809,8 +867,8 @@ def df_cellfile_check_and_convert(df, fp_for_error_report=None):
 
     rename_dicts = [
         # one dict in list per each required col
-        {"tac": "lac"},
-        {"cid": "cell_id", "eci": "cell_id", "cell_id": "cell_id"},
+        {"tac": "lac", "lac/enodeb id": "lac"},
+        {"cid": "cell_id", "eci": "cell_id", "cell_id": "cell_id", "cellid": "cell_id"},
     ]
 
     for rename_dict in rename_dicts:
@@ -883,19 +941,45 @@ def add_projection(df, distance_meters, dir_col, ret_lat_col, ret_lon_col):
 
 def add_sector_polygon_wkt_to_cellfile_df(df, add_sector_polygon_wkt_sector_size_meters):
     print("add_sector_polygon_wkt_to_cellfile_df: distance_meters: {}".format(add_sector_polygon_wkt_sector_size_meters))
-    df["point2"] = df["dir"] + (df.ant_bw / 2)
-    df["point3"] = df["dir"] - (df.ant_bw / 2)
-    tmp_cols = ["point2", "point3"]
+
+    site_type_col = ['station type', 'site_type']
+    ibc_list = ['Pico', 'IBC']
+    for ibc in ibc_list:
+        for site_type in site_type_col:
+            if site_type in df.columns:
+                df.loc[df[site_type] == ibc, "ant_bw"] = 360
+
+    df["point1"] = 30
+    df.loc[df.ant_bw == 360,"point2"] = 90
+    df.loc[df.ant_bw == 360,"point3"] = 150
+    df["point4"] = 210
+    df["point5"] = 270
+    df["point6"] = 330
+    df.loc[df.ant_bw != 360,"point2"] = df["dir"] + (df.ant_bw / 2)
+    df.loc[df.ant_bw != 360,"point3"] = df["dir"] - (df.ant_bw / 2)
+    tmp_cols = ["point1", "point2", "point3", "point4", "point5", "point6"]
+
     for tmp_col in tmp_cols:
         add_projection(df, add_sector_polygon_wkt_sector_size_meters, tmp_col, tmp_col+"_lat", tmp_col+"_lon")
         del df[tmp_col]
-    df["sector_polygon_wkt"] = "POLYGON(("+\
-                               df.lon.astype(str) + " "+df.lat.astype(str) + ","+\
-                               df.point2_lon.astype(str)+" "+df.point2_lat.astype(str)+","+\
-                               df.point3_lon.astype(str)+" "+df.point3_lat.astype(str)+","+\
-                               df.lon.astype(str) + " " + df.lat.astype(str)+\
-                               "))"
-    for tmp_col in tmp_cols:
-        del df[tmp_col+"_lat"]
-        del df[tmp_col +"_lon"]
 
+    df.loc[df.ant_bw != 360, "sector_polygon_wkt"] = "POLYGON((" + \
+                                                     df.lon.astype(str) + " "+df.lat.astype(str) + "," +\
+                                                     df.point2_lon.astype(str)+" "+df.point2_lat.astype(str)+"," +\
+                                                     df.point3_lon.astype(str)+" "+df.point3_lat.astype(str)+"," +\
+                                                     df.lon.astype(str) + " " + df.lat.astype(str) +\
+                                                     "))"
+
+    df.loc[df.ant_bw == 360, "sector_polygon_wkt"] = "POLYGON((" + \
+                                                     df.point1_lon.astype(str) + " "+df.point1_lat.astype(str) + "," +\
+                                                     df.point2_lon.astype(str) + " "+df.point2_lat.astype(str) + "," +\
+                                                     df.point3_lon.astype(str) + " "+df.point3_lat.astype(str) + "," +\
+                                                     df.point4_lon.astype(str) + " "+df.point4_lat.astype(str) + "," +\
+                                                     df.point5_lon.astype(str) + " "+df.point5_lat.astype(str) + "," +\
+                                                     df.point6_lon.astype(str) + " "+df.point6_lat.astype(str) + "," +\
+                                                     df.point1_lon.astype(str) + " "+df.point1_lat.astype(str) +\
+                                                     "))"
+
+    for tmp_col in tmp_cols:
+        del df[tmp_col + "_lat"]
+        del df[tmp_col + "_lon"]

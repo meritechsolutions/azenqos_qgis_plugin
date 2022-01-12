@@ -1,148 +1,162 @@
 import contextlib
-import os
+import os.path
 import sqlite3
 import sys
-import time
 import traceback
+from multiprocessing.pool import ThreadPool
+import multiprocessing as mp
 
 import pandas as pd
+import psutil
+
+import azq_utils
+import preprocess_azm
+import system_sql_query
 
 try:
     from qgis.core import (
         QgsProject,
-        QgsTask,
-        QgsMessageLog,
-        QgsRectangle,
-        QgsLayerTreeLayer,
-        QgsMapLayerType,
         QgsCoordinateReferenceSystem,
     )
 except:
     pass
 
 
-class LayerTask(QgsTask):
-    def __init__(self, desc, databasePath, gc, task_done_signal):
-        QgsTask.__init__(self, desc)
-        print("start layertask: databasePath {}".format(databasePath))
-        self.task_done_signal = task_done_signal
-        self.dbPath = databasePath
-        self.start_time = time.time()
-        self.desc = desc
-        self.exception = None
-        self.vLayers = []
-        self.gc = gc
+def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_theme_bucket_counts=True, main_rat_params_only=False):
+    print("create_layers main_rat_params_only:", main_rat_params_only)
+    azq_utils.timer_start("create_layers")
+    try:
+        if db_fp is None:
+            db_fp = gc.db_fp
+        if True:
+            # gc.mostFeaturesLayer = None
+            print("db_layer_task.py add_layers_from_ui_thread 0")
+            # Setting CRS
+            my_crs = QgsCoordinateReferenceSystem(4326)
+            QgsProject.instance().setCrs(my_crs)
+            print("db_layer_task.py add_layers_from_ui_thread() 3 addVectorLayer")
+            # geom_column = "geom"
+            if ogr_mode and gc.qgis_iface:
+                gc.qgis_iface.addVectorLayer(db_fp, None, "ogr")
+            else:
 
-
-
-    def zoomToActiveLayer(self):
-        root = QgsProject.instance().layerTreeRoot()
-        groups = root.findGroups()
-        extent = QgsRectangle()
-        extent.setMinimal()
-        if len(groups) > 0:
-            for child in groups[0].children():
-                if isinstance(child, QgsLayerTreeLayer):
-                    extent.combineExtentWith(child.layer().extent())
-        else:
-            layers = root.findLayers()
-            for child in layers:
-                if isinstance(child, QgsLayerTreeLayer):
-                    msg = "child.layer().type(): {}".format(child.layer().type())
-                    print(msg)
-                    QgsMessageLog.logMessage(msg)
-                    try:
-                        if child.layer().type() == QgsMapLayerType.VectorLayer:
-                            extent.combineExtentWith(child.layer().extent())
-                    except Exception as ne:
-                        print(
-                            "check QgsMapLayerType.VectorLayer failed: {} - try fallback to alt method".format(
-                                ne
-                            )
-                        )
-                        if child.layer().type() == 0:
-                            extent.combineExtentWith(child.layer().extent())
-
-            self.gc.qgis_iface.mapCanvas().setExtent(extent)
-            self.gc.qgis_iface.mapCanvas().refresh()
-
-
-    def run(self):
-        if not self.gc.qgis_iface:
-            return
-        self.start_time = time.time()
-        return True
-
-
-    def finished(self, result):
-        self.task_done_signal.emit(os.path.basename(__file__))
-
-    def add_layers_from_ui_thread(self, select=False):
-        try:
-            if self.gc.qgis_iface:
-                # gc.mostFeaturesLayer = None
-                print("db_layer_task.py add_layers_from_ui_thread 0")
-
-                print("db_layer_task.py add_layers_from_ui_thread() 3 addVectorLayer")
-                # geom_column = "geom"
-                table_list = []
-                with contextlib.closing(sqlite3.connect(self.dbPath)) as dbcon:
-                    table_list = pd.read_sql("select f_table_name from geometry_columns", dbcon)
-                if True:
-                    #TODO add lower direct, non-ogr support?
-                    self.gc.qgis_iface.addVectorLayer(self.dbPath, None, "ogr")
-                else:
+                with contextlib.closing(sqlite3.connect(db_fp)) as dbcon:
+                    db_created_views_mode = True  # if false then qgis seems to create/show only the last created layer per same table
+                    custom_sql = None
+                    if main_rat_params_only:
+                        param_list = list(system_sql_query.rat_to_main_param_dict.values())
+                    else:
+                        param_list = pd.read_sql("select f_table_name from geometry_columns", dbcon).f_table_name.values
+                    if db_created_views_mode:
+                        table_list = param_list
+                    else:
+                        table_list = [preprocess_azm.get_table_for_column(param) for param in param_list]
+                    tp_list = zip(table_list, param_list)
                     import qgis_layers_gen
-                    for table in table_list:
+                    last_visible_layer = None
+                    table_to_layer_dict = {}
+                    layer_id_to_visible_flag_dict = {}
+                    qml_tmp_fp_list = None
+
+                    # pre-gen qml theme file
+                    azq_utils.timer_start("gen_theme_qml")
+                    qml_tmp_fp_list = []
+                    mp_mode = False
+                    if mp_mode:
+                        print("gen theme qml files mp")
+                        pool = mp.Pool(psutil.cpu_count()) if os.name == "posix" else ThreadPool(psutil.cpu_count())  # windows qgis if mp it will open multiple instances of qgis
                         try:
-                            qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-                            self.dbPath, table
+                            args = []
+                            for table, param in tp_list:
+                                args.append((table, param, db_fp, gen_theme_bucket_counts))
+                            qml_tmp_fp_list = pool.starmap(azq_utils.get_theme_qml_tmp_file_for_param, args)
+                        finally:
+                            pool.close()
+                    else:
+                        print("gen theme qml files seq")
+                        for table, param in tp_list:
+                            qml_tmp_fp_list.append(azq_utils.get_theme_qml_tmp_file_for_param(table, param, db_fp, gen_theme_bucket_counts=gen_theme_bucket_counts))
+                    azq_utils.timer_print("gen_theme_qml")
+                    assert qml_tmp_fp_list is not None
+                    assert len(qml_tmp_fp_list) > 0
+                    for i in range(len(table_list)):
+                        table = table_list[i]
+                        param = param_list[i]
+                        qml_tmp_fp = qml_tmp_fp_list[i]
+                        if not qml_tmp_fp or not os.path.isfile(qml_tmp_fp):
+                            continue
+                        print("Adding layer to UI:", param)
+                        try:
+                            visible = False
+                            if table in system_sql_query.rat_to_main_param_dict.values():
+                                visible = True
+                            dn = display_name_prefix+param
+                            if azq_utils.is_lang_th() and gc.is_easy_mode():
+                                dn = dn.replace("_1", "", 1) # rm trailing _1
+                                dn = azq_utils.th_translate(dn)
+                            layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+                                db_fp, table, visible=visible,
+                                style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=dn, theme_param=param, custom_sql=custom_sql
                             )
+                            layer_id_to_visible_flag_dict[layer.id()] = visible
+                            table_to_layer_dict[table] = layer
+                            if visible:
+                                last_visible_layer = layer
                         except:
                             type_, value_, traceback_ = sys.exc_info()
                             exstr = str(traceback.format_exception(type_, value_, traceback_))
                             print("WARNING: create_qgis_layer_from_spatialite_db table {} failed exception: {}".format(
                                 table, exstr
                             )
-                        )
+                            )
 
-                # Setting CRS
-                my_crs = QgsCoordinateReferenceSystem(4326)
-                QgsProject.instance().setCrs(my_crs)
+                    return table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: add_layers_from_ui_thread - exception: {}".format(exstr))
+    finally:
+        azq_utils.timer_print("create_layers")
+    return None
 
-                self.zoomToActiveLayer()
+def set_active_layer(gc, layer_name=None):
+    try:
+        if gc.qgis_iface:
+            layer =  QgsProject.instance().mapLayersByName(layer_name)[0]
+            gc.qgis_iface.setActiveLayer(layer)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: set_active_layer - exception: {}".format(exstr))
 
-                elapsed_time = time.time() - self.start_time
-                QgsMessageLog.logMessage(
-                    "Elapsed time: " + str(elapsed_time) + " s.", tag="Processing"
-                )
-                QgsMessageLog.logMessage("[-- End add layers --]", tag="Processing")
-
-            else:
-                if self.exception is None:
-                    QgsMessageLog.logMessage(
-                        'Task "{name}" not successful but without '
-                        "exception (probably the task was manually "
-                        "canceled by the user)".format(name=self.desc),
-                        tag="Exception",
-                    )
-                else:
-                    QgsMessageLog.logMessage(
-                        'Task "{name}" Exception: {exception}'.format(
-                            name=self.desc, exception=self.exception
-                        ),
-                        tag="Exception",
-                    )
-                    raise self.exception
-        except:
-            type_, value_, traceback_ = sys.exc_info()
-            exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: load cell file - exception: {}".format(exstr))
-        print("add_layers_from_ui_thread() end")
-
-
-    def run_blocking(self, select=False):
-        self.run()
-        self.add_layers_from_ui_thread()
+def ui_thread_add_layers_to_qgis(gc, table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer):
+    azq_utils.timer_start("ui_thread_add_layers_to_qgis")
+    try:
+        layers = table_to_layer_dict.values()
+        print("ui_thread_add_layers_to_qgis1")
+        QgsProject.instance().addMapLayers(layers)
+        print("ui_thread_add_layers_to_qgis2")
+        for lid in layer_id_to_visible_flag_dict.keys():
+            visible = layer_id_to_visible_flag_dict[lid]
+            ltlayer = QgsProject.instance().layerTreeRoot().findLayer(lid)
+            if ltlayer is None:
+                continue
+            ltlayer.setItemVisibilityChecked(visible)
+            print("ui_thread_add_layers_to_qgis2 lid {} visible {}".format(lid, visible))
+        for layer in layers:
+            ltlayer = QgsProject.instance().layerTreeRoot().findLayer(layer.id())
+            if ltlayer is None:
+                continue
+            ltlayer.setExpanded(False)
+            if last_visible_layer is not None and last_visible_layer.id() == layer.id():
+                if gc.qgis_iface:
+                    gc.qgis_iface.setActiveLayer(last_visible_layer)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: ui_thread_add_layers_to_qgis - exception: {}".format(exstr))
+    finally:
+        azq_utils.timer_print("ui_thread_add_layers_to_qgis")
+    return None
 
 

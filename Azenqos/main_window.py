@@ -1,10 +1,12 @@
 import contextlib
 import datetime
 import json
+import uuid
 import pathlib
 import shutil
 import threading
 import traceback
+import azq_cell_file
 
 import PyQt5
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -27,6 +29,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
 )
 from PyQt5.uic import loadUi
+from qgis._core import QgsTask
 
 import qt_utils, azq_utils
 import spider_plot
@@ -54,7 +57,8 @@ try:
         QgsFields,
         QgsSymbol,
         QgsRendererRange,
-        QgsGraduatedSymbolRenderer
+        QgsGraduatedSymbolRenderer,
+        QgsDataSourceUri
     )
 
     # from qgis.utils import
@@ -103,9 +107,18 @@ class main_window(QMainWindow):
 
     signal_ui_thread_emit_time_slider_updated = pyqtSignal(float)
     task_done_signal = pyqtSignal(str)
-
+    poi_open_signal = pyqtSignal()
+    poi_result_signal = pyqtSignal(object, object)
+    poi_progress_signal = pyqtSignal(int)
+    open_cellfile_progress_signal = pyqtSignal(int)
+    open_cellfile_complete_signal = pyqtSignal()
+    cellfile_layer_created_signal = pyqtSignal(object)
+    signal_trigger_zoom_to_active_layer = pyqtSignal(str)
+    add_created_layers_signal = pyqtSignal(str, object)
+    curInstance = None
 
     def __init__(self, qgis_iface, parent=None):
+        curInstance = self
         if qgis_iface is not None and parent is None:
             parent = qgis_iface.mainWindow()
         print("mainwindow __init__ parent: {}".format(parent))
@@ -119,9 +132,13 @@ class main_window(QMainWindow):
         self.gc = analyzer_vars.analyzer_vars()
         self.gc.qgis_iface = qgis_iface
         self.gc.main_window = self
+        self.gc.has_wave_file = False
+        self.gc.is_mos_nb = False
         self.timechange_service_thread = None
         self.is_legacy_indoor = False
         self.is_leg_nr_tables = False
+        self.asked_easy_mode = False
+        self.close_all_layers = True
         self.timechange_to_service_counter = atomic_int(0)
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
@@ -129,15 +146,31 @@ class main_window(QMainWindow):
         self.task_done_signal.connect(
             self.task_done_slot
         )
+
+        self.signal_trigger_zoom_to_active_layer.connect(
+            self.slot_trigger_zoom_to_active_layer
+        )
+
         self.db_layer_task = None
         self.cell_layer_task = None
+        self.zoom_thread = None
 
         self.dbfp = None
         self.qgis_iface = qgis_iface
+        self.crs_already_set = False
         self.timeSliderThread = timeSliderThread(self.gc)
         self.current_workspace_settings = QSettings(
             azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN), QSettings.IniFormat
         )
+        import progress_dialog
+        self.poi_progress = progress_dialog.progress_dialog("Calculating...")
+        self.open_cellfile_progress = progress_dialog.progress_dialog("Load Cell Files...")
+        self.open_cellfile_progress_signal.connect(self.set_open_cellfile_progress)
+        self.open_cellfile_complete_signal.connect(self.open_cellfile_complete)
+        self.cellfile_layer_created_signal.connect(self.on_cell_layer_created)
+        self.poi_open_signal.connect(self.on_poi_open)
+        self.poi_progress_signal.connect(self.set_poi_progress)
+        self.poi_result_signal.connect(self.create_poi_window)
         ########################
         self.setupUi()
 
@@ -147,19 +180,49 @@ class main_window(QMainWindow):
             print("analyzer_window: qgis mode")
             self.canvas = qgis_iface.mapCanvas()
             self.clickTool = QgsMapToolEmitPoint(self.canvas)
-            self.canvas.setMapTool(self.clickTool)
-            self.clickTool.canvasClicked.connect(self.clickCanvas)
+            self.setMapTool()
+            self.reg_map_tool_click_point(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
+            self.add_created_layers_signal.connect(self._add_created_layers)
+            self.add_map_layer()
         try:
-            QgsProject.instance().layersAdded.connect(self.rename_layers)
+            QgsProject.instance().layersAdded.connect(self.on_layers_added)
         except:
             pass
 
-        self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple())
+        self.timechange_service_thread = threading.Thread(target=self.timeChangedWorkerFunc, args=tuple(), daemon=True)
         self.timechange_service_thread.start()
-        self.resize(1024,768)
+        self.setMinimumSize(50, 50)
         azq_utils.adb_kill_server_threaded()  # otherwise cant update plugin as adb files would be locked
+
+        ##### set project crs to 4326 - this wont work if we call it here, need to call it from a delayed signal
+        def emit_init_done(delay=0.5):
+            time.sleep(delay)
+            self.task_done_signal.emit("init")
+        t = threading.Thread(target=emit_init_done)
+        t.start()
+        ######################################################################################################
+
         print("main_window __init__() done")
+
+    def set_open_cellfile_progress(self, value):
+        self.open_cellfile_progress.set_value(value)
+
+    def open_cellfile_complete(self):
+        self.open_cellfile_progress.hide()
+
+    def on_cell_layer_created(self, layer):
+        QgsProject.instance().addMapLayers([layer])
+
+    def on_poi_open(self):
+        self.poi_progress.show()
+
+    def set_poi_progress(self, value):
+        self.poi_progress.set_value(value)
+    
+    def create_poi_window(self, df, title):
+        self.add_param_window(custom_df=df, title=title, allow_no_log_opened=True)
+        self.poi_progress.hide()
 
     @pyqtSlot()
     def on_actionTile_triggered(self):
@@ -275,6 +338,41 @@ Log_hash list: {}""".format(
             self.gc.login_dialog.token = None
         qt_utils.msgbox(msg, parent=self)
 
+
+    @pyqtSlot()
+    def on_actionServer_overview_layers_triggered(self):
+        if not self.is_logged_in():
+            self.on_actionLogin_triggered()
+            if not self.is_logged_in():
+                return
+        import server_overview_widget
+        widget = server_overview_widget.server_overview_widget(self, self.gc)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
+
+    @pyqtSlot()
+    def on_actionServerAIPrediction_triggered(self):
+        if not self.is_logged_in():
+            self.on_actionLogin_triggered()
+            if not self.is_logged_in():
+                return
+        import predict_widget
+        widget = predict_widget.predict_widget(self, self.gc)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
+
+    @pyqtSlot()
+    def on_actionOSM_triggered(self):
+        self.add_map_layer()
+
+    def reg_map_tool_click_point(self, func):
+        print("reg_map_tool_click_point func:", func)
+        self.clickTool.canvasClicked.connect(func)
+
+    def dereg_map_tool_click_point(self, func):
+        print("dereg_map_tool_click_point func:", func)
+        self.clickTool.canvasClicked.disconnect(func)
+
     @pyqtSlot()
     def on_actionRun_server_modules_triggered(self):
         if not self.is_logged_in():
@@ -347,7 +445,7 @@ Log_hash list: {}""".format(
             self.add_subwindow_with_widget(swa, widget)
 
     def is_logged_in(self):
-        return self.gc.login_dialog and self.gc.login_dialog.token
+        return self.gc.is_logged_in()
 
     ############# log menu slots
     @pyqtSlot()
@@ -381,25 +479,61 @@ Log_hash list: {}""".format(
         import system_sql_query
         self.add_param_window(system_sql_query.LTE_SYSTEM_INFO_SQL_LIST, title="LTE System Info")
 
+    ############# footprint menu slots
+
+    @pyqtSlot()
+    def on_actionNR_PCI_Footprint_triggered(self):
+        print("action nr pci footprint")
+        import footprint_dialog
+
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "NR PCI Footprint", technology = "nr")
+        dlg.show()
+
+    @pyqtSlot()
+    def on_actionLTE_PCI_Footprint_triggered(self):
+        print("action lte pci footprint")
+        import footprint_dialog
+
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "LTE PCI Footprint", technology = "lte")
+        dlg.show()
+
+    @pyqtSlot()
+    def on_actionWCDMA_PSC_Footprint_triggered(self):
+        print("action wcdma psc footprint")
+        import footprint_dialog
+
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "WCDMA PSC Footprint", technology = "wcdma")
+        dlg.show()
+
+    @pyqtSlot()
+    def on_actionGSM_BCCH_Footprint_triggered(self):
+        print("action gsm bcch footprint")
+        import footprint_dialog
+
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "GSM BCCH Footprint", technology = "gsm")
+        dlg.show()
+
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):
-        self.add_param_window("pd.read_sql('''select log_hash, time, name, symbol as dir, protocol, detail_str from signalling''',dbcon)", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
+        self.add_param_window("pd.read_sql('''select log_hash, time, name, symbol as dir, protocol, detail_str from signalling''',dbcon).sort_values(by='time')", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):
-        has_wave_file = False
         with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
             try:
                 mos_df = pd.read_sql("select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos", dbcon)
                 if len(mos_df) > 0 and "wave_file" in mos_df.columns:
-                    has_wave_file = True
+                    self.gc.has_wave_file = True
+                check_nb_df = pd.read_sql("select info from events where info = 'is_mos_test_polqa_nb'", dbcon)
+                if len(check_nb_df) > 0:
+                    self.gc.is_mos_nb = True
             except:
                 pass
-        if has_wave_file:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
+        if self.gc.has_wave_file == True:
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos where polqa_mos is not null order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
         else:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True)
+            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
 
     ############# NR menu slots
     @pyqtSlot()
@@ -414,7 +548,7 @@ Log_hash list: {}""".format(
         import nr_data_query
         self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, allow_no_log_opened=False):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
         widget = TableWindow(
@@ -423,9 +557,12 @@ Log_hash list: {}""".format(
             refresh_func_or_py_eval_str_or_sql_str,
             time_list_mode=time_list_mode,
             stretch_last_row=stretch_last_row,
-            options=options
+            options=options,
+            func_key=func_key,
+            custom_df=custom_df,
+            custom_table_param_list=custom_table_param_list
         )
-        self.add_subwindow_with_widget(swa, widget)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=allow_no_log_opened)
         #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
@@ -486,6 +623,12 @@ Log_hash list: {}""".format(
                                       existing_content="Custom table view")
             self.add_param_window(expression, title=title, time_list_mode=True, stretch_last_row=True)
 
+    @pyqtSlot()
+    def on_actionCustom_Table_View_UI_triggered(self):
+        import custom_table_dialog
+        dlg = custom_table_dialog.custom_table_dialog(self.gc)
+        dlg.on_result.connect(lambda df, param_list, title: self.add_param_window(custom_df=df, title=title, time_list_mode=True, custom_table_param_list=param_list))
+        dlg.show()
 
     @pyqtSlot()
     def on_actionExynosServiceMode_BasicInfo_2_triggered(self):
@@ -533,20 +676,20 @@ Log_hash list: {}""".format(
         print("action old nr radio params")
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
+            self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters")
+            self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name)
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self):
         print("action nr serving neigh")
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
+            self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors")
+            self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name)
 
     @pyqtSlot()
     def on_action5GNR_Beams_triggered(self):
@@ -559,10 +702,10 @@ Log_hash list: {}""".format(
         print("action old nr data")
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
+            self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data")
+            self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name)
 
     ############# LTE menu slots
     @pyqtSlot()
@@ -690,6 +833,52 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+
+    ############# Add Layer menu slots
+
+    @pyqtSlot()
+    def on_actionAdd_Layer_triggered(self):
+        print("action add layer")
+        elm_df = preprocess_azm.get_elm_df_from_csv()
+        elm_df = elm_df.loc[(elm_df["var_type"] == "Double") | (elm_df["var_type"] == "Integer"), ("var_name", "name", "n_arg_max")].reset_index(drop=True)
+        swa = SubWindowArea(self.mdi, self.gc)
+
+        widget = TableWindow(
+            swa,
+            "Add Layer",
+            elm_df,
+            func_key=inspect.currentframe().f_code.co_name,
+        )
+        self.add_subwindow_with_widget(swa, widget)
+
+    ############# Add POI Layer menu slots
+
+    @pyqtSlot()
+    def on_actionAdd_POI_Layer_triggered(self):
+        print("action add poi layer")
+        from pathlib import Path
+        import qgis_layers_gen
+        pot_file_name = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open POI file ...", os.path.join(Path.home(),""), "POI file(*.csv *.kml *.mif *.tab);;All file(*)"
+        )
+        if pot_file_name:
+            if pot_file_name[0]:
+                pot_file_path = pot_file_name[0]
+                try:
+                    qgis_layers_gen.check_poi_file(self.gc, pot_file_path)
+                except:
+                    pass
+
+    ############# Add POI Layer menu slots
+
+    
+    @pyqtSlot()
+    def on_actionCalculate_POI_Coverage_triggered(self):
+        print("action calculate poi coverage")
+        # result_signal = pyqtSignal(object, object)
+        import calculate_poi_dialog
+        dlg = calculate_poi_dialog.calculate_poi(self.gc, self.poi_result_signal, self.poi_progress_signal, self.poi_open_signal)
+        dlg.show()
 
     ############# Data menu slots
 
@@ -1201,17 +1390,22 @@ Log_hash list: {}""".format(
         linechart_window.open()
         linechart_window.setWindowTitle("GSM Data Line Chart")
 
-    def add_subwindow_with_widget(self, swa, widget, w=280, h=250):
-        if self.gc.db_fp is None or os.path.isfile(self.gc.db_fp) == False:
-            qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
-            return False
+
+    def add_subwindow_with_widget(self, swa, widget, w=280, h=250, allow_no_log_opened=False):
+        if allow_no_log_opened == False:
+            if self.gc.db_fp is None or os.path.isfile(self.gc.db_fp) == False:
+                qt_utils.msgbox(msg="Please open a log first", title="Log not opened", parent=self)
+                return False
         swa.setWidget(widget)
         self.mdi.addSubWindow(swa)
-        swa.resize(w, h)
+        if w and h:
+            swa.resize(w, h)
         swa.show()
         self.gc.openedWindows.append(widget)
         return True
 
+    def status(self, msg):
+        self.ui.statusbar.showMessage(msg)
 
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_module_fp("main_window.ui"), self)
@@ -1343,7 +1537,7 @@ Log_hash list: {}""".format(
 
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.saveBtn.clicked.connect(self.saveDbAs)
-            self.layerSelect.clicked.connect(self.selectLayer)
+            self.layerSelect.clicked.connect(self.on_button_selectLayer)
             self.cellsSelect.clicked.connect(self.selectCells)
             self.importDatabaseBtn.clicked.connect(self.open_logs)
             self.maptool.clicked.connect(self.setMapTool)
@@ -1359,8 +1553,8 @@ Log_hash list: {}""".format(
             print("WARNING: setupUi failed - exception: {}".format(exstr))
 
     def setupToolBar(self):
-        self.toolbar.setFloatable(False)
-        self.toolbar.setMovable(False)
+        self.toolbar.setFloatable(True)
+        self.toolbar.setMovable(True)
         self.toolbar.addWidget(self.importDatabaseBtn)
         self.toolbar.addWidget(self.saveBtn)
         self.toolbar.addWidget(self.maptool)
@@ -1396,15 +1590,15 @@ Log_hash list: {}""".format(
             i = -1
             for sf in layer.selectedFeatures():
                 i += 1
-                print("selectChanged selectedfeature rect sf i:", i)
-                h = QgsHighlight(self.qgis_iface.mapCanvas(), sf.geometry(), layer)
+                print("selectChanged selectedfeature rect sf i:", i, sf)
+                h = QgsHighlight(canvas, sf.geometry(), layer)
                 # set highlight symbol properties
-                h.setColor(QColor(255, 0, 0, 255))
-                h.setWidth(2)
-                h.setFillColor(QColor(255, 255, 255, 0))
-                # write the object to the list
+                h.setColor(QColor(0, 0, 0, 255))
+                h.setWidth(3)
                 self.gc.highlight_list.append(h)
-            canvas.flashFeatureIds(layer, layer.selectedFeatureIds(), flashes=1)
+                canvas.flashFeatureIds(layer, layer.selectedFeatureIds(), flashes=1)
+                break
+
 
 
     def updateUi(self):
@@ -1470,24 +1664,21 @@ Log_hash list: {}""".format(
             self.timeSliderThread.start()
 
     def setMapTool(self):
-        self.clickTool = QgsMapToolEmitPoint(self.canvas)
         self.canvas.setMapTool(self.clickTool)
-        self.clickTool.canvasClicked.connect(self.clickCanvas)
 
-    def selectLayer(self):
-        if self.qgis_iface:
-            self.add_db_layers(select=True)
+    def on_button_selectLayer(self):
+        self.on_actionAdd_Layer_triggered()
 
     def selectCells(self):
-        if not self.gc.db_fp:
-            qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
-            return
         if self.qgis_iface:
 
             fileNames, _ = QFileDialog.getOpenFileNames(
                 self, "Select cell files", QtCore.QDir.rootPath(), "*.*"
             )
-
+            
+            # self.open_cellfile_progress.show()
+            # self.open_cellfile_progress.set_value(0)
+            self.open_cellfile_progress_signal.emit(0)
             if fileNames:
                 try:
                     import azq_cell_file
@@ -1501,8 +1692,17 @@ Log_hash list: {}""".format(
             else:
                 return
             assert self.gc.cell_files
+            print("selectCells add_cell_layers()")
+            # worker = Worker(self.add_cell_layers)
+            # self.gc.threadpool.start(worker)
             self.add_cell_layers()  # this will set cellfiles
-            self.add_spider_layer()
+            if self.gc.db_fp:
+                print("selectCells add_spider_layer()")
+                self.add_spider_layer()
+            else:
+                pass
+                # qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
+                # return
 
     def pauseTime(self):
         self.gc.timeSlider.setEnabled(True)
@@ -1527,6 +1727,10 @@ Log_hash list: {}""".format(
             self.cell_layer_task.add_layers_from_ui_thread()
         elif msg == "db_layer_task.py":
             self.db_layer_task.add_layers_from_ui_thread()
+        elif msg == "init":
+            print("task_done_slot init start")
+            self.set_project_crs()
+            print("task_done_slot init done")
 
 
     def ui_thread_emit_time_slider_updated(self, timestamp):
@@ -1545,10 +1749,12 @@ Log_hash list: {}""".format(
         selected_seqid = None
         selected_lat = None
         selected_lon = None
-        self.clearAllSelectedFeatures()
+        try:
+            self.clearAllSelectedFeatures()
+        except:
+            pass
         qgis_selected_layers = self.qgis_iface.layerTreeView().selectedLayers()
         print("qgis_selected_layers: ", qgis_selected_layers)
-
         for layer in qgis_selected_layers:
             if not layer:
                 continue
@@ -1558,7 +1764,8 @@ Log_hash list: {}""".format(
                     continue
                 print("layer.name()", layer.name())
                 # Loop through all features in a rect near point xy
-                offset = 0.000180
+                offset_meters = 300
+                offset = azq_cell_file.METER_IN_WGS84 * offset_meters
                 if self.is_legacy_indoor:
                     offset = 0.01
                 p1 = QgsPointXY(point.x() - offset, point.y() - offset)
@@ -1589,7 +1796,10 @@ Log_hash list: {}""".format(
                 #############################
 
                 try:
-                    time = layer.getFeature(closestFeatureId).attribute("time")
+                    feature = layer.getFeature(closestFeatureId)
+                    attrs = feature.attributes()
+                    print("attrs:", attrs)
+                    time = feature.attribute("time")
                     log_hash = None
                     posid = None
                     seqid = None
@@ -1726,12 +1936,6 @@ Log_hash list: {}""".format(
         print("clickCanvas done")
 
 
-
-    def useCustomMapTool(self):
-        currentTool = self.canvas.mapTool()
-        if currentTool != self.clickTool:
-            self.canvas.setMapTool(self.clickTool)
-
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
         if getSelected:
@@ -1747,14 +1951,20 @@ Log_hash list: {}""".format(
         if not (self.gc.log_mode and self.gc.log_mode == "adb"):
             qt_utils.msgbox("This button is for re-sync data from phone in 'Connected phone mode' (chosen in 'Open logs') only.", "Not in 'Connected phone mode'", parent=self)
             return
-        self.open_logs(connected_mode_refresh=True)
+        self.open_logs(connected_mode_refresh=True, ask_close_all_layers=False)
         print("sync_connecter_phone DONE")
 
 
-    def open_logs(self, connected_mode_refresh=False):
+    def open_logs(self, connected_mode_refresh=False, ask_close_all_layers=True):
         if self.gc.databasePath:
             self.gc.databasePath = None
             self.gc.db_fp = None
+            if ask_close_all_layers:
+                reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?")
+                print("reply", reply)
+                self.close_all_layers = False
+                if reply == 0:
+                    self.close_all_layers = True
             self.cleanup()
             '''
             msgBox = QMessageBox()
@@ -1778,9 +1988,10 @@ Log_hash list: {}""".format(
         if not self.gc.databasePath:
             # dialog not completed successfully
             return
-        if self.gc.db_fp:
+        if self.gc.db_fp and self.qgis_iface:
             print("starting layertask")
-            self.add_map_layer()
+            if self.close_all_layers:
+                self.add_map_layer()
             self.add_spider_layer()
             self.add_indoor_map_layers()
             self.add_cell_layers()
@@ -1805,6 +2016,13 @@ Log_hash list: {}""".format(
         self.is_leg_nr_tables = preprocess_azm.is_leg_nr_tables()
 
     def timeChange(self):
+
+        ######### this change comes from the timeslider so set selected_row_log_hash
+        self.gc.selected_row_log_hash = None
+        if self.gc.selected_point_match_dict is not None:
+            self.gc.selected_point_match_dict["log_hash"] = None
+        #################
+
         ret = self.timechange_to_service_counter.inc_and_get()
         print(
             "%s: timeChange: timechange_to_service_counter: %d"
@@ -1939,7 +2157,7 @@ Log_hash list: {}""".format(
                 layer.removeSelection()
                 end_dt = datetime.datetime.fromtimestamp(self.gc.currentTimestamp)
                 start_dt = end_dt - datetime.timedelta(
-                    seconds=(params_disp_df.DEFAULT_LOOKBACK_DUR_MILLIS / 1000.0)
+                    seconds=10.0
                 )
                 # 2020-10-08 15:35:55.431000
                 filt_expr = ""
@@ -1963,7 +2181,6 @@ Log_hash list: {}""".format(
                     if isinstance(lft, PyQt5.QtCore.QDateTime):
                         print("ltf2: {} type: {}".format(lft, type(lft)))  # - sometimes comes as qdatetime we cant add
                         time_list.append(lft.toMSecsSinceEpoch())
-
 
                 if len(fids) and len(time_list):
                     print("time_list: {}".format(time_list))
@@ -2052,8 +2269,17 @@ Log_hash list: {}""".format(
                     project.removeMapLayer(to_be_deleted.id())
                     del layer
                 '''
-                project.removeAllMapLayers()
-                project.clear()
+                
+                if self.close_all_layers:
+                    project.removeAllMapLayers()
+                    project.clear()
+                else:
+                    for layer in project.mapLayers().values():
+                        if layer.name() == "OSM":
+                            # project.removeMapLayer(project.mapLayersByName(layer.name())[0].id())
+                            continue
+                        new_layer_name = layer.name()+"_old"
+                        layer.setName(new_layer_name)
 
             print("cleanup: len(self.gc.openedWindows)", len(self.gc.openedWindows))
             for widget in self.gc.openedWindows:
@@ -2116,22 +2342,32 @@ Log_hash list: {}""".format(
             if azqGroup:
                 root.removeChildNode(azqGroup)
 
-    def rename_layers(self, layers):
-        print('rename_layers start')
+
+    def set_project_crs(self):
+        if self.qgis_iface:
+            print("setting project crs")
+            my_crs = QgsCoordinateReferenceSystem(4326)
+            QgsProject.instance().setCrs(my_crs)
+            self.crs_already_set = True
+
+    def on_layers_added(self, layers):
         if layers is None:
             return
-            
+        print('on_layers_added start len:', len(layers))
         for layer in layers:
             name = layer.name()
+            import system_sql_query
+            #if name in system_sql_query.rat_to_main_param_dict.values():
+            if self.gc.qgis_iface.activeLayer() is not None:
+                pass
             print("renamingLayers layer:", name)
-            
             if "azqdata " in name:
                 try:
                     param = name.split("azqdata ")[1]
                     layer.setName(param)
                 except Exception as e:
                     print("WARNING: renaming layers exception: {}".format(e))
-            
+
 
 
     '''
@@ -2208,6 +2444,14 @@ Log_hash list: {}""".format(
                             window.widget().func_key,
                         )
                         self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_df".format(i),
+                            window.widget().custom_df,
+                        )
+                        self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_table_param_list".format(i),
+                            window.widget().custom_table_param_list,
+                        )
+                        self.current_workspace_settings.setValue(
                             GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
                             window.saveGeometry(),
                         )
@@ -2234,6 +2478,9 @@ Log_hash list: {}""".format(
                         print("WARNING: save_current_workspace() for window exception: {}".format(exstr))
                     # tablewindows dont have saveState() self.settings.setValue(GUI_SETTING_NAME_PREFIX + "window_{}_state".format(i), window.saveState())
 
+            wsfp = azq_utils.get_settings_fp(CURRENT_WORKSPACE_FN)
+            if os.path.isfile(wsfp):
+                os.remove(wsfp)
             self.current_workspace_settings.sync()  # save to disk
             print("save_current_workspace() DONE")
         except:
@@ -2241,32 +2488,130 @@ Log_hash list: {}""".format(
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: save_current_workspace() - exception: {}".format(exstr))
 
+    def qgis_msgbar(self, title, msg):
+        if self.qgis_iface:
+            self.qgis_iface.messageBar().clearWidgets()
+            self.qgis_iface.messageBar().pushInfo(title, msg)
 
     def add_db_layers(self, select=False):
+        print("add_db_layers 0")
         if self.gc.db_fp:
-            self.db_layer_task = db_layer_task.LayerTask(u"Add layers", self.gc.db_fp, self.gc, self.task_done_signal)
-            self.db_layer_task.run_blocking(select=select)
+            print("add_db_layers 2")
+            self.qgis_msgbar("Creating layers", "Please wait...")
+            self._create_db_layers(None)
+            '''
+            self.load_db_layers_task = QgsTask.fromFunction('Load db layers', self._create_db_layers,
+                                                            on_finished=self._create_db_layers_done)
+                                       
+            print("add_db_layers 3")
+            QgsApplication.taskManager().addTask(self.load_db_layers_task)
+            '''
+            print("add_db_layers 4")
         else:
             qt_utils.msgbox("No log opened", title="Please open a log first", parent=self)
 
+    def _create_db_layers(self, task):
+        print("_add_db_layers start")
+        table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer = db_layer_task.create_layers(
+            self.gc)
+        obj = (table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer)
+        #this was for older QgsTask.fromFunction but this always creates the QObject::setParent: Cannot set parent... although we already sent it via signales, perhaps qvectorlayer should be created in ui thread too... self.add_created_layers_signal.emit("", obj)
+        self._add_created_layers(None, obj)
+        print("_add_db_layers done")
+
+    def _create_db_layers_done(self, exception, result=None):
+        print("_add_db_layers_done exception: {} result: {}".format(exception, result))
+
+    def _add_created_layers(self, signal_msg, obj):
+        print("add_created_layers signal_msg:", signal_msg)
+        table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer = obj
+        db_layer_task.ui_thread_add_layers_to_qgis(self.gc, table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer)
+        self.qgis_msgbar("Done", "Loading layers completed")
+        self.trigger_zoom_to_active_layer()
+
+    def trigger_zoom_to_active_layer(self, wait_secs=0.6):
+        print("trigger_zoom_to_active_layer")
+        if self.zoom_thread is None or self.zoom_thread.is_alive() == False:
+            print("trigger_zoom_to_active_layer create")
+            self.zoom_thread = threading.Thread(
+            target=self.zoom_after_secs,
+            args=(wait_secs,),
+                daemon=True
+            )
+            self.zoom_thread.start()
+        else:
+            print("trigger_zoom_to_active_layer omit because already working")
+
+    def zoom_after_secs(self, secs):
+        print("zoom_after_secs wait")
+        time.sleep(secs)
+        print("zoom_after_secs start")
+        self.signal_trigger_zoom_to_active_layer.emit("")
+
+    def slot_trigger_zoom_to_active_layer(self, msg):
+        print("slot_trigger_zoom_to_active_layer")
+        self.gc.qgis_iface.zoomToActiveLayer()
 
     def add_map_layer(self):
+        layers_names = []
+        for layer in QgsProject.instance().mapLayers().values():
+            layers_names.append(layer.name())
+        map_layer_name = "OSM"
+        if map_layer_name in layers_names:
+            return  # no need to add
+
         urlWithParams = (
-            "type=xyz&url=http://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
+            "type=xyz&url=http://tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png"
         )
         from qgis._core import QgsRasterLayer
-        rlayer = QgsRasterLayer(urlWithParams, "OSM", "wms")
+        rlayer = QgsRasterLayer(urlWithParams, map_layer_name, "wms")
         if rlayer.isValid():
             QgsProject.instance().addMapLayer(rlayer)
         else:
             QgsMessageLog.logMessage("Invalid layer")
 
+        if azq_utils.is_container_mode():
+            # server mode login to self must work
+            import integration_test_helpers
+            import login_dialog
+            integration_test_helpers.silent_login(self.gc, login_dialog.DOCKER_NW_SERVER_URL,
+                                                  os.environ["DASHBOARD_USER"], os.environ["DASHBOARD_PASS"])
+            assert self.gc.is_logged_in()
 
+
+        if not self.asked_easy_mode and azq_utils.is_container_mode():
+            self.asked_easy_mode = True
+            reply = qt_utils.ask_yes_no(None, "Easy mode", "Start Overview/AI-Predict mode?")
+            print("reply", reply)
+            if reply == 0:
+                self.gc.easy_overview_mode = True
+                print("show server overview")
+                self.on_actionServer_overview_layers_triggered()  # TODO open this year - 60 second bin
+                self.on_actionServerAIPrediction_triggered()
+                print("load POI layer")
+                self.pre_load_poi_layer()
+
+    def pre_load_poi_layer(self):
+        import qgis_layers_gen
+        print("load POI layer start")
+        qgis_poi_preload_path = "/host_shared_dir/resource/viewPreference/qgis_poi_preload/"
+        if os.path.exists(qgis_poi_preload_path):
+            for root, dirs, files in os.walk(qgis_poi_preload_path):
+                for file in files:
+                    poi_path = os.path.join(root,file)
+                    qgis_layers_gen.create_qgis_poi_layer(self.gc, poi_path)
+
+
+    
     def add_spider_layer(self):
         import spider_plot
         import azq_cell_file
         print("add_spider_layer self.gc.cell_files:", self.gc.cell_files)
         if not self.gc.cell_files:
+            print("add_spider_layer self.gc.cell_files no cellfiles so omit")
+            return
+        if self.gc.overview_opened:  # dont add spider in overview mode
+            print("add_spider_layer overview_opened so omit otherwise will draw too many lines")
             return
         try:
             azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
@@ -2327,64 +2672,96 @@ Log_hash list: {}""".format(
         print("add_cell_layers self.gc.cell_files:", self.gc.cell_files)
         if not self.gc.cell_files:
             return
-        import azq_cell_file
-        try:
-            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
-        except Exception as e:
-            qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
-            return
         if self.gc.cell_files:
             import azq_cell_file
             import azq_utils
             import cell_layer_task
             rrv = azq_cell_file.CELL_FILE_RATS.copy()
             rrv.reverse()  # by default gsm is biggest so put it at the bottom
+            rat_count = len(rrv)
+            current_rat_index = 0
+            load_cellfile_progress = 100 / rat_count
             for rat in rrv:
                 try:
                     layer_name = rat.upper() + "_cells"
                     pref_key = "cell_{}_sector_size_meters".format(rat)
                     sector_size_meters = float(self.gc.pref[pref_key])
                     df = azq_cell_file.read_cellfiles(self.gc.cell_files, rat, add_sector_polygon_wkt_sector_size_meters=sector_size_meters)
-                    csv_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_" + rat + ".csv")
+                    df = df.reset_index()
+                    self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.4))
+
+                    create_cellfile_sql_str = azq_utils.get_create_cellfile_spatialite_header(rat)
+                    create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_create_table(rat,
+                                                                                                     list(df.columns))
+                    create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_insert_cell(rat, df)
+                    create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_footer()
+                    cell_sql_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_{}_".format(uuid.uuid4()) + rat + ".sql")
+                    f = open(cell_sql_fp, 'w')
+                    f.write(create_cellfile_sql_str)
+                    f.close()
+                    spatialite_bin = azq_utils.get_spatialite_bin()
+                    self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.5))
+                    cel_spatial_db_fp = cell_sql_fp[:-3]+"db"
+                    if os.path.isfile(cel_spatial_db_fp):
+                        os.remove(cel_spatial_db_fp)
+                    cmd = [spatialite_bin, "-init", cell_sql_fp, cel_spatial_db_fp, ".quit"]
+                    azq_utils.call_no_shell(cmd)
                     if len(df):
-                        df.to_csv(csv_fp)
-                        uri = pathlib.Path(csv_fp).as_uri()
-                        uri += "?crs=epsg:4326&wktField={}".format('sector_polygon_wkt')
-                        print("csv uri: {}".format(uri))
-                        layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
-                        param_att_rat = {'gsm': 'bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
-                        param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'wcdma_aset_sc_1', 'lte': 'lte_physical_cell_id_1', 'nr': 'nr_servingbeam_pci_1'}
-                        param_name_in_cell = param_att_rat[rat]
-                        param_name_in_db = param_db_rat[rat]
-                        color_range_list = []
-                        param_with_color_df = cell_layer_task.cell_in_logs_with_color(self.gc.cell_files, self.gc.databasePath, rat)
-                        param_with_color_df[param_name_in_db] = param_with_color_df[param_name_in_db].astype(int)
-                        print(param_with_color_df)
-                        fes = layer.getFeatures()
-                        for fe in fes:
-                            param_val_in_fe = int(fe.attribute(param_name_in_cell))
-                            print(param_val_in_fe, list(param_with_color_df[param_name_in_db]))
-                            if param_val_in_fe in list(param_with_color_df[param_name_in_db]):
-                                tmp_df = param_with_color_df[param_with_color_df[param_name_in_db] == param_val_in_fe].reset_index()
-                                color = tmp_df.loc[0, 'ColorXml']
-                            else:
-                                color = '#666666'
+                        uri = QgsDataSourceUri()
+                        uri.setDatabase(cel_spatial_db_fp)
+                        schema = ''
+                        table = rat
+                        geom_column = 'geometry'
+                        uri.setDataSource(schema, table, geom_column)
+                        layer = QgsVectorLayer(uri.uri(), layer_name, 'spatialite')
+                        self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.6))
+                        try:
+                            param_att_rat = {'gsm': 'bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
+                            param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'wcdma_aset_sc_1', 'lte': 'lte_physical_cell_id_1', 'nr': 'nr_servingbeam_pci_1'}
+                            param_name_in_cell = param_att_rat[rat]
+                            param_name_in_db = param_db_rat[rat]
+                            color_range_list = []
+                            if not self.gc.db_fp:
+                                raise Exception(
+                                    "not self.gc.db_fp so raise exception here to omit cell color/spider match as it will fail")
+                            if self.gc.overview_opened:
+                                raise Exception("self.gc.overview_opened so raise exception here to omit cell color/spider match as it will fail")
+                            param_with_color_df = cell_layer_task.cell_in_logs_with_color(self.gc.cell_files, self.gc.databasePath, rat)
+                            param_with_color_df[param_name_in_db] = param_with_color_df[param_name_in_db].astype(int)
+                            self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.7))
+                            print(param_with_color_df)
+                            fes = layer.getFeatures()
+                            for fe in fes:
+                                param_val_in_fe = int(fe.attribute(param_name_in_cell))
+                                print(param_val_in_fe, list(param_with_color_df[param_name_in_db]))
+                                if param_val_in_fe in list(param_with_color_df[param_name_in_db]):
+                                    tmp_df = param_with_color_df[param_with_color_df[param_name_in_db] == param_val_in_fe].reset_index()
+                                    color = tmp_df.loc[0, 'ColorXml']
+                                else:
+                                    color = '#666666'
 
-                            symbol = QgsSymbol.defaultSymbol(layer.geometryType())
-                            symbol.setColor(QColor(color))
-                            color_per_param = QgsRendererRange(param_val_in_fe, param_val_in_fe, symbol, str(param_val_in_fe))
-                            color_range_list.append(color_per_param)
+                                symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+                                symbol.setColor(QColor(color))
+                                color_per_param = QgsRendererRange(param_val_in_fe, param_val_in_fe, symbol, str(param_val_in_fe))
+                                color_range_list.append(color_per_param)
 
-                        renderer = QgsGraduatedSymbolRenderer(param_name_in_cell, color_range_list)
-                        renderer.setMode(QgsGraduatedSymbolRenderer.Custom)
-
-                        layer.setRenderer(renderer)
-                        QgsProject.instance().addMapLayers([layer])
+                            renderer = QgsGraduatedSymbolRenderer(param_name_in_cell, color_range_list)
+                            renderer.setMode(QgsGraduatedSymbolRenderer.Custom)
+                            layer.setRenderer(renderer)
+                            self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.8))
+                        except:
+                            type_, value_, traceback_ = sys.exc_info()
+                            exstr = str(traceback.format_exception(type_, value_, traceback_))
+                            print("WARNING: add cell file color for rat {} - exception: {}".format(rat, exstr))
+                        self.cellfile_layer_created_signal.emit(layer)
                         pass
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: add cell file for rat {} - exception: {}".format(rat, exstr))
+                self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 1))
+                current_rat_index += 1
+            self.open_cellfile_complete_signal.emit()
             return
         else:
             qt_utils.msgbox("No cell-files specified", parent=self)
@@ -2423,8 +2800,16 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
                         )
 
+                        custom_df = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_df".format(i)
+                        )
+
+                        custom_table_param_list = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_table_param_list".format(i)
+                        )
+
                         hh_state = self.current_workspace_settings.value(
-                        GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i)
+                            GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i)
                         )
 
                         refresh_df_func_or_py_eval_str = self.current_workspace_settings.value(
@@ -2439,9 +2824,11 @@ Log_hash list: {}""".format(
                                                                                                              options))
                         if func is not None:
                             # on..._triggered func like on L3 triggered etc
-                            func_key = "self." + func + "()"
+                            func_key = "self." + func + "()" 
                             print(func_key)
                             eval(func_key)
+                        elif custom_df is not None and custom_table_param_list is not None:
+                            self.add_param_window(custom_df = custom_df, custom_table_param_list=custom_table_param_list, title=title, options=options)
                         else:
                             # like for custom windows - newer style
                             self.add_param_window(refresh_df_func_or_py_eval_str, title=title, options=options)

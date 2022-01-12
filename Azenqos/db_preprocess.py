@@ -1,8 +1,10 @@
 import os
 import sys
 import traceback
+import uuid
 import xml.etree.ElementTree as xet
 import struct
+import datetime
 
 import pandas as pd
 import numpy as np
@@ -10,6 +12,7 @@ import numpy as np
 import azq_theme_manager
 import azq_utils
 import preprocess_azm
+import system_sql_query
 
 elm_table_main_col_types = {
     "log_hash": "BIGINT",
@@ -68,19 +71,13 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False, time_bin_secs=None):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geometry_columns df:\n{}".format(df.head()))
     assert len(df) == 0
-
-    default_qml_fp = os.path.join(azq_utils.get_module_path(), "default_style.qml")
-    default_qml = None
-    with open(default_qml_fp, "rb") as f:
-        default_qml = f.read().decode("ascii")
-    default_qml_param = "lte_inst_rsrp_1"
 
     ### we will make views one per param so drop all existing tables from geom_columns
     try:
@@ -92,39 +89,48 @@ def prepare_spatialite_views(dbcon):
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: del from geom cols exception: ", exstr)
 
+
     ### get list of log_hash, posids where location table's positioning_lat is -1.0 and positioning_lon is -1.0 caused by pressing load indoor logs
-    df_posids_indoor_start = pd.read_sql(
-        "select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0",
-        dbcon,
-    )
-    df_posids_indoor_gps_cancel = pd.read_sql(
-        "select log_hash, time from events where name = 'AddGPSCancel'",
-        dbcon,
-    )
-    df_location_posid_time = pd.read_sql(
-        "select log_hash, posid, time from location where positioning_lat is not null",
-        dbcon,
-    )
     gps_cancel_list = []
-    for index, row in df_posids_indoor_gps_cancel.iterrows():
-        posid = df_location_posid_time.loc[(df_location_posid_time.log_hash == row.log_hash) & (df_location_posid_time.time <= row.time), "posid"].max()
-        df_location_posid_time = df_location_posid_time.loc[df_location_posid_time.posid != posid]
-        gps_cancel_list.append((row.log_hash, posid+1))
+    df_posids_indoor_start = pd.DataFrame()
+    try:
+        df_posids_indoor_start = pd.read_sql(
+            "select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0",
+            dbcon,
+        )
+        df_posids_indoor_gps_cancel = pd.read_sql(
+            "select log_hash, time from events where name = 'AddGPSCancel'",
+            dbcon,
+        )
+        df_location_posid_time = pd.read_sql(
+            "select log_hash, posid, time from location",
+            dbcon,
+        )
+        for index, row in df_posids_indoor_gps_cancel.iterrows():
+            posid = df_location_posid_time.loc[(df_location_posid_time.log_hash == row.log_hash) & (df_location_posid_time.time <= row.time), "posid"].max()
+            df_location_posid_time = df_location_posid_time.loc[df_location_posid_time.posid != posid]
+            gps_cancel_list.append((row.log_hash, posid+1))
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: prepare_spatialite_views indoor failed exception: ", exstr)
 
     # gps_cancel_list = []
 
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
-    azq_theme_manager
-    params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
+    params_to_gen = []
+    if main_rat_params_only:
+        params_to_gen = list(system_sql_query.rat_to_main_param_dict.values())
+    else:
+        params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
+
     print("params_to_gen:", params_to_gen)
-
-
     dbcon.commit()
-
     # create layer_styles table if not exist
     tables_to_rm_stray_neg1_rows = ["signalling", "events"]
     layer_style_id = 0
+    tables_added_to_geom_cols = []
     for param in params_to_gen:
         layer_style_id += 1
         try:
@@ -134,11 +140,16 @@ def prepare_spatialite_views(dbcon):
             view = param
             table_cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns
             table_has_geom = "geom" in table_cols
-            table_has_modem_time = "modem_time" in table_cols
+            # table_has_modem_time = "modem_time" in table_cols
             print("table: {} table_has_geom {}".format(table, table_has_geom))
-            table_len = pd.read_sql("select count(*) from {}".format(table), dbcon).iloc[0,0]
-            if not table_len:
-                continue  # skip this param as no rows
+            if cre_table:
+                print("read count")
+                table_len = pd.read_sql("select count(*) from {}".format(table), dbcon).iloc[0,0]
+                if not table_len:
+                    continue  # skip this param as no rows
+            else:
+                if is_table_empty(dbcon, table, param):
+                    continue
             if not table_has_geom:
                 print("not table_has_geom so gen sql merge in from location table by time - START")
                 '''
@@ -166,24 +177,52 @@ def prepare_spatialite_views(dbcon):
                 )
                 print("not table_has_geom so gen sql merge in from location table by time - DONE")
             else:
-                if "cell_meas" in table:
-                    drop_view_sqlstr = "drop table if exists {col}".format(col=view)
-                    sqlstr = "create table {col} as select * from {table} where {col} is not null;".format(col=view, table=table)
+                print("start cre")
+                cre_type = "table"
+                if cre_table == False:
+                    cre_type = "view"
+                date_filt_where_and = ""
+                if start_date is not None and end_date is not None:
+                    if "time_bin" in table_cols and time_bin_secs:
+                        sd = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+                        ed = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
+                        stb = int(sd.timestamp()/time_bin_secs)
+                        etb = int(ed.timestamp()/time_bin_secs)
+                        date_filt_where_and = "and time_bin >= {} and time_bin < {}".format(stb, etb)
+                    else:
+                        date_filt_where_and = "and time >= '{}' and time <= '{} 24:00:00'".format(start_date, end_date)
+                print("date_filt_where_and:", date_filt_where_and)
+                drop_view_sqlstr = "drop {cre_type} if exists {view}".format(cre_type=cre_type, view=view)
+                if "cell_meas" in table or table in ["ping"]:
+                    sqlstr = "create {} {col} as select * from {table} where {col} is not null {date_filt_where_and};".format(cre_type, col=view, table=table, date_filt_where_and=date_filt_where_and)   # need to create table because create view casues get nearest feature id to fail - getting only 0
                 else:
-                    drop_view_sqlstr = "drop table if exists {col}".format(col=view)
-                    sqlstr = "create table {col} as select log_hash, time, {modem_time_part}, posid, seqid, geom, {col} from {table} where {col} is not null;".format(
-                        col=view, table=table,
-                        modem_time_part="modem_time" if table_has_modem_time else "null as modem_time"
+                    optional_cols_as = [(x if x in table_cols else "null as {}".format(x)) for x in ["modem_time", "posid", "seqid"]]
+                    optional_cols_part = ",".join(optional_cols_as)
+                    sqlstr = "create {} {col} as select log_hash, time, {optional_cols_part}, geom, {col} from {table} where {col} is not null {date_filt_where_and};".format(
+                        cre_type, col=view, table=table,
+                        optional_cols_part=optional_cols_part,
+                        date_filt_where_and=date_filt_where_and
                     )
             print("create view sqlstr: %s" % sqlstr)
-            dbcon.execute(drop_view_sqlstr)
+            if table_or_view_exists(dbcon, view):
+                print("exec drop view")
+                dbcon.execute(drop_view_sqlstr)
+            print("exec sql")
             dbcon.execute(sqlstr)
+            print("read cols")
             view_cols = pd.read_sql("select * from {} where false".format(view), dbcon).columns
             assert "geom" in view_cols
             assert param in view_cols
-            view_len = pd.read_sql("select count(*) from {}".format(view), dbcon).iloc[0,0]
-            if not view_len:
-                continue
+            if cre_table:
+                print("read count")
+                view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, view), dbcon).iloc[0,0]
+                if not view_len:
+                    continue
+            else:
+                print("read first row")
+                if is_table_empty(dbcon, view, param):
+                    continue
+
             tables_to_rm_stray_neg1_rows.append(view)
 
             sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
@@ -191,103 +230,33 @@ def prepare_spatialite_views(dbcon):
             )
             print("insert into geometry_columns view {} sqlstr: {}".format(view, sqlstr))
             dbcon.execute(sqlstr)
+            print("commit")
             dbcon.commit()
 
-            # get theme df for this param
-            theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
-            print("db_preprocess theme_df:\n", theme_df)
-            if 'match_value' in theme_df.columns:
-                # id columns like pci, earfcn
-                theme_df.Lower = theme_df.match_value
-                theme_df.Upper = theme_df.match_value
-            if theme_df is None:
-                continue
-            print("param: {} got theme_df:\n{}".format(param, theme_df))
-
-            ranges_xml = "<ranges>\n"
-            try:
-                # QGIS ranges count (right click > show layer count) wont match sql counts below if we dont sort this way
-                theme_df["Upper"] = pd.to_numeric(theme_df["Upper"])
-                theme_df.sort_values("Upper", ascending=False, inplace=True)
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: theme_df.sort_values exception:", exstr)
-
-            for index, row in theme_df.iterrows():
-                percent_part = ""
-                try:
-                    rsql = "select count(*) from {view} where {view} >= {lower} and {view} < {upper}".format(view=view, lower=row.Lower, upper=row.Upper)
-                    if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
-                        rsql = "select count(*) from {view} where {view} = {lower}".format(
-                            view=view, lower=row.Lower)
-                    print("range rsql:", rsql)
-                    count = pd.read_sql(
-                        rsql,
-                        dbcon).iloc[0, 0]
-                    print("view_len: {} count: {}".format(view_len, count))
-                    percent_part = " (%d: %.02f%%)" % (count, ((count*100.0)/view_len))
-                    print("range percent_part:", percent_part)
-                except:
-                    type_, value_, traceback_ = sys.exc_info()
-                    exstr = str(traceback.format_exception(type_, value_, traceback_))
-                    print("WARNING: calc range percent exception:", exstr)
-                ranges_xml += """<range symbol="{index}" label="{lower} to {upper}{percent}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
-                    index=index, lower=row.Lower, upper=row.Upper, percent=percent_part
+            if not table in tables_added_to_geom_cols:
+                sqlstr = """insert into geometry_columns values ('{}', 'geom', 'POINT', '2', 4326, 0);""".format(
+                    table
                 )
-            ranges_xml += "</ranges>\n"
+                print("insert into geometry_columns table {} sqlstr: {}".format(table, sqlstr))
+                dbcon.execute(sqlstr)
+                dbcon.commit()
+                tables_added_to_geom_cols.append(table)
 
-            symbols_xml = "<symbols>\n"
-            for index, row in theme_df.iterrows():
-                color = row.ColorXml
-                r = int(color[1:3], 16)
-                g = int(color[3:5], 16)
-                b = int(color[5:7], 16)
-                symbols_xml += """
-      <symbol alpha="1" force_rhr="0" clip_to_extent="1" name="{index}" type="marker">
-        <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
-          <prop k="angle" v="0"/>
-          <prop k="color" v="{r},{g},{b},255"/>
-          <prop k="horizontal_anchor_point" v="1"/>
-          <prop k="joinstyle" v="bevel"/>
-          <prop k="name" v="circle"/>
-          <prop k="offset" v="0,0"/>
-          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="offset_unit" v="MM"/>
-          <prop k="outline_color" v="35,35,35,255"/>
-          <prop k="outline_style" v="no"/>
-          <prop k="outline_width" v="0"/>
-          <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="outline_width_unit" v="MM"/>
-          <prop k="scale_method" v="diameter"/>
-          <prop k="size" v="2"/>
-          <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="size_unit" v="MM"/>
-          <prop k="vertical_anchor_point" v="1"/>
-          <data_defined_properties>
-            <Option type="Map">
-              <Option name="name" type="QString" value=""/>
-              <Option name="properties"/>
-              <Option name="type" type="QString" value="collection"/>
-            </Option>
-          </data_defined_properties>
-        </layer>
-      </symbol>
-            """.format(
-                    index=index, r=r, g=g, b=b
-                )
+            qml = None
+            if gen_qml_styles_into_db:
+                # get theme df for this param
+                theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
+                print("db_preprocess theme_df:\n", theme_df)
+                if 'match_value' in theme_df.columns:
+                    # id columns like pci, earfcn
+                    theme_df.Lower = theme_df.match_value
+                    theme_df.Upper = theme_df.match_value
+                if theme_df is None:
+                    continue
+                print("param: {} got theme_df:\n{}".format(param, theme_df))
 
-            symbols_xml += "</symbols>\n"
-            # print("symbols_xml: %s" % symbols_xml)
-
-            qml = default_qml.replace(default_qml_param, param)
-            root = xet.fromstring(qml)
-            renderer = root.find("renderer-v2")
-            renderer.remove(renderer.find("ranges"))
-            renderer.append(xet.fromstring(ranges_xml))
-            renderer.remove(renderer.find("symbols"))
-            renderer.append(xet.fromstring(symbols_xml))
-            # print("qml_xml: %s" % xet.tostring(root))
+                qml = gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon)
+                # print("qml_xml: %s" % xet.tostring(root))
 
             df = pd.DataFrame(
                 {
@@ -297,8 +266,8 @@ def prepare_spatialite_views(dbcon):
                     "stylename": [param],
                     "styleqml": [
                         "<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>\n {}".format(
-                            str(xet.tostring(root), "utf8")
-                        )
+                            str(qml, "utf8")
+                        ) if qml else None
                     ],
                     "useasdefault": [1],
                     "update_time": [pd.to_datetime(pd.Timestamp.now())],
@@ -310,16 +279,13 @@ def prepare_spatialite_views(dbcon):
                 }
             )
             df.to_sql("layer_styles", dbcon, if_exists="append", index=False)
-
             dbcon.execute(
                 """ INSERT INTO sqlite_sequence VALUES('layer_styles',{}); """.format(
                     layer_style_id
                 )
             )
-
             # gen theme qml for this param
             # insert into layer_styles table
-
             dbcon.commit()
             print("create view success")
         except:
@@ -386,53 +352,67 @@ def prepare_spatialite_views(dbcon):
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: remove gps cancel rows exception:", exstr)
-        
-    df_location = pd.read_sql_query("select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon, parse_dates=['time'])
 
-    # remove stray -1 -1 rows
-    for view in tables_to_rm_stray_neg1_rows:
-        for index, row in df_posids_indoor_start.iterrows():
-            try:
-                for posid in [
-                    row.posid,
-                    row.posid + 1,
-                ]:  # del with same posid and next posid as found in log case: 354985102910027 20_1_2021 7.57.38.azm
-                    # sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
-                    #     view, row.log_hash, posid
-                    # )
+    try:
+        df_location = pd.read_sql_query("select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon, parse_dates=['time'])
 
-                    sqlstr = "update {} set geom = null where log_hash = {} and posid <= {};".format(
-                        view, row.log_hash, posid
-                    )
-                    print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)
-                    dbcon.execute(sqlstr)
-                    dbcon.commit()
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: remove stray -1 -1 rows exception:", exstr)
-        if len(gps_cancel_list) > 0:
-            for log_hash, posid in gps_cancel_list:
+        # remove stray -1 -1 rows
+        for view in tables_to_rm_stray_neg1_rows:
+            for index, row in df_posids_indoor_start.iterrows():
                 try:
-                    sqlstr = "update {} set geom = null where log_hash = {} and posid = {};".format(
-                        view, log_hash, posid
-                    )
-                    print("delete gps cancel sqlstr: %s" % sqlstr)
-                    dbcon.execute(sqlstr)
-                    dbcon.commit()
+                    for posid in [
+                        row.posid,
+                        row.posid + 1,
+                    ]:  # del with same posid and next posid as found in log case: 354985102910027 20_1_2021 7.57.38.azm
+                        # sqlstr = "delete from {} where log_hash = {} and posid = {};".format(
+                        #     view, row.log_hash, posid
+                        # )
+
+                        sqlstr = "update {} set geom = null where log_hash = {} and posid <= {};".format(
+                            view, row.log_hash, posid
+                        )
+                        print("delete stray -1 -1 lat lon sqlstr: %s" % sqlstr)
+                        dbcon.execute(sqlstr)
+                        dbcon.commit()
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
-                    print("WARNING: remove gps cancel rows exception:", exstr)
-        if len(df_posids_indoor_start) > 0:
-            view_df = pd.read_sql("select * from {}".format(view), dbcon, parse_dates=['time'])
-            if len(view_df) > 0:
-                view_df = add_pos_lat_lon_to_indoor_df(view_df, df_location)
-                view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)                
-                view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
-                view_df = view_df.sort_values(by="time").reset_index(drop=True)
-                view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
-                view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
+                    print("WARNING: remove stray -1 -1 rows exception:", exstr)
+            if len(gps_cancel_list) > 0:
+                for log_hash, posid in gps_cancel_list:
+                    try:
+                        sqlstr = "update {} set geom = null where log_hash = {} and posid = {};".format(
+                            view, log_hash, posid
+                        )
+                        print("delete gps cancel sqlstr: %s" % sqlstr)
+                        dbcon.execute(sqlstr)
+                        dbcon.commit()
+                    except:
+                        type_, value_, traceback_ = sys.exc_info()
+                        exstr = str(traceback.format_exception(type_, value_, traceback_))
+                        print("WARNING: remove gps cancel rows exception:", exstr)
+            if len(df_posids_indoor_start) > 0:
+                view_df = pd.read_sql("select * from {}".format(view), dbcon, parse_dates=['time'])
+                if len(view_df) > 0:
+                    view_df = add_pos_lat_lon_to_indoor_df(view_df, df_location)
+                    view_df["geom"]  = view_df.apply(lambda x: lat_lon_to_geom(x["positioning_lat"], x["positioning_lon"]), axis=1)
+                    view_df = view_df.drop(columns=['positioning_lat', 'positioning_lon'])
+                    view_df = view_df.sort_values(by="time").reset_index(drop=True)
+                    view_df["log_hash"] = view_df["log_hash"].astype(np.int64)
+                    view_df.to_sql(view, dbcon, index=False, if_exists="replace", dtype=elm_table_main_col_types)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: indoor prepare failed exception:", exstr)
+    main_param_list = ["nr_cell_meas", "lte_cell_meas", "wcdma_cell_meas", "gsm_cell_meas", "ping", "android_info_1sec"]
+    if pre_create_index:
+        try:
+            n = 0
+            for param in main_param_list:
+                dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(param))
+                n += 1
+        except:
+            pass
 
     preprocess_azm.update_default_element_csv_for_dbcon_azm_ver(dbcon)
     ## for each param
@@ -441,6 +421,14 @@ def prepare_spatialite_views(dbcon):
     # create param QML theme based on default_style.qml
     # put qml entry into 'layer_styles' table
 
+def is_table_empty(dbcon, table, col):
+    df_first_row = pd.read_sql("select {} from {} where {} is not null limit 1".format(col, table, col), dbcon)
+    if not len(df_first_row):
+        return True
+    return False
+
+def table_or_view_exists(dbcon, table_or_view):
+    return bool(len(pd.read_sql("SELECT name FROM sqlite_master WHERE (type='table' or type='view') AND name='{}';".format(table_or_view), dbcon)))
 
 def get_geom_cols_df(dbcon):
     df = pd.read_sql("select * from geometry_columns", dbcon)
@@ -461,17 +449,143 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
         subset='time').set_index('time')
     indoor_location_df_interpolated = indoor_location_df_interpolated.groupby('log_hash').apply(
         lambda sdf: sdf.interpolate(method='time')).reset_index()
-
+    
     # merge indoor lat/lon into df
 
     by = None
-    if "log_hash" in df.columns and "log_hash" in df_location.columns:
+    if "log_hash" in df.columns and "log_hash" in indoor_location_df_interpolated.columns:
         print('indoor merge df_location using by log_hash')
         by = 'log_hash'
         df['log_hash'] = df['log_hash'].astype(np.int64)
-        df_location['log_hash'] = df_location['log_hash'].astype(np.int64)
+        indoor_location_df_interpolated['log_hash'] = indoor_location_df_interpolated['log_hash'].astype(np.int64)
 
     df = pd.merge_asof(df.sort_values("time"), indoor_location_df_interpolated.sort_values("time"),
                            on="time", by=by,
                            direction="backward", allow_exact_matches=True)
     return df
+
+
+def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=False):
+    if theme_df is None:
+        theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
+    if theme_df is None:
+        return None
+    if 'match_value' in theme_df.columns:
+        # id columns like pci, earfcn
+        theme_df.Lower = theme_df.match_value
+        theme_df.Upper = theme_df.match_value
+    ranges_xml = "<ranges>\n"
+    try:
+        # QGIS ranges count (right click > show layer count) wont match sql counts below if we dont sort this way
+        theme_df["Upper"] = pd.to_numeric(theme_df["Upper"])
+        theme_df.sort_values("Upper", ascending=False, inplace=True)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: theme_df.sort_values exception:", exstr)
+
+    match_value_counts = (theme_df.Lower == theme_df.Upper).all()
+    if view_len is None and dbcon is not None:
+        view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, param), dbcon).iloc[0, 0]
+    match_value_counts_df = None
+    if match_value_counts:
+        match_value_counts_df = pd.read_sql("select {param} as match_val, count({param}) as match_count from {view} group by {param}".format(view=view,param=param), dbcon)
+
+    # add legend bucket counts and percentage
+    for index, row in theme_df.iterrows():
+        percent_part = ""
+        if dbcon is not None:
+            try:
+                rsql = "select count(*) from {view} where {param} >= {lower} and {param} < {upper}".format(view=view,
+                                                                                                           param=param,
+                                                                                                         lower=row.Lower,
+                                                                                                         upper=row.Upper)
+                if pd.notnull(row.Lower) and pd.notnull(row.Upper) and row.Lower == row.Upper:
+                    rsql = "select count(*) from {view} where {param} = {lower}".format(
+                        view=view, lower=row.Lower, param=param)
+                count = None
+                if match_value_counts_df is not None:
+                    dfsl = match_value_counts_df[match_value_counts_df.match_val == row.Lower]
+                    if len(dfsl) == 1:
+                        count = dfsl.iloc[0].match_count
+                else:
+                    print("range rsql:", rsql)
+                    count = pd.read_sql(
+                        rsql,
+                        dbcon).iloc[0, 0]
+                print("view_len: {} count: {}".format(view_len, count))
+                percent_part = " (%d: %.02f%%)" % (count, ((count * 100.0) / view_len))
+                print("range percent_part:", percent_part)
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: calc range percent exception:", exstr)
+        ranges_xml += """<range symbol="{index}" label="{lower} to {upper}{percent}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
+            index=index, lower=row.Lower, upper=row.Upper, percent=percent_part
+        )
+    ranges_xml += "</ranges>\n"
+    symbols_xml = "<symbols>\n"
+    for index, row in theme_df.iterrows():
+        color = row.ColorXml
+        r = int(color[1:3], 16)
+        g = int(color[3:5], 16)
+        b = int(color[5:7], 16)
+        symbols_xml += """
+          <symbol alpha="1" force_rhr="0" clip_to_extent="1" name="{index}" type="marker">
+            <layer enabled="1" locked="0" pass="0" class="SimpleMarker">
+              <prop k="angle" v="0"/>
+              <prop k="color" v="{r},{g},{b},255"/>
+              <prop k="horizontal_anchor_point" v="1"/>
+              <prop k="joinstyle" v="bevel"/>
+              <prop k="name" v="circle"/>
+              <prop k="offset" v="0,0"/>
+              <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="outline_color" v="35,35,35,255"/>
+              <prop k="outline_style" v="no"/>
+              <prop k="outline_width" v="0"/>
+              <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="outline_width_unit" v="MM"/>
+              <prop k="scale_method" v="diameter"/>
+              <prop k="size" v="2"/>
+              <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="size_unit" v="MM"/>
+              <prop k="vertical_anchor_point" v="1"/>
+              <data_defined_properties>
+                <Option type="Map">
+                  <Option name="name" type="QString" value=""/>
+                  <Option name="properties"/>
+                  <Option name="type" type="QString" value="collection"/>
+                </Option>
+              </data_defined_properties>
+            </layer>
+          </symbol>
+                """.format(
+            index=index, r=r, g=g, b=b
+        )
+
+    symbols_xml += "</symbols>\n"
+    # print("symbols_xml: %s" % symbols_xml)
+    default_qml_fp = os.path.join(azq_utils.get_module_path(), "default_style.qml")
+    default_qml = None
+    with open(default_qml_fp, "rb") as f:
+        default_qml = f.read().decode("ascii")
+    default_qml_param = "lte_inst_rsrp_1"
+
+    qml = default_qml.replace(default_qml_param, param)
+    root = xet.fromstring(qml)
+    renderer = root.find("renderer-v2")
+    renderer.remove(renderer.find("ranges"))
+    renderer.append(xet.fromstring(ranges_xml))
+    renderer.remove(renderer.find("symbols"))
+    renderer.append(xet.fromstring(symbols_xml))
+    ret = xet.tostring(root)
+    if ret and to_tmp_file:
+        qml_fp = get_qml_tmp_fp_for_view(view)
+        with open(qml_fp, "wb") as f:  # ret is a buffer so use wb
+            f.write(ret)
+        return qml_fp
+    return ret
+
+def get_qml_tmp_fp_for_view(view):
+    return azq_utils.tmp_gen_fp("style_{}_{}.qml".format(view, uuid.uuid4()))

@@ -26,7 +26,11 @@ def get_module_path():
 
 
 def get_ori_default_theme():
-    return os.path.join(get_module_path(), "default_theme.xml")
+    import azq_utils
+    if azq_utils.is_container_mode():
+        return os.path.join(get_module_path(), "container_default_theme.xml")
+    else:
+        return os.path.join(get_module_path(), "default_theme.xml")
 
 
 g_default_theme_file = get_ori_default_theme()

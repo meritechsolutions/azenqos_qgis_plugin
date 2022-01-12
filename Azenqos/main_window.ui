@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>25</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -90,6 +90,7 @@
      <addaction name="actionLTE_RLC"/>
      <addaction name="actionLTE_VoLTE"/>
      <addaction name="actionLTE_Line_Chart"/>
+     <addaction name="actionLTE_PCI_Footprint"/>
      <addaction name="actionExynos_LTE_Radio"/>
      <addaction name="actionExynosServiceMode_LTE_Data"/>
      <addaction name="actionExynosServiceMode_LTE_Reg"/>
@@ -103,6 +104,7 @@
      <addaction name="action5GNR_Serving_Neighbors"/>
      <addaction name="action5GNR_Beams"/>
      <addaction name="actionNR_Line_Chart"/>
+     <addaction name="actionNR_PCI_Footprint"/>
      <addaction name="actionExynosServiceMode_NR_Radio"/>
      <addaction name="actionExynosServiceMode_NR_Data"/>
      <addaction name="actionExynosServiceMode_NR_Reg"/>
@@ -127,6 +129,7 @@
      <addaction name="actionWCDMA_BLER_Summary"/>
      <addaction name="actionWCDMA_Bearers"/>
      <addaction name="actionWCDMA_Line_Chart"/>
+     <addaction name="actionWCDMA_PSC_Footprint"/>
     </widget>
     <widget class="QMenu" name="menuGSM">
      <property name="title">
@@ -137,6 +140,7 @@
      <addaction name="actionGSM_Current_Channel"/>
      <addaction name="actionGSM_C_I"/>
      <addaction name="actionGSM_Line_Chart"/>
+     <addaction name="actionGSM_BCCH_Footprint"/>
     </widget>
     <widget class="QMenu" name="menuData">
      <property name="title">
@@ -174,6 +178,7 @@
      </property>
      <addaction name="actionCustom_Instant_View"/>
      <addaction name="actionCustom_Table_View"/>
+     <addaction name="actionCustom_Table_View_UI"/>
     </widget>
     <widget class="QMenu" name="menuMisc">
      <property name="title">
@@ -183,7 +188,7 @@
     </widget>
     <widget class="QMenu" name="menuSession_1">
      <property name="title">
-      <string>Session 1</string>
+      <string>Common test sessions</string>
      </property>
      <addaction name="actionVoice_Report"/>
      <addaction name="actionLog_To_Operator_Map"/>
@@ -212,7 +217,7 @@
     </widget>
     <widget class="QMenu" name="menuLegacy_Session">
      <property name="title">
-      <string>Legacy Session</string>
+      <string>Legacy test sessions</string>
      </property>
      <addaction name="actiondatasession"/>
      <addaction name="actionline_mo"/>
@@ -223,7 +228,7 @@
     </widget>
     <widget class="QMenu" name="menuSession_2">
      <property name="title">
-      <string>Session 2</string>
+      <string>Other test sessions</string>
      </property>
      <addaction name="actionFacebook_Post_Status"/>
      <addaction name="actionFacebook_Post_Photo"/>
@@ -242,6 +247,12 @@
      <addaction name="actionVideo"/>
      <addaction name="actionNperf_Test"/>
     </widget>
+    <widget class="QMenu" name="menuMaps">
+     <property name="title">
+      <string>Maps</string>
+     </property>
+     <addaction name="actionOSM"/>
+    </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
@@ -251,11 +262,15 @@
     <addaction name="menuSystem"/>
     <addaction name="menuLog"/>
     <addaction name="actionPCAP"/>
-    <addaction name="menuCustom_Windows"/>
-    <addaction name="menuMisc"/>
     <addaction name="menuSession_1"/>
     <addaction name="menuSession_2"/>
     <addaction name="menuLegacy_Session"/>
+    <addaction name="menuCustom_Windows"/>
+    <addaction name="menuMisc"/>
+    <addaction name="menuMaps"/>
+    <addaction name="actionAdd_Layer"/>
+    <addaction name="actionAdd_POI_Layer"/>
+    <addaction name="actionCalculate_POI_Coverage"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -274,12 +289,14 @@
     <property name="title">
      <string>Server modules</string>
     </property>
+    <addaction name="actionLogin"/>
+    <addaction name="actionServer_overview_layers"/>
+    <addaction name="actionServerAIPrediction"/>
     <addaction name="actionRun_server_modules"/>
     <addaction name="actionRun_PY_EVAL_code"/>
     <addaction name="actionRun_SQL_code"/>
     <addaction name="separator"/>
     <addaction name="actionSession_info"/>
-    <addaction name="actionLogin"/>
     <addaction name="actionLogout"/>
    </widget>
    <addaction name="menuFile"/>
@@ -422,17 +439,17 @@
   </action>
   <action name="actionRun_server_modules">
    <property name="text">
-    <string>Run server calculation modules...</string>
+    <string>Run server calculation modules</string>
    </property>
   </action>
   <action name="actionRun_PY_EVAL_code">
    <property name="text">
-    <string>Run PY_EVAL module code...</string>
+    <string>Run PY_EVAL module code</string>
    </property>
   </action>
   <action name="actionRun_SQL_code">
    <property name="text">
-    <string>Run SQL code...</string>
+    <string>Run SQL code</string>
    </property>
   </action>
   <action name="actionLogin">
@@ -447,7 +464,7 @@
   </action>
   <action name="actionSession_info">
    <property name="text">
-    <string>Session info...</string>
+    <string>Session info</string>
    </property>
   </action>
   <action name="actionLTE_Line_Chart">
@@ -658,6 +675,16 @@
   <action name="actionExynosServiceMode_BasicInfo_2">
    <property name="text">
     <string>ExynosServiceMode BasicInfo</string>
+   </property>
+  </action>
+  <action name="actionServer_overview_layers">
+   <property name="text">
+    <string>All logs overview</string>
+   </property>
+  </action>
+  <action name="actionServerPredict">
+   <property name="text">
+    <string>Predict from server models</string>
    </property>
   </action>
   <action name="actionPing">
@@ -913,6 +940,56 @@
   <action name="actionLocation">
    <property name="text">
     <string>Location</string>
+   </property>
+  </action>
+  <action name="actionServerAIPrediction">
+   <property name="text">
+    <string>AI Prediction</string>
+   </property>
+  </action>
+  <action name="actionOSM">
+   <property name="text">
+    <string>OSM</string>
+   </property>
+  </action>
+  <action name="actionLTE_PCI_Footprint">
+   <property name="text">
+    <string>LTE PCI Footprint</string>
+   </property>
+  </action>
+  <action name="actionNR_PCI_Footprint">
+   <property name="text">
+    <string>NR PCI Footprint</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_PSC_Footprint">
+   <property name="text">
+    <string>WCDMA PSC Footprint</string>
+   </property>
+  </action>
+  <action name="actionGSM_BCCH_Footprint">
+   <property name="text">
+    <string>GSM BCCH Footprint</string>
+   </property>
+  </action>
+  <action name="actionAdd_Layer">
+   <property name="text">
+    <string>Add Layer</string>
+   </property>
+  </action>
+  <action name="actionAdd_POI_Layer">
+   <property name="text">
+    <string>Add POI Layer</string>
+   </property>
+  </action>
+  <action name="actionCalculate_POI_Coverage">
+   <property name="text">
+    <string>Calculate POI Coverage</string>
+   </property>
+  </action>
+  <action name="actionCustom_Table_View_UI">
+   <property name="text">
+    <string>Custom Table View</string>
    </property>
   </action>
  </widget>

@@ -13,6 +13,7 @@ import traceback
 import uuid
 import json 
 from pathlib import Path
+import base64
 
 import pandas as pd
 import requests
@@ -21,7 +22,15 @@ from PyQt5 import QtWidgets, QtCore
 import dprint
 
 TMP_FOLDER_NAME = "tmp_gen"
+CONTAINER_MODE_TMP_GEN_PATH = "/host_shared_dir/tmp_gen"
+AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY = "AZQ_WORKSTATION_CONTAINER_NAME"
 
+def is_container_mode():
+    return AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY in os.environ
+
+def get_container_name():
+    assert is_container_mode()
+    return os.environ[AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY]
 
 def debug(s):
     dprint.dprint(s)
@@ -36,7 +45,10 @@ def get_module_fp(fn):
 
 
 def get_settings_dp():
-    dp = os.path.join(get_module_parent_path(), "Azenqos_settings")
+    settings_dname = "Azenqos_settings"
+    dp = os.path.join(get_module_parent_path(), settings_dname)
+    if is_container_mode():
+        dp = tmp_gen_fp(settings_dname)
     if not os.path.isdir(dp):
         os.makedirs(dp)
     assert os.path.isdir(dp)
@@ -49,10 +61,12 @@ def get_settings_fp(fn):
     return fp
 
 
-def write_settings_file(fname, contents, auto_encode=True):
+def write_settings_file(fname, contents, auto_encode=True, encrypt=False):
     try:
         if auto_encode and isinstance(contents, str):
             contents = contents.encode()  # conv to bytes for write
+        if encrypt:
+            contents = base64.b64encode(contents)
         with open(get_settings_fp(fname), "wb") as f:
             f.write(contents)
     except:
@@ -61,10 +75,12 @@ def write_settings_file(fname, contents, auto_encode=True):
         print("WARNING: write_local_file - exception: {}".format(exstr))
 
 
-def read_settings_file(fname, auto_decode=True):
+def read_settings_file(fname, auto_decode=True, decrypt=False):
     try:
         with open(get_settings_fp(fname), "rb") as f:
             ret = f.read()
+            if decrypt:
+                ret = base64.b64decode(ret)
             if auto_decode:
                 ret = ret.decode()
             return ret
@@ -1450,6 +1466,9 @@ def open_and_redirect_stdout_to_last_run_log():
 
 def tmp_gen_path_parent():
     dp = os.path.join(get_module_path(), TMP_FOLDER_NAME)
+    if is_container_mode():
+        assert os.path.isdir(CONTAINER_MODE_TMP_GEN_PATH)
+        dp = os.path.join(CONTAINER_MODE_TMP_GEN_PATH, get_container_name())
     if not os.path.isdir(dp):
         os.makedirs(dp)
     return dp
@@ -1468,10 +1487,15 @@ def tmp_gen_path():
         os.makedirs(dp)
     return dp
 
+def tmp_gen_new_subdir():
+    dp = tmp_gen_fp("tmp_subdir_{}".format(uuid.uuid4()))
+    assert not os.path.isdir(dp)
+    os.mkdir(dp)
+    assert os.path.isdir(dp)
+    return dp
 
 def tmp_gen_fp(fn):
     return os.path.join(tmp_gen_path(), fn)
-
 
 def cleanup_died_processes_tmp_folders():
     import psutil
@@ -1542,6 +1566,10 @@ def signal_emit(signal_obj, emit_obj):
     print("signal_emit: {}: {}".format(signal_obj, emit_obj))
     if signal_obj is not None:
         signal_obj.emit(emit_obj)
+
+
+def datetime_now():
+    return datetime.datetime.now()
 
 
 def datetimeStringtoTimestamp(datetimeString):
@@ -1855,6 +1883,54 @@ def get_sqlite_bin():
         ),
     )
 
+def get_spatialite_bin():
+    return os.path.join(
+        get_module_path(),
+        os.path.join(
+            "sqlite_" + os.name,
+            "spatialite" + ("" if os.name == "posix" else ".exe"),
+        ),
+    )
+
+def get_create_cellfile_spatialite_header(rat):
+    sql_str = """PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+INSERT INTO "geometry_columns" VALUES('{}','geometry',3,2,4326,0);\n""".format(rat)
+
+    return sql_str
+
+def get_create_cellfile_spatialite_create_table(rat, columns):
+    start_str = """CREATE TABLE '{}' ( "ogc_fid" INTEGER PRIMARY KEY AUTOINCREMENT,""".format(rat)
+    for col in columns:
+        if col == "index":
+            pass
+        elif col != "sector_polygon_wkt":
+            start_str += " '{}' VARCHAR, ".format(col)
+        else:
+            start_str += ''' "GEOMETRY" POLYGON '''
+    start_str += ");"
+    return start_str
+
+def get_create_cellfile_spatialite_insert_cell(rat, df):
+    df_col = list(df.columns)
+    df["spatial"] = '''INSERT INTO "{}" VALUES('''.format(rat)
+
+    for col in df_col:
+        df[col] = df[col].astype(str)
+        if col == "index":
+            df["spatial"] = df["spatial"] + " " + df[col] + ","
+        elif col != "sector_polygon_wkt":
+            df["spatial"] = df["spatial"] + " '" + df[col].astype(str).str.replace("'","''") + "',"
+        else:
+            df["spatial"] = df["spatial"] + " ST_GeomFromText('" + df[col] + "')"
+
+    df["spatial"] += ");"
+    return "\n".join(list(df["spatial"]))
+
+def get_create_cellfile_spatialite_footer():
+    ret = """\nPRAGMA writable_schema=OFF;
+COMMIT;"""
+    return ret
 
 def set_none_to_repetetive_rows(df, cols):
     # set None to repetetive rows - https://stackoverflow.com/questions/19463985/pandas-drop-consecutive-duplicates
@@ -1888,3 +1964,132 @@ def resample_per_log_hash_time(param_df, resample_param, use_last=False):
     assert len(ori_cols) == len(end_cols)
     assert set(ori_cols) == set(end_cols)
     return param_df
+
+
+def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None, add_to_qgis=True, new_db=True, svg_icon_fp=None):
+    try:
+        import preprocess_azm
+        import qgis_layers_gen
+        tmpdbfp = tmp_gen_fp("tmp_{}.db".format(uuid.uuid4()))
+        if not new_db:
+            assert databasePath
+            assert os.path.isfile(databasePath)
+            tmpdbfp = databasePath
+        assert not os.path.isfile(tmpdbfp)
+        if (("lat" not in df.columns) or ("lon" not in df.columns)) and databasePath is not None:
+            print("need to merge lat and lon")
+            with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
+                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+                    columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                )
+        table = "layer_dump" if theme_param is None else preprocess_azm.get_table_for_column(theme_param)
+        qgis_layers_gen.dump_df_to_spatialite_db(
+            df, tmpdbfp, table, is_indoor=is_indoor
+        )
+        assert os.path.isfile(tmpdbfp)
+        with contextlib.closing(sqlite3.connect(tmpdbfp)) as dbcon:
+            return qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+            tmpdbfp, table, label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, dbcon_for_theme_legend_counts=dbcon, add_to_qgis=add_to_qgis
+            , svg_icon_fp=svg_icon_fp)
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(
+            "WARNING: create_layer_in_qgis failed exception: {}".format(
+                exstr
+            )
+        )
+
+
+def get_theme_qml_tmp_file_for_param(table, col, dbfp, gen_theme_bucket_counts=True):
+    print("get_theme_qml_tmp_file_for_param START")
+    qml_fp = None
+    try:
+        assert os.path.isfile(dbfp)
+        import db_preprocess
+        dbcon = None
+        try:
+            if gen_theme_bucket_counts:
+                dbcon = sqlite3.connect(dbfp)
+            qml_fp = db_preprocess.gen_style_qml_for_theme(
+                None, table, None, col,
+                dbcon,
+                to_tmp_file=True
+            )
+        finally:
+            if dbcon:
+                dbcon.close()
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(
+            "WARNING: gen_style_qml_for_theme col {} failed exception: {}".format(
+                col, exstr
+            )
+        )
+    print("get_theme_qml_tmp_file_for_param DONE")
+    return qml_fp
+
+g_timer_start_ts_dict = {}
+
+def timer_start(tname=None):
+    global g_timer_start_ts_dict
+    if not tname:
+        tname = str(sys._getframe().f_back.f_code.co_name)
+    g_timer_start_ts_dict[tname] = datetime.datetime.now()
+
+def timer_print(tname=None, extra="now"):
+    if not tname:
+        tname = sys._getframe().f_back.f_code.co_name
+    dur = timer_get_dur(tname)
+    msg = "timer: {} to {}: {} seconds".format(tname, extra, dur)
+    print(msg)
+    return dur
+
+def timer_get_dur(tname):
+    global g_timer_start_ts_dict
+    if tname in g_timer_start_ts_dict:
+        return (datetime.datetime.now()-g_timer_start_ts_dict[tname]).total_seconds()
+    else:
+        timer_start(tname)
+        return 0
+    return 0
+
+
+def get_env_azq_lang():
+    key = "AZQ_LANG"
+    if key in os.environ:
+        return os.environ[key]
+    return "en"
+
+def is_lang_th():
+    return get_env_azq_lang() == "th"
+
+th_translate_replace_dict = {
+    "combined model": "ชุดทำนายร่วม",
+    "model per grid": "ชุดทำนายแยกตาราง",
+    "whole_year": "ทั้งปี",
+    "lte_inst_rsrp": "ความแรงสัญญาณ_4G",
+    "wcdma_aset_rscp": "ความแรงสัญญาณ_3G",
+    "nr_servingbeam_ss_rsrp": "ความแรงสัญญาณ_5G",
+    "gsm_rxlev_sub_dbm": "ความแรงสัญญาณ_2G",
+    "prediction_from": "ผลทำนายจาก",
+    "overview":"ภาพรวม",
+    "gsm_rxqual_sub":"คุณภาพสัญญาณ 2G",
+    "wcdma_aset_ecio":"คุณภาพสัญญาณ 3G",
+    "lte_inst_rsrq":"คุณภาพสัญญาณ 4G",
+    "lte_sinr":"คุณภาพสัญญาณเทียบสัญญาณอื่น 4G",
+    "data_hsupa_total_e_dpdch_throughput":"ความเร็วในการส่งข้อมูล 3G",
+    "lte_l1_dl_throughput_all_carriers_mbps": "ความเร็วในการรับข้อมูล 4G",
+    "lte_l1_ul_throughput_all_carriers_mbps": "ความเร็วในการส่งข้อมูล 4G",
+    "data_hsdpa_thoughput": "เร็วในการรับข้อมูล 3G",
+}
+
+def th_translate(msg):
+    if msg is None:
+        return None
+    assert isinstance(msg, str)
+    for key in th_translate_replace_dict:
+        val = th_translate_replace_dict[key]
+        msg = msg.replace(key, val)
+    return msg

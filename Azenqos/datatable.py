@@ -8,7 +8,10 @@ import sqlite3
 import sys
 import threading
 import traceback
-import uuid
+import pyqtgraph as pg
+import wave
+import datetime
+from functools import partial
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 
@@ -19,7 +22,6 @@ from PyQt5.QtCore import (
     pyqtSignal,
     Qt,
     QItemSelection,
-    QSortFilterProxyModel,
     QAbstractTableModel,
 )
 import PyQt5.QtGui as QtGui
@@ -54,7 +56,6 @@ from PyQt5 import QtCore
 from tsharkworker import TsharkDecodeWorker
 import azq_utils
 import qt_utils
-import qgis_layers_gen
 import sql_utils
 import preprocess_azm
 
@@ -85,6 +86,7 @@ class TableWindow(QWidget):
         skip_setup_ui=False,
         mdi=None,
         func_key=None,
+        custom_table_param_list=None,
 
         # these params will be written to options_dict
         time_list_mode=False,
@@ -99,6 +101,7 @@ class TableWindow(QWidget):
         self.skip_setup_ui = skip_setup_ui
         self.mdi = mdi
         self.func_key = func_key
+        self.custom_table_param_list = custom_table_param_list
 
         ################ support old params not put in options dict
         print("options0:", options)
@@ -161,6 +164,7 @@ class TableWindow(QWidget):
         self.parent = parent
         self.filterList = None
         self.filterMenu = None
+        self.svg_icon_fp= None
         self.signal_ui_thread_emit_model_datachanged.connect(
             self.ui_thread_model_datachanged
         )
@@ -289,11 +293,16 @@ class TableWindow(QWidget):
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
-        actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None}
+        actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None, "custom_table": None}
         if self.time_list_mode and self.df is not None and 'log_hash' in self.df.columns and 'time' in self.df.columns:
+            actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
+        if self.df is not None and "lat" in self.df.columns and "lon" in self.df.columns:
+            self.svg_icon_fp = azq_utils.get_module_fp("map-marker-alt.svg")
             actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
         if isinstance(self.refresh_data_from_dbcon_and_time_func, (str, list, dict)):
             actions_dict["custom_expression"] = menu.addAction("Customize SQL/Python expression...")
+        if self.custom_table_param_list:
+            actions_dict["custom_table"] = menu.addAction("Customize table...")
         if self.tableModel.df is not None:
             actions_dict["to_csv"] = menu.addAction("Dump to CSV...")
             actions_dict["to_parquet"] = menu.addAction("Dump to Parquet...")
@@ -305,6 +314,18 @@ class TableWindow(QWidget):
             if expression:
                 self.refresh_data_from_dbcon_and_time_func = expression
                 self.refreshTableContents()
+        if action == actions_dict["custom_table"]:
+            import custom_table_dialog
+            dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list, self.title)
+            def on_result(df, param_list, title):
+                self.custom_df=df
+                self.custom_table_param_list=param_list
+                self.title=title
+                self.setObjectName(self.title)
+                self.setWindowTitle(self.title)
+                self.refreshTableContents()
+            dlg.on_result.connect(on_result)
+            dlg.show()
         elif action == actions_dict["to_csv"] or action == actions_dict["to_parquet"]:
             df = self.tableModel.df
             try:
@@ -320,8 +341,12 @@ class TableWindow(QWidget):
                 )
                 if fp:
                     if action == actions_dict["to_csv"]:
+                        if not fp.endswith(".csv"):
+                            fp += ".csv"
                         df.to_csv(fp, index=False, quoting=csv.QUOTE_ALL)
                     else:
+                        if not fp.endswith(".parquet"):
+                            fp += ".parquet"
                         df.to_parquet(fp)
                     qt_utils.msgbox("Dumped to file: {}".format(fp))
             except:
@@ -362,34 +387,8 @@ class TableWindow(QWidget):
                     self, "New layer", "Please specify layer name:"
                 )
                 if layer_name:
-                    # load it into qgis as new layer
-                    try:
-                        tmpdbfp = self.gc.databasePath
-                        tmpdbfp +=  "_{}.db".format(uuid.uuid4())
+                    azq_utils.create_layer_in_qgis(self.gc.databasePath, self.tableModel.df, layer_name, is_indoor=self.gc.is_indoor, svg_icon_fp=self.svg_icon_fp)
 
-                        df = self.tableModel.df
-                        if ("lat" not in df.columns) or ("lon" not in df.columns):
-                            print("need to merge lat and lon")
-                            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
-columns={"positioning_lat": "lat", "positioning_lon": "lon"}
-                            )
-                        qgis_layers_gen.dump_df_to_spatialite_db(
-                        df, tmpdbfp, layer_name, is_indoor=self.gc.is_indoor
-                        )
-                        assert os.path.isfile(tmpdbfp)
-                        qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-                            tmpdbfp, layer_name, label_col="name" if "name" in self.tableModel.df.columns else None
-                        )
-                    except:
-                        type_, value_, traceback_ = sys.exc_info()
-                        exstr = str(traceback.format_exception(type_, value_, traceback_))
-                        print(
-                            "WARNING: create_qgis_layer_df exception title {} refreshTableContents() failed exception: {}".format(
-                                self.title, exstr
-                            )
-                        )
-                        qt_utils.msgbox("create layer failed: "+exstr, title="Failed")
 
     def headerMenu(self, pos):
         globalPos = self.mapToGlobal(pos)
@@ -416,8 +415,8 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                 columnIndex, checkedRegexList
             )
         )
-        self.proxyModel.filterFromMenu[columnIndex] = checkedRegexList
-        self.proxyModel.invalidateFilter()
+        self.proxyModel.setFilterListModel(columnIndex, checkedRegexList)
+        # self.proxyModel.invalidateFilter()
 
     def ui_thread_new_model(self):
         self.setTableModel(self.dataList)
@@ -580,7 +579,7 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                         df = df.loc[:,~df.columns.duplicated()]
                     else:
                         print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))
-                        if self.title.lower() == "pcap":
+                        if self.title.lower() in ["pcap", "add layer"]:
                             df = self.refresh_data_from_dbcon_and_time_func
                         else:
                             df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
@@ -631,11 +630,16 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
         # QgsMessageLog.logMessage('[-- Start hilight row --]', tag="Processing")
         # start_time = time.time()
         worker = None
-
-
         find_row_time_string = str(sampledate)
         find_row_time = azq_utils.datetimeStringtoTimestamp(find_row_time_string)
         find_row_log_hash = self.gc.selected_point_match_dict["log_hash"]
+
+        if self.gc.has_wave_file == True:
+            try:
+                if self.detailWidget:
+                    self.detailWidget.move_cursor(find_row_time)
+            except:
+                pass
 
         ######### check same timestamp from last select propagate back to us - dont drift to last row with same ts
         print("hilightRow: find_row_time: {} self.selected_row_time: {}".format(find_row_time, self.selected_row_time))
@@ -692,6 +696,13 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
             self.detailWidget = DetailWidget(
                 self.gc, self, cellContent, name, side, protocol
             )
+        elif self.title.lower() == "add layer":
+            param_name = row_sr["var_name"]
+            n_arg_max = row_sr["n_arg_max"]
+            import add_map_layer_dialog
+
+            dlg = add_map_layer_dialog.add_map_layer_dialog(self.gc, param_name, n_arg_max)
+            dlg.show()
         elif 'name' in row_sr.index and row_sr["name"].find("MOS Score") != -1:
             name = row_sr["name"]
             side = {}
@@ -702,6 +713,7 @@ columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                 azq_utils.tmp_gen_path(),
                 row_sr["wave_file"].replace(".wav", "_polqa.txt"),
             )
+            side["time"] = row_sr["time"]
             self.detailWidget = DetailWidget(
                 self.gc, self, cellContent, name, side
             )
@@ -898,7 +910,7 @@ class FilterMenuWidget(QWidget):
                 item.setCheckState(Qt.Checked)
                 self.model.appendRow(item)
 
-        self.proxyModel = QSortFilterProxyModel()
+        self.proxyModel = SortFilterProxyModel()
         self.proxyModel.setSourceModel(self.model)
         self.proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.proxyModel.setFilterKeyColumn(self.columnIndex)
@@ -948,7 +960,7 @@ class DetailWidget(QDialog):
     def __init__(
         self, gc, parent, detailText, messageName=None, side=None, protocol=None
     ):
-        super().__init__(None)
+        super().__init__(parent)
         self.closed = False
         self.title = "Details"
         self.gc = gc
@@ -1142,13 +1154,33 @@ class DetailWidget(QDialog):
             QIcon(QPixmap(os.path.join(dirname, "res", "save_wav.png")))
         )
         self.saveBtn.setText("Save file")
+        self.start_time_s = azq_utils.datetimeStringtoTimestamp(str(self.side["time"]))
+        self.framerate = 0
+        
+        self.show_ref_wave_check_box = QCheckBox("Show reference")
+        self.show_ref_wave_check_box.setChecked(False)
+        enable_show_ref_wave_check_box = partial(self.show_ref_wave, self.show_ref_wave_check_box)
+        disable_show_ref_wave_check_box = partial(self.hide_ref_wave, self.show_ref_wave_check_box)
+        self.show_ref_wave_check_box.stateChanged.connect(
+            lambda x: enable_show_ref_wave_check_box() if x else disable_show_ref_wave_check_box()
+        )
+
+        pg.setConfigOptions(background="#c0c0c0", foreground="k", antialias=True)
+        
+        self.wave_sine = pg.GraphicsWindow()
+        self.wave_sine.scene().sigMouseClicked.connect(self.on_click)
+        self.v_line = pg.InfiniteLine(
+            angle=90, movable=False, pen=pg.mkPen("k")
+        )
 
         self.textEdit = QTextEdit()
         self.textEdit.setReadOnly(True)
 
         gridlayout.addWidget(self.playBtn, 0, 0, 1, 2)
-        gridlayout.addWidget(self.saveBtn, 0, 2, 1, 1)
-        gridlayout.addWidget(self.textEdit, 1, 0, 1, 3)
+        gridlayout.addWidget(self.show_ref_wave_check_box, 0, 2, 1, 1)
+        gridlayout.addWidget(self.saveBtn, 0, 3, 1, 1)
+        gridlayout.addWidget(self.wave_sine, 1, 0, 1, 4)
+        gridlayout.addWidget(self.textEdit, 2, 0, 2, 4)
 
         self.playBtn.clicked.connect(self.playWavFile)
         self.saveBtn.clicked.connect(self.saveWaveFile)
@@ -1159,10 +1191,83 @@ class DetailWidget(QDialog):
         f.close()
 
         self.polqaWavFile = (self.side["wav_file"])
+        self.set_ref_wave()
+        self.set_wave()
+        self.show_ref_wave_check_box.setChecked(False)
+        self.hide_ref_wave(self.show_ref_wave_check_box)
         self.resize(self.width, self.height)
         self.show()
         self.raise_()
         self.activateWindow()
+
+    def draw_cursor(self, x):
+        self.v_line.setPos(x)
+
+    def show_ref_wave(self, checkbox):
+        self.wave_sine.axes1.show()
+
+    def hide_ref_wave(self, checkbox):
+        self.wave_sine.axes1.hide()
+    
+    def move_cursor(self, current_time_s):
+        time_s = current_time_s-self.start_time_s
+        x = time_s * self.framerate
+        self.draw_cursor(x)
+        
+    def on_click(self, event):
+        x = self.wave_sine.axes0.vb.mapSceneToView(event.scenePos()).x()
+        self.draw_cursor(x)
+        sliderValue = (x/self.framerate)+self.start_time_s - self.gc.minTimeValue
+        sliderValue = round(sliderValue, 3)
+        self.gc.timeSlider.setValue(sliderValue)
+    
+    def set_ref_wave(self):
+        ref_wave_file_name = "polqaref_np"
+        ref_framerate = 48000.0
+        ref_nframes = 305732
+        if self.gc.is_mos_nb == True:
+            print("is_mos_nb")
+            ref_wave_file_name = "polqarefnb_np"
+            ref_framerate = 8000.0
+            ref_nframes = 50956
+        ref_wave_file_path = azq_utils.get_module_fp(ref_wave_file_name)
+        if os.path.isfile(ref_wave_file_path):
+            data = np.fromfile(ref_wave_file_path, dtype="int16")
+            self.wave_sine.axes1 = self.wave_sine.addPlot(
+                0, 0,axisItems={"bottom": RefTimeAxisItem(orientation="bottom", framerate=ref_framerate)}
+            )
+            self.wave_sine.axes1.plot(data,
+                pen=pg.mkPen("b"),)
+            self.wave_sine.axes1.setTitle("Reference")
+            self.wave_sine.axes1.setLimits(
+                xMin=-0,
+                xMax=ref_nframes,
+                yMin=-40000,
+                yMax=40000
+            )
+
+    def set_wave(self):
+        if self.polqaWavFile:
+            if os.path.isfile(self.polqaWavFile):
+                wf = wave.open(self.polqaWavFile, 'rb')
+                self.framerate = float(wf.getframerate())
+                self.nframe = wf.getnframes()
+                buf = wf.readframes(self.nframe)
+                data = np.frombuffer(buf, dtype="int16")
+                self.wave_sine.axes0 = self.wave_sine.addPlot(
+                    1, 0, axisItems={"bottom": TimeAxisItem(orientation="bottom", framerate=self.framerate, start_time = self.start_time_s)}
+                )
+                self.wave_sine.axes0.addItem(self.v_line, ignoreBounds=True)
+                self.wave_sine.axes0.plot(data,
+                    pen=pg.mkPen("b"),)
+                self.wave_sine.axes0.setTitle("Degraded")
+                self.wave_sine.axes0.setLimits(
+                    xMin=-0,
+                    xMax=self.nframe,
+                    yMin=-40000,
+                    yMax=40000
+                )
+                self.draw_cursor(0)
 
     def saveWaveFile(self):
         wavfilepath = str(self.polqaWavFile)
@@ -1244,6 +1349,32 @@ class TableModel(QAbstractTableModel):
             return self.headerLabels[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
+def epochToDateString(epoch):
+    try:
+        return datetime.datetime.fromtimestamp(epoch).strftime("%H:%M:%S.%f")[:-3]
+    except:
+        return ""
+
+class TimeAxisItem(pg.AxisItem):
+    """Internal timestamp for x-axis"""
+
+    def __init__(self, framerate, start_time, *args, **kwargs):
+        super(TimeAxisItem, self).__init__(*args, **kwargs)
+        self.framerate = framerate
+        self.start_time = start_time
+
+    def tickStrings(self, values, scale, spacing):
+        return [epochToDateString(self.start_time+(value/self.framerate)) for value in values]
+
+class RefTimeAxisItem(pg.AxisItem):
+    """Internal timestamp for x-axis"""
+
+    def __init__(self, framerate, *args, **kwargs):
+        super(RefTimeAxisItem, self).__init__(*args, **kwargs)
+        self.framerate = framerate
+
+    def tickStrings(self, values, scale, spacing):
+        return [(value/self.framerate) for value in values]
 
 class PdTableModel(QAbstractTableModel):
     def __init__(self, df, parent=None, *args):
@@ -1255,6 +1386,16 @@ class PdTableModel(QAbstractTableModel):
         self.df_full = df
         self.df = df  # filtered data for display
         self.parent = parent
+        self.filters = {}
+        self.filterFromMenu = {}
+
+    def setFilters(self, filters):
+        self.filters = filters
+        self.filter()
+    
+    def setFilterFromMenu(self, filterFromMenu):
+        self.filterFromMenu = filterFromMenu
+        self.filter()
 
     def rowCount(self, parent):
         return len(self.df)
@@ -1262,18 +1403,32 @@ class PdTableModel(QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.df.columns)
 
-    def setStrColFilters(self, filters):
-        print("pdtablemodel setStrColFilters filteres START")
+    def filter(self):
+        print("pdtablemodel filteres START")
         self.df = self.df_full
         changed = True
-        for col_index in filters.keys():
+        for col_index in self.filters.keys():
             col = self.df.columns[col_index]
-            regex = filters[col_index].pattern()  # QRegExp
+            regex = self.filters[col_index].pattern()  # QRegExp
             if col and regex:
-                print("setStrColFilters col: {} regex: {}".format(col, regex))
-                self.df = self.df[
-                    self.df[col].astype(str).str.contains(regex, case=False)
-                ]
+                print("filters col: {} regex: {}".format(col, regex))
+                try:
+                    self.df = self.df[
+                        self.df[col].astype(str).str.contains(regex, case=False)
+                    ]
+                except Exception as exe:
+                    print("WARNING: datatable regex filter exception:", exe)
+        for col_index in self.filterFromMenu.keys():
+            col = self.df.columns[col_index]
+            regexlist = self.filterFromMenu[col_index]  # QRegExp
+            if col and regexlist:
+                print("filterFromMenu col: {} regex: {}".format(col, regexlist))
+                try:
+                    self.df = self.df[
+                        self.df[col].isin(regexlist)
+                    ]
+                except Exception as exe:
+                    print("WARNING: datatable regex filter exception:", exe)
         if changed:
             """
             index_topleft = self.index(0, 0)
@@ -1378,6 +1533,7 @@ def create_table_window_from_api_expression_ret(
     gen_thread = threading.Thread(
         target=run_api_expression_and_set_results_to_table_window,
         args=(window, server, token, lhl, azq_report_gen_expression),
+        daemon=True
     )
     gen_thread.start()
     return window

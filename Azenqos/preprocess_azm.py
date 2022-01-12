@@ -1823,9 +1823,14 @@ def is_leg_nr_tables():
 
 def update_default_element_csv_for_dbcon_azm_ver(dbcon):
     global AZQ_ELM_CSV
-    if get_azm_apk_ver(dbcon) < 31650:
-        print("get_azm_apk_ver(dbcon) < 31650 so set pre nr table restructure csv")
-        AZQ_ELM_CSV = "azq_global_element_info_list_pre_nr_table_restructure.csv"
+    try:
+        if get_azm_apk_ver(dbcon) < 31650:
+            print("get_azm_apk_ver(dbcon) < 31650 so set pre nr table restructure csv")
+            AZQ_ELM_CSV = "azq_global_element_info_list_pre_nr_table_restructure.csv"
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print("WARNING: update_default_element_csv_for_dbcon_azm_ver failed exception:", exstr)
     print("update_default_element_csv_for_dbcon_azm_ver() done AZQ_ELM_CSV:", AZQ_ELM_CSV)
 
 

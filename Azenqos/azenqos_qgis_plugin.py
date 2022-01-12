@@ -78,6 +78,7 @@ class azenqos_qgis_plugin:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u"&Azenqos")
+        self.qgis_iface.initializationCompleted.connect(self.run_plugin_action)
 
 
     # noinspection PyMethodMayBeStatic
@@ -174,13 +175,16 @@ class azenqos_qgis_plugin:
         dirname = os.path.dirname(__file__)
         # icon_path = ":/plugins/azenqos_plugin/icon.png"
         icon_path = os.path.join(dirname, "icon.png")
-        self.add_action(
+        self.plugin_button = self.add_action(
             icon_path,
             text=self.tr(u"Azenqos Log"),
             callback=self.run,
             parent=self.qgis_iface.mainWindow(),
         )
+        self.plugin_button.setObjectName('start_azenqos_plugin')
 
+    def run_plugin_action(self):
+        self.qgis_iface.mainWindow().findChild(QAction, 'start_azenqos_plugin').trigger()
 
     def unload(self):
         print("azenqos_plugin: unload()")
@@ -206,6 +210,7 @@ class azenqos_qgis_plugin:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: unload() remove plugin icons exception:", exstr)
+
 
     def run(self):
         """Run method that performs all the real work"""
@@ -240,7 +245,6 @@ class azenqos_qgis_plugin:
         print("launch mode ret: {}".format(ret))
         qgis_panel_dock_mode = not ret
         '''
-        qgis_panel_dock_mode = True  # user can pop-out anyway
 
         if self.main_window is not None:
             reply = qt_utils.ask_yes_no(None, 'Close existing?', '''The AZENQOS replay/analyzer panel already exists under QGIS menu 'View' > 'Panels'.\nThis will close it, remove all layers and open new one.\nDo you wish to proceed?''', question=True)
@@ -255,8 +259,10 @@ class azenqos_qgis_plugin:
                 print("close prev main_window done")
             else:
                 return
+        self.add_main_window()
 
 
+    def add_main_window(self, qgis_panel_dock_mode=True):
         import main_window
 
         if self.qgis_iface is not None:
@@ -264,7 +270,8 @@ class azenqos_qgis_plugin:
                 from PyQt5.QtGui import QDockWidget
                 from qgis.PyQt.QtCore import Qt
                 if self.dock_widget is None:
-                    self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer - v%.03f' % version.VERSION, self.qgis_iface.mainWindow())
+                    self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer - v%.03f' % version.VERSION,
+                                                   self.qgis_iface.mainWindow())
                 self.main_window = main_window.main_window(self.qgis_iface, None)
                 self.dock_widget.setWidget(self.main_window)
                 self.dock_widget.setFloating(False)

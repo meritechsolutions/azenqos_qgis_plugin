@@ -4,6 +4,9 @@ from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QPixmap, QIntValidator
 
 try:
+    from qgis.utils import (
+        spatialite_connect
+    )
     from qgis.core import (
         QgsProject,
         QgsFeatureRequest,
@@ -13,9 +16,7 @@ except:
 
 import os
 import contextlib
-import sqlite3
 import pandas as pd
-import struct
 from worker import Worker
 
 import azq_cell_file
@@ -46,73 +47,16 @@ other_table_param_dict = {
     "android_info_1sec": ["data_trafficstat_dl_mbps", "data_trafficstat_ul_mbps"],
 }
 
-
-def geom_to_lat_lon(geomBlob):
-    if geomBlob is None:
-        return None
-    lon = struct.unpack('d', geomBlob[43:51])[0]
-    lat = struct.unpack('d', geomBlob[51:59])[0]
-    return lat, lon
-
-def get_technology_df(dbcon, cov_column_name_list):
-    per_rat_df_list = []
-    for rat in rat_to_table_and_primary_where_dict:
-        try:
-            sql = "select log_hash, time, geom, {} as value from {}".format(
-                rat_to_main_param_dict[rat], rat_to_table_and_primary_where_dict[rat]
-            )
-            df = pd.read_sql(sql, dbcon, parse_dates=["Time"])
-            df["name"] = rat_to_main_param_dict[rat]
-            cov_column_name_list.append(rat_to_main_param_dict[rat])
-            per_rat_df_list.append(df)
-        except Exception as e:
-            print("WARNING: gen per_rat_df failed:", e)
-    df = pd.concat(per_rat_df_list, ignore_index=True)
-    df.sort_values(["log_hash", "time"], inplace=True)
-    df = df.loc[(df["geom"].notna()) & (df["value"].notna())].reset_index(drop=True)
-    return df ,cov_column_name_list
-
-def calculate_poi_cov(poi_list, cov_df, cov_column_name_list, lat_col, lon_col, offset, progress_signal):
-    row_df_list = []
-    
-    len_poi =  len(poi_list)
-    calculate_progress = 100/len_poi
-    n = 0
-    for row in poi_list:
-        try:
-            poi_lat = float(row[lat_col])
-            poi_lon = float(row[lon_col])
-        except:
-            pass
-        if isinstance(poi_lat, float) and isinstance(poi_lon, float):
-            cov_df["poi_lat"] = poi_lat
-            cov_df["poi_lon"] = poi_lon
-            cov_df_loc = cov_df.loc[(abs(cov_df["lat"] - cov_df["poi_lat"]) <= offset) & (abs(cov_df["lon"] - cov_df["poi_lon"]) <= offset) ]
-            progress_signal.emit(int(calculate_progress*(n+1)))
-            n += 1
-            if len(cov_df_loc) > 0:
-                for cov_column_name in cov_column_name_list:
-                    avg_cov_col = cov_column_name+"_average"
-                    row[avg_cov_col] = cov_df_loc.loc[cov_df_loc["name"] == cov_column_name, "value"].mean()
-
-                row_df_list.append(row)
-    df = pd.DataFrame(row_df_list)
-    df = df.rename(columns={lat_col: "lat", lon_col: "lon"})
-    return df
-
-def Average(lst):
-    if len(lst) > 0:
-        return sum(lst) / len(lst)
-    return
-
 def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
     df = poi_df.copy()
-    import spatialite
-    with contextlib.closing(spatialite.connect(db_path)) as dbcon:
+    with contextlib.closing(spatialite_connect(db_path)) as dbcon:
         col_name_list = []
+        count_col_name_list = []
+        existing_rat_list = []
+        existing_other_table_list = []
         for rat in rat_to_table_and_primary_where_dict:
             try:
-                dbcon.execute("select ROWID from idx_{}_geom".format(rat_to_table_and_primary_where_dict[rat])).fetchone()
+                dbcon.execute("select ROWID from idx_{}_geom limit 1".format(rat_to_table_and_primary_where_dict[rat])).fetchone()
             except:
                 try:
                     dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(rat_to_table_and_primary_where_dict[rat]))
@@ -121,12 +65,26 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
         
         for table in other_table_param_dict:
             try:
-                dbcon.execute("select ROWID from idx_{}_geom".format(table)).fetchone()
+                dbcon.execute("select ROWID from idx_{}_geom limit 1".format(table)).fetchone()
             except:
                 try:
                     dbcon.execute("SELECT CreateSpatialIndex('{}', 'geom')".format(table))
                 except:
                     pass
+        
+        for rat in rat_to_table_and_primary_where_dict:
+            try:
+                dbcon.execute("select ROWID from idx_{}_geom limit 1".format(rat_to_table_and_primary_where_dict[rat])).fetchone()
+                existing_rat_list.append(rat)
+            except:
+                pass
+        
+        for table in other_table_param_dict:
+            try:
+                dbcon.execute("select ROWID from idx_{}_geom limit 1".format(table)).fetchone()
+                existing_other_table_list.append(table)
+            except:
+                pass
             
         len_poi=  len(poi_df)
         calculate_progress = 100/len_poi
@@ -138,40 +96,59 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
             ymax = y+offset
             ymin = y-offset
             progress_signal.emit(int(calculate_progress*(index+1)))
-            for rat in rat_to_table_and_primary_where_dict:
-                avg = []
-                avg_sql_list = []
-                for main_param in rat_to_main_param_list_dict[rat]:
-                    avg_sql_list.append("avg({})".format(main_param))
-                try:
-                    avg =  dbcon.execute("SELECT {} FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(",".join(avg_sql_list), rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], xmin, xmax, ymin, ymax)).fetchone()
-                except Exception as e:
-                    print(e)
-                n = 0
-                if len(avg) > 0:
+            if len(existing_rat_list) > 0:
+                for rat in existing_rat_list:
+                    avg = []
+                    avg_sql_list = []
                     for main_param in rat_to_main_param_list_dict[rat]:
-                        col_name = main_param+"_average"
-                        if col_name not in col_name_list:
-                            col_name_list.append(col_name)
-                        df.loc[index, col_name] = avg[n]
-                        n += 1
-            for table in other_table_param_dict:
-                avg_sql_list = []
-                for main_param in other_table_param_dict[table]:
-                    avg_sql_list.append("avg({})".format(main_param))
-                try:
-                    avg =  dbcon.execute("SELECT {} FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(",".join(avg_sql_list), table, table, table, xmin, xmax, ymin, ymax)).fetchone()
-                except Exception as e:
-                    print(e)
-                n = 0
-                if len(avg) > 0:
+                        avg_sql_list.append("avg({}), count({})".format(main_param, main_param))
+                    try:
+                        avg =  dbcon.execute("SELECT {} FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(",".join(avg_sql_list), rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], rat_to_table_and_primary_where_dict[rat], xmin, xmax, ymin, ymax)).fetchone()
+                    except Exception as e:
+                        print(e)
+                    n = 0
+                    if len(avg) > 0:
+                        for main_param in rat_to_main_param_list_dict[rat]:
+                            avg_col_name = main_param+"_average"
+                            count_col_name = main_param+"_count"
+                            if avg_col_name not in col_name_list:
+                                col_name_list.append(avg_col_name)
+                            if count_col_name not in col_name_list:
+                                col_name_list.append(count_col_name)
+                                count_col_name_list.append(count_col_name)
+                            if avg[n] is not None and avg[n+1] > 0:
+                                df.loc[index, avg_col_name] = avg[n]
+                            n += 1
+                            if avg[n] is not None and avg[n] > 0:
+                                df.loc[index, count_col_name] = avg[n]
+                            n += 1
+            if len(existing_other_table_list) > 0:
+                for table in existing_other_table_list:
+                    avg_sql_list = []
                     for main_param in other_table_param_dict[table]:
-                        col_name = main_param+"_average"
-                        if col_name not in col_name_list:
-                            col_name_list.append(col_name)
-                        df.loc[index, col_name] = avg[n]
-                        n += 1
+                        avg_sql_list.append("avg({}), count({})".format(main_param, main_param))
+                    try:
+                        avg =  dbcon.execute("SELECT {} FROM {} WHERE {}.ROWID IN (select ROWID from idx_{}_geom where xmin >= {} and xmin <= {} and ymin >= {} and Ymin <= {})".format(",".join(avg_sql_list), table, table, table, xmin, xmax, ymin, ymax)).fetchone()
+                    except Exception as e:
+                        print(e)
+                    n = 0
+                    if len(avg) > 0:
+                        for main_param in other_table_param_dict[table]:
+                            avg_col_name = main_param+"_average"
+                            count_col_name = main_param+"_count"
+                            if avg_col_name not in col_name_list:
+                                col_name_list.append(avg_col_name)
+                            if count_col_name not in col_name_list:
+                                col_name_list.append(count_col_name)
+                                count_col_name_list.append(count_col_name)
+                            if avg[n] is not None and avg[n+1] > 0:
+                                df.loc[index, avg_col_name] = avg[n]
+                            n += 1
+                            if avg[n] is not None and avg[n] > 0:
+                                df.loc[index, count_col_name] = avg[n]
+                            n += 1
         df = df.dropna(subset=col_name_list, how='all')
+        df[count_col_name_list] = df[count_col_name_list].fillna(0).astype(int)
     return df
 
 class calculate_poi(QDialog):
@@ -222,28 +199,13 @@ class calculate_poi(QDialog):
                 self.poi_list.append(dict(zip(columns, feat.attributes())))
         self.cov_column_name_list = []
         if self.gc.databasePath is not None:
-            if os.name == "nt":
-                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                    self.cov_df, self.cov_column_name_list = get_technology_df(dbcon, self.cov_column_name_list)
-                    self.cov_df["lat"] = self.cov_df["geom"].apply(lambda x: geom_to_lat_lon(x)[0])
-                    self.cov_df["lon"] = self.cov_df["geom"].apply(lambda x: geom_to_lat_lon(x)[1])
-                    if len(self.poi_list) > 0:
-                        worker = Worker(self.calculate_poi_window)
-                        self.gc.threadpool.start(worker)
-            else:
-                self.poi_df = pd.DataFrame(self.poi_list)
-                if len(self.poi_df) > 0:
-                    self.poi_df = self.poi_df.rename(columns={self.lat_col: "lat", self.lon_col: "lon"})
-                    worker = Worker(self.calculate_poi_linux)
-                    self.gc.threadpool.start(worker)
+            self.poi_df = pd.DataFrame(self.poi_list)
+            if len(self.poi_df) > 0:
+                self.poi_df = self.poi_df.rename(columns={self.lat_col: "lat", self.lon_col: "lon"})
+                worker = Worker(self.calculate_poi)
+                self.gc.threadpool.start(worker)
 
-    def calculate_poi_window(self):
-        df = calculate_poi_cov(self.poi_list, self.cov_df, self.cov_column_name_list, self.lat_col, self.lon_col, self.offset, self.progress_signal)
-        window_name = "Coverage " + str(self.offset_meters / 1000.0) + "km. around poi: " + self.layer_name
-        self.progress_signal.emit(100)
-        self.result_signal.emit(df, window_name)
-
-    def calculate_poi_linux(self):
+    def calculate_poi(self):
         df = calculate_poi_cov_spatialite(self.poi_df, self.gc.databasePath, self.offset, self.progress_signal)
         window_name = "Coverage " + str(self.offset_meters / 1000.0) + "km. around poi: " + self.layer_name
         self.progress_signal.emit(100)

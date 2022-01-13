@@ -2619,11 +2619,11 @@ Log_hash list: {}""".format(
         if self.gc.overview_opened:  # dont add spider in overview mode
             print("add_spider_layer overview_opened so omit otherwise will draw too many lines")
             return
-        try:
-            azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
-        except Exception as e:
-            qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
-            return
+        # try:
+        #     azq_cell_file.read_cellfiles(self.gc.cell_files, "lte", add_cell_lat_lon_sector_distance_meters=0.001)
+        # except Exception as e:
+        #     qt_utils.msgbox("Failed to load the sepcified cellfiles: {}".format(str(e)), title="Invalid cellfiles", parent=self)
+        #     return
         for rat in azq_cell_file.CELL_FILE_RATS:
             options_dict = {"distance_limit_m": int(self.gc.pref["spider_match_max_distance_meters"])}
             pref_key = "cell_{}_sector_size_meters".format(rat)
@@ -2676,6 +2676,8 @@ Log_hash list: {}""".format(
 
     def add_cell_layers(self):
         print("add_cell_layers self.gc.cell_files:", self.gc.cell_files)
+        if not self.gc.cell_files:
+            return
         if self.gc.cell_files:
             import azq_cell_file
             import azq_utils

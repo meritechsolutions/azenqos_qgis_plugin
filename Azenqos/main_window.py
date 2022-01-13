@@ -2673,6 +2673,8 @@ Log_hash list: {}""".format(
 
     def add_cell_layers(self):
         print("add_cell_layers self.gc.cell_files:", self.gc.cell_files)
+        if not self.gc.cell_files:
+            return
         if self.gc.cell_files:
             import azq_cell_file
             import azq_utils

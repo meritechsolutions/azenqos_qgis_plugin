@@ -655,23 +655,48 @@ class TableWindow(QWidget):
         self.find_row_time = find_row_time
         self.find_row_time_string = find_row_time_string
 
-        if not self.time_list_mode:
+        if not self.time_list_mode :
             # table data mode like measurements of that time needs refresh
             if threading:
                 worker = Worker(self.refreshTableContents)
             else:
                 self.refreshTableContents()
         else:
-            # time_list_mode needs findCurrentRow()
-            print(
-                "datatable: threading: {} self.title: {} hilightRow: findCurrentRow()".format(
-                    threading, self.title
-                )
-            )
-            if threading:
-                worker = Worker(self.findCurrentRow)
+            if self.gc.live_mode:
+                if "time" in self.df:
+                    with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                        eval_str = self.refresh_data_from_dbcon_and_time_func
+                        sql = re.search(r"^pd\.read_sql\('(.*)',dbcon\)",eval_str).group(1)
+                        where = "where time > '{}'".format(self.df["time"].max())
+                        sql = sql_utils.add_first_where_filt(sql, where)
+                        append_df = pd.read_sql(sql, dbcon)
+                        append_df["time"] = pd.to_datetime(append_df["time"])
+                        df = pd.concat([self.df, append_df]).sort_values("time").reset_index(drop = True)
+                        self.set_pd_df(df)
+                        self.signal_ui_thread_emit_new_model.emit()
+                        self.tableViewCount = self.tableView.model().rowCount()
+                    if threading:
+                        worker = Worker(self.findCurrentRow)
+                    else:
+                        self.findCurrentRow()
+                else:
+                    if threading:
+                        worker = Worker(self.refreshTableContents)
+                        worker = Worker(self.findCurrentRow)
+                    else:
+                        self.refreshTableContents()
+                        self.findCurrentRow()
             else:
-                self.findCurrentRow()
+                # time_list_mode needs findCurrentRow()
+                print(
+                    "datatable: threading: {} self.title: {} hilightRow: findCurrentRow()".format(
+                        threading, self.title
+                    )
+                )
+                if threading:
+                    worker = Worker(self.findCurrentRow)
+                else:
+                    self.findCurrentRow()
 
         if threading and worker:
             self.gc.threadpool.start(worker)

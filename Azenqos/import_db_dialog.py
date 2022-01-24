@@ -574,9 +574,10 @@ class import_db_dialog(QDialog):
                     exstr = str(traceback.format_exception(type_, value_, traceback_))
                     print("WARNING: check db failed exception:", exstr)
 
+                self.gc.params_to_gen = {}
                 # check theme
                 check_theme(theme_fp = self.themePathLineEdit.text())
-                db_preprocess.prepare_spatialite_views(dbcon)
+                db_preprocess.prepare_spatialite_views(dbcon, gc = self.gc)
                 dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
 
                 assert self.databasePath

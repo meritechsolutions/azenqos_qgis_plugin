@@ -71,7 +71,7 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False, time_bin_secs=None):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False, time_bin_secs=None, gc = None):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
@@ -125,6 +125,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     else:
         params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
 
+        
     print("params_to_gen:", params_to_gen)
     dbcon.commit()
     # create layer_styles table if not exist
@@ -136,6 +137,10 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
         try:
             print("create param table for param %s" % param)
             table = preprocess_azm.get_table_for_column(param)
+            if gc is not None:
+                if table not in gc.params_to_gen:
+                    gc.params_to_gen[table] = []
+                gc.params_to_gen[table].append(param)
             assert table
             view = param
             table_cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns

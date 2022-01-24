@@ -60,8 +60,6 @@ try:
         QgsGraduatedSymbolRenderer,
         QgsDataSourceUri
     )
-
-    # from qgis.utils import
     from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
     from PyQt5.QtGui import QColor
     from qgis.PyQt.QtCore import QVariant
@@ -110,6 +108,7 @@ class main_window(QMainWindow):
     poi_open_signal = pyqtSignal()
     poi_result_signal = pyqtSignal(object, object)
     poi_progress_signal = pyqtSignal(int)
+    refresh_signal = pyqtSignal()
     open_cellfile_progress_signal = pyqtSignal(int)
     open_cellfile_complete_signal = pyqtSignal()
     on_load_cellfile_error_signal = pyqtSignal(str)
@@ -134,6 +133,8 @@ class main_window(QMainWindow):
         self.gc.qgis_iface = qgis_iface
         self.gc.main_window = self
         self.gc.has_wave_file = False
+        self.gc.live_mode = False
+        self.gc.live_mode_update_time = False
         self.gc.is_mos_nb = False
         self.timechange_service_thread = None
         self.is_legacy_indoor = False
@@ -170,6 +171,7 @@ class main_window(QMainWindow):
         self.open_cellfile_complete_signal.connect(self.open_cellfile_complete)
         self.on_load_cellfile_error_signal.connect(self.open_cellfile_fail)
         self.cellfile_layer_created_signal.connect(self.on_cell_layer_created)
+        self.refresh_signal.connect(self.refresh)
         self.poi_open_signal.connect(self.on_poi_open)
         self.poi_progress_signal.connect(self.set_poi_progress)
         self.poi_result_signal.connect(self.create_poi_window)
@@ -228,6 +230,12 @@ class main_window(QMainWindow):
     def create_poi_window(self, df, title):
         self.add_param_window(custom_df=df, title=title, allow_no_log_opened=True)
         self.poi_progress.hide()
+
+    def refresh(self):
+        if self.gc.sliderLength:
+            self.gc.timeSlider.setRange(0, self.gc.sliderLength)
+            if self.gc.live_mode_update_time:
+                self.gc.timeSlider.setValue(self.gc.sliderLength - 1)
 
     @pyqtSlot()
     def on_actionTile_triggered(self):
@@ -455,15 +463,15 @@ Log_hash list: {}""".format(
     ############# log menu slots
     @pyqtSlot()
     def on_actionLog_Info_triggered(self):
-        self.add_param_window("pd.read_sql('''select log_hash, time, max(script_name) as script_name, max(script)as script, max(phonemodel) as phonemodel, max(imsi) as imsi, max(imei) as imei from log_info group by log_hash''',dbcon)", title="Log Info", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select log_hash, time, max(script_name) as script_name, max(script)as script, max(phonemodel) as phonemodel, max(imsi) as imsi, max(imei) as imei from log_info group by log_hash',dbcon)", title="Log Info", time_list_mode=True)
 
     @pyqtSlot()
     def on_actionLogs_triggered(self):
-        self.add_param_window("pd.read_sql('''select log_hash, time, log_start_time, log_end_time, log_tag, log_ori_file_name, log_app_version, log_license_edition, log_required_pc_version, log_timezone_offset from logs group by log_hash''',dbcon)", title="Logs", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select log_hash, time, log_start_time, log_end_time, log_tag, log_ori_file_name, log_app_version, log_license_edition, log_required_pc_version, log_timezone_offset from logs group by log_hash',dbcon)", title="Logs", time_list_mode=True)
 
     @pyqtSlot()
     def on_actionLocation_triggered(self):
-        self.add_param_window("pd.read_sql('''select log_hash, time, printf('%.8f', positioning_lat) as latitude, printf('%.8f', positioning_lon) as longitude from location where positioning_lat is not null''',dbcon)", title="Location", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select log_hash, time, positioning_lat as latitude, positioning_lon as longitude from location where positioning_lat is not null',dbcon)", title="Location", time_list_mode=True)
 
     ############# system menu slots
     @pyqtSlot()
@@ -521,7 +529,7 @@ Log_hash list: {}""".format(
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):
-        self.add_param_window("pd.read_sql('''select log_hash, time, name, symbol as dir, protocol, detail_str from signalling''',dbcon).sort_values(by='time')", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
+        self.add_param_window("pd.read_sql('select log_hash, time, name, symbol as dir, protocol, detail_str from signalling',dbcon).sort_values(by='time')", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):
@@ -536,9 +544,9 @@ Log_hash list: {}""".format(
             except:
                 pass
         if self.gc.has_wave_file == True:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events union all select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos where polqa_mos is not null order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window('''pd.read_sql('select log_hash, time, name, info, "" as wave_file from events union all select log_hash, time, "MOS Score" as name, polqa_mos as info, wav_filename as wave_file from polqa_mos where polqa_mos is not null',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
         else:
-            self.add_param_window("pd.read_sql('''select log_hash, time, name, info, '' as wave_file from events order by time''',dbcon)", title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window('''pd.read_sql('select log_hash, time, name, info, "" as wave_file from events',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
 
     ############# NR menu slots
     @pyqtSlot()
@@ -1171,32 +1179,32 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actiondatasession_triggered(self):
         print("action data session")
-        self.add_param_window("pd.read_sql('''select * from datasession''',dbcon)", title="datasession", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select * from datasession',dbcon)", title="datasession", time_list_mode=True)
 
     @pyqtSlot()
     def on_actionline_mo_triggered(self):
         print("action line session")
-        self.add_param_window("pd.read_sql('''select * from line_mo''',dbcon)", title="line_mo", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select * from line_mo',dbcon)", title="line_mo", time_list_mode=True)
 
     @pyqtSlot()
     def on_actionpingsession_triggered(self):
         print("action ping session")
-        self.add_param_window("pd.read_sql('''select * from pingsession''',dbcon)", title="pingsession", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select * from pingsession',dbcon)", title="pingsession", time_list_mode=True)
 
     @pyqtSlot()
     def on_actionspeedtestsession_triggered(self):
         print("action speedtest session")
-        self.add_param_window("pd.read_sql('''select * from speedtestsession''',dbcon)", title="speedtestsession", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select * from speedtestsession',dbcon)", title="speedtestsession", time_list_mode=True)
 
     @pyqtSlot()
     def on_actionyoutube_triggered(self):
         print("action youtube session")
-        self.add_param_window("pd.read_sql('''select * from youtube''',dbcon)", title="youtube", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select * from youtube',dbcon)", title="youtube", time_list_mode=True)
 
     @pyqtSlot()
     def on_actionyoutube_buffer_duration_triggered(self):
         print("action youtube buffer duration session")
-        self.add_param_window("pd.read_sql('''select * from youtube_buffer_duration''',dbcon)", title="youtube_buffer_duration", time_list_mode=True)
+        self.add_param_window("pd.read_sql('select * from youtube_buffer_duration',dbcon)", title="youtube_buffer_duration", time_list_mode=True)
 
 
     ############# Line Chart NR
@@ -1540,6 +1548,17 @@ Log_hash list: {}""".format(
             )
             self.sync_connected_phone_button.setEnabled(False)
 
+            # refresh connected phone button
+            self.live_button = QToolButton()
+            self.live_button.setIcon(
+                QIcon(QPixmap(os.path.join(dirname, "res", "stoplive.png")))
+            )
+            self.live_button.setObjectName("live_button")
+            self.live_button.setToolTip(
+                "<b>Live</b><br>..."
+            )
+            self.live_button.setEnabled(False)
+
             self.gc.timeSlider.valueChanged.connect(self.timeChange)
             self.saveBtn.clicked.connect(self.saveDbAs)
             self.layerSelect.clicked.connect(self.on_button_selectLayer)
@@ -1547,6 +1566,7 @@ Log_hash list: {}""".format(
             self.importDatabaseBtn.clicked.connect(self.open_logs)
             self.maptool.clicked.connect(self.setMapTool)
             self.sync_connected_phone_button.clicked.connect(self.sync_connected_phone)
+            self.live_button.clicked.connect(self.switch_live_mode)
             self.setupToolBar()
 
             self.setWindowTitle(
@@ -1567,6 +1587,7 @@ Log_hash list: {}""".format(
         self.toolbar.addWidget(self.layerSelect)
         self.toolbar.addWidget(self.cellsSelect)
         self.toolbar.addWidget(self.sync_connected_phone_button)
+        self.toolbar.addWidget(self.live_button)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
@@ -1956,9 +1977,20 @@ Log_hash list: {}""".format(
         if not (self.gc.log_mode and self.gc.log_mode == "adb"):
             qt_utils.msgbox("This button is for re-sync data from phone in 'Connected phone mode' (chosen in 'Open logs') only.", "Not in 'Connected phone mode'", parent=self)
             return
-        azq_utils.live_mode(self.gc.databasePath)
-        # self.open_logs(connected_mode_refresh=True, ask_close_all_layers=False)
+        self.open_logs(connected_mode_refresh=True, ask_close_all_layers=False)
         print("sync_connecter_phone DONE")
+
+    def switch_live_mode(self):
+        dirname = os.path.dirname(__file__)
+        self.gc.live_mode_update_time = not self.gc.live_mode_update_time
+        if self.gc.live_mode_update_time:
+            self.live_button.setIcon(
+                QIcon(QPixmap(os.path.join(dirname, "res", "live.png")))
+            )
+        else:
+            self.live_button.setIcon(
+                QIcon(QPixmap(os.path.join(dirname, "res", "stoplive.png")))
+            )
 
 
     def open_logs(self, connected_mode_refresh=False, ask_close_all_layers=True):
@@ -1989,8 +2021,10 @@ Log_hash list: {}""".format(
         print("import_db_dialog ret: {}".format(ret))
         if self.gc.log_mode == "adb":
             self.sync_connected_phone_button.setEnabled(True)
+            self.live_button.setEnabled(True)
         else:
             self.sync_connected_phone_button.setEnabled(False)
+            self.live_button.setEnabled(False)
         if not self.gc.databasePath:
             # dialog not completed successfully
             return
@@ -2020,6 +2054,11 @@ Log_hash list: {}""".format(
             self.ui.statusbar.showMessage("Log not opened...")
         self.updateUi()
         self.is_leg_nr_tables = preprocess_azm.is_leg_nr_tables()
+        if self.gc.log_mode == "adb":
+            if not self.gc.live_mode_update_time:
+                self.switch_live_mode()
+            worker = Worker(azq_utils.live_mode(self.gc, self.refresh_signal))
+            self.gc.threadpool.start(worker)
 
     def timeChange(self):
 

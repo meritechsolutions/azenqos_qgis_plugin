@@ -1721,18 +1721,45 @@ def check_and_recover_db(dbfp, tmp_path, write_debug_sql_file=False):
         dbfp = out_db_fp
     return dbfp
 
-def live_mode(dbfp):
-    with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-        process = popen_no_shell((get_adb_command(), "shell", "tail", "-f",  "/sdcard/diag_logs/azqdata.db.sql"))
-        n = 0
-        for line in iter(process.stdout.readline, b''):
-            if n >= 10:
-                break 
-            print(line)
-            line = line.decode("utf-8")
-            match = re.search(r"SQLiteProgram: (.*)", line)
-            print(match.group(1))
-            n+=1
+def current_milli_time():
+    return round(time.time() * 1000)
+
+def live_mode(gc, refresh_signal):
+    def temp():
+        gc.live_mode = True
+        gc.live_mode_update_time = True
+        dbfp = gc.databasePath
+        start_time_ms = current_milli_time()
+        with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+            dbcon.execute('PRAGMA journal_mode=WAL;')
+            call_no_shell((get_adb_command(), "shell", "touch",  "/sdcard/azq_db_live"))
+            process = popen_no_shell((get_adb_command(), "shell", "busybox", "tail", "-f",  "/sdcard/diag_logs/azqdata.db.sql"))
+            dbcon.execute('BEGIN;')
+            for line in iter(process.stdout.readline, b''):
+                line = line.decode("utf-8")
+                sql_script = line[len("SQLiteProgram: "):]
+                match_table = re.search(r"^INSERT INTO \"(\S*)\"",sql_script).group(1)
+                dbcon.execute('{}'.format(sql_script))
+                if match_table in gc.params_to_gen.keys():
+                    for param in gc.params_to_gen[match_table]:
+                        view = param
+                        if match_table == view:
+                            view = match_table+"_1"
+                        sql_script_view = sql_script.replace('INTO "{}"'.format(match_table), 'INTO "{}"'.format(view))
+                        try:
+                            dbcon.execute('{}'.format(sql_script_view))
+                        except:
+                            pass
+                current_time_ms  = current_milli_time()
+                if (current_time_ms - start_time_ms) > 1*1000:
+                    start_time_ms = current_time_ms
+                    gc.maxTimeValue = current_time_ms / 1000
+                    gc.sliderLength = gc.maxTimeValue - gc.minTimeValue
+                    gc.sliderLength = round(gc.sliderLength, 3)
+                    dbcon.commit()
+                    dbcon.execute('BEGIN;')
+                    refresh_signal.emit()
+    return temp
 
 def pull_latest_log_db_from_phone(parent=None):
     close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows

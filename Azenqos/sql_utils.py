@@ -18,7 +18,7 @@ from exynos_basic_info_nr
 '''
 
 LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART = '''
-where {log_hash_filt_part} time between DATETIME('{time}','-4 seconds') and '{time}'
+where {log_hash_filt_part} time between DATETIME('{time}','-5 seconds') and '{time}'
 '''
 
 LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SUFFIX = '''.format(
@@ -27,6 +27,69 @@ time=time),
 dbcon).transpose().reset_index()
 '''
 
+def add_first_where_filt(sqlstr, where):
+    if where is not None and len(where) > 0:
+        where = where.replace("==","=")
+        order_by_suffix = None
+        group_by_suffix = None
+        limit_suffix = None
+        try:
+            obp = sqlstr.split("group by")
+            group_by_suffix = obp[1]            
+            sqlstr = obp[0]
+            try:
+                obp = group_by_suffix.split("order by")
+                order_by_suffix = obp[1]            
+                group_by_suffix = obp[0]
+                try:
+                    obp = order_by_suffix.split("limit")
+                    limit_suffix = obp[1]            
+                    order_by_suffix = obp[0]
+                except:
+                    pass
+            except:
+                pass
+        except:
+            pass
+        
+        try:
+            obp = sqlstr.split("order by")
+            order_by_suffix = obp[1]            
+            sqlstr = obp[0]
+            try:
+                obp = order_by_suffix.split("limit")
+                limit_suffix = obp[1]            
+                order_by_suffix = obp[0]
+            except:
+                pass
+        except:
+            pass
+
+        try:
+            obp = sqlstr.split("limit")
+            limit_suffix = obp[1]            
+            sqlstr = obp[0]
+        except:
+            pass
+
+        filt_part = where
+        if "where " in filt_part:
+            filt_part = " " + where.replace("where ", "( ", 1) + " )"
+
+        if "where " in sqlstr:
+            sqlstr = sqlstr.replace("where", "where " + filt_part + " and ", 1)
+        else:
+            sqlstr += " where " + filt_part
+
+        if order_by_suffix is not None:
+            sqlstr += " order by "+order_by_suffix
+
+        if group_by_suffix is not None:
+            sqlstr += " group by "+group_by_suffix
+
+        if limit_suffix is not None:
+            sqlstr += " limit "+limit_suffix
+    return sqlstr
 
 def get_ex_eval_str_for_select_from_part(select_from_part):
     return LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_PREFIX+'"""'+\

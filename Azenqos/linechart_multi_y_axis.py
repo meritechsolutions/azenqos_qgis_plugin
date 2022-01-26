@@ -94,12 +94,13 @@ class LineChart(QtWidgets.QDialog):
         #self.graphWidget.getAxis("bottom").setStyle(tickTextOffset=20)
 
         self.ui.tableView.customContextMenuRequested.connect(self.onTableRightClick)
-        enable_slot = partial(self.enable_zoom, self.ui.checkBox_2)
-        disable_slot = partial(self.disable_zoom, self.ui.checkBox_2)
+        self.enable_slot = partial(self.enable_zoom, self.ui.checkBox_2)
+        self.disable_slot = partial(self.disable_zoom, self.ui.checkBox_2)
         self.ui.checkBox_2.stateChanged.connect(
-            lambda x: enable_slot() if x else disable_slot()
+            lambda x: self.enable_slot() if x else self.disable_slot()
         )
         self.ui.checkBox_2.setChecked(False)
+        self.zoom_enabled = False
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         if self.gc.currentDateTimeString is not None:
@@ -227,9 +228,14 @@ class LineChart(QtWidgets.QDialog):
 
     def onScrollBarMove(self):
         value = self.ui.horizontalScrollBar.value()
-        # x = self.minX + value
+        x = self.minX + value
+        zoom_state_before_disable_slot = self.zoom_enabled
         if not self.moveFromChart:
-            self.moveChart(self.minX + value)
+            if self.zoom_enabled == True:
+                self.disable_slot()
+            self.moveChart(x)
+            if zoom_state_before_disable_slot == True:
+                self.enable_slot()
         self.moveFromChart = False
 
     def onClick(self, event):
@@ -339,6 +345,7 @@ class LineChart(QtWidgets.QDialog):
         self.axisDict[name].setPen(color, width=2)
 
     def enable_zoom(self, checkbox):
+        self.zoom_enabled = True
         for viewBox in self.viewBoxList:
             viewBox.setMouseEnabled(x=True, y=True)
             viewBox.setLimits(
@@ -346,10 +353,13 @@ class LineChart(QtWidgets.QDialog):
             )
 
     def disable_zoom(self, checkbox):
+        self.zoom_enabled = False
         for viewBox in self.viewBoxList:
             viewBox.setMouseEnabled(x=True, y=False)
+            x_range = viewBox.viewRange()[0]
+            x_diff = x_range[1] - x_range[0]
             viewBox.setLimits(
-                minXRange=20, maxXRange=20, minYRange=1,
+                minXRange=x_diff, maxXRange=x_diff, minYRange=1,
             )
 
 

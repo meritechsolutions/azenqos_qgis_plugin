@@ -1292,7 +1292,7 @@ Log_hash list: {}""".format(
             paramList=[
                 {"name": "data_trafficstat_dl/1000", "data": True},
                 {"name": "data_trafficstat_ul/1000", "data": True},
-                {"name": "lte_l1_throughput_mbps_1", "data": True},
+                {"name": "lte_l1_dl_throughput_all_carriers_mbps", "data": True},
                 {"name": "lte_bler_1", "data": True},
             ],
         )

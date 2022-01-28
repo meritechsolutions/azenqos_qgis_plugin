@@ -284,6 +284,8 @@
      <string>Help</string>
     </property>
     <addaction name="actionSupport"/>
+    <addaction name="actionUser_Guide"/>
+    <addaction name="actionInstall_Update_Guide"/>
    </widget>
    <widget class="QMenu" name="menuServer_modules">
     <property name="title">
@@ -990,6 +992,16 @@
   <action name="actionCustom_Table_View_UI">
    <property name="text">
     <string>Custom Table View</string>
+   </property>
+  </action>
+  <action name="actionUser_Guide">
+   <property name="text">
+    <string>User Guide</string>
+   </property>
+  </action>
+  <action name="actionInstall_Update_Guide">
+   <property name="text">
+    <string>Installation/Update Guide</string>
    </property>
   </action>
  </widget>

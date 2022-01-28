@@ -50,7 +50,7 @@ class LineChart(QtWidgets.QDialog):
         super(LineChart, self).__init__(None)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
-        pg.setConfigOptions(background="w", useOpenGL=True, antialias=True)
+        pg.setConfigOptions(background="w", useOpenGL=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.paramListDict = {}
         for paramDict in paramList:
@@ -179,6 +179,7 @@ class LineChart(QtWidgets.QDialog):
                 newline = pg.PlotCurveItem(
                     x=df["Time"].to_list(),
                     y=df[col].to_list(),
+                    stepMode = "right",
                     connect="finite",
                     pen=pg.mkPen(color, width=2),
                 )

@@ -305,9 +305,19 @@ class main_window(QMainWindow):
     @pyqtSlot()
     def on_actionSupport_triggered(self):
         print("action support")
-        import qgis_layers_gen
-        # qt_utils.msgbox("Please email support@azenqos.com", "Technical support", self)
-        qgis_layers_gen.create_test_qgis_layer_py_objs()
+        qt_utils.msgbox("Please email support@azenqos.com", "Technical support", self)
+        
+    @pyqtSlot()
+    def on_actionUser_Guide_triggered(self):
+        url = QtCore.QUrl('https://docs.google.com/document/d/13ERtna5Rwuh0qgYUB0n8qihoW6hCO30TCJAIw_tXri0/edit?usp=sharing')
+        if not QtGui.QDesktopServices.openUrl(url):
+            QtGui.QMessageBox.warning(self, 'Open Url', 'Could not open url')
+
+    @pyqtSlot()
+    def on_actionInstall_Update_Guide_triggered(self):
+        url = QtCore.QUrl('https://github.com/freewillfx-azenqos/azenqos_qgis_plugin/blob/master/README.md')
+        if not QtGui.QDesktopServices.openUrl(url):
+            QtGui.QMessageBox.warning(self, 'Open Url', 'Could not open url')
 
     ############# server_modules menu slots
     @pyqtSlot()

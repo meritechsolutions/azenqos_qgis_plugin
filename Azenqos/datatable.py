@@ -87,6 +87,7 @@ class TableWindow(QWidget):
         mdi=None,
         func_key=None,
         custom_table_param_list=None,
+        selected_ue=None,
 
         # these params will be written to options_dict
         time_list_mode=False,
@@ -141,6 +142,12 @@ class TableWindow(QWidget):
 
         self.custom_df = custom_df
         self.tableHeader = tableHeader
+        self.selected_ue = selected_ue
+        if len(self.gc.log_list) > 1 and self.selected_ue is not None:
+            if int(self.selected_ue) <= len(self.gc.log_list):
+                self.selected_log = str(self.gc.log_list[int(self.selected_ue)-1])
+            else:
+                self.selected_log = "0"
         self.rows = 0
         self.columns = 0
         self.fetchRows = 0
@@ -532,7 +539,7 @@ class TableWindow(QWidget):
                         if sql_utils.is_sql_select(eval_str):
                             sql_str = eval_str
                             print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
-                            df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time)
+                            df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, selected_log=self.selected_log)
                         else:
                             print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
                             df = eval(eval_str)
@@ -546,7 +553,7 @@ class TableWindow(QWidget):
                             if sql_utils.is_sql_select(eval_str):
                                 sql_str = eval_str
                                 print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
-                                df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time)
+                                df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, selected_log=self.selected_log)
                                 df_list.append(df)
                             else:
                                 print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
@@ -565,7 +572,7 @@ class TableWindow(QWidget):
                                 if sql_utils.is_sql_select(eval_str):
                                     sql_str = eval_str
                                     print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
-                                    df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, col_name=key)
+                                    df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, col_name=key, selected_log=self.selected_log)
                                     df_list.append(df)
                                 else:
                                     print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))

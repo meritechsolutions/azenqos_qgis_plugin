@@ -139,7 +139,9 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
         return
 
 
-def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash, time, col_name=None, trasposed=True):
+def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash, time, col_name=None, trasposed=True, selected_log=None):
+    if selected_log:
+        log_hash = selected_log
     sql = sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time)
     return get_lh_time_match_df(dbcon, sql, col_name=col_name, trasposed=trasposed)
 

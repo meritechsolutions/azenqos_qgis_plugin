@@ -561,9 +561,13 @@ Log_hash list: {}""".format(
         import nr_data_query
         self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, allow_no_log_opened=False):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, allow_no_log_opened=False, selected_ue=None):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
+        if selected_ue is not None:
+            title_ue_suffix = "( UE" + selected_ue + " )"
+            if title_ue_suffix not in title:
+                title = title + title_ue_suffix
         widget = TableWindow(
             swa,
             title,
@@ -573,7 +577,8 @@ Log_hash list: {}""".format(
             options=options,
             func_key=func_key,
             custom_df=custom_df,
-            custom_table_param_list=custom_table_param_list
+            custom_table_param_list=custom_table_param_list,
+            selected_ue=selected_ue
         )
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=allow_no_log_opened)
         #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -722,98 +727,203 @@ Log_hash list: {}""".format(
 
     ############# LTE menu slots
     @pyqtSlot()
-    def on_actionLTE_Radio_Parameters_triggered(self):
+    def on_actionLTE_Radio_Parameters_triggered(self, selected_ue = None):
         print("action lte radio params")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import lte_sql_query
-        self.add_param_window(lte_sql_query.LTE_RADIO_PARAMS_SQL_LIST_DICT, title="LTE Radio Parameters")
+        self.add_param_window(lte_sql_query.LTE_RADIO_PARAMS_SQL_LIST_DICT, title="LTE Radio Parameters", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionLTE_Serving_Neighbors_triggered(self):
+    def on_actionLTE_Serving_Neighbors_triggered(self, selected_ue = None):
         print("action lte serving neigh")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import lte_sql_query
-        self.add_param_window(lte_sql_query.LTE_SERV_AND_NEIGH_SQL_LIST_DICT, title="LTE Serving + Neighbors")
+        self.add_param_window(lte_sql_query.LTE_SERV_AND_NEIGH_SQL_LIST_DICT, title="LTE Serving + Neighbors", selected_ue=selected_ue)
         
     @pyqtSlot()
-    def on_actionLTE_Data_Params_triggered(self):
+    def on_actionLTE_Data_Params_triggered(self, selected_ue = None):
         print("action lte data param")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import lte_sql_query
-        self.add_param_window(lte_sql_query.LTE_DATA_PARAMS_SQL_LIST_DICT, title="LTE Data Params")
+        self.add_param_window(lte_sql_query.LTE_DATA_PARAMS_SQL_LIST_DICT, title="LTE Data Params", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionLTE_PUCCH_PDSCH_Params_triggered(self):
+    def on_actionLTE_PUCCH_PDSCH_Params_triggered(self, selected_ue = None):
         print("action lte pucch pdsch param")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import lte_sql_query
-        self.add_param_window(lte_sql_query.LTE_PUCCH_PDSCH_SQL_LIST_DICT, title="PUCCH/PDSCH Params")
+        self.add_param_window(lte_sql_query.LTE_PUCCH_PDSCH_SQL_LIST_DICT, title="PUCCH/PDSCH Params", selected_ue=selected_ue)
         
     @pyqtSlot()
-    def on_actionLTE_RRC_SIB_States_triggered(self):
+    def on_actionLTE_RRC_SIB_States_triggered(self, selected_ue = None):
         print("action lte rrc sib states")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import lte_sql_query
-        self.add_param_window(lte_sql_query.LTE_RRC_SIB_SQL_LIST, title="LTE RRC/SIB States")
+        self.add_param_window(lte_sql_query.LTE_RRC_SIB_SQL_LIST, title="LTE RRC/SIB States", selected_ue=selected_ue)
         
     @pyqtSlot()
-    def on_actionLTE_RLC_triggered(self):
+    def on_actionLTE_RLC_triggered(self, selected_ue = None):
         print("action lte rlc")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import lte_sql_query
-        self.add_param_window(lte_sql_query.LTE_RLC_SQL_LIST_DICT, title="LTE RLC")
+        self.add_param_window(lte_sql_query.LTE_RLC_SQL_LIST_DICT, title="LTE RLC", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionLTE_VoLTE_triggered(self):
+    def on_actionLTE_VoLTE_triggered(self, selected_ue = None):
         print("action lte volte")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import lte_sql_query
-        self.add_param_window(lte_sql_query.LTE_VOLTE_SQL_LIST, title="LTE VoLTE")
+        self.add_param_window(lte_sql_query.LTE_VOLTE_SQL_LIST, title="LTE VoLTE", selected_ue=selected_ue)
 
     ############# WCDMA menu slots
 
     @pyqtSlot()
-    def on_actionWCDMA_Radio_Parameters_triggered(self):
+    def on_actionWCDMA_Radio_Parameters_triggered(self, selected_ue = None):
         print("action wcdma radio params")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import wcdma_sql_query
-        self.add_param_window(wcdma_sql_query.WCDMA_RADIO_PARAMS_SQL_LIST, title="WCDMA Radio Parameters")
+        self.add_param_window(wcdma_sql_query.WCDMA_RADIO_PARAMS_SQL_LIST, title="WCDMA Radio Parameters", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionWCDMA_Active_Monitored_sets_triggered(self):
+    def on_actionWCDMA_Active_Monitored_sets_triggered(self, selected_ue = None):
         print("action wcdma active monitored")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import wcdma_sql_query
-        self.add_param_window(wcdma_sql_query.WCDMA_ACTIVE_MONITORED_SQL_LIST_DICT, title="WCDMA Active + Monitored sets")
+        self.add_param_window(wcdma_sql_query.WCDMA_ACTIVE_MONITORED_SQL_LIST_DICT, title="WCDMA Active + Monitored sets", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionWCDMA_BLER_Summary_triggered(self):
+    def on_actionWCDMA_BLER_Summary_triggered(self, selected_ue = None):
         print("action wcdma bler summary")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import wcdma_sql_query
-        self.add_param_window(wcdma_sql_query.WCDMA_BLER_SQL_LIST, title="WCDMA BLER Summary")
+        self.add_param_window(wcdma_sql_query.WCDMA_BLER_SQL_LIST, title="WCDMA BLER Summary", selected_ue=selected_ue)
         
     @pyqtSlot()
-    def on_actionWCDMA_Bearers_triggered(self):
+    def on_actionWCDMA_Bearers_triggered(self, selected_ue = None):
         print("action wcdma bearers")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import wcdma_sql_query
-        self.add_param_window(wcdma_sql_query.WCDMA_BLER_SQL_LIST_DICT, title="WCDMA Bearers")
+        self.add_param_window(wcdma_sql_query.WCDMA_BLER_SQL_LIST_DICT, title="WCDMA Bearers", selected_ue=selected_ue)
 
     ############# GSM menu slots
 
     @pyqtSlot()
-    def on_actionGSM_Physical_Parameters_triggered(self):
+    def on_actionGSM_Physical_Parameters_triggered(self, selected_ue = None):
         print("action gsm radio params")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import gsm_sql_query
-        self.add_param_window(gsm_sql_query.GSM_RADIO_PARAMS_SQL_LIST, title="GSM Radio Parameters")
+        self.add_param_window(gsm_sql_query.GSM_RADIO_PARAMS_SQL_LIST, title="GSM Radio Parameters", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionGSM_Serving_Neighbors_triggered(self):
+    def on_actionGSM_Serving_Neighbors_triggered(self, selected_ue = None):
         print("action gsm serving neigh")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import gsm_sql_query
-        self.add_param_window(gsm_sql_query.GSM_SERV_AND_NEIGH_SQL_LIST_DICT, title="GSM Serving + Neighbors")
+        self.add_param_window(gsm_sql_query.GSM_SERV_AND_NEIGH_SQL_LIST_DICT, title="GSM Serving + Neighbors", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionGSM_Current_Channel_triggered(self):
+    def on_actionGSM_Current_Channel_triggered(self, selected_ue = None):
         print("action gsm current channel")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import gsm_sql_query
-        self.add_param_window(gsm_sql_query.GSM_CURRENT_CHANNEL_SQL_LIST, title="GSM Current Channel")
+        self.add_param_window(gsm_sql_query.GSM_CURRENT_CHANNEL_SQL_LIST, title="GSM Current Channel", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionGSM_C_I_triggered(self):
+    def on_actionGSM_C_I_triggered(self, selected_ue = None):
         print("action gsm coi")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import gsm_sql_query
-        self.add_param_window(gsm_sql_query.GSM_COI_SQL_LIST_DICT, title="GSM C/I")
+        self.add_param_window(gsm_sql_query.GSM_COI_SQL_LIST_DICT, title="GSM C/I", selected_ue=selected_ue)
 
     ############# PCAP menu slots
 
@@ -2515,6 +2625,10 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i),
                             json.dumps(window.widget().options),
                         )
+                        self.current_workspace_settings.setValue(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_selected_ue".format(i),
+                            window.widget().selected_ue,
+                        )
                         i += 1
                         self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", i)
                     except:
@@ -2861,6 +2975,10 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_refresh_df_func_or_py_eval_str".format(i)
                         )
 
+                        selected_ue = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_selected_ue".format(i)
+                        )
+
                         options = json.loads(self.current_workspace_settings.value(
                             GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i)
                         ))
@@ -2873,10 +2991,10 @@ Log_hash list: {}""".format(
                             print(func_key)
                             eval(func_key)
                         elif custom_df is not None and custom_table_param_list is not None:
-                            self.add_param_window(custom_df = custom_df, custom_table_param_list=custom_table_param_list, title=title, options=options)
+                            self.add_param_window(custom_df = custom_df, custom_table_param_list=custom_table_param_list, title=title, options=options, selected_ue=selected_ue)
                         else:
                             # like for custom windows - newer style
-                            self.add_param_window(refresh_df_func_or_py_eval_str, title=title, options=options)
+                            self.add_param_window(refresh_df_func_or_py_eval_str, title=title, options=options, selected_ue=selected_ue)
 
                         if geom:
                             for window in self.mdi.subWindowList():

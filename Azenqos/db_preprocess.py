@@ -75,6 +75,9 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
+    if gc is not None:
+        gc.log_list = pd.read_sql("select distinct log_hash from logs", dbcon)["log_hash"].values.tolist()
+
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geometry_columns df:\n{}".format(df.head()))
     assert len(df) == 0

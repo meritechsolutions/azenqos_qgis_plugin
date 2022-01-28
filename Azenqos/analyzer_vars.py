@@ -53,6 +53,7 @@ class analyzer_vars:
         self.openedWindows = []
         self.timeSlider = None
         self.isSliderPlay = False
+        self.log_list = []
         self.is_indoor = False
         self.easy_overview_mode = False
         self.overview_opened = False

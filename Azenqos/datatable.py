@@ -1380,8 +1380,14 @@ class PdTableModel(QAbstractTableModel):
     def __init__(self, df, parent=None, *args):
         assert df is not None
         assert isinstance(df, pd.DataFrame)
-        if "time" in df.columns:
-            df["time"] = pd.to_datetime(df["time"])
+        if "time" in df.columns and len(df):
+            try:
+                df["time"] = pd.to_datetime(df["time"])
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print("WARNING: datatable time convert exception: {}", exstr)
+
         QAbstractTableModel.__init__(self, parent, *args)
         self.df_full = df
         self.df = df  # filtered data for display

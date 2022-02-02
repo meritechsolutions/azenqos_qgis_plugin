@@ -147,8 +147,11 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
                             if avg[n] is not None and avg[n] > 0:
                                 df.loc[index, count_col_name] = avg[n]
                             n += 1
-        df = df.dropna(subset=col_name_list, how='all')
-        df[count_col_name_list] = df[count_col_name_list].fillna(0).astype(int)
+        if set(col_name_list).issubset(df.columns):
+            df = df.dropna(subset=col_name_list, how='all')
+            df[count_col_name_list] = df[count_col_name_list].fillna(0).astype(int)
+        else:
+            df = pd.DataFrame(columns=df.columns)
     return df
 
 class calculate_poi(QDialog):

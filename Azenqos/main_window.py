@@ -1330,14 +1330,21 @@ Log_hash list: {}""".format(
     ############# Line Chart NR
 
     @pyqtSlot()
-    def on_actionNR_Line_Chart_triggered(self):
+    def on_actionNR_Line_Chart_triggered(self, selected_ue=None):
         print("action nr line chart")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "nr_servingbeam_ss_rsrp_1"},
-                {"name": "nr_servingbeam_ss_rsrq_1"},
-                {"name": "nr_servingbeam_ss_sinr_1"},
+                {"name": "nr_servingbeam_ss_rsrp_1", "selected_ue": selected_ue},
+                {"name": "nr_servingbeam_ss_rsrq_1", "selected_ue": selected_ue},
+                {"name": "nr_servingbeam_ss_sinr_1", "selected_ue": selected_ue},
             ],
         )
 
@@ -1353,17 +1360,24 @@ Log_hash list: {}""".format(
             linechart_window.setWindowTitle("NR Line Chart")
 
     @pyqtSlot()
-    def on_actionNR_DATA_Line_Chart_triggered(self):
+    def on_actionNR_DATA_Line_Chart_triggered(self, selected_ue=None):
         print("action nr data line chart")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_trafficstat_dl/1000", "data": True},
-                {"name": "data_trafficstat_ul/1000", "data": True},
-                {"name": "nr_p_plus_scell_nr_pdsch_tput_mbps", "data": True},
-                {"name": "nr_p_plus_scell_nr_pusch_tput_mbps", "data": True},
-                {"name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "data": True},
-                {"name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps", "data": True},
+                {"name": "data_trafficstat_dl/1000", "data": True, "selected_ue": selected_ue},
+                {"name": "data_trafficstat_ul/1000", "data": True, "selected_ue": selected_ue},
+                {"name": "nr_p_plus_scell_nr_pdsch_tput_mbps", "data": True, "selected_ue": selected_ue},
+                {"name": "nr_p_plus_scell_nr_pusch_tput_mbps", "data": True, "selected_ue": selected_ue},
+                {"name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "data": True, "selected_ue": selected_ue},
+                {"name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps", "data": True, "selected_ue": selected_ue},
             ],
         )
 
@@ -1381,15 +1395,22 @@ Log_hash list: {}""".format(
     ############# Line Chart LTE
 
     @pyqtSlot()
-    def on_actionLTE_Line_Chart_triggered(self):
+    def on_actionLTE_Line_Chart_triggered(self, selected_ue=None):
         print("action lte line chart")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "lte_sinr_1"},
-                {"name": "lte_inst_rsrp_1"},
-                {"name": "lte_inst_rsrq_1"},
-                {"name": "lte_inst_rssi_1"},
+                {"name": "lte_sinr_1", "selected_ue": selected_ue},
+                {"name": "lte_inst_rsrp_1", "selected_ue": selected_ue},
+                {"name": "lte_inst_rsrq_1", "selected_ue": selected_ue},
+                {"name": "lte_inst_rssi_1", "selected_ue": selected_ue},
             ],
         )
 
@@ -1405,15 +1426,22 @@ Log_hash list: {}""".format(
         linechart_window.setWindowTitle("LTE Line Chart")
 
     @pyqtSlot()
-    def on_actionLTE_DATA_Line_Chart_triggered(self):
+    def on_actionLTE_DATA_Line_Chart_triggered(self, selected_ue=None):
         print("action lte data line chart")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_trafficstat_dl/1000", "data": True},
-                {"name": "data_trafficstat_ul/1000", "data": True},
-                {"name": "lte_l1_dl_throughput_all_carriers_mbps", "data": True},
-                {"name": "lte_bler_1", "data": True},
+                {"name": "data_trafficstat_dl/1000", "data": True, "selected_ue": selected_ue},
+                {"name": "data_trafficstat_ul/1000", "data": True, "selected_ue": selected_ue},
+                {"name": "lte_l1_dl_throughput_all_carriers_mbps", "data": True, "selected_ue": selected_ue},
+                {"name": "lte_bler_1", "data": True, "selected_ue": selected_ue},
             ],
         )
 
@@ -1431,15 +1459,22 @@ Log_hash list: {}""".format(
     ############# Line Chart WCDMA
 
     @pyqtSlot()
-    def on_actionWCDMA_Line_Chart_triggered(self):
+    def on_actionWCDMA_Line_Chart_triggered(self, selected_ue=None):
         print("action wcdma line chart")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "wcdma_aset_ecio_avg"},
-                {"name": "wcdma_aset_rscp_avg"},
-                {"name": "wcdma_rssi"},
-                {"name": "wcdma_bler_average_percent_all_channels"},
+                {"name": "wcdma_aset_ecio_avg", "selected_ue": selected_ue},
+                {"name": "wcdma_aset_rscp_avg", "selected_ue": selected_ue},
+                {"name": "wcdma_rssi", "selected_ue": selected_ue},
+                {"name": "wcdma_bler_average_percent_all_channels", "selected_ue": selected_ue},
             ],
         )
 
@@ -1455,14 +1490,21 @@ Log_hash list: {}""".format(
         linechart_window.setWindowTitle("WCDMA Line Chart")
 
     @pyqtSlot()
-    def on_actionWCDMA_DATA_Line_Chart_triggered(self):
+    def on_actionWCDMA_DATA_Line_Chart_triggered(self, selected_ue=None):
         print("action wcdma data line chart")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_wcdma_rlc_dl_throughput", "data": True},
-                {"name": "data_app_dl_throughput_1", "data": True},
-                {"name": "data_hsdpa_thoughput", "data": True},
+                {"name": "data_wcdma_rlc_dl_throughput", "data": True, "selected_ue": selected_ue},
+                {"name": "data_app_dl_throughput_1", "data": True, "selected_ue": selected_ue},
+                {"name": "data_hsdpa_thoughput", "data": True, "selected_ue": selected_ue},
             ],
         )
 
@@ -1480,13 +1522,20 @@ Log_hash list: {}""".format(
     ############# Line Chart GSM
 
     @pyqtSlot()
-    def on_actionGSM_Line_Chart_triggered(self):
+    def on_actionGSM_Line_Chart_triggered(self, selected_ue=None):
         print("action gsm line chart")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "gsm_rxlev_sub_dbm"},
-                {"name": "gsm_rxqual_sub"},
+                {"name": "gsm_rxlev_sub_dbm", "selected_ue": selected_ue},
+                {"name": "gsm_rxqual_sub", "selected_ue": selected_ue},
             ],
         )
 
@@ -1502,13 +1551,20 @@ Log_hash list: {}""".format(
         linechart_window.setWindowTitle("GSM Line Chart")
 
     @pyqtSlot()
-    def on_actionGSM_DATA_Line_Chart_triggered(self):
+    def on_actionGSM_DATA_Line_Chart_triggered(self, selected_ue=None):
         print("action gsm data line chart")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         linechart_window = linechart_multi_y_axis.LineChart(
             self.gc,
             paramList=[
-                {"name": "data_gsm_rlc_dl_throughput", "data": True},
-                {"name": "data_app_dl_throughput_1", "data": True},
+                {"name": "data_gsm_rlc_dl_throughput", "data": True, "selected_ue": selected_ue},
+                {"name": "data_app_dl_throughput_1", "data": True, "selected_ue": selected_ue},
             ],
         )
 

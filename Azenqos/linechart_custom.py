@@ -227,7 +227,7 @@ class LineChart(QtWidgets.QDialog):
     def reQueryTableData(self, dbcon, time):
         import linechart_query
 
-        df = linechart_query.get_table_df_by_time(dbcon, time, self.paramListDict)
+        df = linechart_query.get_table_df_by_time(dbcon, time, self.paramListDict, self.gc)
         df = df.loc[df["param"] != "Time"]
         df["color"] = None
         df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)

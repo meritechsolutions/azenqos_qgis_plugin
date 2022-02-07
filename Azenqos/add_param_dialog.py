@@ -10,17 +10,19 @@ import preprocess_azm
 
 
 class AddParamDialog(QDialog):
-    def __init__(self, onParamAdded):
+    def __init__(self, onParamAdded, gc):
         super(AddParamDialog, self).__init__(None)
         self.paramDF = preprocess_azm.get_number_param()
         self.paramDF = self.paramDF.reset_index(drop=True)
         self.onParamAdded = onParamAdded
         self.param = self.paramDF["var_name"][0]
         self.paramName = None
+        self.gc = gc
         self.arg = "1"
         self.argCount = "1"
         self.isNotNull = False
         self.isData = False
+        self.selected_ue = None
         self.setAttribute(PyQt5.QtCore.Qt.WA_DeleteOnClose)
         self.setupUi()
 
@@ -97,8 +99,16 @@ class AddParamDialog(QDialog):
         self.arg = self.ui.comboBox_2.currentText()
 
     def onOkButtonClick(self):
+        
+        if self.selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            self.selected_ue = dlg.log
         self.onParamAdded(
-            {"name": self.paramName, "null": self.isNotNull, "data": self.isData}
+            {"name": self.paramName, "null": self.isNotNull, "data": self.isData, "selected_ue": self.selected_ue}
         )
 
 

@@ -54,13 +54,16 @@ class LineChart(QtWidgets.QDialog):
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.paramListDict = {}
         for paramDict in paramList:
-            self.paramListDict[paramDict["name"]] = paramDict
+            param_alias_name = paramDict["name"]
+            if "selected_ue" in paramDict:
+                param_alias_name = param_alias_name+"_UE_"+str(paramDict["selected_ue"])
+            self.paramListDict[param_alias_name] = paramDict
         self.viewBoxList = []
         self.colorDict = {}
         self.colorindex = 0
         for paramDict in self.paramListDict:
             color = get_default_color_for_index(self.colorindex)
-            self.colorDict[self.paramListDict[paramDict]["name"]] = color
+            self.colorDict[paramDict] = color
             self.colorindex += 1
         self.lastChartParamList = None
         self.minX = None
@@ -129,6 +132,19 @@ class LineChart(QtWidgets.QDialog):
             self.graphWidget.axes, row=2, col=colIndex, rowspan=1, colspan=1
         )
         colIndex -= 1
+        
+        self.minX = None
+        self.maxX = None
+        for df in dfList:
+            df["Time"] = df["Time"].apply(
+                lambda x: self.unixTimeMillis(x.to_pydatetime())
+            )
+            minX = df["Time"].min()
+            maxX = df["Time"].max()
+            if self.minX is None or self.minX > minX:
+                self.minX = minX
+            if self.maxX is None or self.maxX < maxX:
+                self.maxX = maxX
         for df in dfList:
             if len(df) == 0:
                 continue
@@ -149,11 +165,6 @@ class LineChart(QtWidgets.QDialog):
             if prevViewBox != None:
                 viewBox.setXLink(prevViewBox)
             prevViewBox = viewBox
-            df["Time"] = df["Time"].apply(
-                lambda x: self.unixTimeMillis(x.to_pydatetime())
-            )
-            self.minX = df["Time"].min()
-            self.maxX = df["Time"].max()
             minY = None
             maxY = None
             colorindex = 0
@@ -262,13 +273,13 @@ class LineChart(QtWidgets.QDialog):
             return
         self.lastChartParamList = {}
         self.lastChartParamList.update(self.paramListDict)
-        chartDFList = linechart_query.get_chart_df(dbcon, self.paramListDict)
+        chartDFList = linechart_query.get_chart_df(dbcon, self.paramListDict, self.gc)
         self.updateChart.emit(chartDFList)
 
     def reQueryTableData(self, dbcon, time):
         import linechart_query
 
-        df = linechart_query.get_table_df_by_time(dbcon, time, self.paramListDict)
+        df = linechart_query.get_table_df_by_time(dbcon, time, self.paramListDict, self.gc)
         df = df.loc[df["param"] != "Time"]
         df["color"] = None
         df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
@@ -327,14 +338,17 @@ class LineChart(QtWidgets.QDialog):
                 self.updateTime(self.newTime)
 
     def onAddParameterButtonClick(self):
-        dlg = add_param_dialog.AddParamDialog(self.onParamAdded)
+        dlg = add_param_dialog.AddParamDialog(self.onParamAdded, self.gc)
         dlg.show()
 
     def onParamAdded(self, paramDict):
-        if paramDict["name"] not in self.paramListDict:
-            self.paramListDict[paramDict["name"]] = paramDict
+        param_alias_name = paramDict["name"]
+        if "selected_ue" in paramDict:
+            param_alias_name = param_alias_name+"_UE_"+str(paramDict["selected_ue"])
+        if param_alias_name not in self.paramListDict:
+            self.paramListDict[param_alias_name] = paramDict
             color = get_default_color_for_index(self.colorindex)
-            self.colorDict[paramDict["name"]] = color
+            self.colorDict[param_alias_name] = color
             self.colorindex += 1
             self.updateTime(self.newTime)
         # print( self.paramList)

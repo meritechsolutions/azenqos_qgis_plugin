@@ -738,12 +738,12 @@ class TableWindow(QWidget):
         elif 'name' in row_sr.index and row_sr["name"].find("MOS Score") != -1:
             name = row_sr["name"]
             side = {}
+            side["log_hash"] = row_sr["log_hash"]
             side["wav_file"] = os.path.join(
-                azq_utils.tmp_gen_path(), row_sr["wave_file"]
+                azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"]
             )
             side["text_file"] = os.path.join(
-                azq_utils.tmp_gen_path(),
-                row_sr["wave_file"].replace(".wav", "_polqa.txt"),
+                azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"].replace(".wav", "_polqa.txt"),
             )
             side["time"] = row_sr["time"]
             self.detailWidget = DetailWidget(
@@ -1257,8 +1257,8 @@ class DetailWidget(QDialog):
         ref_wave_file_name = "polqaref_np"
         ref_framerate = 48000.0
         ref_nframes = 305732
-        if self.gc.is_mos_nb == True:
-            print("is_mos_nb")
+        if len(self.gc.is_mos_nb_lh_list) > 0 and self.side["log_hash"] in self.gc.is_mos_nb_lh_list:
+            print("is_mos_nb_lh_list")
             ref_wave_file_name = "polqarefnb_np"
             ref_framerate = 8000.0
             ref_nframes = 50956

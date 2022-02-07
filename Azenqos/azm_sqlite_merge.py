@@ -46,6 +46,10 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
             assert not os.path.isfile(new_dbfp)
             if azm.endswith(".azm") or azm.endswith(".zip"):
                 preprocess_azm.extract_entry_from_zip(azm, "azqdata.db", tmp_dir)
+                with contextlib.closing(sqlite3.connect(new_dbfp)) as dbcon:
+                    log_hash = pd.read_sql("SELECT log_hash FROM logs LIMIT 1;",dbcon).log_hash[0]
+                    out_tmp_each_log_dir = os.path.join(azq_utils.tmp_gen_path(), str(log_hash))
+                    preprocess_azm.extract_all_from_zip(azm, out_tmp_each_log_dir)
             elif azm.endswith(".db"):
                 shutil.copy(azm, new_dbfp)
             else:

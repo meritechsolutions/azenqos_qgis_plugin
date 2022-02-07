@@ -470,6 +470,7 @@ class import_db_dialog(QDialog):
         try:
             import preprocess_azm
             azq_utils.cleanup_died_processes_tmp_folders()
+            azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
 
             if isinstance(zip_fp, list):
                 if len(zip_fp) == 1:
@@ -481,17 +482,18 @@ class import_db_dialog(QDialog):
                     self.import_status_signal.emit("Multiple logs specified - trying to merge them...")
                     zip_fp = azm_sqlite_merge.merge(zip_fp, progress_update_signal = self.progress_update_signal)  # zip_fp will now be assigned with the merged db file path
                     self.import_status_signal.emit("Multiple logs specified - trying to merge them... done")
-
             self.progress_update_signal.emit(50)
             print("using log:", zip_fp)
             assert isinstance(zip_fp, str)
             assert os.path.isfile(zip_fp)
-            azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
             if zip_fp.endswith(".azm") or zip_fp.endswith(".zip"):
                 self.databasePath = preprocess_azm.extract_entry_from_zip(
                     zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
                 )
-                preprocess_azm.extract_all_from_zip(zip_fp, azq_utils.tmp_gen_path())
+                with contextlib.closing(sqlite3.connect(self.databasePath)) as dbcon:
+                    log_hash = pd.read_sql("SELECT log_hash FROM logs LIMIT 1;",dbcon).log_hash[0]
+                    out_tmp_each_log_dir = os.path.join(azq_utils.tmp_gen_path(), str(log_hash))
+                    preprocess_azm.extract_all_from_zip(zip_fp, out_tmp_each_log_dir)
             elif zip_fp.endswith(".db"):
                 databasePath = os.path.join(azq_utils.tmp_gen_path(), "azqdata.db")
                 shutil.copy(zip_fp, databasePath)

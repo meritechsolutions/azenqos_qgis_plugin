@@ -2912,34 +2912,50 @@ Log_hash list: {}""".format(
                     pref_key = "cell_{}_sector_size_meters".format(rat)
                     sector_size_meters = float(self.gc.pref[pref_key])
                     df = azq_cell_file.read_cellfiles(self.gc.cell_files, rat, add_sector_polygon_wkt_sector_size_meters=sector_size_meters)
-                    df = df.reset_index()
                     self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.4))
+                    if len(df) > 20000:
+                        df = df.reset_index()
 
-                    create_cellfile_sql_str = azq_utils.get_create_cellfile_spatialite_header(rat)
-                    create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_create_table(rat,
-                                                                                                     list(df.columns))
-                    create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_insert_cell(rat, df)
-                    create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_footer()
-                    cell_sql_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_{}_".format(uuid.uuid4()) + rat + ".sql")
-                    f = open(cell_sql_fp, 'w')
-                    f.write(create_cellfile_sql_str)
-                    f.close()
-                    spatialite_bin = azq_utils.get_spatialite_bin()
-                    self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.5))
-                    cel_spatial_db_fp = cell_sql_fp[:-3]+"db"
-                    if os.path.isfile(cel_spatial_db_fp):
-                        os.remove(cel_spatial_db_fp)
-                    cmd = [spatialite_bin, "-init", cell_sql_fp, cel_spatial_db_fp, ".quit"]
-                    azq_utils.call_no_shell(cmd)
+                        create_cellfile_sql_str = azq_utils.get_create_cellfile_spatialite_header(rat)
+                        create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_create_table(rat,
+                                                                                                         list(df.columns))
+                        create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_insert_cell(rat, df)
+                        create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_footer()
+                        cell_sql_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_{}_".format(uuid.uuid4()) + rat + ".sql")
+                        f = open(cell_sql_fp, 'w')
+                        f.write(create_cellfile_sql_str)
+                        f.close()
+                        spatialite_bin = azq_utils.get_spatialite_bin()
+                        self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.5))
+                        cel_spatial_db_fp = cell_sql_fp[:-3]+"db"
+                        if os.path.isfile(cel_spatial_db_fp):
+                            os.remove(cel_spatial_db_fp)
+                        cmd = [spatialite_bin, "-init", cell_sql_fp, cel_spatial_db_fp, ".quit"]
+                        azq_utils.call_no_shell(cmd)
+                        if len(df):
+                            uri = QgsDataSourceUri()
+                            uri.setDatabase(cel_spatial_db_fp)
+                            schema = ''
+                            table = rat
+                            geom_column = 'geometry'
+                            uri.setDataSource(schema, table, geom_column)
+                            layer = QgsVectorLayer(uri.uri(), layer_name, 'spatialite')
+                    else:
+                        layer_name = rat.upper() + "_cells"
+                        pref_key = "cell_{}_sector_size_meters".format(rat)
+                        sector_size_meters = float(self.gc.pref[pref_key])
+                        df = azq_cell_file.read_cellfiles(self.gc.cell_files, rat,
+                                                          add_sector_polygon_wkt_sector_size_meters=sector_size_meters)
+                        csv_fp = os.path.join(azq_utils.tmp_gen_path(), "cell_file_sectors_" + rat + ".csv")
+                        if len(df):
+                            df.to_csv(csv_fp, encoding='utf-8')
+                            uri = pathlib.Path(csv_fp).as_uri()
+                            uri += "?crs=epsg:4326&wktField={}".format('sector_polygon_wkt')
+                            print("csv uri: {}".format(uri))
+                            layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
+                    self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.6))
+
                     if len(df):
-                        uri = QgsDataSourceUri()
-                        uri.setDatabase(cel_spatial_db_fp)
-                        schema = ''
-                        table = rat
-                        geom_column = 'geometry'
-                        uri.setDataSource(schema, table, geom_column)
-                        layer = QgsVectorLayer(uri.uri(), layer_name, 'spatialite')
-                        self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.6))
                         try:
                             param_att_rat = {'gsm': 'bcch', 'wcdma': 'psc', 'lte': 'pci', 'nr': 'pci'}
                             param_db_rat = {'gsm': 'gsm_arfcn_bcch', 'wcdma': 'wcdma_aset_sc_1', 'lte': 'lte_physical_cell_id_1', 'nr': 'nr_servingbeam_pci_1'}

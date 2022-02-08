@@ -2702,9 +2702,9 @@ Log_hash list: {}""".format(
                     pref_key = "cell_{}_sector_size_meters".format(rat)
                     sector_size_meters = float(self.gc.pref[pref_key])
                     df = azq_cell_file.read_cellfiles(self.gc.cell_files, rat, add_sector_polygon_wkt_sector_size_meters=sector_size_meters)
+                    self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.4))
                     if len(df) > 20000:
                         df = df.reset_index()
-                        self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.4))
 
                         create_cellfile_sql_str = azq_utils.get_create_cellfile_spatialite_header(rat)
                         create_cellfile_sql_str += azq_utils.get_create_cellfile_spatialite_create_table(rat,
@@ -2730,7 +2730,6 @@ Log_hash list: {}""".format(
                             geom_column = 'geometry'
                             uri.setDataSource(schema, table, geom_column)
                             layer = QgsVectorLayer(uri.uri(), layer_name, 'spatialite')
-                            self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.6))
                     else:
                         layer_name = rat.upper() + "_cells"
                         pref_key = "cell_{}_sector_size_meters".format(rat)
@@ -2744,6 +2743,7 @@ Log_hash list: {}""".format(
                             uri += "?crs=epsg:4326&wktField={}".format('sector_polygon_wkt')
                             print("csv uri: {}".format(uri))
                             layer = QgsVectorLayer(uri, layer_name, "delimitedtext")
+                    self.open_cellfile_progress_signal.emit(load_cellfile_progress*(current_rat_index) + (load_cellfile_progress * 0.6))
 
                     if len(df):
                         try:

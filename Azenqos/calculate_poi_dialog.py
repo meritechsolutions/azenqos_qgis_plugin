@@ -111,12 +111,12 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
                         for main_param in rat_to_main_param_list_dict[rat]:
                             avg_col_name = main_param+"_average"
                             count_col_name = main_param+"_count"
-                            if avg_col_name not in col_name_list:
-                                col_name_list.append(avg_col_name)
-                            if count_col_name not in col_name_list:
-                                col_name_list.append(count_col_name)
-                                count_col_name_list.append(count_col_name)
                             if avg[n] is not None and avg[n+1] > 0:
+                                if avg_col_name not in col_name_list:
+                                    col_name_list.append(avg_col_name)
+                                if count_col_name not in col_name_list:
+                                    col_name_list.append(count_col_name)
+                                    count_col_name_list.append(count_col_name)
                                 df.loc[index, avg_col_name] = avg[n]
                             n += 1
                             if avg[n] is not None and avg[n] > 0:
@@ -136,19 +136,22 @@ def calculate_poi_cov_spatialite(poi_df, db_path, offset, progress_signal):
                         for main_param in other_table_param_dict[table]:
                             avg_col_name = main_param+"_average"
                             count_col_name = main_param+"_count"
-                            if avg_col_name not in col_name_list:
-                                col_name_list.append(avg_col_name)
-                            if count_col_name not in col_name_list:
-                                col_name_list.append(count_col_name)
-                                count_col_name_list.append(count_col_name)
                             if avg[n] is not None and avg[n+1] > 0:
+                                if avg_col_name not in col_name_list:
+                                    col_name_list.append(avg_col_name)
+                                if count_col_name not in col_name_list:
+                                    col_name_list.append(count_col_name)
+                                    count_col_name_list.append(count_col_name)
                                 df.loc[index, avg_col_name] = avg[n]
                             n += 1
                             if avg[n] is not None and avg[n] > 0:
                                 df.loc[index, count_col_name] = avg[n]
                             n += 1
-        df = df.dropna(subset=col_name_list, how='all')
-        df[count_col_name_list] = df[count_col_name_list].fillna(0).astype(int)
+        if set(col_name_list).issubset(df.columns):
+            df = df.dropna(subset=col_name_list, how='all')
+            df[count_col_name_list] = df[count_col_name_list].fillna(0).astype(int)
+        else:
+            df = pd.DataFrame(columns=df.columns)
     return df
 
 class calculate_poi(QDialog):

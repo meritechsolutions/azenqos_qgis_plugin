@@ -11,10 +11,11 @@ import azq_utils
 import tshark_util
 
 
-def get_pcap_path_list(azm_path):
+def get_pcap_path_list(azm_path, log_hash):
     pcap_path_list = []
     azm_path = azm_path.replace("\\", os.path.sep)
     azm_path = azm_path.replace("/", os.path.sep)
+    azm_path = os.path.join(azm_path, str(log_hash))
     if os.name != "nt":
         extensions = ".csv"
     else:
@@ -105,7 +106,7 @@ log_hash = None
 time_offset = None
 
 
-def new_get_all_pcap_content(azm_path):
+def new_get_all_pcap_content(azm_path, gc, selected_ue):
     global pcap_path_list
     global log_hash
     global time_offset
@@ -119,7 +120,11 @@ def new_get_all_pcap_content(azm_path):
         ).iloc[0, 0]
         print(time_offset)
         print(log_hash)
-    pcap_path_list = get_pcap_path_list(azm_path)
+    if len(gc.log_list) > 1 and selected_ue is not None:
+        if int(selected_ue) <= len(gc.log_list):
+            log_hash = str(gc.log_list[int(selected_ue)-1])
+
+    pcap_path_list = get_pcap_path_list(azm_path, log_hash)
 
     return tmp()
 

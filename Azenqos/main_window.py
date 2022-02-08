@@ -574,10 +574,6 @@ Log_hash list: {}""".format(
     def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, allow_no_log_opened=False, selected_ue=None):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
-        if selected_ue is not None:
-            title_ue_suffix = "( UE" + selected_ue + " )"
-            if title_ue_suffix not in title:
-                title = title + title_ue_suffix
         widget = TableWindow(
             swa,
             title,
@@ -652,10 +648,17 @@ Log_hash list: {}""".format(
             self.add_param_window(expression, title=title, time_list_mode=True, stretch_last_row=True)
 
     @pyqtSlot()
-    def on_actionCustom_Table_View_UI_triggered(self):
+    def on_actionCustom_Table_View_UI_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import custom_table_dialog
-        dlg = custom_table_dialog.custom_table_dialog(self.gc)
-        dlg.on_result.connect(lambda df, param_list, title: self.add_param_window(custom_df=df, title=title, time_list_mode=True, custom_table_param_list=param_list))
+        dlg = custom_table_dialog.custom_table_dialog(self.gc, selected_ue=selected_ue)
+        dlg.on_result.connect(lambda df, param_list, title, selected_ue: self.add_param_window(custom_df=df, title=title, time_list_mode=True, custom_table_param_list=param_list, selected_ue=selected_ue))
         dlg.show()
 
     @pyqtSlot()
@@ -938,8 +941,16 @@ Log_hash list: {}""".format(
     ############# PCAP menu slots
 
     @pyqtSlot()
-    def on_actionPCAP_triggered(self):
+    def on_actionPCAP_triggered(self, selected_ue = None):
         print("action pcap")
+        title = "PCAP"
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import pcap_window
 
         headers = [
@@ -959,10 +970,11 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(
             swa,
-            "PCAP",
-            pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path()),
+            title,
+            pcap_window.new_get_all_pcap_content(azq_utils.tmp_gen_path(), self.gc, selected_ue=selected_ue),
             tableHeader=headers,
             time_list_mode=True,
+            selected_ue=selected_ue,
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
@@ -3069,7 +3081,11 @@ Log_hash list: {}""".format(
                                                                                                              options))
                         if func is not None:
                             # on..._triggered func like on L3 triggered etc
-                            func_key = "self." + func + "()" 
+                            func_key = "self." + func
+                            if selected_ue is not None:
+                                func_key = func_key + "(selected_ue = '{}')".format(selected_ue)
+                            else:
+                                func_key = func_key + "()"
                             print(func_key)
                             eval(func_key)
                         elif custom_df is not None and custom_table_param_list is not None:

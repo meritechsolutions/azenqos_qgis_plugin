@@ -20,18 +20,22 @@ import custom_table_dataframe_model
 
 class custom_table_dialog(QtWidgets.QDialog):
     update_table = pyqtSignal(object)
-    on_result = pyqtSignal(object, object, object)
+    on_result = pyqtSignal(object, object, object, object)
 
 
-    def __init__(self, gc, param_list=[], window_name=None):
+    def __init__(self, gc, param_list=[], window_name="Custom window", selected_ue=None):
         super(custom_table_dialog, self).__init__(None)
         self.gc = gc
         self.param_list = param_list
         self.select_param = None
         self.select_arg = None
         self.window_name = "Custom window"
-        if window_name is not None:
-            self.window_name = window_name
+        self.selected_ue = selected_ue
+        self.selected_log = None
+        if len(self.gc.log_list) > 1 and self.selected_ue is not None:
+            if int(self.selected_ue) <= len(self.gc.log_list):
+                self.selected_log = str(self.gc.log_list[int(self.selected_ue)-1])
+        self.window_name = window_name
         self.setupUi()
 
     def setupUi(self):
@@ -137,6 +141,10 @@ class custom_table_dialog(QtWidgets.QDialog):
                     param_name = param_dict["parameter name"]
                     table_name = preprocess_azm.get_table_for_column(param_name.split("/")[0])
                     sql = "SELECT log_hash, time, {} FROM {}".format(param_name, table_name)
+                    if self.selected_log is not None:
+                        import sql_utils
+                        where = "where log_hash = '{}'".format(self.selected_log)
+                        sql = sql_utils.add_first_where_filt(sql, where)
                     df = pd.read_sql(sql, dbcon, parse_dates=["time"])
                     df["log_hash"] = df["log_hash"].astype(np.int64)
                     df = df.sort_values(by="time")
@@ -156,28 +164,29 @@ class custom_table_dialog(QtWidgets.QDialog):
                 main_df = pd.merge_asof(left=main_df.reset_index(), right=df_merge.reset_index(), left_on=['time'], right_on=['time'],by='log_hash', direction="backward", allow_exact_matches=True, tolerance=pd.Timedelta('2s'), suffixes=('_not_use', '')) 
                 main_df = main_df[["log_hash", "time", main_param_name]]
                 main_df = main_df.rename(columns={main_param_name:main_param_name+"_main"})
-                tmp_df_1 = main_df.copy()
+                if len(main_df) > 0:
+                    tmp_df_1 = main_df.copy()
 
-                for param_dict in param_df_list:
-                    if param_dict["main parameter"] == False:
-                        main_df = main_df.reset_index(drop=True)
-                        df = param_dict["df"]
-                        param_name = param_dict["parameter name"]
-                        tolerance = param_dict["tolerance"]+"ms"
-                        merge_method = param_dict["merge_method"]
-                        param_name_alias = param_name+"_"+merge_method+"_"+tolerance
-                        tmp_df = tmp_df_1.copy()
-                        tmp_df["time_tmp"] = tmp_df["time"]
-                        tmp_col = tmp_df.columns.tolist()
-                        main_col = main_df.columns.tolist()
-                        tmp_df = pd.merge_asof(left=df.sort_values(by="time"), right=tmp_df.sort_values(by="time"), left_on=['time'], right_on=['time'], by='log_hash', direction="forward", allow_exact_matches=True, tolerance=pd.Timedelta(tolerance))
-                        tmp_col.remove("time")
-                        tmp_df = tmp_df[tmp_col+[param_name]]
-                        tmp_df = eval("tmp_df.groupby(tmp_col)."+merge_method)
-                        tmp_df = tmp_df.reset_index()
-                        tmp_df = tmp_df.rename(columns={param_name:param_name_alias, "time_tmp":"time"})
-                        main_df = main_df.merge(tmp_df, how="left", on="time", suffixes=("", "_not_use"))
-                        main_df = main_df[main_col+[param_name_alias]]
+                    for param_dict in param_df_list:
+                        if param_dict["main parameter"] == False:
+                            main_df = main_df.reset_index(drop=True)
+                            df = param_dict["df"]
+                            param_name = param_dict["parameter name"]
+                            tolerance = param_dict["tolerance"]+"ms"
+                            merge_method = param_dict["merge_method"]
+                            param_name_alias = param_name+"_"+merge_method+"_"+tolerance
+                            tmp_df = tmp_df_1.copy()
+                            tmp_df["time_tmp"] = tmp_df["time"]
+                            tmp_col = tmp_df.columns.tolist()
+                            main_col = main_df.columns.tolist()
+                            tmp_df = pd.merge_asof(left=df.sort_values(by="time"), right=tmp_df.sort_values(by="time"), left_on=['time'], right_on=['time'], by='log_hash', direction="forward", allow_exact_matches=True, tolerance=pd.Timedelta(tolerance))
+                            tmp_col.remove("time")
+                            tmp_df = tmp_df[tmp_col+[param_name]]
+                            tmp_df = eval("tmp_df.groupby(tmp_col)."+merge_method)
+                            tmp_df = tmp_df.reset_index()
+                            tmp_df = tmp_df.rename(columns={param_name:param_name_alias, "time_tmp":"time"})
+                            main_df = main_df.merge(tmp_df, how="left", on="time", suffixes=("", "_not_use"))
+                            main_df = main_df[main_col+[param_name_alias]]
 
                 # for df in df_list:
                 #     main_df = main_df.reset_index(drop=True)
@@ -188,4 +197,4 @@ class custom_table_dialog(QtWidgets.QDialog):
     def on_ok_button_click(self):
         df = self.merge_custom_param_to_df(self.param_list)
         self.window_name = self.ui.windowNameLineEdit.text()
-        self.on_result.emit(df, self.param_list, self.window_name)
+        self.on_result.emit(df, self.param_list, self.window_name, self.selected_ue)

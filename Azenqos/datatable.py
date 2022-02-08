@@ -144,6 +144,9 @@ class TableWindow(QWidget):
         self.tableHeader = tableHeader
         self.selected_ue = selected_ue
         if len(self.gc.log_list) > 1 and self.selected_ue is not None:
+            title_ue_suffix = "( UE" + str(self.selected_ue) + " )"
+            if title_ue_suffix not in self.title:
+                self.title = self.title + title_ue_suffix
             if int(self.selected_ue) <= len(self.gc.log_list):
                 self.selected_log = str(self.gc.log_list[int(self.selected_ue)-1])
             else:
@@ -323,11 +326,12 @@ class TableWindow(QWidget):
                 self.refreshTableContents()
         if action == actions_dict["custom_table"]:
             import custom_table_dialog
-            dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list, self.title)
-            def on_result(df, param_list, title):
+            dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list, self.title, selected_ue=self.selected_ue)
+            def on_result(df, param_list, title, selected_ue):
                 self.custom_df=df
                 self.custom_table_param_list=param_list
                 self.title=title
+                self.selected_ue=selected_ue
                 self.setObjectName(self.title)
                 self.setWindowTitle(self.title)
                 self.refreshTableContents()
@@ -586,7 +590,7 @@ class TableWindow(QWidget):
                         df = df.loc[:,~df.columns.duplicated()]
                     else:
                         print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))
-                        if self.title.lower() in ["pcap", "add layer"]:
+                        if self.title.lower() == "add layer" or self.title.lower().startswith("pcap"):
                             df = self.refresh_data_from_dbcon_and_time_func
                         else:
                             df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)

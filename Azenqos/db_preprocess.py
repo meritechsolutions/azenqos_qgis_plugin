@@ -342,7 +342,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
             pass
         try:
             if df_indoor_location is not None and len(df_indoor_location) > 0: 
-                sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid);"
+                sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid and log_hash = location.log_hash), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid and log_hash = location.log_hash);"
                 print("copy indoor_location lat lon to location: %s" % sqlstr)
                 dbcon.execute(sqlstr)
                 dbcon.commit()

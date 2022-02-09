@@ -143,6 +143,9 @@ class TableWindow(QWidget):
         self.custom_df = custom_df
         self.tableHeader = tableHeader
         self.selected_ue = selected_ue
+        self.selected_log = None
+        if len(self.gc.log_list):
+            self.selected_log = str(self.gc.log_list[0])
         if len(self.gc.log_list) > 1 and self.selected_ue is not None:
             title_ue_suffix = "( UE" + str(self.selected_ue) + " )"
             if title_ue_suffix not in self.title:
@@ -592,10 +595,21 @@ class TableWindow(QWidget):
                         print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))
                         if self.title.lower() == "add layer" or self.title.lower().startswith("pcap"):
                             df = self.refresh_data_from_dbcon_and_time_func
+                        elif self.title.lower().startswith("wifi scan"):
+                            df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict, selected_log=self.selected_log)
                         else:
                             df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
                     assert df is not None
                     assert isinstance(df, pd.DataFrame)
+                    if self.time_list_mode:
+                        if "time" in df.columns:
+                            df = df.sort_values(by="time")
+                            if len(self.gc.log_list) > 1 and "log_hash" in df.columns:
+                                i = 1
+                                for lh in self.gc.log_list:
+                                    df.loc[df["log_hash"] == lh, "UE"] = i
+                                    i += 1
+                                df["UE"] = df["UE"].astype(str)
                     print("datatable refersh param view got df:\n", df.head())
                     self.set_pd_df(df)
             except:

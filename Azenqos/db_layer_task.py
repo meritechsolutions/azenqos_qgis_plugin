@@ -79,36 +79,47 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                     azq_utils.timer_print("gen_theme_qml")
                     assert qml_tmp_fp_list is not None
                     assert len(qml_tmp_fp_list) > 0
-                    for i in range(len(table_list)):
-                        table = table_list[i]
-                        param = param_list[i]
-                        qml_tmp_fp = qml_tmp_fp_list[i]
-                        if not qml_tmp_fp or not os.path.isfile(qml_tmp_fp):
-                            continue
-                        print("Adding layer to UI:", param)
-                        try:
-                            visible = False
-                            if table in system_sql_query.rat_to_main_param_dict.values():
-                                visible = True
-                            dn = display_name_prefix+param
-                            if azq_utils.is_lang_th() and gc.is_easy_mode():
-                                dn = dn.replace("_1", "", 1) # rm trailing _1
-                                dn = azq_utils.th_translate(dn)
-                            layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
-                                db_fp, table, visible=visible,
-                                style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=dn, theme_param=param, custom_sql=custom_sql
-                            )
-                            layer_id_to_visible_flag_dict[layer.id()] = visible
-                            table_to_layer_dict[table] = layer
-                            if visible:
-                                last_visible_layer = layer
-                        except:
-                            type_, value_, traceback_ = sys.exc_info()
-                            exstr = str(traceback.format_exception(type_, value_, traceback_))
-                            print("WARNING: create_qgis_layer_from_spatialite_db table {} failed exception: {}".format(
-                                table, exstr
-                            )
-                            )
+                    log_list = gc.log_list
+                    if gc.overview_opened :
+                        log_list = [0]
+                    ue = 1
+                    for log_hash in log_list:
+                        for i in range(len(table_list)):
+                            table = table_list[i]
+                            param = param_list[i]
+                            qml_tmp_fp = qml_tmp_fp_list[i]
+                            table_alias = table
+                            if not qml_tmp_fp or not os.path.isfile(qml_tmp_fp):
+                                continue
+                            print("Adding layer to UI:", param)
+                            try:
+                                visible = False
+                                if table in system_sql_query.rat_to_main_param_dict.values():
+                                    visible = True
+                                dn = display_name_prefix+param
+                                if azq_utils.is_lang_th() and gc.is_easy_mode():
+                                    dn = dn.replace("_1", "", 1) # rm trailing _1
+                                    dn = azq_utils.th_translate(dn)
+                                if len(log_list) > 1:
+                                    custom_sql = "log_hash = {}".format(log_hash)
+                                    dn = dn + "_UE_" + str(ue)
+                                    table_alias = table + "_UE_" + str(ue)
+                                layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
+                                    db_fp, table, visible=visible,
+                                    style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=dn, theme_param=param, custom_sql=custom_sql
+                                )
+                                layer_id_to_visible_flag_dict[layer.id()] = visible
+                                table_to_layer_dict[table_alias] = layer
+                                if visible:
+                                    last_visible_layer = layer
+                            except:
+                                type_, value_, traceback_ = sys.exc_info()
+                                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                                print("WARNING: create_qgis_layer_from_spatialite_db table {} failed exception: {}".format(
+                                    table, exstr
+                                )
+                                )
+                        ue += 1
 
                     return table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer
     except:

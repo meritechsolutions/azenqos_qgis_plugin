@@ -491,49 +491,91 @@ Log_hash list: {}""".format(
         self.add_param_window(system_sql_query.SYSTEM_TECHNOLOGY_SQL_LIST, title="Technology", stretch_last_row=True, time_list_mode=True)
 
     @pyqtSlot()
-    def on_actionGSM_WCDMA_System_Info_triggered(self):
+    def on_actionGSM_WCDMA_System_Info_triggered(self, selected_ue = None):
         print("action gsm wdcma system info")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import system_sql_query
-        self.add_param_window(system_sql_query.GSM_WCDMA_SYSTEM_INFO_SQL_LIST, title="GSM/WCDMA System Info")
+        self.add_param_window(system_sql_query.GSM_WCDMA_SYSTEM_INFO_SQL_LIST, title="GSM/WCDMA System Info", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionLTE_System_Info_triggered(self):
+    def on_actionLTE_System_Info_triggered(self, selected_ue = None):
         print("action lte system info")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import system_sql_query
-        self.add_param_window(system_sql_query.LTE_SYSTEM_INFO_SQL_LIST, title="LTE System Info")
+        self.add_param_window(system_sql_query.LTE_SYSTEM_INFO_SQL_LIST, title="LTE System Info", selected_ue=selected_ue)
 
     ############# footprint menu slots
 
     @pyqtSlot()
-    def on_actionNR_PCI_Footprint_triggered(self):
+    def on_actionNR_PCI_Footprint_triggered(self, selected_ue = None):
         print("action nr pci footprint")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import footprint_dialog
 
-        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "NR PCI Footprint", technology = "nr")
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "NR PCI Footprint", technology = "nr", selected_ue=selected_ue)
         dlg.show()
 
     @pyqtSlot()
-    def on_actionLTE_PCI_Footprint_triggered(self):
+    def on_actionLTE_PCI_Footprint_triggered(self, selected_ue = None):
         print("action lte pci footprint")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import footprint_dialog
 
-        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "LTE PCI Footprint", technology = "lte")
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "LTE PCI Footprint", technology = "lte", selected_ue=selected_ue)
         dlg.show()
 
     @pyqtSlot()
-    def on_actionWCDMA_PSC_Footprint_triggered(self):
+    def on_actionWCDMA_PSC_Footprint_triggered(self, selected_ue = None):
         print("action wcdma psc footprint")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import footprint_dialog
 
-        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "WCDMA PSC Footprint", technology = "wcdma")
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "WCDMA PSC Footprint", technology = "wcdma", selected_ue=selected_ue)
         dlg.show()
 
     @pyqtSlot()
-    def on_actionGSM_BCCH_Footprint_triggered(self):
+    def on_actionGSM_BCCH_Footprint_triggered(self, selected_ue = None):
         print("action gsm bcch footprint")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import footprint_dialog
 
-        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "GSM BCCH Footprint", technology = "gsm")
+        dlg = footprint_dialog.footprint_dialog(self, self.gc, title = "GSM BCCH Footprint", technology = "gsm", selected_ue=selected_ue)
         dlg.show()
 
     ############# signalling menu slots
@@ -560,16 +602,30 @@ Log_hash list: {}""".format(
 
     ############# NR menu slots
     @pyqtSlot()
-    def on_action5GNR_Radio_triggered(self):
+    def on_action5GNR_Radio_triggered(self, selected_ue = None):
         print("action nr radio params")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import nr_radio_query
-        self.add_param_window(nr_radio_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio")
+        self.add_param_window(nr_radio_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_action5GNR_Data_triggered(self):
+    def on_action5GNR_Data_triggered(self, selected_ue = None):
         print("action nr data params")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import nr_data_query
-        self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data")
+        self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", selected_ue=selected_ue)
 
     def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, allow_no_log_opened=False, selected_ue=None):
         swa = SubWindowArea(self.mdi, self.gc)
@@ -662,81 +718,158 @@ Log_hash list: {}""".format(
         dlg.show()
 
     @pyqtSlot()
-    def on_actionExynosServiceMode_BasicInfo_2_triggered(self):
-        self.add_param_window("select log_hash, time, exynos_basic_info from exynos_basic_info", title="ExynosServiceMode BasicInfo", stretch_last_row=True)
+    def on_actionExynosServiceMode_BasicInfo_2_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        self.add_param_window("select log_hash, time, exynos_basic_info from exynos_basic_info", title="ExynosServiceMode BasicInfo", stretch_last_row=True, selected_ue=selected_ue)
 
 
     @pyqtSlot()
-    def on_actionExynosServiceMode_NR_Radio_triggered(self):
+    def on_actionExynosServiceMode_NR_Radio_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import exynos_service_mode_nr_query
-        self.add_param_window(exynos_service_mode_nr_query.RADIO_SELECT_FROM_PART, title="ExynosServiceMode NR Radio")
+        self.add_param_window(exynos_service_mode_nr_query.RADIO_SELECT_FROM_PART, title="ExynosServiceMode NR Radio", selected_ue=selected_ue)
 
 
     @pyqtSlot()
-    def on_actionExynosServiceMode_NR_Data_triggered(self):
+    def on_actionExynosServiceMode_NR_Data_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import exynos_service_mode_nr_query
-        self.add_param_window(exynos_service_mode_nr_query.DATA_SELECT_FROM_PART, title="ExynosServiceMode NR Data")
+        self.add_param_window(exynos_service_mode_nr_query.DATA_SELECT_FROM_PART, title="ExynosServiceMode NR Data", selected_ue=selected_ue)
 
 
     @pyqtSlot()
-    def on_actionExynosServiceMode_NR_Reg_triggered(self):
+    def on_actionExynosServiceMode_NR_Reg_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import exynos_service_mode_nr_query
-        self.add_param_window(exynos_service_mode_nr_query.REG_SELECT_FROM_PART, title="ExynosServiceMode NR Reg")
+        self.add_param_window(exynos_service_mode_nr_query.REG_SELECT_FROM_PART, title="ExynosServiceMode NR Reg", selected_ue=selected_ue)
 
 
     @pyqtSlot()
-    def on_actionExynos_LTE_Radio_triggered(self):
+    def on_actionExynos_LTE_Radio_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import exynos_service_mode_lte_query
-        self.add_param_window(exynos_service_mode_lte_query.RADIO_SELECT_FROM_PART, title="ExynosServiceMode LTE Radio")
+        self.add_param_window(exynos_service_mode_lte_query.RADIO_SELECT_FROM_PART, title="ExynosServiceMode LTE Radio", selected_ue=selected_ue)
 
 
     @pyqtSlot()
-    def on_actionExynosServiceMode_LTE_Data_triggered(self):
+    def on_actionExynosServiceMode_LTE_Data_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import exynos_service_mode_lte_query
-        self.add_param_window(exynos_service_mode_lte_query.DATA_SELECT_FROM_PART, title="ExynosServiceMode LTE Data")
+        self.add_param_window(exynos_service_mode_lte_query.DATA_SELECT_FROM_PART, title="ExynosServiceMode LTE Data", selected_ue=selected_ue)
 
 
     @pyqtSlot()
-    def on_actionExynosServiceMode_LTE_Reg_triggered(self):
+    def on_actionExynosServiceMode_LTE_Reg_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import exynos_service_mode_lte_query
-        self.add_param_window(exynos_service_mode_lte_query.REG_SELECT_FROM_PART, title="ExynosServiceMode LTE Reg")
+        self.add_param_window(exynos_service_mode_lte_query.REG_SELECT_FROM_PART, title="ExynosServiceMode LTE Reg", selected_ue=selected_ue)
 
 
     @pyqtSlot()
-    def on_action5GNR_Radio_Parameters_triggered(self):
+    def on_action5GNR_Radio_Parameters_triggered(self, selected_ue = None):
         print("action old nr radio params")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_action5GNR_Serving_Neighbors_triggered(self):
+    def on_action5GNR_Serving_Neighbors_triggered(self, selected_ue = None):
         print("action nr serving neigh")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_action5GNR_Beams_triggered(self):
+    def on_action5GNR_Beams_triggered(self, selected_ue = None):
         print("action nr beams")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import nr_sql_query
         self.add_param_window(nr_sql_query.NR_BEAMS_SQL_LIST_DICT, title="NR Beams")
 
     @pyqtSlot()
-    def on_action5GNR_Data_Params_triggered(self):
+    def on_action5GNR_Data_Params_triggered(self, selected_ue = None):
         print("action old nr data")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import nr_sql_query
         if self.is_leg_nr_tables == False:
-            self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
         else:
             print("is legacy nr")
-            self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
 
     ############# LTE menu slots
     @pyqtSlot()
@@ -1028,42 +1161,77 @@ Log_hash list: {}""".format(
     ############# Data menu slots
 
     @pyqtSlot()
-    def on_actionWiFi_Active_triggered(self):
+    def on_actionWiFi_Active_triggered(self, selected_ue = None):
         print("action wifi active")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import data_sql_query
-        self.add_param_window(data_sql_query.WIFI_ACTIVE_SQL_LIST, title="WiFi Active")
+        self.add_param_window(data_sql_query.WIFI_ACTIVE_SQL_LIST, title="WiFi Active", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionWiFi_Scan_triggered(self):
+    def on_actionWiFi_Scan_triggered(self, selected_ue = None):
         print("action wifi scan")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import data_query
-
         swa = SubWindowArea(self.mdi, self.gc)
         widget = TableWindow(
             swa,
             "WiFi Scan",
             data_query.get_wifi_scan_df,
             func_key=inspect.currentframe().f_code.co_name,
+            selected_ue = selected_ue
         )
         self.add_subwindow_with_widget(swa, widget)
 
     @pyqtSlot()
-    def on_actionGPRS_EDGE_Information_triggered(self):
+    def on_actionGPRS_EDGE_Information_triggered(self, selected_ue = None):
         print("action gprs edge info")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import data_sql_query
-        self.add_param_window(data_sql_query.GPRS_EDGE_SQL_LIST, title="GPRS/EDGE Information")
+        self.add_param_window(data_sql_query.GPRS_EDGE_SQL_LIST, title="GPRS/EDGE Information", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionHSDPA_Statistics_triggered(self):
+    def on_actionHSDPA_Statistics_triggered(self, selected_ue = None):
         print("action hadpa statistics")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import data_sql_query
-        self.add_param_window(data_sql_query.HSDPA_STATISTICS_SQL_LIST, title="HSDPA Statistics")
+        self.add_param_window(data_sql_query.HSDPA_STATISTICS_SQL_LIST, title="HSDPA Statistics", selected_ue=selected_ue)
 
     @pyqtSlot()
-    def on_actionHSUPA_Statistics_triggered(self):
+    def on_actionHSUPA_Statistics_triggered(self, selected_ue = None):
         print("action haupa statistics")
+        if selected_ue is None and len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         import data_sql_query
-        self.add_param_window(data_sql_query.HSUPA_STATISTICS_SQL_LIST, title="HSUPA Statistics")
+        self.add_param_window(data_sql_query.HSUPA_STATISTICS_SQL_LIST, title="HSUPA Statistics", selected_ue=selected_ue)
     
     ############# Session menu slots
 
@@ -2864,44 +3032,50 @@ Log_hash list: {}""".format(
             spider_plot.plot_rat_spider(self.gc.cell_files, self.gc.databasePath, rat, options_dict=options_dict, freq_code_match_mode=freq_code_match_mode)
 
     def add_indoor_map_layers(self):
-        rotate_indoor_map_path = os.path.join(self.gc.logPath, "map_rotated.png")
-        indoor_map_path = os.path.join(self.gc.logPath, "map.jpg")
-        tif_map_path = os.path.join(self.gc.logPath, "map_rotated.tif")
-        from PIL import Image
-        is_rotate_indoor_map = False
-        if os.path.isfile(rotate_indoor_map_path):
-            indoor_map_path = rotate_indoor_map_path
-            is_rotate_indoor_map = True
-        if os.path.isfile(indoor_map_path):
-            self.gc.is_indoor = True
-            indoor_map_image = Image.open(indoor_map_path)
-            w, h = indoor_map_image.size
-            nw_lon = 0
-            nw_lat = 1
-            ne_lon = 1
-            ne_lat = 1
-            se_lon = 1
-            se_lat = 0
-            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                try:
-                    indoor_bg_df = pd.read_sql("select * from indoor_background_img", dbcon)
-                    if len(indoor_bg_df) > 0:
-                        map_type = "ori"
-                        if is_rotate_indoor_map:
-                            map_type = "rotated"
-                        nw_lon = indoor_bg_df["indoor_{}_img_north_west_lon".format(map_type)][0]
-                        nw_lat = indoor_bg_df["indoor_{}_img_north_west_lat".format(map_type)][0]
-                        ne_lon = indoor_bg_df["indoor_{}_img_north_east_lon".format(map_type)][0]
-                        ne_lat = indoor_bg_df["indoor_{}_img_north_east_lat".format(map_type)][0]
-                        se_lon = indoor_bg_df["indoor_{}_img_south_east_lon".format(map_type)][0]
-                        se_lat = indoor_bg_df["indoor_{}_img_south_east_lat".format(map_type)][0]
-                    else:
+        ue = 1
+        for log_hash in self.gc.log_list:
+            rotate_indoor_map_path = os.path.join(self.gc.logPath, str(log_hash), "map_rotated.png")
+            indoor_map_path = os.path.join(self.gc.logPath, str(log_hash), "map.jpg")
+            tif_map_path = os.path.join(self.gc.logPath, str(log_hash), "map_rotated.tif")
+            indoor_map_layer_name = "indoor_map"
+            if len(self.gc.log_list) > 1:
+                 indoor_map_layer_name = indoor_map_layer_name + "_UE_" + str(ue)
+            from PIL import Image
+            is_rotate_indoor_map = False
+            if os.path.isfile(rotate_indoor_map_path):
+                indoor_map_path = rotate_indoor_map_path
+                is_rotate_indoor_map = True
+            if os.path.isfile(indoor_map_path):
+                self.gc.is_indoor = True
+                indoor_map_image = Image.open(indoor_map_path)
+                w, h = indoor_map_image.size
+                nw_lon = 0
+                nw_lat = 1
+                ne_lon = 1
+                ne_lat = 1
+                se_lon = 1
+                se_lat = 0
+                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                    try:
+                        indoor_bg_df = pd.read_sql("select * from indoor_background_img where log_hash = {}".format(log_hash), dbcon)
+                        if len(indoor_bg_df) > 0:
+                            map_type = "ori"
+                            if is_rotate_indoor_map:
+                                map_type = "rotated"
+                            nw_lon = indoor_bg_df["indoor_{}_img_north_west_lon".format(map_type)][0]
+                            nw_lat = indoor_bg_df["indoor_{}_img_north_west_lat".format(map_type)][0]
+                            ne_lon = indoor_bg_df["indoor_{}_img_north_east_lon".format(map_type)][0]
+                            ne_lat = indoor_bg_df["indoor_{}_img_north_east_lat".format(map_type)][0]
+                            se_lon = indoor_bg_df["indoor_{}_img_south_east_lon".format(map_type)][0]
+                            se_lat = indoor_bg_df["indoor_{}_img_south_east_lat".format(map_type)][0]
+                        else:
+                            self.is_legacy_indoor = True
+                    except:
                         self.is_legacy_indoor = True
-                except:
-                    self.is_legacy_indoor = True
 
-            os.system("gdal_translate -of GTiff -a_srs EPSG:4326 -gcp 0 0 {nw_lon} {nw_lat} -gcp {width} 0 {ne_lon} {ne_lat} -gcp {width} {height} {se_lon} {se_lat} {jpg_path} {tif_path}".format(width=w, height=h, jpg_path=indoor_map_path, tif_path=tif_map_path, nw_lon=nw_lon, nw_lat=nw_lat, ne_lon=ne_lon, ne_lat=ne_lat, se_lon=se_lon, se_lat=se_lat))
-            self.qgis_iface.addRasterLayer(tif_map_path, "indoor_map")
+                os.system("gdal_translate -of GTiff -a_srs EPSG:4326 -gcp 0 0 {nw_lon} {nw_lat} -gcp {width} 0 {ne_lon} {ne_lat} -gcp {width} {height} {se_lon} {se_lat} {jpg_path} {tif_path}".format(width=w, height=h, jpg_path=indoor_map_path, tif_path=tif_map_path, nw_lon=nw_lon, nw_lat=nw_lat, ne_lon=ne_lon, ne_lat=ne_lat, se_lon=se_lon, se_lat=se_lat))
+                self.qgis_iface.addRasterLayer(tif_map_path, indoor_map_layer_name)
+            ue += 1
             
         return
 

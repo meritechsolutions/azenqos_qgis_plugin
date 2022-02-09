@@ -52,13 +52,33 @@ class add_map_layer_dialog(QDialog):
 
 
     def create_param_layer(self):
+        selected_ue = None
+        if len(self.gc.log_list) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
         if self.gc.databasePath is not None:
             with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                 table_name = preprocess_azm.get_table_for_column(self.param_name .split("/")[0])
                 sqlstr = "select log_hash, time, {} from {}".format(self.param_name , table_name)
+                location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
+                layer_name = self.param_name
+                if len(self.gc.log_list) > 1 and selected_ue is not None:
+                    import sql_utils
+                    title_ue_suffix = "_UE_" + str(selected_ue)
+                    if title_ue_suffix not in self.param_name:
+                        layer_name = self.param_name + title_ue_suffix
+                    if int(selected_ue) <= len(self.gc.log_list):
+                        selected_log = str(self.gc.log_list[int(selected_ue)-1])
+                        where = "where log_hash = '{}'".format(selected_log)
+                        sqlstr = sql_utils.add_first_where_filt(sqlstr, where)
+                        location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
                 df = pd.read_sql(sqlstr, dbcon, parse_dates=['time'])
                 df = df.loc[df[self.param_name].notna()]
-                df_location = pd.read_sql("select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon, parse_dates=['time'])
+                df_location = pd.read_sql(location_sqlstr, dbcon, parse_dates=['time'])
                 if self.gc.is_indoor:
                     df = db_preprocess.add_pos_lat_lon_to_indoor_df(df, df_location).rename(
                     columns={"positioning_lat": "lat", "positioning_lon": "lon"}).reset_index(drop=True)
@@ -72,4 +92,4 @@ class add_map_layer_dialog(QDialog):
                         QMessageBox.Ok,
                     )
                     return
-                azq_utils.create_layer_in_qgis(self.gc.databasePath, df, self.param_name, theme_param = self.param_name)
+                azq_utils.create_layer_in_qgis(self.gc.databasePath, df, layer_name, theme_param = self.param_name)

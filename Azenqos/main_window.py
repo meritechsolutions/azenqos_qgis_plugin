@@ -2416,7 +2416,7 @@ Log_hash list: {}""".format(
             for device in self.gc.device_configs:
                 ret = azq_utils.call_no_shell((azq_utils.get_adb_command(), "-s", device["key"], "shell", "ls",  "/sdcard/azq_db_live"))
                 if ret != 0:
-                    qt_utils.msgbox("Plese enable Azenqos Replay Live mode from Azenqos application", title="Live mode is not enabled on {}".format(device["name"]), parent=self)
+                    qt_utils.msgbox("please enable QGIS Replay LIVE mode from Azenqos application", title="Live mode is not enabled on {}".format(device["name"]), parent=self)
                     return
             if not self.gc.live_mode_update_time:
                 self.switch_live_mode()

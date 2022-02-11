@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 import base64
 import re
+from numpy import where
 
 import pandas as pd
 import requests
@@ -1724,32 +1725,39 @@ def check_and_recover_db(dbfp, tmp_path, write_debug_sql_file=False):
 def current_milli_time():
     return round(time.time() * 1000)
 
-def live_mode(gc, refresh_signal):
+def live_mode(gc, device_dict, db_queue):
     def temp():
-        gc.live_mode = True
         gc.live_mode_update_time = True
+        device_key = device_dict["key"]
+        process = popen_no_shell((get_adb_command(), "-s", device_key, "shell", "busybox", "tail", "-f",  "/sdcard/diag_logs/azqdata.db.sql"))
+        gc.live_process_list.append(process)
+        for line in iter(process.stdout.readline, b''):
+            line = line.decode("utf-8")
+            sql_script = line[len("SQLiteProgram: "):]
+            db_queue.put(sql_script)
+            match_table = re.search(r"^INSERT INTO \"(\S*)\"",sql_script).group(1)
+            if match_table in gc.params_to_gen.keys():
+                for param in gc.params_to_gen[match_table]:
+                    view = param
+                    if match_table == view:
+                        view = match_table+"_1"
+                    sql_script_view = sql_script.replace('INTO "{}"'.format(match_table), 'INTO "{}"'.format(view))
+                    db_queue.put(sql_script_view)
+    return temp
+
+def live_mode_db_insert(gc, refresh_signal, db_queue):
+    def temp():
         dbfp = gc.databasePath
         start_time_ms = current_milli_time()
         with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
             dbcon.execute('PRAGMA journal_mode=WAL;')
-            call_no_shell((get_adb_command(), "shell", "touch",  "/sdcard/azq_db_live"))
-            process = popen_no_shell((get_adb_command(), "shell", "busybox", "tail", "-f",  "/sdcard/diag_logs/azqdata.db.sql"))
             dbcon.execute('BEGIN;')
-            for line in iter(process.stdout.readline, b''):
-                line = line.decode("utf-8")
-                sql_script = line[len("SQLiteProgram: "):]
-                match_table = re.search(r"^INSERT INTO \"(\S*)\"",sql_script).group(1)
-                dbcon.execute('{}'.format(sql_script))
-                if match_table in gc.params_to_gen.keys():
-                    for param in gc.params_to_gen[match_table]:
-                        view = param
-                        if match_table == view:
-                            view = match_table+"_1"
-                        sql_script_view = sql_script.replace('INTO "{}"'.format(match_table), 'INTO "{}"'.format(view))
-                        try:
-                            dbcon.execute('{}'.format(sql_script_view))
-                        except:
-                            pass
+            while gc.live_mode:
+                item = db_queue.get()
+                try:
+                    dbcon.execute(item)
+                except:
+                    pass
                 current_time_ms  = current_milli_time()
                 if (current_time_ms - start_time_ms) > 1*1000:
                     start_time_ms = current_time_ms
@@ -1761,42 +1769,57 @@ def live_mode(gc, refresh_signal):
                     refresh_signal.emit()
     return temp
 
-def pull_latest_log_db_from_phone(parent=None):
-    close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows
-    failed_cmd = get_failed_scrcpy_cmd()
-    if failed_cmd:
-        QtWidgets.QMessageBox.critical(
-            parent,
-            "Test command failed",
-            "Command failed: " + failed_cmd,
-            QtWidgets.QMessageBox.Cancel,
-        )
-        return None
-    azqdata_uuid = uuid.uuid4()
-    db_journal_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
-    assert not os.path.isfile(db_journal_fp)
-    call_no_shell((get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db-journal", db_journal_fp))
-    dbfp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(azqdata_uuid))
-    assert not os.path.isfile(dbfp)
-    cmd = (get_adb_command(), "pull", "/sdcard/diag_logs/azqdata.db", dbfp)
-    ret = 1
-    try_n = 0
-    while ret != 0 and try_n < 10:
-        ret = call_no_shell(cmd)
-        try_n += 1
-    print("total pull: ", try_n, "ret: ", ret)
-    if ret != 0:
-        QtWidgets.QMessageBox.critical(
-            parent,
-            "Failed to pull data from connected phone",
-            "- Please make sure that you have a phone with AZENQOS netmon/script running connected via USB.\n- Please make sure phone has 'USB Debugging' enabled in phone settings >> 'Developer options'.",
-            QtWidgets.QMessageBox.Cancel,
-        )
-        return None
-    dbfp = check_and_recover_db(dbfp, tmp_gen_path())
-    assert os.path.isfile(dbfp)
-    start_scrcpy_proc()
-    return dbfp
+def pull_latest_log_db_from_phone(parent=None, gc = None):
+    # close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows
+    # failed_cmd = get_failed_scrcpy_cmd()
+    # if failed_cmd:
+    #     QtWidgets.QMessageBox.critical(
+    #         parent,
+    #         "Test command failed",
+    #         "Command failed: " + failed_cmd,
+    #         QtWidgets.QMessageBox.Cancel,
+    #     )
+    #     return None
+    # azqdata_uuid = uuid.uuid4()
+    # db_journal_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
+    # assert not os.path.isfile(db_journal_fp)
+    adb_devices = list(set([device.split('\t')[0] for device in check_output_no_shell((get_adb_command(), "devices")).splitlines() if device.endswith('\tdevice')]))
+    logs = []
+    for adb_device in adb_devices:
+        adb_device_name = check_output_no_shell((get_adb_command(), "-s", adb_device, "shell", "dumpsys bluetooth_manager | \grep 'name:' | cut -c9-")).strip()
+        
+        db_journal_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(adb_device))
+        call_no_shell((get_adb_command(), "-s", adb_device, "pull", "/sdcard/diag_logs/azqdata.db-journal", db_journal_fp))
+        dbfp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db".format(adb_device))
+        if os.path.exists(db_journal_fp):
+            os.remove(db_journal_fp)
+        if os.path.exists(dbfp):
+            os.remove(dbfp)
+        
+        cmd = (get_adb_command(), "-s", adb_device, "pull", "/sdcard/diag_logs/azqdata.db", dbfp)
+        ret = 1
+        try_n = 0
+        while ret != 0 and try_n < 10:
+            ret = call_no_shell(cmd)
+            try_n += 1
+        print("total pull: ", try_n, "ret: ", ret)
+        if ret != 0:
+            QtWidgets.QMessageBox.critical(
+                parent,
+                "Failed to pull data from {}".format(adb_device_name),
+                "- Please make sure that you have a phone with AZENQOS netmon/script running connected via USB.\n- Please make sure phone has 'USB Debugging' enabled in phone settings >> 'Developer options'.",
+                QtWidgets.QMessageBox.Cancel,
+            )
+            return None
+        dbfp = check_and_recover_db(dbfp, tmp_gen_path())
+        assert os.path.isfile(dbfp)
+        logs.append(dbfp)
+        log_hash = None
+        with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+            log_hash = str(pd.read_sql("select log_hash from logs limit 1", dbcon)["log_hash"][0])
+            gc.device_configs.append({"key":adb_device, "name":adb_device_name, "log_hash":[log_hash]})
+    # start_scrcpy_proc()
+    return logs
 
 
 CREATE_NO_WINDOW = 0x08000000

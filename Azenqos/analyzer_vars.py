@@ -54,10 +54,12 @@ class analyzer_vars:
         self.timeSlider = None
         self.isSliderPlay = False
         self.log_list = []
+        self.device_configs = []
         self.is_indoor = False
         self.easy_overview_mode = False
         self.overview_opened = False
         self.allLayers = []
+        self.live_process_list = []
         # tableList = []
         self.highlight_list = []
         self.linechartWindowname = [

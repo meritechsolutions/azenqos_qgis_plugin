@@ -100,9 +100,9 @@ class AddParamDialog(QDialog):
 
     def onOkButtonClick(self):
         
-        if self.selected_ue is None and len(self.gc.log_list) > 1:
+        if self.selected_ue is None and len(self.gc.device_configs) > 1 :
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return

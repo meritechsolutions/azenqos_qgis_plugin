@@ -493,9 +493,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_WCDMA_System_Info_triggered(self, selected_ue = None):
         print("action gsm wdcma system info")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -506,9 +506,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_System_Info_triggered(self, selected_ue = None):
         print("action lte system info")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -521,9 +521,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionNR_PCI_Footprint_triggered(self, selected_ue = None):
         print("action nr pci footprint")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -536,9 +536,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_PCI_Footprint_triggered(self, selected_ue = None):
         print("action lte pci footprint")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -551,9 +551,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_PSC_Footprint_triggered(self, selected_ue = None):
         print("action wcdma psc footprint")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -566,9 +566,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_BCCH_Footprint_triggered(self, selected_ue = None):
         print("action gsm bcch footprint")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -604,9 +604,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_action5GNR_Radio_triggered(self, selected_ue = None):
         print("action nr radio params")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -617,9 +617,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_action5GNR_Data_triggered(self, selected_ue = None):
         print("action nr data params")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -705,9 +705,9 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionCustom_Table_View_UI_triggered(self, selected_ue = None):
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -719,9 +719,9 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionExynosServiceMode_BasicInfo_2_triggered(self, selected_ue = None):
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -731,9 +731,9 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionExynosServiceMode_NR_Radio_triggered(self, selected_ue = None):
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -744,9 +744,9 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionExynosServiceMode_NR_Data_triggered(self, selected_ue = None):
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -757,9 +757,9 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionExynosServiceMode_NR_Reg_triggered(self, selected_ue = None):
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -770,9 +770,9 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionExynos_LTE_Radio_triggered(self, selected_ue = None):
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -783,9 +783,9 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionExynosServiceMode_LTE_Data_triggered(self, selected_ue = None):
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -796,9 +796,9 @@ Log_hash list: {}""".format(
 
     @pyqtSlot()
     def on_actionExynosServiceMode_LTE_Reg_triggered(self, selected_ue = None):
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -810,9 +810,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_action5GNR_Radio_Parameters_triggered(self, selected_ue = None):
         print("action old nr radio params")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -827,9 +827,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self, selected_ue = None):
         print("action nr serving neigh")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -844,9 +844,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_action5GNR_Beams_triggered(self, selected_ue = None):
         print("action nr beams")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -857,9 +857,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_action5GNR_Data_Params_triggered(self, selected_ue = None):
         print("action old nr data")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -875,9 +875,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_Radio_Parameters_triggered(self, selected_ue = None):
         print("action lte radio params")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -888,9 +888,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_Serving_Neighbors_triggered(self, selected_ue = None):
         print("action lte serving neigh")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -901,9 +901,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_Data_Params_triggered(self, selected_ue = None):
         print("action lte data param")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -914,9 +914,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_PUCCH_PDSCH_Params_triggered(self, selected_ue = None):
         print("action lte pucch pdsch param")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -927,9 +927,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_RRC_SIB_States_triggered(self, selected_ue = None):
         print("action lte rrc sib states")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -940,9 +940,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_RLC_triggered(self, selected_ue = None):
         print("action lte rlc")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -953,9 +953,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_VoLTE_triggered(self, selected_ue = None):
         print("action lte volte")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -968,9 +968,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_Radio_Parameters_triggered(self, selected_ue = None):
         print("action wcdma radio params")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -981,9 +981,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_Active_Monitored_sets_triggered(self, selected_ue = None):
         print("action wcdma active monitored")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -994,9 +994,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_BLER_Summary_triggered(self, selected_ue = None):
         print("action wcdma bler summary")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1007,9 +1007,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_Bearers_triggered(self, selected_ue = None):
         print("action wcdma bearers")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1022,9 +1022,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_Physical_Parameters_triggered(self, selected_ue = None):
         print("action gsm radio params")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1035,9 +1035,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_Serving_Neighbors_triggered(self, selected_ue = None):
         print("action gsm serving neigh")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1048,9 +1048,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_Current_Channel_triggered(self, selected_ue = None):
         print("action gsm current channel")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1061,9 +1061,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_C_I_triggered(self, selected_ue = None):
         print("action gsm coi")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1077,9 +1077,9 @@ Log_hash list: {}""".format(
     def on_actionPCAP_triggered(self, selected_ue = None):
         print("action pcap")
         title = "PCAP"
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1163,9 +1163,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWiFi_Active_triggered(self, selected_ue = None):
         print("action wifi active")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1176,9 +1176,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWiFi_Scan_triggered(self, selected_ue = None):
         print("action wifi scan")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1197,9 +1197,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGPRS_EDGE_Information_triggered(self, selected_ue = None):
         print("action gprs edge info")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1210,9 +1210,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionHSDPA_Statistics_triggered(self, selected_ue = None):
         print("action hadpa statistics")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1223,9 +1223,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionHSUPA_Statistics_triggered(self, selected_ue = None):
         print("action haupa statistics")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1512,9 +1512,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionNR_Line_Chart_triggered(self, selected_ue=None):
         print("action nr line chart")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1542,9 +1542,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionNR_DATA_Line_Chart_triggered(self, selected_ue=None):
         print("action nr data line chart")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1577,9 +1577,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_Line_Chart_triggered(self, selected_ue=None):
         print("action lte line chart")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1608,9 +1608,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionLTE_DATA_Line_Chart_triggered(self, selected_ue=None):
         print("action lte data line chart")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1641,9 +1641,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_Line_Chart_triggered(self, selected_ue=None):
         print("action wcdma line chart")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1672,9 +1672,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionWCDMA_DATA_Line_Chart_triggered(self, selected_ue=None):
         print("action wcdma data line chart")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1704,9 +1704,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_Line_Chart_triggered(self, selected_ue=None):
         print("action gsm line chart")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -1733,9 +1733,9 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionGSM_DATA_Line_Chart_triggered(self, selected_ue=None):
         print("action gsm data line chart")
-        if selected_ue is None and len(self.gc.log_list) > 1:
+        if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -2351,14 +2351,16 @@ Log_hash list: {}""".format(
 
     def open_logs(self, connected_mode_refresh=False, ask_close_all_layers=True):
         if self.gc.databasePath:
+            if ask_close_all_layers:
+                reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?", question=True)
+
+                if reply == QMessageBox.Cancel:
+                    return
+                self.close_all_layers = False
+                if reply == QMessageBox.Yes:
+                    self.close_all_layers = True
             self.gc.databasePath = None
             self.gc.db_fp = None
-            if ask_close_all_layers:
-                reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?")
-                print("reply", reply)
-                self.close_all_layers = False
-                if reply == 0:
-                    self.close_all_layers = True
             self.cleanup()
             '''
             msgBox = QMessageBox()
@@ -2411,10 +2413,22 @@ Log_hash list: {}""".format(
         self.updateUi()
         self.is_leg_nr_tables = preprocess_azm.is_leg_nr_tables()
         if self.gc.log_mode == "adb":
+            for device in self.gc.device_configs:
+                ret = azq_utils.call_no_shell((azq_utils.get_adb_command(), "-s", device["key"], "shell", "ls",  "/sdcard/azq_db_live"))
+                if ret != 0:
+                    qt_utils.msgbox("Plese enable Azenqos Replay Live mode from Azenqos application", title="Live mode is not enabled on {}".format(device["name"]), parent=self)
+                    return
             if not self.gc.live_mode_update_time:
                 self.switch_live_mode()
-            worker = Worker(azq_utils.live_mode(self.gc, self.refresh_signal))
+            import queue
+            self.gc.live_mode = True
+            db_queue = queue.Queue()
+            worker = Worker(azq_utils.live_mode_db_insert(self.gc, self.refresh_signal, db_queue))
             self.gc.threadpool.start(worker)
+            for device in self.gc.device_configs:
+                worker = Worker(azq_utils.live_mode(self.gc, device, db_queue))
+                # worker = Worker(azq_utils.live_mode(self.gc, self.refresh_signal, device))
+                self.gc.threadpool.start(worker)
 
     def timeChange(self):
 
@@ -2652,12 +2666,18 @@ Log_hash list: {}""".format(
 
     def cleanup(self):
         try:
+            self.gc.live_mode = False
+            if self.gc.live_mode_update_time:
+                self.switch_live_mode()
+            for process in self.gc.live_mode_update_time:
+                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            self.gc.live_mode_update_time = []
             self.save_current_workspace()
             self.pauseTime()
 
             # remove selected features:
             self.clear_highlights()
-
+            
             # Begin removing layers
             if self.qgis_iface:
                 project = QgsProject.instance()
@@ -3039,7 +3059,7 @@ Log_hash list: {}""".format(
             tif_map_path = os.path.join(self.gc.logPath, str(log_hash), "map_rotated.tif")
             indoor_map_layer_name = "indoor_map"
             if len(self.gc.log_list) > 1:
-                 indoor_map_layer_name = indoor_map_layer_name + "_UE_" + str(ue)
+                 indoor_map_layer_name = indoor_map_layer_name + "_" + str(ue)
             from PIL import Image
             is_rotate_indoor_map = False
             if os.path.isfile(rotate_indoor_map_path):

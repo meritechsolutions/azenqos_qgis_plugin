@@ -53,10 +53,15 @@ class LineChart(QtWidgets.QDialog):
         pg.setConfigOptions(background="w", useOpenGL=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.paramListDict = {}
+        
+        gc.device_configs
         for paramDict in paramList:
             param_alias_name = paramDict["name"]
             if "selected_ue" in paramDict:
-                param_alias_name = param_alias_name+"_UE_"+str(paramDict["selected_ue"])
+                if paramDict["selected_ue"] is not None:
+                    title_ue_suffix = self.gc.device_configs[paramDict["selected_ue"]]["name"]
+                    if title_ue_suffix not in param_alias_name:
+                        param_alias_name = param_alias_name + "(" + title_ue_suffix + ")"
             self.paramListDict[param_alias_name] = paramDict
         self.viewBoxList = []
         self.colorDict = {}
@@ -198,15 +203,16 @@ class LineChart(QtWidgets.QDialog):
                 viewBox.addItem(newline)
                 colorindex += 1
             viewBox.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
-            viewBox.setLimits(
-                xMin=self.minX,
-                xMax=self.maxX,
-                yMin=minY - 4,
-                yMax=maxY + 10,
-                minXRange=20,
-                maxXRange=20,
-                minYRange=1,
-            )
+            if minY is not None:
+                viewBox.setLimits(
+                    xMin=self.minX,
+                    xMax=self.maxX,
+                    yMin=minY - 4,
+                    yMax=maxY + 10,
+                    minXRange=20,
+                    maxXRange=20,
+                    minYRange=1,
+                )
             self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 30)
             self.drawCursor(self.minX)
             self.moveChart(self.minX)
@@ -344,7 +350,10 @@ class LineChart(QtWidgets.QDialog):
     def onParamAdded(self, paramDict):
         param_alias_name = paramDict["name"]
         if "selected_ue" in paramDict:
-            param_alias_name = param_alias_name+"_UE_"+str(paramDict["selected_ue"])
+            if paramDict["selected_ue"] is not None:
+                title_ue_suffix = self.gc.device_configs[paramDict["selected_ue"]]["name"]
+                if title_ue_suffix not in param_alias_name:
+                    param_alias_name = param_alias_name + "(" + title_ue_suffix + ")"
         if param_alias_name not in self.paramListDict:
             self.paramListDict[param_alias_name] = paramDict
             color = get_default_color_for_index(self.colorindex)

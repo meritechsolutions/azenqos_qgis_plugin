@@ -53,9 +53,9 @@ class add_map_layer_dialog(QDialog):
 
     def create_param_layer(self):
         selected_ue = None
-        if len(self.gc.log_list) > 1:
+        if len(self.gc.device_configs) > 1 :
             import select_log_dialog
-            dlg = select_log_dialog.select_log_dialog(self.gc.log_list)
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
             result = dlg.exec_()
             if not result:
                 return
@@ -66,14 +66,13 @@ class add_map_layer_dialog(QDialog):
                 sqlstr = "select log_hash, time, {} from {}".format(self.param_name , table_name)
                 location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
                 layer_name = self.param_name
-                if len(self.gc.log_list) > 1 and selected_ue is not None:
+                if selected_ue is not None:
                     import sql_utils
-                    title_ue_suffix = "_UE_" + str(selected_ue)
+                    title_ue_suffix = self.gc.device_configs[self.selected_ue]["name"]
                     if title_ue_suffix not in self.param_name:
-                        layer_name = self.param_name + title_ue_suffix
-                    if int(selected_ue) <= len(self.gc.log_list):
-                        selected_log = str(self.gc.log_list[int(selected_ue)-1])
-                        where = "where log_hash = '{}'".format(selected_log)
+                        layer_name = self.param_name + "(" + title_ue_suffix + ")"
+                        selected_logs = self.gc.device_configs[self.selected_ue]["log_hash"]
+                        where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in selected_logs]))
                         sqlstr = sql_utils.add_first_where_filt(sqlstr, where)
                         location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
                 df = pd.read_sql(sqlstr, dbcon, parse_dates=['time'])

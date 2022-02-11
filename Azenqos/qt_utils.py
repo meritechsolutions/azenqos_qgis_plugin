@@ -128,7 +128,7 @@ def ask_selection(parent, items, items_selected=None, title="Please select", msg
 def ask_yes_no(parent, title, msg, yes_text="Yes", no_text="No", cancel_text="Cancel" , question=False):
     reply = None
     if question:
-        reply = QMessageBox.question(parent, title, msg, QMessageBox.Yes | QMessageBox.No,
+        reply = QMessageBox.question(parent, title, msg, QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
                                        QMessageBox.Yes)
     else:
         msgBox = QMessageBox(parent)

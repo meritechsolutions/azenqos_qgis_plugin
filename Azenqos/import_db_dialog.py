@@ -325,11 +325,11 @@ class import_db_dialog(QDialog):
         elif self.radioButtonPhone.isChecked():
             try:
                 self.import_status_signal.emit("Trying to pull data from connected phone...")
-                adb_db_fp = azq_utils.pull_latest_log_db_from_phone(self)
-                if adb_db_fp is None:
+                logs = azq_utils.pull_latest_log_db_from_phone(self, self.gc)
+                if logs is None:
                     return
-                assert os.path.isfile(adb_db_fp)
-                zip_fp = adb_db_fp
+                # assert os.path.isfile(adb_db_fp)
+                zip_fp = logs
                 self.gc.log_mode = "adb"
                 self.import_status_signal.emit("Trying to pull data from connected phone... done")
             except:

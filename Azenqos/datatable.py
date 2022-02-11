@@ -143,17 +143,15 @@ class TableWindow(QWidget):
         self.custom_df = custom_df
         self.tableHeader = tableHeader
         self.selected_ue = selected_ue
-        self.selected_log = None
-        if len(self.gc.log_list):
-            self.selected_log = str(self.gc.log_list[0])
-        if len(self.gc.log_list) > 1 and self.selected_ue is not None:
-            title_ue_suffix = "( UE" + str(self.selected_ue) + " )"
-            if title_ue_suffix not in self.title:
-                self.title = self.title + title_ue_suffix
-            if int(self.selected_ue) <= len(self.gc.log_list):
-                self.selected_log = str(self.gc.log_list[int(self.selected_ue)-1])
-            else:
-                self.selected_log = "0"
+        self.selected_logs = None
+        if len(self.gc.device_configs):
+            self.selected_logs = self.gc.device_configs[0]["log_hash"]
+            if self.selected_ue is not None:
+                title_ue_suffix = self.gc.device_configs[self.selected_ue]["name"]
+                if title_ue_suffix not in self.title:
+                    self.title = self.title + "(" + title_ue_suffix + ")"
+                    self.selected_logs = self.gc.device_configs[self.selected_ue]["log_hash"]
+
         self.rows = 0
         self.columns = 0
         self.fetchRows = 0
@@ -546,7 +544,7 @@ class TableWindow(QWidget):
                         if sql_utils.is_sql_select(eval_str):
                             sql_str = eval_str
                             print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
-                            df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, selected_log=self.selected_log)
+                            df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, selected_logs=self.selected_logs)
                         else:
                             print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
                             df = eval(eval_str)
@@ -560,7 +558,7 @@ class TableWindow(QWidget):
                             if sql_utils.is_sql_select(eval_str):
                                 sql_str = eval_str
                                 print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
-                                df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, selected_log=self.selected_log)
+                                df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, selected_logs=self.selected_logs)
                                 df_list.append(df)
                             else:
                                 print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
@@ -579,7 +577,7 @@ class TableWindow(QWidget):
                                 if sql_utils.is_sql_select(eval_str):
                                     sql_str = eval_str
                                     print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
-                                    df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, col_name=key, selected_log=self.selected_log)
+                                    df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, col_name=key, selected_logs=self.selected_logs)
                                     df_list.append(df)
                                 else:
                                     print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
@@ -596,7 +594,7 @@ class TableWindow(QWidget):
                         if self.title.lower() == "add layer" or self.title.lower().startswith("pcap"):
                             df = self.refresh_data_from_dbcon_and_time_func
                         elif self.title.lower().startswith("wifi scan"):
-                            df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict, selected_log=self.selected_log)
+                            df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict, selected_logs=self.selected_logs)
                         else:
                             df = self.refresh_data_from_dbcon_and_time_func(dbcon, refresh_dict)
                     assert df is not None
@@ -604,12 +602,17 @@ class TableWindow(QWidget):
                     if self.time_list_mode:
                         if "time" in df.columns:
                             df = df.sort_values(by="time")
-                            if len(self.gc.log_list) > 1 and "log_hash" in df.columns:
-                                i = 1
-                                for lh in self.gc.log_list:
-                                    df.loc[df["log_hash"] == lh, "UE"] = i
-                                    i += 1
-                                df["UE"] = df["UE"].astype(str)
+                            if "log_hash" in df.columns:
+                                if len(self.gc.device_configs):
+                                    for device in self.gc.device_configs:
+                                        df.loc[df["log_hash"].isin(device["log_hash"]), "UE"] = device["name"]
+                                    df["UE"] = df["UE"].astype(str)
+                                elif len(self.gc.log_list) > 1:
+                                    i = 1
+                                    for lh in self.gc.log_list:
+                                        df.loc[df["log_hash"] == lh, "UE"] = i
+                                        i += 1
+                                    df["UE"] = df["UE"].astype(str)
                     print("datatable refersh param view got df:\n", df.head())
                     self.set_pd_df(df)
             except:
@@ -697,6 +700,10 @@ class TableWindow(QWidget):
                         append_df = pd.read_sql(sql, dbcon)
                         append_df["time"] = pd.to_datetime(append_df["time"])
                         df = pd.concat([self.df, append_df]).sort_values("time").reset_index(drop = True)
+                        if len(self.gc.device_configs) and "log_hash" in df.columns:
+                            for device in self.gc.device_configs:
+                                df.loc[df["log_hash"].isin(device["log_hash"]), "UE"] = device["name"]
+                            df["UE"] = df["UE"].astype(str)
                         self.set_pd_df(df)
                         self.signal_ui_thread_emit_new_model.emit()
                         self.tableViewCount = self.tableView.model().rowCount()

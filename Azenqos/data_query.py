@@ -45,14 +45,16 @@ def get_Wifi_active_df(dbcon, time_before):
     )
 
 
-def get_wifi_scan_df(dbcon, time_before, selected_log=None):
+def get_wifi_scan_df(dbcon, time_before, selected_logs=None):
     dt_before = time_before["time"]
     sql = "select * from wifi_scanned_info where time between DATETIME('{}','-4 seconds') and '{}'".format(
         dt_before, dt_before
     )
-    if selected_log:
+    if selected_logs is not None and not isinstance(selected_logs, list):
+        selected_logs = [selected_logs]
+    if selected_logs:
         import sql_utils
-        where = "where log_hash = '{}'".format(selected_log)
+        where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in selected_logs]))
         sql = sql_utils.add_first_where_filt(sql, where)
     drop_col_list = ['time','modem_time','posid','seqid','netid','geom']
     df = pd.read_sql(sql, dbcon, parse_dates="time").sort_values(by="time").reset_index(drop=True)

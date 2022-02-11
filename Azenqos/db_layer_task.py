@@ -79,11 +79,11 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                     azq_utils.timer_print("gen_theme_qml")
                     assert qml_tmp_fp_list is not None
                     assert len(qml_tmp_fp_list) > 0
-                    log_list = gc.log_list
-                    if gc.overview_opened :
-                        log_list = [0]
+                    device_configs = gc.device_configs
+                    if gc.overview_opened or len(gc.device_configs) == 0:
+                        device_configs = [0]
                     ue = 1
-                    for log_hash in log_list:
+                    for device in device_configs:
                         for i in range(len(table_list)):
                             table = table_list[i]
                             param = param_list[i]
@@ -100,10 +100,12 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                 if azq_utils.is_lang_th() and gc.is_easy_mode():
                                     dn = dn.replace("_1", "", 1) # rm trailing _1
                                     dn = azq_utils.th_translate(dn)
-                                if len(log_list) > 1:
-                                    custom_sql = "log_hash = {}".format(log_hash)
-                                    dn = dn + "_UE_" + str(ue)
-                                    table_alias = table + "_UE_" + str(ue)
+                                if len(device_configs) > 1:
+                                    custom_sql = "log_hash in ({})".format(','.join([str(selected_log) for selected_log in device["log_hash"]]))
+                                    title_ue_suffix = device["name"]
+                                    if title_ue_suffix not in dn:
+                                        dn = dn + "(" + title_ue_suffix + ")"
+                                        table_alias = table + "(" + title_ue_suffix + ")"
                                 layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
                                     db_fp, table, visible=visible,
                                     style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=dn, theme_param=param, custom_sql=custom_sql

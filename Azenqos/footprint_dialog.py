@@ -31,19 +31,18 @@ class footprint_dialog(QDialog):
         super(footprint_dialog, self).__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
-        self.log_list = gc.log_list
+        self.device_configs = gc.device_configs
         self.title = title
         self.technology = technology.lower()
         self.selected_ue = selected_ue
-        self.selected_log = None
-        if len(self.log_list):
-            self.selected_log = str(self.log_list[0])
-        if len(self.log_list) > 1 and self.selected_ue is not None:
-            title_ue_suffix = "( UE" + str(self.selected_ue) + " )"
-            if title_ue_suffix not in self.title:
-                self.title = self.title + title_ue_suffix
-            if int(self.selected_ue) <= len(self.log_list):
-                self.selected_log = str(self.log_list[int(self.selected_ue)-1])
+        self.selected_logs = None
+        if len(self.device_configs):
+            self.selected_logs = self.device_configs[0]["log_hash"]
+            if self.selected_ue is not None:
+                title_ue_suffix = self.device_configs[self.selected_ue]["name"]
+                if title_ue_suffix not in self.title:
+                    self.title = self.title + "(" + title_ue_suffix + ")"
+                    self.selected_logs = self.device_configs[self.selected_ue]["log_hash"]
         if self.technology == "nr":
             self.nb_table = "nr_intra_neighbor"
             self.footprint_param = "nr_servingbeam_pci_1"
@@ -113,8 +112,8 @@ class footprint_dialog(QDialog):
                     sqlstr_for_get_pci = "select log_hash, time, {}, geom, {} from {}_cell_meas".format(self.param, self.footprint_param, self.technology)
 
                 sqlstr_for_get_location = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
-                if self.selected_log is not None:
-                    where = "where log_hash = '{}'".format(self.selected_log)
+                if self.selected_logs is not None:
+                    where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in self.selected_logs]))
                     sqlstr_for_get_pci = sql_utils.add_first_where_filt(sqlstr_for_get_pci, where)
                     sqlstr_for_get_location = sql_utils.add_first_where_filt(sqlstr_for_get_location, where)
                 cell_meas_df = pd.read_sql(sqlstr_for_get_pci, dbcon, parse_dates=['time'])
@@ -132,10 +131,10 @@ class footprint_dialog(QDialog):
                     pci = int(pci)
                     per_pci_df = df.loc[df[self.footprint_param]==pci].reset_index(drop=True)
                     layer_name = "{} per {}: {}".format(self.param, self.label_name,pci)
-                    
-                    if len(self.log_list) > 1 and self.selected_ue is not None:
-                        title_ue_suffix = "( UE" + str(self.selected_ue) + " )"
-                        layer_name = layer_name + title_ue_suffix
+                    if len(self.device_configs) > 1 and self.selected_ue is not None:
+                        title_ue_suffix = self.device_configs[self.selected_ue]["name"]
+                        if title_ue_suffix not in self.title:
+                            layer_name = layer_name + "(" + title_ue_suffix + ")"
                     theme_param = self.param
                     if len(per_pci_df) > 0:
                         azq_utils.create_layer_in_qgis(self.gc.databasePath, per_pci_df, layer_name, theme_param = theme_param)
@@ -143,8 +142,8 @@ class footprint_dialog(QDialog):
                         nb_param = self.neigh_macth_param_dict[self.param]
                         layer_name = "{} per {}: {}".format(nb_param, self.label_name,pci)
                         sqlstr_lte_nb = "select * from {} order by log_hash, time".format(self.nb_table)
-                        if self.selected_log is not None:
-                            where = "where log_hash = '{}'".format(self.selected_log)
+                        if self.selected_logs is not None:
+                            where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in self.selected_logs]))
                             sqlstr_lte_nb = sql_utils.add_first_where_filt(sqlstr_lte_nb, where)
                         nb_df = pd.read_sql(sqlstr_lte_nb, dbcon, parse_dates=['time'])
                         if self.gc.is_indoor:
@@ -184,8 +183,9 @@ class footprint_dialog(QDialog):
 
                         all_nb_per_pci_df = pd.concat(all_nb_per_pci_df, ignore_index=True)
                         if len(all_nb_per_pci_df) > 0:
-                            if len(self.log_list) > 1 and self.selected_ue is not None:
-                                title_ue_suffix = "( UE" + str(self.selected_ue) + " )"
-                                layer_name = layer_name + title_ue_suffix
+                            if len(self.device_configs) > 1 and self.selected_ue is not None:
+                                title_ue_suffix = self.device_configs[self.selected_ue]["name"]
+                                if title_ue_suffix not in self.title:
+                                    layer_name = layer_name + "(" + title_ue_suffix + ")"
                             azq_utils.create_layer_in_qgis(self.gc.databasePath, all_nb_per_pci_df, layer_name, theme_param = theme_param)
         

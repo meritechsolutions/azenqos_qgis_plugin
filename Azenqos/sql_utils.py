@@ -99,11 +99,17 @@ def get_ex_eval_str_for_select_from_part(select_from_part):
 
 
 def sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time):
+    if log_hash is not None and not isinstance(log_hash, list):
+        log_hash = [log_hash]
     return select_from_part+LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART.format(
-        log_hash_filt_part='log_hash = {} and '.format(log_hash) if log_hash is not None else '',
+        log_hash_filt_part='log_hash in ({}) and '.format(','.join([str(selected_log) for selected_log in log_hash])) if log_hash is not None else '',
         time=time
     )
-
+def list_to_sql_list(items):
+    if items is None:
+        return "[]"
+    quotedList = list(map(lambda x: '"{}"'.format(str(x)), items))
+    return '[{}]'.format(','.join(quotedList))
 
 def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
     print(sql)
@@ -139,9 +145,9 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
         return
 
 
-def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash, time, col_name=None, trasposed=True, selected_log=None):
-    if selected_log:
-        log_hash = selected_log
+def get_lh_time_match_df_for_select_from_part(dbcon, select_from_part, log_hash, time, col_name=None, trasposed=True, selected_logs=None):
+    if selected_logs is not None:
+        log_hash = selected_logs
     sql = sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time)
     return get_lh_time_match_df(dbcon, sql, col_name=col_name, trasposed=trasposed)
 

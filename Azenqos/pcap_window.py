@@ -11,33 +11,37 @@ import azq_utils
 import tshark_util
 
 
-def get_pcap_path_list(azm_path, log_hash):
+def get_pcap_path_list(azm_path, log_list):
     pcap_path_list = []
     azm_path = azm_path.replace("\\", os.path.sep)
     azm_path = azm_path.replace("/", os.path.sep)
-    azm_path = os.path.join(azm_path, str(log_hash))
-    if os.name != "nt":
-        extensions = ".csv"
-    else:
-        extensions = (".csv", ".pcap")
-    for root, dirs, files in os.walk(azm_path):
-        for name in files:
-            pcap_file = os.path.join(root, name)
-            if pcap_file.endswith(extensions):
-                pcap_path_list.append(pcap_file)
+    for log_hash in log_list:
+        resource_path = os.path.join(azm_path, str(log_hash))
+        if os.name != "nt":
+            extensions = ".csv"
+        else:
+            extensions = (".csv", ".pcap")
+        for root, dirs, files in os.walk(resource_path):
+            for name in files:
+                pcap_file = os.path.join(root, name)
+                if pcap_file.endswith(extensions):
+                    pcap_path_list.append(pcap_file)
 
     pcap_path_list = [os.path.splitext(x)[0] for x in pcap_path_list]
     pcap_path_list = list(dict.fromkeys(pcap_path_list))
     return pcap_path_list
 
 
-def get_pcap_df(pcap_path_list, log_hash):
+def get_pcap_df(pcap_path_list, log_list):
     global time_offset
     pcap_df_list = []
     for pcap_path in pcap_path_list:
         pcap_file_name = os.path.basename(pcap_path)
         csv_path = pcap_path + ".csv"
         pcap_path = pcap_path + ".pcap"
+        for log_hash in log_list:
+            if str(log_hash) in csv_path or str(log_hash) in pcap_path:
+                pcap_log = log_hash
         if path.isfile(csv_path):
             pass
         else:
@@ -70,6 +74,7 @@ def get_pcap_df(pcap_path_list, log_hash):
         pcap_df["file_name"] = pcap_file_name
         if "_ws.col.Time" not in pcap_df.columns:
             return
+        pcap_df["log_hash"] = pcap_log
         pcap_df_list.append(pcap_df)
     if len(pcap_df_list) == 0:
         return
@@ -92,7 +97,8 @@ def get_pcap_df(pcap_path_list, log_hash):
     )
     tdelta = pd.Timedelta(np.timedelta64(time_offset, "ms"))
     pcap_df_all["time"] = pd.to_datetime(pcap_df_all["time"]) + tdelta
-    pcap_df_all.insert(0, "log_hash", log_hash)
+    first_column = pcap_df_all.pop("log_hash")
+    pcap_df_all.insert(0, "log_hash", first_column)
     return pcap_df_all
 
 
@@ -102,37 +108,34 @@ def get_all_pcap_content(azm_path):
 
 
 pcap_path_list = None
-log_hash = None
+log_list = None
 time_offset = None
 
 
 def new_get_all_pcap_content(azm_path, gc, selected_ue):
     global pcap_path_list
-    global log_hash
+    global log_list
     global time_offset
     db_path = os.path.join(azm_path, "azqdata.db")
     with contextlib.closing(sqlite3.connect(db_path)) as dbcon:
-        log_hash = pd.read_sql("select log_hash from log_info limit 1", dbcon).iloc[
-            0, 0
-        ]
         time_offset = pd.read_sql(
             "select log_timezone_offset from logs limit 1", dbcon
         ).iloc[0, 0]
         print(time_offset)
-        print(log_hash)
-    if len(gc.log_list) > 1 and selected_ue is not None:
-        if int(selected_ue) <= len(gc.log_list):
-            log_hash = str(gc.log_list[int(selected_ue)-1])
+        print(log_list)
+    log_list = gc.log_list
+    if selected_ue is not None: 
+        log_list = gc.device_configs[selected_ue]["log_list"]
 
-    pcap_path_list = get_pcap_path_list(azm_path, log_hash)
+    pcap_path_list = get_pcap_path_list(azm_path, log_list)
 
     return tmp()
 
 
 def tmp():
     global pcap_path_list
-    global log_hash
-    return get_pcap_df(pcap_path_list, log_hash)
+    global log_list
+    return get_pcap_df(pcap_path_list, log_list)
 
 
 # def get_pcap_path_list_df(azm_path):

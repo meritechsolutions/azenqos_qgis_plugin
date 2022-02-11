@@ -31,10 +31,9 @@ class custom_table_dialog(QtWidgets.QDialog):
         self.select_arg = None
         self.window_name = "Custom window"
         self.selected_ue = selected_ue
-        self.selected_log = None
-        if len(self.gc.log_list) > 1 and self.selected_ue is not None:
-            if int(self.selected_ue) <= len(self.gc.log_list):
-                self.selected_log = str(self.gc.log_list[int(self.selected_ue)-1])
+        self.selected_logs = None
+        if self.selected_ue is not None:
+            self.selected_logs = self.gc.device_configs[self.selected_ue]["log_hash"]
         self.window_name = window_name
         self.setupUi()
 
@@ -141,9 +140,9 @@ class custom_table_dialog(QtWidgets.QDialog):
                     param_name = param_dict["parameter name"]
                     table_name = preprocess_azm.get_table_for_column(param_name.split("/")[0])
                     sql = "SELECT log_hash, time, {} FROM {}".format(param_name, table_name)
-                    if self.selected_log is not None:
+                    if self.selected_logs is not None:
                         import sql_utils
-                        where = "where log_hash = '{}'".format(self.selected_log)
+                        where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in self.selected_logs]))
                         sql = sql_utils.add_first_where_filt(sql, where)
                     df = pd.read_sql(sql, dbcon, parse_dates=["time"])
                     df["log_hash"] = df["log_hash"].astype(np.int64)

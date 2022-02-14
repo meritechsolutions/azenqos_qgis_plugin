@@ -2666,12 +2666,13 @@ Log_hash list: {}""".format(
 
     def cleanup(self):
         try:
-            self.gc.live_mode = False
-            if self.gc.live_mode_update_time:
-                self.switch_live_mode()
-            for process in self.gc.live_mode_update_time:
-                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-            self.gc.live_mode_update_time = []
+            if self.gc.live_mode:
+                self.gc.live_mode = False
+                if self.gc.live_mode_update_time:
+                    self.switch_live_mode()
+                for process in self.gc.live_mode_update_time:
+                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                self.gc.live_mode_update_time = []
             self.save_current_workspace()
             self.pauseTime()
 

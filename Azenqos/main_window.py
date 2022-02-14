@@ -2400,6 +2400,7 @@ Log_hash list: {}""".format(
 
         if self.gc.sliderLength:
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
+            self.gc.timeSlider.setValue(0)
         if self.gc.databasePath:
             self.load_current_workspace()
             self.ui.statusbar.showMessage(
@@ -2670,9 +2671,10 @@ Log_hash list: {}""".format(
                 self.gc.live_mode = False
                 if self.gc.live_mode_update_time:
                     self.switch_live_mode()
-                for process in self.gc.live_mode_update_time:
-                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-                self.gc.live_mode_update_time = []
+                for process in self.gc.live_process_list:
+                    os.kill(process.pid, signal.SIGTERM)
+                    # os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                self.gc.live_process_list = []
             self.save_current_workspace()
             self.pauseTime()
 

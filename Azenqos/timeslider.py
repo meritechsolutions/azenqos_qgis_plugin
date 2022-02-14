@@ -63,10 +63,10 @@ class timeSlider(QSlider):
         self.setRange(self._min_value, value)
 
     def setRange(self, minimum, maximum):
-        old_value = self.value()
+        # old_value = self.value()
         self._min_value = minimum
         self._max_value = maximum
-        self.setValue(old_value)  # Put slider in correct position
+        # self.setValue(old_value)  # Put slider in correct position
         self.update()
 
     def proportion(self):

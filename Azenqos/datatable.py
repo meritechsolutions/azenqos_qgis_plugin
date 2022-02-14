@@ -607,12 +607,12 @@ class TableWindow(QWidget):
                                     for device in self.gc.device_configs:
                                         df.loc[df["log_hash"].astype(str).isin(device["log_hash"]), "UE"] = device["name"]
                                     df["UE"] = df["UE"].astype(str)
-                                elif len(self.gc.log_list) > 1:
+                                elif len(self.gc.log_list) > 0:
                                     i = 1
                                     for lh in self.gc.log_list:
                                         df.loc[df["log_hash"] == lh, "UE"] = i
                                         i += 1
-                                    df["UE"] = df["UE"].astype(str)
+                                    df["UE"] = df["UE"].astype(int).astype(str)
                     print("datatable refersh param view got df:\n", df.head())
                     self.set_pd_df(df)
             except:

@@ -1770,19 +1770,7 @@ def live_mode_db_insert(gc, refresh_signal, db_queue):
     return temp
 
 def pull_latest_log_db_from_phone(parent=None, gc = None):
-    # close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows
-    # failed_cmd = get_failed_scrcpy_cmd()
-    # if failed_cmd:
-    #     QtWidgets.QMessageBox.critical(
-    #         parent,
-    #         "Test command failed",
-    #         "Command failed: " + failed_cmd,
-    #         QtWidgets.QMessageBox.Cancel,
-    #     )
-    #     return None
-    # azqdata_uuid = uuid.uuid4()
-    # db_journal_fp = os.path.join(tmp_gen_path(), "adb_log_snapshot_{}.db-journal".format(azqdata_uuid))
-    # assert not os.path.isfile(db_journal_fp)
+    close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows
     adb_devices = list(set([device.split('\t')[0] for device in check_output_no_shell((get_adb_command(), "devices")).splitlines() if device.endswith('\tdevice')]))
     logs = []
     for adb_device in adb_devices:
@@ -1818,7 +1806,7 @@ def pull_latest_log_db_from_phone(parent=None, gc = None):
         with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
             log_hash = str(pd.read_sql("select log_hash from logs limit 1", dbcon)["log_hash"][0])
             gc.device_configs.append({"key":adb_device, "name":adb_device_name, "log_hash":[log_hash]})
-    # start_scrcpy_proc()
+    start_scrcpy_proc(adb_devices)
     return logs
 
 
@@ -1844,39 +1832,45 @@ def check_output_no_shell(cmd_list):
     return None
 
 
-g_scrcpy_proc = None
-def start_scrcpy_proc():
-    global g_scrcpy_proc
+g_scrcpy_proc_list = []
+def start_scrcpy_proc(adb_devices = None):
+    global g_scrcpy_proc_list
     close_scrcpy_proc()
-    assert g_scrcpy_proc is None
-    g_scrcpy_proc = scrcpy_popen()
+    assert len(g_scrcpy_proc_list) == 0
+    for adb_device in adb_devices:
+        g_scrcpy_proc_list.append(scrcpy_popen(adb_device))
 
 
 def is_scrcpy_proc_running():
-    global g_scrcpy_proc
-    return g_scrcpy_proc is not None and g_scrcpy_proc.poll() is None
+    global g_scrcpy_proc_list
+    for g_scrcpy_proc in g_scrcpy_proc_list:
+        if g_scrcpy_proc.poll() is None:
+            return True
+    return False
 
 
 def close_scrcpy_proc():
-    global g_scrcpy_proc
+    global g_scrcpy_proc_list
     if is_scrcpy_proc_running():
-        try:
-            g_scrcpy_proc.terminate()
-        except Exception as e:
-            print("WARNING: terminate prev scrcpy process failed with exception: {}".format(e))
-        if g_scrcpy_proc.poll() is None:
+        for g_scrcpy_proc in g_scrcpy_proc_list:
             try:
-                g_scrcpy_proc.kill()
+                g_scrcpy_proc.terminate()
             except Exception as e:
-                print("WARNING: kill prev scrcpy process failed with exception: {}".format(e))
-        if g_scrcpy_proc.poll() is None:
-            print("WARNING: still g_scrcpy_proc.poll() is None (still running) after kill() and terminate()")
-    g_scrcpy_proc = None
+                print("WARNING: terminate prev scrcpy process failed with exception: {}".format(e))
+            if is_scrcpy_proc_running():
+                try:
+                    g_scrcpy_proc.kill()
+                except Exception as e:
+                    print("WARNING: kill prev scrcpy process failed with exception: {}".format(e))
+            if is_scrcpy_proc_running():
+                print("WARNING: still g_scrcpy_proc_list.poll() is None (still running) after kill() and terminate()")
+    g_scrcpy_proc_list = []
 
 
 def adb_kill_server_threaded():
     t = threading.Thread(target=adb_kill_server, daemon=False)
     t.start()
+    t.join()
 
 
 def adb_kill_server():
@@ -1884,8 +1878,8 @@ def adb_kill_server():
     print("adb_kill_server() ret", ret)
 
 
-def scrcpy_popen():
-    cmd = (get_scrcpy_command(),)
+def scrcpy_popen(adb_device):
+    cmd = (get_scrcpy_command(), "-s", adb_device)
     return popen_no_shell(cmd)
 
 

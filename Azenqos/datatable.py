@@ -605,7 +605,7 @@ class TableWindow(QWidget):
                             if "log_hash" in df.columns:
                                 if len(self.gc.device_configs):
                                     for device in self.gc.device_configs:
-                                        df.loc[df["log_hash"].isin(device["log_hash"]), "UE"] = device["name"]
+                                        df.loc[df["log_hash"].astype(str).isin(device["log_hash"]), "UE"] = device["name"]
                                     df["UE"] = df["UE"].astype(str)
                                 elif len(self.gc.log_list) > 1:
                                     i = 1
@@ -699,11 +699,11 @@ class TableWindow(QWidget):
                         sql = sql_utils.add_first_where_filt(sql, where)
                         append_df = pd.read_sql(sql, dbcon)
                         append_df["time"] = pd.to_datetime(append_df["time"])
-                        df = pd.concat([self.df, append_df]).sort_values("time").reset_index(drop = True)
-                        if len(self.gc.device_configs) and "log_hash" in df.columns:
+                        if len(self.gc.device_configs) and "log_hash" in append_df.columns:
                             for device in self.gc.device_configs:
-                                df.loc[df["log_hash"].isin(device["log_hash"]), "UE"] = device["name"]
-                            df["UE"] = df["UE"].astype(str)
+                                append_df.loc[append_df["log_hash"].astype(str).isin(device["log_hash"]), "UE"] = device["name"]
+                            append_df["UE"] = append_df["UE"].astype(str)
+                        df = pd.concat([self.df, append_df]).sort_values("time").reset_index(drop = True)
                         self.set_pd_df(df)
                         self.signal_ui_thread_emit_new_model.emit()
                         self.tableViewCount = self.tableView.model().rowCount()

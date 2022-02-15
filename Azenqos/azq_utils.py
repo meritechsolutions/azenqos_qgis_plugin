@@ -1753,7 +1753,11 @@ def live_mode_db_insert(gc, refresh_signal, db_queue):
             dbcon.execute('PRAGMA journal_mode=WAL;')
             dbcon.execute('BEGIN;')
             while gc.live_mode:
-                item = db_queue.get(block=False, timeout=1000)
+                item = None 
+                try:
+                    item = db_queue.get(block=True, timeout=1000)
+                except:
+                    pass
                 if item is None:
                     continue
                 try:

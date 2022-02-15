@@ -2428,7 +2428,6 @@ Log_hash list: {}""".format(
             self.gc.threadpool.start(worker)
             for device in self.gc.device_configs:
                 worker = Worker(azq_utils.live_mode(self.gc, device, db_queue))
-                # worker = Worker(azq_utils.live_mode(self.gc, self.refresh_signal, device))
                 self.gc.threadpool.start(worker)
 
     def timeChange(self):

@@ -50,6 +50,15 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
                     log_hash = pd.read_sql("SELECT log_hash FROM logs LIMIT 1;",dbcon).log_hash[0]
                     out_tmp_each_log_dir = os.path.join(azq_utils.tmp_gen_path(), str(log_hash))
                     preprocess_azm.extract_all_from_zip(azm, out_tmp_each_log_dir)
+                    tables = []
+                    tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%' and name LIKE 'pp%';", dbcon).name.tolist()
+                    tables.append("polqa_mos")
+                    for table in tables:
+                        check_len_table = len(pd.read_sql("SELECT * FROM {};".format(table),dbcon))
+                        if check_len_table == 0:
+                            dbcon.executescript("DROP TABLE {};".format(table))
+                    dbcon.commit()
+
             elif azm.endswith(".db"):
                 shutil.copy(azm, new_dbfp)
             else:

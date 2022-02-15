@@ -1771,6 +1771,7 @@ def live_mode_db_insert(gc, refresh_signal, db_queue):
 
 def pull_latest_log_db_from_phone(parent=None, gc = None):
     close_scrcpy_proc()  # if left open we somehow see adb pull fail cases in windows
+    gc.device_configs = []
     adb_devices = list(set([device.split('\t')[0] for device in check_output_no_shell((get_adb_command(), "devices")).splitlines() if device.endswith('\tdevice')]))
     logs = []
     for adb_device in adb_devices:

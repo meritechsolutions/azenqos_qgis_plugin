@@ -54,8 +54,8 @@ class open_multiple_ue_dialog(QDialog):
         self.ui.add_logs_button.clicked.connect(self.on_add_logs_button_click)
         self.ui.remove_ue_button.clicked.connect(self.on_remove_ue_button_click)
         self.ui.remove_log_button.clicked.connect(self.on_remove_log_button_click)
-        self.ui.ue_list_widget.itemClicked.connect(self.on_ue_selected)
-        self.ui.log_list_widget.itemClicked.connect(self.on_log_selected)
+        self.ui.ue_list_widget.itemSelectionChanged.connect(self.on_ue_selected)
+        self.ui.log_list_widget.itemSelectionChanged.connect(self.on_log_selected)
         self.ui.select_theme_button.clicked.connect(self.choose_theme)
         self.ui.open_log_button.clicked.connect(self.on_ok_button_click)
 
@@ -68,10 +68,13 @@ class open_multiple_ue_dialog(QDialog):
                 qt_utils.msgbox("UE already exists")
                 return
             self.gc.device_configs.append({"name":ue_name, "log_hash":[]})
+            
+            item = self.ui.ue_list_widget.count()
             self.ui.ue_list_widget.addItem(ue_name)
             self.ue_list.append(ue_name)
             self.log_name_by_ue_list.append([])
             self.log_path_by_ue_list.append([])
+            self.ui.ue_list_widget.setCurrentItem(self.ui.ue_list_widget.item(item))
 
     def on_add_logs_button_click(self):
         file_path_list, _ = QFileDialog.getOpenFileNames(
@@ -91,14 +94,15 @@ class open_multiple_ue_dialog(QDialog):
 
     def on_remove_ue_button_click(self):
         remove_index = self.ue_list_widget.currentRow()
+        print(self.ue_list_widget.currentRow())
         reply = qt_utils.ask_yes_no(None, "Romove UE", "Do you want to romove {}?".format(self.gc.device_configs[remove_index]["name"]))
         if reply == 0:
-            self.ue_list_widget.takeItem(remove_index)
             self.log_name_by_ue_list.pop(remove_index)
             self.log_path_by_ue_list.pop(remove_index)
             self.gc.device_configs.pop(remove_index)
+            self.ue_list.pop(remove_index)
             self.all_log_path_list = [item for sublist in self.log_path_by_ue_list for item in sublist]
-            self.ui.log_list_widget.clear()
+            self.ue_list_widget.takeItem(remove_index)
     
     def on_remove_log_button_click(self):
         remove_index = self.log_list_widget.currentRow()
@@ -108,15 +112,18 @@ class open_multiple_ue_dialog(QDialog):
         self.all_log_path_list = [item for sublist in self.log_path_by_ue_list for item in sublist]
 
 
-    def on_ue_selected(self,item):
-        self.ui.remove_ue_button.setEnabled(True)
+    def on_ue_selected(self):
+        self.ui.remove_ue_button.setEnabled(False)
         self.ui.remove_log_button.setEnabled(False)
-        self.ui.add_logs_button.setEnabled(True)
+        self.ui.add_logs_button.setEnabled(False)
         self.ui.log_list_widget.clear()
-        self.ui.log_list_widget.addItems(list(set(self.log_name_by_ue_list[self.ui.ue_list_widget.currentRow()])))
+        if self.ui.ue_list_widget.currentRow() < len(self.log_name_by_ue_list) and self.ui.ue_list_widget.currentRow() >= 0:
+            self.ui.remove_ue_button.setEnabled(True)
+            self.ui.remove_log_button.setEnabled(False)
+            self.ui.add_logs_button.setEnabled(True)
+            self.ui.log_list_widget.addItems(list(set(self.log_name_by_ue_list[self.ui.ue_list_widget.currentRow()])))
 
-
-    def on_log_selected(self,item):
+    def on_log_selected(self):
         self.ui.remove_ue_button.setEnabled(False)
         self.ui.remove_log_button.setEnabled(True)
     

@@ -53,6 +53,7 @@ class server_overview_widget(QWidget):
         super().__init__(parent)
         self.closed = False
         self.gvars = gvars
+        self.gvars.device_configs = []
         self.setupUi()
         self.req_body = {}
         self.apply_thread = None

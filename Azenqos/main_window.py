@@ -2691,6 +2691,7 @@ Log_hash list: {}""".format(
 
             # remove selected features:
             self.clear_highlights()
+            self.gc.device_configs = []
             
             # Begin removing layers
             if self.qgis_iface:

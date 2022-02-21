@@ -59,9 +59,9 @@ class LineChart(QtWidgets.QDialog):
             param_alias_name = paramDict["name"]
             if "selected_ue" in paramDict:
                 if paramDict["selected_ue"] is not None:
-                    title_ue_suffix = self.gc.device_configs[paramDict["selected_ue"]]["name"]
+                    title_ue_suffix = "(" + self.gc.device_configs[paramDict["selected_ue"]]["name"] + ")"
                     if title_ue_suffix not in param_alias_name:
-                        param_alias_name = param_alias_name + "(" + title_ue_suffix + ")"
+                        param_alias_name = param_alias_name + title_ue_suffix
             self.paramListDict[param_alias_name] = paramDict
         self.viewBoxList = []
         self.colorDict = {}
@@ -351,9 +351,9 @@ class LineChart(QtWidgets.QDialog):
         param_alias_name = paramDict["name"]
         if "selected_ue" in paramDict:
             if paramDict["selected_ue"] is not None:
-                title_ue_suffix = self.gc.device_configs[paramDict["selected_ue"]]["name"]
+                title_ue_suffix = "(" + self.gc.device_configs[paramDict["selected_ue"]]["name"] + ")"
                 if title_ue_suffix not in param_alias_name:
-                    param_alias_name = param_alias_name + "(" + title_ue_suffix + ")"
+                    param_alias_name = param_alias_name + title_ue_suffix
         if param_alias_name not in self.paramListDict:
             self.paramListDict[param_alias_name] = paramDict
             color = get_default_color_for_index(self.colorindex)

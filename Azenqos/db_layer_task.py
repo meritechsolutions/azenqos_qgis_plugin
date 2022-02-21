@@ -102,10 +102,10 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                     dn = azq_utils.th_translate(dn)
                                 if len(device_configs) > 1:
                                     custom_sql = "log_hash in ({})".format(','.join([str(selected_log) for selected_log in device["log_hash"]]))
-                                    title_ue_suffix = device["name"]
+                                    title_ue_suffix = "(" + device["name"] + ")"
                                     if title_ue_suffix not in dn:
-                                        dn = dn + "(" + title_ue_suffix + ")"
-                                        table_alias = table + "(" + title_ue_suffix + ")"
+                                        dn = dn + title_ue_suffix 
+                                        table_alias = table + title_ue_suffix 
                                 layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
                                     db_fp, table, visible=visible,
                                     style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=dn, theme_param=param, custom_sql=custom_sql

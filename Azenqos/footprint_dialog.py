@@ -39,9 +39,9 @@ class footprint_dialog(QDialog):
         if len(self.device_configs):
             self.selected_logs = self.device_configs[0]["log_hash"]
             if self.selected_ue is not None:
-                title_ue_suffix = self.device_configs[self.selected_ue]["name"]
+                title_ue_suffix = "(" + self.device_configs[self.selected_ue]["name"] + ")"
                 if title_ue_suffix not in self.title:
-                    self.title = self.title + "(" + title_ue_suffix + ")"
+                    self.title = self.title + title_ue_suffix
                     self.selected_logs = self.device_configs[self.selected_ue]["log_hash"]
         if self.technology == "nr":
             self.nb_table = "nr_intra_neighbor"
@@ -132,9 +132,9 @@ class footprint_dialog(QDialog):
                     per_pci_df = df.loc[df[self.footprint_param]==pci].reset_index(drop=True)
                     layer_name = "{} per {}: {}".format(self.param, self.label_name,pci)
                     if len(self.device_configs) > 1 and self.selected_ue is not None:
-                        title_ue_suffix = self.device_configs[self.selected_ue]["name"]
+                        title_ue_suffix = "(" + self.device_configs[self.selected_ue]["name"] + ")"
                         if title_ue_suffix not in self.title:
-                            layer_name = layer_name + "(" + title_ue_suffix + ")"
+                            layer_name = layer_name + title_ue_suffix
                     theme_param = self.param
                     if len(per_pci_df) > 0:
                         azq_utils.create_layer_in_qgis(self.gc.databasePath, per_pci_df, layer_name, theme_param = theme_param)
@@ -184,8 +184,8 @@ class footprint_dialog(QDialog):
                         all_nb_per_pci_df = pd.concat(all_nb_per_pci_df, ignore_index=True)
                         if len(all_nb_per_pci_df) > 0:
                             if len(self.device_configs) > 1 and self.selected_ue is not None:
-                                title_ue_suffix = self.device_configs[self.selected_ue]["name"]
+                                title_ue_suffix = "(" + self.device_configs[self.selected_ue]["name"] + ")"
                                 if title_ue_suffix not in self.title:
-                                    layer_name = layer_name + "(" + title_ue_suffix + ")"
+                                    layer_name = layer_name + title_ue_suffix
                             azq_utils.create_layer_in_qgis(self.gc.databasePath, all_nb_per_pci_df, layer_name, theme_param = theme_param)
         

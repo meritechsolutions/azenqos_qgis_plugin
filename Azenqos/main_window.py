@@ -82,6 +82,7 @@ except:
     pass
 from atomic_int import atomic_int
 import import_db_dialog
+import open_multiple_ue_dialog
 import preprocess_azm
 import params_disp_df
 from version import VERSION
@@ -291,6 +292,11 @@ class main_window(QMainWindow):
     def on_actionOpen_log_triggered(self):
         print("open log")
         self.open_logs()
+
+    @pyqtSlot()
+    def on_actionOpen_multiple_UE_log_file_sets_triggered(self):
+        print("open multiple UE log file sets")
+        self.open_logs(multi_ue_mode=True)
 
     @pyqtSlot()
     def on_actionOpen_workspace_triggered(self):
@@ -2349,7 +2355,7 @@ Log_hash list: {}""".format(
             )
 
 
-    def open_logs(self, connected_mode_refresh=False, ask_close_all_layers=True):
+    def open_logs(self, connected_mode_refresh=False, ask_close_all_layers=True, multi_ue_mode = False):
         if self.gc.databasePath:
             if ask_close_all_layers:
                 reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?", question=True)
@@ -2373,10 +2379,16 @@ Log_hash list: {}""".format(
             msgBox.exec_()            
             return
             '''
-        dlg = import_db_dialog.import_db_dialog(self, self.gc, connected_mode_refresh=connected_mode_refresh)
-        dlg.show()
-        ret = dlg.exec()
-        print("import_db_dialog ret: {}".format(ret))
+        if not multi_ue_mode:
+            dlg = import_db_dialog.import_db_dialog(self, self.gc, connected_mode_refresh=connected_mode_refresh)
+            dlg.show()
+            ret = dlg.exec()
+            print("import_db_dialog ret: {}".format(ret))
+        else:
+            dlg = open_multiple_ue_dialog.open_multiple_ue_dialog(self, self.gc)
+            dlg.show()
+            ret = dlg.exec()
+
         if self.gc.log_mode == "adb":
             self.sync_connected_phone_button.setEnabled(True)
             self.live_button.setEnabled(True)

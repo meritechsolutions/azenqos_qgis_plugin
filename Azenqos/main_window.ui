@@ -64,6 +64,7 @@
      <string>File</string>
     </property>
     <addaction name="actionOpen_log"/>
+    <addaction name="actionOpen_multiple_UE_log_file_sets"/>
     <addaction name="actionOpen_workspace"/>
     <addaction name="actionSave_workspace"/>
     <addaction name="separator"/>
@@ -1002,6 +1003,11 @@
   <action name="actionInstall_Update_Guide">
    <property name="text">
     <string>Installation/Update Guide</string>
+   </property>
+  </action>
+  <action name="actionOpen_multiple_UE_log_file_sets">
+   <property name="text">
+    <string>Open multiple UE log file sets</string>
    </property>
   </action>
  </widget>

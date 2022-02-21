@@ -125,7 +125,7 @@ def new_get_all_pcap_content(azm_path, gc, selected_ue):
         print(log_list)
     log_list = gc.log_list
     if selected_ue is not None: 
-        log_list = gc.device_configs[selected_ue]["log_list"]
+        log_list = gc.device_configs[selected_ue]["log_hash"]
 
     pcap_path_list = get_pcap_path_list(azm_path, log_list)
 

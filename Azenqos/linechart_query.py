@@ -21,11 +21,10 @@ def get_chart_df(dbcon, param_list_dict, gc):
             if param_dict["selected_ue"] is not None:
                 selected_logs = gc.device_configs[param_dict["selected_ue"]]["log_hash"]
                 where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in selected_logs]))
-                title_ue_suffix = gc.device_configs[param_dict["selected_ue"]]["name"]
+                title_ue_suffix = "(" + gc.device_configs[param_dict["selected_ue"]]["name"] + ")"
                 if title_ue_suffix not in param_alias_name:
-                    param_alias_name = param_alias_name + "_" + title_ue_suffix
-                param_name = param_name+" as "+param_alias_name
-        sql = "SELECT log_hash, time as Time, {} FROM {}".format(param_name, table_name)
+                    param_alias_name = param_alias_name + title_ue_suffix
+        sql = "SELECT log_hash, time as Time, {} as '{}' FROM {}".format(param_name, param_alias_name, table_name)
         sql = sql_utils.add_first_where_filt(sql, where)
         df = pd.read_sql(sql, dbcon, parse_dates=["Time"])
         df["log_hash"] = df["log_hash"].astype(np.int64)
@@ -55,9 +54,9 @@ def get_table_df_by_time(dbcon, time_before, param_list_dict, gc):
             if param_dict["selected_ue"] is not None:
                 selected_logs = gc.device_configs[param_dict["selected_ue"]]["log_hash"]
                 where = "and log_hash in ({})".format(','.join([str(selected_log) for selected_log in selected_logs]))
-                title_ue_suffix = gc.device_configs[param_dict["selected_ue"]]["name"]
+                title_ue_suffix = "(" + gc.device_configs[param_dict["selected_ue"]]["name"] + ")"
                 if title_ue_suffix not in param_alias_name:
-                    param_alias_name = param_alias_name + "(" + title_ue_suffix + ")"
+                    param_alias_name = param_alias_name + title_ue_suffix
         if first_table is None:
             first_table = table_name
         parameter_to_columns = (param_alias_name, [param_name], table_name, where)

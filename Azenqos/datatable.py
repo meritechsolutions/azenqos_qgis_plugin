@@ -147,9 +147,9 @@ class TableWindow(QWidget):
         if len(self.gc.device_configs):
             self.selected_logs = self.gc.device_configs[0]["log_hash"]
             if self.selected_ue is not None:
-                title_ue_suffix = self.gc.device_configs[self.selected_ue]["name"]
+                title_ue_suffix = "(" + self.gc.device_configs[self.selected_ue]["name"]+ ")"
                 if title_ue_suffix not in self.title:
-                    self.title = self.title + "(" + title_ue_suffix + ")"
+                    self.title = self.title + title_ue_suffix 
                     self.selected_logs = self.gc.device_configs[self.selected_ue]["log_hash"]
 
         self.rows = 0

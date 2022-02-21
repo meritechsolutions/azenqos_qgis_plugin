@@ -68,9 +68,9 @@ class add_map_layer_dialog(QDialog):
                 layer_name = self.param_name
                 if selected_ue is not None:
                     import sql_utils
-                    title_ue_suffix = self.gc.device_configs[self.selected_ue]["name"]
+                    title_ue_suffix = "(" + self.gc.device_configs[self.selected_ue]["name"] + ")"
                     if title_ue_suffix not in self.param_name:
-                        layer_name = self.param_name + "(" + title_ue_suffix + ")"
+                        layer_name = self.param_name + title_ue_suffix 
                         selected_logs = self.gc.device_configs[self.selected_ue]["log_hash"]
                         where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in selected_logs]))
                         sqlstr = sql_utils.add_first_where_filt(sqlstr, where)

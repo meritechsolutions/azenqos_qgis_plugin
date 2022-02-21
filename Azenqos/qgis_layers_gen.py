@@ -2,16 +2,10 @@ import contextlib
 import os
 import sqlite3
 
-from PyQt5.QtCore import QVariant
-
 try:
     from qgis.core import (
         QgsProject,
         QgsFeature,
-        QgsField,
-        QgsFields,
-        QgsPointXY,
-        QgsGeometry,
         QgsVectorLayer,
         QgsDataSourceUri,
         QgsSvgMarkerSymbolLayer,
@@ -22,6 +16,7 @@ except:
 import pathlib
 import db_preprocess
 import fill_geom_in_location_df
+import azq_utils
 import sys
 import traceback
 

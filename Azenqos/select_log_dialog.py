@@ -1,17 +1,10 @@
 import PyQt5
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QDialog, QMessageBox
-
+from PyQt5.QtWidgets import QDialog
 import os
-import contextlib
-import sqlite3
-import pandas as pd
 
 import azq_utils
-import preprocess_azm
-import db_preprocess
-from PyQt5.QtCore import pyqtSignal
 
 
 class select_log_dialog(QDialog):

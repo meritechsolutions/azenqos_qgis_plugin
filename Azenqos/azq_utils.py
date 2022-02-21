@@ -15,7 +15,6 @@ import json
 from pathlib import Path
 import base64
 import re
-from numpy import where
 
 import pandas as pd
 import requests

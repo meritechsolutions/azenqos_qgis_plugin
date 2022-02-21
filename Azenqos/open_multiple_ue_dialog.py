@@ -11,13 +11,8 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QIcon, QPixmap, QProgressBar
 from PyQt5.QtWidgets import (
     QDialog,
-    QVBoxLayout,
-    QGroupBox,
-    QGridLayout,
-    QRadioButton,
     QFileDialog,
 )
 
@@ -244,7 +239,7 @@ class open_multiple_ue_dialog(QDialog):
 
     def import_thread_run(self):
         zip_fp = self.zip_fp
-        success = False
+        # success = False
         try:
             import preprocess_azm
             azq_utils.cleanup_died_processes_tmp_folders()
@@ -284,7 +279,7 @@ class open_multiple_ue_dialog(QDialog):
                 )
             else:
                 self.import_done_signal.emit("")
-                success = True
+                # success = True
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))

@@ -11,6 +11,8 @@ def get_chart_df(dbcon, param_list_dict, gc):
     import sql_utils
     df_list = []
     print(param_list_dict)
+    if len(param_list_dict) == 0:
+        return
     for key in param_list_dict:
         where = None
         param_dict = param_list_dict[key]
@@ -41,6 +43,8 @@ def get_chart_df(dbcon, param_list_dict, gc):
 
 
 def get_table_df_by_time(dbcon, time_before, param_list_dict, gc):
+    if len(param_list_dict) == 0:
+        return
     first_table = None
     not_null_first_col = True
     parameter_to_columns_list = [("Time", ["time"],)]

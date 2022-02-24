@@ -7,7 +7,7 @@ from functools import partial
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QMenu, QFont
 # from qgis.gui import QgsColorButton
 from PyQt5.uic import loadUi
@@ -54,7 +54,6 @@ class LineChart(QtWidgets.QDialog):
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.paramListDict = {}
         
-        gc.device_configs
         for paramDict in paramList:
             param_alias_name = paramDict["name"]
             if "selected_ue" in paramDict:
@@ -257,9 +256,10 @@ class LineChart(QtWidgets.QDialog):
         self.moveFromChart = False
 
     def onClick(self, event):
-        self.graphWidget.scene().items(event.scenePos())
-        x = self.graphWidget.axes.vb.mapSceneToView(event.scenePos()).x()
-        self.timeSelected.emit(x)
+        if event.button() == Qt.LeftButton:
+            self.graphWidget.scene().items(event.scenePos())
+            x = self.graphWidget.axes.vb.mapSceneToView(event.scenePos()).x()
+            self.timeSelected.emit(x)
 
     def drawCursor(self, x):
         self.vLine.setPos(x)

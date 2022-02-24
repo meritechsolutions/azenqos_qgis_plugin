@@ -1512,6 +1512,33 @@ Log_hash list: {}""".format(
         print("action youtube buffer duration session")
         self.add_param_window("pd.read_sql('select * from youtube_buffer_duration',dbcon)", title="youtube_buffer_duration", time_list_mode=True)
 
+    ############# Line Chart Custom
+
+    @pyqtSlot()
+    def on_actionCustom_Line_Chart_triggered(self, selected_ue=None):
+        print("action line chart custom")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        linechart_window = linechart_custom.LineChart(
+            self.gc,
+            paramList=[]
+        )
+
+        def updateTime(epoch):
+            timestampValue = epoch - self.gc.minTimeValue
+            print(timestampValue)
+            self.setTimeValue(timestampValue)
+
+        linechart_window.timeSelected.connect(updateTime)
+        swa = SubWindowArea(self.mdi, self.gc)
+        if self.add_subwindow_with_widget(swa, linechart_window):
+            linechart_window.open()
+            linechart_window.setWindowTitle("Line Chart Custom")
 
     ############# Line Chart NR
 

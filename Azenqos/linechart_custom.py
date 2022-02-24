@@ -7,7 +7,7 @@ from functools import partial
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 # from qgis.gui import QgsColorButton
 from PyQt5.QtWidgets import QMenu
 from PyQt5.uic import loadUi
@@ -22,7 +22,7 @@ from worker import Worker
 
 def epochToDateString(epoch):
     try:
-        return datetime.datetime.fromtimestamp(epoch).strftime("%m-%d-%Y %H:%M:%S")
+        return datetime.datetime.fromtimestamp(epoch).strftime("%H:%M:%S")
     except:
         return ""
 
@@ -50,22 +50,34 @@ class LineChart(QtWidgets.QDialog):
         super(LineChart, self).__init__(None)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
-        pg.setConfigOptions(background="w", antialias=True)
+        # pg.setConfigOptions(background="w", antialias=True)
+        pg.setConfigOptions(background="w", useOpenGL=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.paramListDict = {}
-        for paramDict in paramList:
-            self.paramListDict[paramDict["name"]] = paramDict
         self.colorDict = {}
         self.colorindex = 0
+
+        for paramDict in paramList:
+            param_alias_name = paramDict["name"]
+            if "selected_ue" in paramDict:
+                if paramDict["selected_ue"] is not None:
+                    title_ue_suffix = "(" + self.gc.device_configs[paramDict["selected_ue"]]["name"] + ")"
+                    if title_ue_suffix not in param_alias_name:
+                        param_alias_name = param_alias_name + title_ue_suffix
+            self.paramListDict[param_alias_name] = paramDict
+
         for paramDict in self.paramListDict:
             color = get_default_color_for_index(self.colorindex)
-            self.colorDict[self.paramListDict[paramDict]["name"]] = color
+            self.colorDict[paramDict] = color
             self.colorindex += 1
+
+
         self.lastChartParamList = None
         self.minX = None
         self.maxX = None
         self.minY = None
         self.maxY = None
+        self.zoom_enabled = False
         self.mousecoordinatesdisplay = None
         self.moveFromChart = False
         self.ui = loadUi(azq_utils.get_module_fp("linechart3.ui"), self)
@@ -88,7 +100,7 @@ class LineChart(QtWidgets.QDialog):
         self.graphWidget.axes.showGrid(x=False, y=True)
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
         self.graphWidget.scene().sigMouseClicked.connect(self.onClick)
-        self.graphWidget.scene().sigMouseMoved.connect(self.mouseMoved)
+        # self.graphWidget.scene().sigMouseMoved.connect(self.mouseMoved)
         self.ui.verticalLayout_3.addWidget(self.graphWidget)
         self.graphWidget.axes.sigXRangeChanged.connect(self.chartXRangeChanged)
         self.ui.horizontalScrollBar.valueChanged.connect(lambda: self.onScrollBarMove())
@@ -96,10 +108,10 @@ class LineChart(QtWidgets.QDialog):
         self.updateTable.connect(self.onUpdateTable)
 
         self.ui.tableView.customContextMenuRequested.connect(self.onTableRightClick)
-        enable_slot = partial(self.enable_zoom, self.ui.checkBox_2)
-        disable_slot = partial(self.disable_zoom, self.ui.checkBox_2)
+        self.enable_slot = partial(self.enable_zoom, self.ui.checkBox_2)
+        self.disable_slot = partial(self.disable_zoom, self.ui.checkBox_2)
         self.ui.checkBox_2.stateChanged.connect(
-            lambda x: enable_slot() if x else disable_slot()
+            lambda x: self.enable_slot() if x else self.disable_slot()
         )
         self.ui.checkBox_2.setChecked(False)
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
@@ -116,7 +128,11 @@ class LineChart(QtWidgets.QDialog):
 
     def plot(self, dfList):
         self.graphWidget.axes.clear()
+        if not dfList or len(dfList) == 0:
+            return
+        all_param_list = [] 
         for df in dfList:
+            all_param_list.append([col for col in df.columns if col not in ["Time", "log_hash"]])
             if len(df) == 0:
                 continue
             df["Time"] = df["Time"].apply(
@@ -146,7 +162,8 @@ class LineChart(QtWidgets.QDialog):
                     x=df["Time"].to_list(),
                     y=df[col].to_list(),
                     connect="finite",
-                    pen=pg.mkPen(color, width=2),
+                    stepMode = "right",
+                    pen=pg.mkPen(color, width=1),
                 )
                 self.lineDict[col] = newline
                 colorindex += 1
@@ -165,6 +182,9 @@ class LineChart(QtWidgets.QDialog):
             self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 30)
             self.drawCursor(self.minX)
             self.moveChart(self.minX)
+        all_param_list = [item for sublist in all_param_list for item in sublist]
+        plot_title = "{}".format(", ".join(all_param_list))
+        self.graphWidget.axes.setTitle(plot_title)
 
     def chartXRangeChanged(self):
         x1 = self.getCurrentX()
@@ -195,13 +215,20 @@ class LineChart(QtWidgets.QDialog):
 
     def onScrollBarMove(self):
         value = self.ui.horizontalScrollBar.value()
+        x = self.minX + value
+        zoom_state_before_disable_slot = self.zoom_enabled
         if not self.moveFromChart:
-            self.moveChart(self.minX + value)
+            if self.zoom_enabled == True:
+                self.disable_slot()
+            self.moveChart(x)
+            if zoom_state_before_disable_slot == True:
+                self.enable_slot()
         self.moveFromChart = False
 
     def onClick(self, event):
-        x = self.graphWidget.axes.vb.mapSceneToView(event.scenePos()).x()
-        self.timeSelected.emit(x)
+        if event.button() == Qt.LeftButton:
+            x = self.graphWidget.axes.vb.mapSceneToView(event.scenePos()).x()
+            self.timeSelected.emit(x)
 
     def drawCursor(self, x):
         self.vLine.setPos(x)
@@ -216,18 +243,20 @@ class LineChart(QtWidgets.QDialog):
 
     def reQueryChartData(self, dbcon):
         import linechart_query
-
         if self.lastChartParamList == self.paramListDict:
             return
         self.lastChartParamList = {}
         self.lastChartParamList.update(self.paramListDict)
-        chartDFList = linechart_query.get_chart_df(dbcon, self.paramListDict)
+        chartDFList = linechart_query.get_chart_df(dbcon, self.paramListDict, self.gc)
+        if chartDFList is None:
+            return
         self.updateChart.emit(chartDFList)
 
     def reQueryTableData(self, dbcon, time):
         import linechart_query
-
         df = linechart_query.get_table_df_by_time(dbcon, time, self.paramListDict, self.gc)
+        if df is None:
+            return
         df = df.loc[df["param"] != "Time"]
         df["color"] = None
         df["color"] = df.apply(lambda x: self.colorDict[x["param"]], axis=1)
@@ -286,11 +315,17 @@ class LineChart(QtWidgets.QDialog):
                 self.updateTime(self.newTime)
 
     def onAddParameterButtonClick(self):
-        dlg = add_param_dialog.AddParamDialog(self.onParamAdded)
+        dlg = add_param_dialog.AddParamDialog(self.onParamAdded, self.gc)
         dlg.show()
 
     def onParamAdded(self, paramDict):
-        if paramDict["name"] not in self.paramListDict:
+        param_alias_name = paramDict["name"]
+        if "selected_ue" in paramDict:
+            if paramDict["selected_ue"] is not None:
+                title_ue_suffix = "(" + self.gc.device_configs[paramDict["selected_ue"]]["name"] + ")"
+                if title_ue_suffix not in param_alias_name:
+                    param_alias_name = param_alias_name + title_ue_suffix
+        if param_alias_name not in self.paramListDict:
             self.paramListDict[paramDict["name"]] = paramDict
             color = get_default_color_for_index(self.colorindex)
             self.colorDict[paramDict["name"]] = color
@@ -304,15 +339,19 @@ class LineChart(QtWidgets.QDialog):
         self.lineDict[name].setPen(color, width=2)
 
     def enable_zoom(self, checkbox):
+        self.zoom_enabled = True
         self.graphWidget.axes.setMouseEnabled(x=True, y=True)
         self.graphWidget.axes.setLimits(
-            minXRange=None, maxXRange=None,
+            minXRange=None, maxXRange=None, maxYRange=None, yMin=None, yMax=None,
         )
 
     def disable_zoom(self, checkbox):
+        self.zoom_enabled = False
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
+        x_range = self.graphWidget.axes.viewRange()[0]
+        x_diff = x_range[1] - x_range[0]
         self.graphWidget.axes.setLimits(
-            minXRange=30, maxXRange=30,
+            minXRange=x_diff, maxXRange=x_diff, minYRange=1,
         )
 
 

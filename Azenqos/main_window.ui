@@ -180,6 +180,7 @@
      <addaction name="actionCustom_Instant_View"/>
      <addaction name="actionCustom_Table_View"/>
      <addaction name="actionCustom_Table_View_UI"/>
+     <addaction name="actionCustom_Line_Chart"/>
     </widget>
     <widget class="QMenu" name="menuMisc">
      <property name="title">
@@ -1008,6 +1009,11 @@
   <action name="actionOpen_multiple_UE_log_file_sets">
    <property name="text">
     <string>Open multiple UE log file sets</string>
+   </property>
+  </action>
+  <action name="actionCustom_Line_Chart">
+   <property name="text">
+    <string>Custom Line Chart</string>
    </property>
   </action>
  </widget>

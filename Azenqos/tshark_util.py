@@ -47,6 +47,7 @@ def tshark_decode_hex(side, name, protocol, detail):
     hexStr = hexStr + "000000 "
     msg = "msg_raw_hex: "
     hexStr = hexStr + detail[detail.rindex(msg) + len(msg):]
+    hexStr = hexStr.split("\n")[0]
     print("text2pcap input content:", hexStr)
 
     tempName = uuid.uuid4().hex

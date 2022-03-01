@@ -408,7 +408,8 @@ class TableWindow(QWidget):
         menu.addAction("Filter menu")
         selectedItem = menu.exec_(globalPos)
         if selectedItem:
-            col = self.tableView.currentIndex().column()
+            # col = self.tableView.currentIndex().column()
+            col = self.filterHeader.logicalIndexAt(pos.x())
             print("headermenuselected col: {}".format(col))
             self.horizontalHeader_sectionClicked(col)
 
@@ -602,7 +603,7 @@ class TableWindow(QWidget):
                     if self.time_list_mode:
                         if "time" in df.columns:
                             df = df.sort_values(by="time")
-                            if "log_hash" in df.columns:
+                            if "log_hash" in df.columns and len(df) > 0:
                                 if len(self.gc.device_configs):
                                     for device in self.gc.device_configs:
                                         df.loc[df["log_hash"].astype(str).isin(device["log_hash"]), "UE"] = device["name"]

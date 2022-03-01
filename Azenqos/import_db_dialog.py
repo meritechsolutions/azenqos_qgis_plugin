@@ -577,6 +577,7 @@ class import_db_dialog(QDialog):
                     print("WARNING: check db failed exception:", exstr)
 
                 self.gc.params_to_gen = {}
+                self.gc.logPath = azq_utils.tmp_gen_path()
                 # check theme
                 check_theme(theme_fp = self.themePathLineEdit.text())
                 db_preprocess.prepare_spatialite_views(dbcon, gc = self.gc)
@@ -584,7 +585,6 @@ class import_db_dialog(QDialog):
 
                 assert self.databasePath
                 self.gc.databasePath = self.databasePath
-                self.gc.logPath = azq_utils.tmp_gen_path()
                 self.gc.db_fp = self.gc.databasePath
 
             finally:

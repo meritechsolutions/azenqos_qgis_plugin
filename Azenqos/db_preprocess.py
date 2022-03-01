@@ -96,6 +96,15 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     ### get list of log_hash, posids where location table's positioning_lat is -1.0 and positioning_lon is -1.0 caused by pressing load indoor logs
     gps_cancel_list = []
     df_posids_indoor_start = pd.DataFrame()
+    
+    for log_hash in gc.log_list:
+        rotate_indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map_rotated.png")
+        indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map.jpg")
+        from PIL import Image
+        if os.path.isfile(rotate_indoor_map_path):
+            indoor_map_path = rotate_indoor_map_path
+        if os.path.isfile(indoor_map_path):
+            gc.is_indoor = True
     try:
         df_posids_indoor_start = pd.read_sql(
             "select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0",
@@ -333,7 +342,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
         df_indoor_location = pd.read_sql_query("select * from indoor_location", dbcon)
     except:
         pass
-    if len(df_posids_indoor_start) > 0:
+    if len(df_posids_indoor_start) > 0 and gc.is_indoor:
         try:
             sqlstr = "update location set geom = null, positioning_lat = null, positioning_lon = null where positioning_lat < 0 or positioning_lon < 0 or positioning_lat > 1 or positioning_lon > 1;"
             dbcon.execute(sqlstr)
@@ -399,7 +408,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                         type_, value_, traceback_ = sys.exc_info()
                         exstr = str(traceback.format_exception(type_, value_, traceback_))
                         print("WARNING: remove gps cancel rows exception:", exstr)
-            if len(df_posids_indoor_start) > 0:
+            if len(df_posids_indoor_start) > 0 and gc.is_indoor:
                 view_df = pd.read_sql("select * from {}".format(view), dbcon, parse_dates=['time'])
                 if len(view_df) > 0:
                     view_df = add_pos_lat_lon_to_indoor_df(view_df, df_location)

@@ -271,6 +271,7 @@
     <addaction name="menuMisc"/>
     <addaction name="menuMaps"/>
     <addaction name="actionAdd_Layer"/>
+    <addaction name="actionAdd_Event_Layer"/>
     <addaction name="actionAdd_POI_Layer"/>
     <addaction name="actionCalculate_POI_Coverage"/>
    </widget>
@@ -1014,6 +1015,11 @@
   <action name="actionCustom_Line_Chart">
    <property name="text">
     <string>Custom Line Chart</string>
+   </property>
+  </action>
+  <action name="actionAdd_Event_Layer">
+   <property name="text">
+    <string>Add Event Layer</string>
    </property>
   </action>
  </widget>

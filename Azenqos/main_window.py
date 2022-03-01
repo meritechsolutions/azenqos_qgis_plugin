@@ -1135,6 +1135,18 @@ Log_hash list: {}""".format(
         )
         self.add_subwindow_with_widget(swa, widget)
 
+    ############# Add Event Layer menu slots
+
+    @pyqtSlot()
+    def on_actionAdd_Event_Layer_triggered(self):
+        print("action add event layer")
+        import add_event_layer_dialog
+        event_list = []
+        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+            event_list = pd.read_sql("select distinct name from events", dbcon).name.tolist()
+        dlg = add_event_layer_dialog.add_event_layer_dialog(event_list, self.gc)
+        dlg.show()
+
     ############# Add POI Layer menu slots
 
     @pyqtSlot()
@@ -3108,7 +3120,6 @@ Log_hash list: {}""".format(
                 indoor_map_path = rotate_indoor_map_path
                 is_rotate_indoor_map = True
             if os.path.isfile(indoor_map_path):
-                self.gc.is_indoor = True
                 indoor_map_image = Image.open(indoor_map_path)
                 w, h = indoor_map_image.size
                 nw_lon = 0

@@ -33,6 +33,14 @@ def get_container_name():
     assert is_container_mode()
     return os.environ[AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY]
 
+def get_custom_tags():
+    custom_tags = []
+    if "custom_tags" in os.environ:
+        custom_tags = os.environ["custom_tags"].split(",")
+    return custom_tags
+
+
+
 def debug(s):
     dprint.dprint(s)
 

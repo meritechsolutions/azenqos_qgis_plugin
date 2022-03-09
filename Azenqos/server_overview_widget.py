@@ -85,6 +85,8 @@ class server_overview_widget(QWidget):
         self.ui.group_filter_pushButton.clicked.connect(self.on_click_group_filter)
         self.ui.showDbStatsButton.clicked.connect(self.showDbStats)
         self.main_params_only_checkBox.setChecked(True)
+        if "main_params_only" in azq_utils.get_custom_tags():
+            self.main_params_only_checkBox.setEnabled(False)
         enable_main_params_slot = partial(self.use_main_params_only, self.main_params_only_checkBox)
         disable_main_params_slot = partial(self.use_all_params, self.main_params_only_checkBox)
         self.main_params_only_checkBox.stateChanged.connect(

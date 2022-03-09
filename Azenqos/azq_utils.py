@@ -25,6 +25,7 @@ import dprint
 TMP_FOLDER_NAME = "tmp_gen"
 CONTAINER_MODE_TMP_GEN_PATH = "/host_shared_dir/tmp_gen"
 AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY = "AZQ_WORKSTATION_CONTAINER_NAME"
+CUSTOM_TAGS_ENV_KEY = "CUSTOM_TAGS"
 
 def is_container_mode():
     return AZQ_WORKSTATION_CONTAINER_NAME_ENV_KEY in os.environ
@@ -36,8 +37,8 @@ def get_container_name():
 def get_custom_tags():
     custom_tags = []
     print("environ: ", os.environ)
-    if "custom_tags" in os.environ:
-        custom_tags = os.environ["custom_tags"].split(",")
+    if CUSTOM_TAGS_ENV_KEY in os.environ:
+        custom_tags = os.environ[CUSTOM_TAGS_ENV_KEY].split(",")
         print("custom_tags: ", custom_tags)
     return custom_tags
 

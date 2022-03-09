@@ -35,8 +35,10 @@ def get_container_name():
 
 def get_custom_tags():
     custom_tags = []
+    print("environ: ", os.environ)
     if "custom_tags" in os.environ:
         custom_tags = os.environ["custom_tags"].split(",")
+        print("custom_tags: ", custom_tags)
     return custom_tags
 
 

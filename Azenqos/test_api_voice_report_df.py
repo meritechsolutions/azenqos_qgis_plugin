@@ -10,7 +10,6 @@ def test():
     )
 
 def _test(server, user, passwd, lhl):
-    return
     #return  # disabled for now likes to get stuck when tested together
     print("server", server)
     print("user", user)

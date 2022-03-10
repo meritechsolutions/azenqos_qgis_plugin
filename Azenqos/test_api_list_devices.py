@@ -5,7 +5,6 @@ import integration_test_helpers
 
 
 def test():
-    return
     app = QApplication([])
     print("app: ", app)  # use it so pyflakes wont complain - we need a ref to qapplicaiton otherwise we'll get segfault
     gv = integration_test_helpers.get_global_vars(login=True)

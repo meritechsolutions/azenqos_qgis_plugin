@@ -2,15 +2,12 @@ import PyQt5
 from PyQt5.QtWidgets import QDialog, QCompleter, QComboBox
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import QSortFilterProxyModel, QStringListModel, QRegExp, Qt
 import os
-from functools import partial
 from add_param_dialog import CustomQCompleter
 import azq_utils
 import contextlib
 import pandas as pd
 import sqlite3
-import preprocess_azm
 
 
 class add_event_layer_dialog(QDialog):

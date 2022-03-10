@@ -104,7 +104,6 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     gps_cancel_list = []
     df_posids_indoor_start = pd.DataFrame()
     
-        rotate_indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map_rotated.png")
     try:
         df_posids_indoor_start = pd.read_sql(
             "select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0",

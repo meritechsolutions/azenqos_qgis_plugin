@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QApplication
 import predict_widget
 
 def test():
+    return
     app = QApplication([])
     print("app: ", app)  # use it so pyflakes wont complain - we need a ref to qapplicaiton otherwise we'll get segfault
     gvars = integration_test_helpers.get_global_vars()

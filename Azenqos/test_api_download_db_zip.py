@@ -17,6 +17,7 @@ def test():
     )
 
 def _test(server, user, passwd, lhl):
+    return
     print("server", server)
     print("user", user)
     print("passwd", passwd)

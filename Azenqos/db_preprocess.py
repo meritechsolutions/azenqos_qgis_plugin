@@ -77,6 +77,13 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
 
     if gc is not None:
         gc.log_list = pd.read_sql("select distinct log_hash from logs", dbcon)["log_hash"].values.tolist()
+        for log_hash in gc.log_list:
+            rotate_indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map_rotated.png")
+            indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map.jpg")
+            if os.path.isfile(rotate_indoor_map_path):
+                indoor_map_path = rotate_indoor_map_path
+            if os.path.isfile(indoor_map_path):
+                gc.is_indoor = True
 
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geometry_columns df:\n{}".format(df.head()))
@@ -97,14 +104,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     gps_cancel_list = []
     df_posids_indoor_start = pd.DataFrame()
     
-    for log_hash in gc.log_list:
         rotate_indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map_rotated.png")
-        indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map.jpg")
-        from PIL import Image
-        if os.path.isfile(rotate_indoor_map_path):
-            indoor_map_path = rotate_indoor_map_path
-        if os.path.isfile(indoor_map_path):
-            gc.is_indoor = True
     try:
         df_posids_indoor_start = pd.read_sql(
             "select log_hash, posid from location where positioning_lat = -1.0 and positioning_lon = -1.0",

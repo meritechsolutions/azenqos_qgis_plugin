@@ -5,6 +5,7 @@ import sys
 from functools import partial
 
 import numpy as np
+import pandas as pd
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal, Qt
@@ -13,6 +14,7 @@ from PyQt5.QtGui import QMenu, QFont
 from PyQt5.uic import loadUi
 
 import add_param_dialog
+import linechart_event_dialog
 import azq_utils
 import color_dialog
 import dataframe_model
@@ -53,6 +55,7 @@ class LineChart(QtWidgets.QDialog):
         pg.setConfigOptions(background="w", useOpenGL=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.paramListDict = {}
+        self.eventList = []
         
         for paramDict in paramList:
             param_alias_name = paramDict["name"]
@@ -70,6 +73,8 @@ class LineChart(QtWidgets.QDialog):
             self.colorDict[paramDict] = color
             self.colorindex += 1
         self.lastChartParamList = None
+        self.lastEventList = None
+        self.eventViewBox = None
         self.minX = None
         self.maxX = None
         self.mousecoordinatesdisplay = None
@@ -101,6 +106,7 @@ class LineChart(QtWidgets.QDialog):
         #self.graphWidget.getAxis("bottom").setStyle(tickTextOffset=20)
 
         self.ui.tableView.customContextMenuRequested.connect(self.onTableRightClick)
+        self.ui.tableView.clicked.connect(self.onTableClick)
         self.enable_slot = partial(self.enable_zoom, self.ui.checkBox_2)
         self.disable_slot = partial(self.disable_zoom, self.ui.checkBox_2)
         self.ui.checkBox_2.stateChanged.connect(
@@ -108,11 +114,12 @@ class LineChart(QtWidgets.QDialog):
         )
         self.ui.checkBox_2.setChecked(False)
         self.zoom_enabled = False
+        self.ui.addEvent.clicked.connect(self.onEventParameterButtonClick)
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         if self.gc.currentDateTimeString is not None:
             self.updateTime(datetime.datetime.strptime(self.gc.currentDateTimeString, "%Y-%m-%d %H:%M:%S.%f"))
-        self.tableView.setStyleSheet(
+        self.ui.tableView.setStyleSheet(
             """
             * {
             font-size: 11px;
@@ -140,6 +147,8 @@ class LineChart(QtWidgets.QDialog):
         self.minX = None
         self.maxX = None
         for df in dfList:
+            if len(df) == 0:
+                continue
             df["Time"] = df["Time"].apply(
                 lambda x: self.unixTimeMillis(x.to_pydatetime())
             )
@@ -212,9 +221,52 @@ class LineChart(QtWidgets.QDialog):
                     maxXRange=20,
                     minYRange=1,
                 )
-            self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 30)
+            self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 20)
             self.drawCursor(self.minX)
             self.moveChart(self.minX)
+        if len(self.eventList) > 0:
+            self.eventViewBox = pg.ViewBox()
+            self.viewBoxList.append(self.eventViewBox)
+            self.graphWidget.addItem(axis, row=2, col=colIndex-1, rowspan=1, colspan=1)
+            self.graphWidget.scene().addItem(self.eventViewBox)
+            self.eventViewBox.setMouseEnabled(x=True, y=False)
+            if prevViewBox != None:
+                self.eventViewBox.setXLink(prevViewBox)
+            if minY is not None:
+                self.eventViewBox.setLimits(
+                    xMin=self.minX,
+                    xMax=self.maxX,
+                    yMin=minY - 4,
+                    yMax=maxY + 10,
+                    minXRange=20,
+                    maxXRange=20,
+                    minYRange=1,
+                )
+            for event in self.eventList:
+                eventName = event["event name"]
+                color = event["color"]
+                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                    eventDF = pd.read_sql("select time from events where name = '{}'".format(eventName), dbcon, parse_dates=['time'])
+                    eventDF["time"] = eventDF["time"].apply(
+                        lambda x: self.unixTimeMillis(x.to_pydatetime())
+                    )
+                    firstRow = []
+                    firstRow.insert(0, {'event name': 'first', 'value': -200000, 'time': eventDF["time"][0]-10, 'index': 0})
+                    eventDF = eventDF.reset_index()
+                    eventDF["value"] = None
+                    eventDF.loc[eventDF["index"]%2 == 0, "value"] = 200000
+                    eventDF.loc[eventDF["index"]%2 != 0, "value"] = -200000
+                    pd.concat([pd.DataFrame(firstRow), eventDF], ignore_index=True)
+                    eventLine = pg.PlotCurveItem(
+                        x=eventDF["time"].to_list(),
+                        y=eventDF["value"].to_list(),
+                        stepMode = "right",
+                        connect="finite",
+                        pen=pg.mkPen(color, width=1),
+                    )
+                    self.eventViewBox.addItem(eventLine)
+            
+            self.eventViewBox.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
 
         def updateViews():
             for viewBox in self.viewBoxList:
@@ -274,11 +326,11 @@ class LineChart(QtWidgets.QDialog):
 
     def reQueryChartData(self, dbcon):
         import linechart_query
-
-        if self.lastChartParamList == self.paramListDict:
+        if self.lastChartParamList == self.paramListDict and self.lastEventList == self.eventList:
             return
         self.lastChartParamList = {}
         self.lastChartParamList.update(self.paramListDict)
+        self.lastEventList = self.eventList.copy()
         chartDFList = linechart_query.get_chart_df(dbcon, self.paramListDict, self.gc)
         self.updateChart.emit(chartDFList)
 
@@ -327,6 +379,13 @@ class LineChart(QtWidgets.QDialog):
         self.close()
         event.accept()
 
+    def onTableClick(self,item):
+        if item.column() == 2: 
+            name = self.tableViewDF.iloc[item.row(), 0]
+            color = self.tableViewDF.iloc[item.row(), 2]
+            dlg = color_dialog.ColorDialog(name, color, self.onColorSet)
+            dlg.show()
+
     def onTableRightClick(self, QPos=None):
         index = self.ui.tableView.indexAt(QPos)
         if index.isValid():
@@ -345,7 +404,17 @@ class LineChart(QtWidgets.QDialog):
 
     def onAddParameterButtonClick(self):
         dlg = add_param_dialog.AddParamDialog(self.onParamAdded, self.gc)
+        dlg.setWindowModality(Qt.ApplicationModal)
         dlg.show()
+
+    def onEventParameterButtonClick(self):
+        dlg = linechart_event_dialog.linechart_event_dialog(self.gc, self.onEventAdded, self.eventList)
+        dlg.setWindowModality(Qt.ApplicationModal)
+        dlg.show()
+
+    def onEventAdded(self, eventList):
+        self.eventList = eventList
+        self.updateTime(self.newTime)
 
     def onParamAdded(self, paramDict):
         param_alias_name = paramDict["name"]
@@ -371,10 +440,15 @@ class LineChart(QtWidgets.QDialog):
     def enable_zoom(self, checkbox):
         self.zoom_enabled = True
         for viewBox in self.viewBoxList:
-            viewBox.setMouseEnabled(x=True, y=True)
-            viewBox.setLimits(
-                minXRange=None, maxXRange=None, maxYRange=None, yMin=None, yMax=None,
-            )
+            if viewBox == self.eventViewBox:
+                viewBox.setLimits(
+                    minXRange=None, maxXRange=None
+                )
+            else:
+                viewBox.setMouseEnabled(x=True, y=True)
+                viewBox.setLimits(
+                    minXRange=None, maxXRange=None, maxYRange=None, yMin=None, yMax=None,
+                )
 
     def disable_zoom(self, checkbox):
         self.zoom_enabled = False

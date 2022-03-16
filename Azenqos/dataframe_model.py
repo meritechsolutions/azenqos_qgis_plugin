@@ -73,7 +73,10 @@ class DataFrameModel(QtCore.QAbstractTableModel):
             return dt
         if role == QtCore.Qt.BackgroundRole:
             if len(str(val)) > 0 and str(val)[0] == "#":
-                return QtGui.QColor(val)
+                return QtCore.QVariant(QtGui.QColor(val))
+        if role == QtCore.Qt.ForegroundRole:
+            if len(str(val)) > 0 and str(val)[0] == "#":
+                return QtCore.QVariant(QtGui.QColor(val))
 
         return QtCore.QVariant()
 

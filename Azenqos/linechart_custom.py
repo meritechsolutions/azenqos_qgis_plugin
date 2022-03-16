@@ -114,6 +114,7 @@ class LineChart(QtWidgets.QDialog):
             lambda x: self.enable_slot() if x else self.disable_slot()
         )
         self.ui.checkBox_2.setChecked(False)
+        self.ui.addEvent.hide()
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.updateTime(datetime.datetime.strptime(self.gc.currentDateTimeString, "%Y-%m-%d %H:%M:%S.%f"))
@@ -231,7 +232,7 @@ class LineChart(QtWidgets.QDialog):
             self.timeSelected.emit(x)
 
     def drawCursor(self, x):
-        self.vLine.setPos(x)
+        self.vLine.setPos(x) 
 
     def updateInternal(self):
         print("updateInternal")

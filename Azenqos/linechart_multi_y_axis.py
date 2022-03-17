@@ -2,6 +2,7 @@ import contextlib
 import datetime
 import sqlite3
 import sys
+import copy
 from functools import partial
 
 import numpy as np
@@ -330,7 +331,7 @@ class LineChart(QtWidgets.QDialog):
             return
         self.lastChartParamList = {}
         self.lastChartParamList.update(self.paramListDict)
-        self.lastEventList = self.eventList.copy()
+        self.lastEventList = copy.deepcopy(self.eventList)
         chartDFList = linechart_query.get_chart_df(dbcon, self.paramListDict, self.gc)
         self.updateChart.emit(chartDFList)
 

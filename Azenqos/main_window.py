@@ -3116,7 +3116,7 @@ Log_hash list: {}""".format(
                  indoor_map_layer_name = indoor_map_layer_name + "_" + str(ue)
             from PIL import Image
             is_rotate_indoor_map = False
-            if os.path.isfile(rotate_indoor_map_path) and gc.real_world_indoor == True:
+            if os.path.isfile(rotate_indoor_map_path) and self.gc.real_world_indoor == True:
                 indoor_map_path = rotate_indoor_map_path
                 is_rotate_indoor_map = True
             if os.path.isfile(indoor_map_path):
@@ -3131,7 +3131,7 @@ Log_hash list: {}""".format(
                 with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                     try:
                         indoor_bg_df = pd.read_sql("select * from indoor_background_img where log_hash = {}".format(log_hash), dbcon)
-                        if len(indoor_bg_df) > 0 and gc.real_world_indoor == True:
+                        if len(indoor_bg_df) > 0 and self.gc.real_world_indoor == True:
                             map_type = "ori"
                             if is_rotate_indoor_map:
                                 map_type = "rotated"

@@ -7,6 +7,7 @@ import sys
 # Adding folder path
 import threading
 import traceback
+from functools import partial
 
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets
@@ -56,6 +57,7 @@ class import_db_dialog(QDialog):
         self.gc = gc
         self.parent_window = parent_window
         self.import_thread = None
+        self.real_world_indoor = True
         self.import_done_signal.connect(self.ui_handler_import_done)
         self.import_status_signal.connect(self.ui_handler_import_status)
         self.progress_update_signal.connect(self.progress)
@@ -128,6 +130,12 @@ class import_db_dialog(QDialog):
         vbox.addWidget(cell_gb)
         vbox.addStretch()
 
+        optional_gb = QGroupBox(
+            "Optional"
+        )
+        vbox.addWidget(optional_gb)
+        vbox.addStretch()
+
         self.buttonBox = QtWidgets.QDialogButtonBox(DatabaseDialog)
         self.buttonBox.setStandardButtons(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -174,6 +182,17 @@ class import_db_dialog(QDialog):
         tmp_box.addWidget(self.browseButtonCell)
         ##################################
 
+        ############ optional setup
+        tmp_box = QVBoxLayout()
+        optional_gb.setLayout(tmp_box)
+
+        self.realWorldIndoorCheckBox = QtWidgets.QCheckBox()
+        self.realWorldIndoorCheckBox.setText("Real world indoor")
+        self.realWorldIndoorCheckBox.setChecked(True)
+        self.realWorldIndoorCheckBox.setObjectName("realWorldIndoorCheckBox")
+        tmp_box.addWidget(self.realWorldIndoorCheckBox)
+        ##################################
+
         vbox.addStretch()
         self.statusLabel = QtWidgets.QLabel()
         self.statusLabel.setEnabled(False)
@@ -189,6 +208,12 @@ class import_db_dialog(QDialog):
         self.browseButton.clicked.connect(self.choose_azm)
         self.browseButtonTheme.clicked.connect(self.choose_theme)
         self.browseButtonCell.clicked.connect(self.choose_cell)
+        
+        enable_real_world_indoor_slot = partial(self.real_world_indoor_enable, self.realWorldIndoorCheckBox)
+        disable_real_world_indoor_slot = partial(self.real_world_indoor_disable, self.realWorldIndoorCheckBox)
+        self.realWorldIndoorCheckBox.stateChanged.connect(
+            lambda x: enable_real_world_indoor_slot() if x else disable_real_world_indoor_slot()
+        )
 
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
             self.check_and_start_import
@@ -247,6 +272,12 @@ class import_db_dialog(QDialog):
         self.cellPathLineEdit.setText(
             ",".join(fileNames)
         ) if fileNames else self.cellPathLineEdit.setText("")
+
+    def real_world_indoor_enable(self, checkbox):
+        self.real_world_indoor = True
+
+    def real_world_indoor_disable(self, checkbox):
+        self.real_world_indoor = False
 
     def save_settings(self):
         import azq_utils
@@ -580,7 +611,7 @@ class import_db_dialog(QDialog):
                 self.gc.logPath = azq_utils.tmp_gen_path()
                 # check theme
                 check_theme(theme_fp = self.themePathLineEdit.text())
-                db_preprocess.prepare_spatialite_views(dbcon, gc = self.gc)
+                db_preprocess.prepare_spatialite_views(dbcon, gc = self.gc, real_world_indoor=self.real_world_indoor)
                 dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
 
                 assert self.databasePath

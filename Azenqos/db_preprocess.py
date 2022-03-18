@@ -71,16 +71,17 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False, time_bin_secs=None, gc = None):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False, time_bin_secs=None, gc = None, real_world_indoor=True):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
     if gc is not None:
+        gc.real_world_indoor = real_world_indoor
         gc.log_list = pd.read_sql("select distinct log_hash from logs", dbcon)["log_hash"].values.tolist()
         for log_hash in gc.log_list:
             rotate_indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map_rotated.png")
             indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map.jpg")
-            if os.path.isfile(rotate_indoor_map_path):
+            if os.path.isfile(rotate_indoor_map_path) and gc.real_world_indoor == True:
                 indoor_map_path = rotate_indoor_map_path
             if os.path.isfile(indoor_map_path):
                 gc.is_indoor = True
@@ -349,7 +350,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
         except:
             pass
         try:
-            if df_indoor_location is not None and len(df_indoor_location) > 0: 
+            if df_indoor_location is not None and len(df_indoor_location) > 0 and gc.real_world_indoor == True: 
                 sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid and log_hash = location.log_hash), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid and log_hash = location.log_hash);"
                 print("copy indoor_location lat lon to location: %s" % sqlstr)
                 dbcon.execute(sqlstr)

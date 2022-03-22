@@ -49,22 +49,25 @@ class LineChart(QtWidgets.QDialog):
     def unixTimeMillis(self, dt):
         return azq_utils.datetimeStringtoTimestamp(dt.strftime("%Y-%m-%d %H:%M:%S.%f"))
 
-    def __init__(self, gc, paramList=[]):
+    def __init__(self, gc, paramList=[], eventList=[], title="Line Chart", func_key=None):
         super(LineChart, self).__init__(None)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
+        self.title = title
+        self.func_key = func_key
+        self.paramList = paramList
         pg.setConfigOptions(background="w", useOpenGL=True)
         pg.TickSliderItem(orientation="bottom", allowAdd=True)
         self.paramListDict = {}
-        self.eventList = []
+        self.eventList = eventList
         
-        for paramDict in paramList:
+        for paramDict in self.paramList:
             param_alias_name = paramDict["name"]
             if "selected_ue" in paramDict:
                 if paramDict["selected_ue"] is not None:
-                    title_ue_suffix = "(" + self.gc.device_configs[paramDict["selected_ue"]]["name"] + ")"
-                    if title_ue_suffix not in param_alias_name:
-                        param_alias_name = param_alias_name + title_ue_suffix
+                    ue_suffix = "(" + self.gc.device_configs[paramDict["selected_ue"]]["name"] + ")"
+                    if ue_suffix not in param_alias_name:
+                        param_alias_name = param_alias_name + ue_suffix
             self.paramListDict[param_alias_name] = paramDict
         self.viewBoxList = []
         self.colorDict = {}
@@ -274,8 +277,9 @@ class LineChart(QtWidgets.QDialog):
                 if viewBox != viewBox1:
                     viewBox.setGeometry(viewBox1.sceneBoundingRect())
 
-        viewBox1.sigResized.connect(updateViews)
-        viewBox1.addItem(self.vLine, ignoreBounds=True)
+        if viewBox1:
+            viewBox1.sigResized.connect(updateViews)
+            viewBox1.addItem(self.vLine, ignoreBounds=True)
         updateViews()
 
     def chartXRangeChanged(self):
@@ -400,6 +404,8 @@ class LineChart(QtWidgets.QDialog):
                 dlg = color_dialog.ColorDialog(name, color, self.onColorSet)
                 dlg.show()
             elif action == removeParam:
+                remove_index = list(self.paramListDict.keys()).index(name)
+                del self.paramList[remove_index]
                 del self.paramListDict[name]
                 self.updateTime(self.newTime)
 
@@ -421,10 +427,12 @@ class LineChart(QtWidgets.QDialog):
         param_alias_name = paramDict["name"]
         if "selected_ue" in paramDict:
             if paramDict["selected_ue"] is not None:
-                title_ue_suffix = "(" + self.gc.device_configs[paramDict["selected_ue"]]["name"] + ")"
-                if title_ue_suffix not in param_alias_name:
-                    param_alias_name = param_alias_name + title_ue_suffix
+                ue_suffix = "(" + self.gc.device_configs[paramDict["selected_ue"]]["name"] + ")"
+                if ue_suffix not in param_alias_name:
+                    param_alias_name = param_alias_name + ue_suffix
         if param_alias_name not in self.paramListDict:
+            dict = {"name":param_alias_name, "selected_ue":paramDict["selected_ue"]}
+            self.paramList.append(dict)
             self.paramListDict[param_alias_name] = paramDict
             color = get_default_color_for_index(self.colorindex)
             self.colorDict[param_alias_name] = color

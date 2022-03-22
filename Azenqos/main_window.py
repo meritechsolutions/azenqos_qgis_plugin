@@ -1527,7 +1527,7 @@ Log_hash list: {}""".format(
     ############# Line Chart Custom
 
     @pyqtSlot()
-    def on_actionCustom_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionCustom_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action line chart custom")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1536,9 +1536,13 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
+        title = "Line Chart Custom"
         linechart_window = linechart_custom.LineChart(
             self.gc,
-            paramList=[]
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
 
         def updateTime(epoch):
@@ -1550,12 +1554,12 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         if self.add_subwindow_with_widget(swa, linechart_window):
             linechart_window.open()
-            linechart_window.setWindowTitle("Line Chart Custom")
+            linechart_window.setWindowTitle(title)
 
     ############# Line Chart NR
 
     @pyqtSlot()
-    def on_actionNR_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionNR_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action nr line chart")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1564,13 +1568,19 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        linechart_window = linechart_multi_y_axis.LineChart(
-            self.gc,
+        if len(paramList) == 0:
             paramList=[
                 {"name": "nr_servingbeam_ss_rsrp_1", "selected_ue": selected_ue},
                 {"name": "nr_servingbeam_ss_rsrq_1", "selected_ue": selected_ue},
                 {"name": "nr_servingbeam_ss_sinr_1", "selected_ue": selected_ue},
-            ],
+            ]
+        title = "NR Line Chart"
+        linechart_window = linechart_multi_y_axis.LineChart(
+            self.gc,
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
 
         def updateTime(epoch):
@@ -1580,12 +1590,12 @@ Log_hash list: {}""".format(
 
         linechart_window.timeSelected.connect(updateTime)
         swa = SubWindowArea(self.mdi, self.gc)
-        if self.add_subwindow_with_widget(swa, linechart_window):
-            linechart_window.open()
-            linechart_window.setWindowTitle("NR Line Chart")
+        self.add_subwindow_with_widget(swa, linechart_window)
+        linechart_window.open()
+        linechart_window.setWindowTitle(title)
 
     @pyqtSlot()
-    def on_actionNR_DATA_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionNR_DATA_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action nr data line chart")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1594,8 +1604,7 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        linechart_window = linechart_multi_y_axis.LineChart(
-            self.gc,
+        if len(paramList) == 0:
             paramList=[
                 {"name": "data_trafficstat_dl/1000", "data": True, "selected_ue": selected_ue},
                 {"name": "data_trafficstat_ul/1000", "data": True, "selected_ue": selected_ue},
@@ -1603,7 +1612,14 @@ Log_hash list: {}""".format(
                 {"name": "nr_p_plus_scell_nr_pusch_tput_mbps", "data": True, "selected_ue": selected_ue},
                 {"name": "nr_p_plus_scell_lte_dl_pdcp_tput_mbps", "data": True, "selected_ue": selected_ue},
                 {"name": "nr_p_plus_scell_lte_ul_pdcp_tput_mbps", "data": True, "selected_ue": selected_ue},
-            ],
+            ]
+        title="NR Data Line Chart"
+        linechart_window = linechart_multi_y_axis.LineChart(
+            self.gc,
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
 
         def updateTime(epoch):
@@ -1615,12 +1631,12 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
-        linechart_window.setWindowTitle("NR Data Line Chart")
+        linechart_window.setWindowTitle(title)
 
     ############# Line Chart LTE
 
     @pyqtSlot()
-    def on_actionLTE_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionLTE_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action lte line chart")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1629,14 +1645,20 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        linechart_window = linechart_multi_y_axis.LineChart(
-            self.gc,
+        if len(paramList) == 0:
             paramList=[
                 {"name": "lte_sinr_1", "selected_ue": selected_ue},
                 {"name": "lte_inst_rsrp_1", "selected_ue": selected_ue},
                 {"name": "lte_inst_rsrq_1", "selected_ue": selected_ue},
                 {"name": "lte_inst_rssi_1", "selected_ue": selected_ue},
-            ],
+            ]
+        title="LTE Line Chart"
+        linechart_window = linechart_multi_y_axis.LineChart(
+            self.gc,
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
 
         def updateTime(epoch):
@@ -1648,10 +1670,10 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
-        linechart_window.setWindowTitle("LTE Line Chart")
+        linechart_window.setWindowTitle(title)
 
     @pyqtSlot()
-    def on_actionLTE_DATA_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionLTE_DATA_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action lte data line chart")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1660,14 +1682,20 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        linechart_window = linechart_multi_y_axis.LineChart(
-            self.gc,
+        if len(paramList) == 0:
             paramList=[
                 {"name": "data_trafficstat_dl/1000", "data": True, "selected_ue": selected_ue},
                 {"name": "data_trafficstat_ul/1000", "data": True, "selected_ue": selected_ue},
                 {"name": "lte_l1_dl_throughput_all_carriers_mbps", "data": True, "selected_ue": selected_ue},
                 {"name": "lte_bler_1", "data": True, "selected_ue": selected_ue},
-            ],
+            ]
+        title="LTE Data Line Chart"
+        linechart_window = linechart_multi_y_axis.LineChart(
+            self.gc,
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
 
         def updateTime(epoch):
@@ -1679,12 +1707,12 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
-        linechart_window.setWindowTitle("LTE Data Line Chart")
+        linechart_window.setWindowTitle(title)
 
     ############# Line Chart WCDMA
 
     @pyqtSlot()
-    def on_actionWCDMA_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionWCDMA_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action wcdma line chart")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1693,14 +1721,20 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        linechart_window = linechart_multi_y_axis.LineChart(
-            self.gc,
+        if len(paramList) == 0:
             paramList=[
                 {"name": "wcdma_aset_ecio_avg", "selected_ue": selected_ue},
                 {"name": "wcdma_aset_rscp_avg", "selected_ue": selected_ue},
                 {"name": "wcdma_rssi", "selected_ue": selected_ue},
                 {"name": "wcdma_bler_average_percent_all_channels", "selected_ue": selected_ue},
-            ],
+            ]
+        title="WCDMA Line Chart"
+        linechart_window = linechart_multi_y_axis.LineChart(
+            self.gc,
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
 
         def updateTime(epoch):
@@ -1712,10 +1746,10 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
-        linechart_window.setWindowTitle("WCDMA Line Chart")
+        linechart_window.setWindowTitle(title)
 
     @pyqtSlot()
-    def on_actionWCDMA_DATA_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionWCDMA_DATA_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action wcdma data line chart")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1724,15 +1758,20 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        linechart_window = linechart_multi_y_axis.LineChart(
-            self.gc,
+        if len(paramList) == 0:
             paramList=[
                 {"name": "data_wcdma_rlc_dl_throughput", "data": True, "selected_ue": selected_ue},
                 {"name": "data_app_dl_throughput_1", "data": True, "selected_ue": selected_ue},
                 {"name": "data_hsdpa_thoughput", "data": True, "selected_ue": selected_ue},
-            ],
+            ]
+        title="WCDMA Data Line Chart"
+        linechart_window = linechart_multi_y_axis.LineChart(
+            self.gc,
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
-
         def updateTime(epoch):
             timestampValue = epoch - self.gc.minTimeValue
             print(timestampValue)
@@ -1742,12 +1781,12 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
-        linechart_window.setWindowTitle("WCDMA Data Line Chart")
+        linechart_window.setWindowTitle(title)
 
     ############# Line Chart GSM
 
     @pyqtSlot()
-    def on_actionGSM_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionGSM_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action gsm line chart")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1756,12 +1795,18 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        linechart_window = linechart_multi_y_axis.LineChart(
-            self.gc,
+        if len(paramList) == 0:
             paramList=[
                 {"name": "gsm_rxlev_sub_dbm", "selected_ue": selected_ue},
                 {"name": "gsm_rxqual_sub", "selected_ue": selected_ue},
-            ],
+            ]
+        title="GSM Line Chart"
+        linechart_window = linechart_multi_y_axis.LineChart(
+            self.gc,
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
 
         def updateTime(epoch):
@@ -1773,10 +1818,10 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
-        linechart_window.setWindowTitle("GSM Line Chart")
+        linechart_window.setWindowTitle(title)
 
     @pyqtSlot()
-    def on_actionGSM_DATA_Line_Chart_triggered(self, selected_ue=None):
+    def on_actionGSM_DATA_Line_Chart_triggered(self, selected_ue=None, paramList=[], eventList=[]):
         print("action gsm data line chart")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -1785,12 +1830,18 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        linechart_window = linechart_multi_y_axis.LineChart(
-            self.gc,
+        if len(paramList) == 0:
             paramList=[
                 {"name": "data_gsm_rlc_dl_throughput", "data": True, "selected_ue": selected_ue},
                 {"name": "data_app_dl_throughput_1", "data": True, "selected_ue": selected_ue},
-            ],
+            ]
+        title="GSM Data Line Chart"
+        linechart_window = linechart_multi_y_axis.LineChart(
+            self.gc,
+            paramList=paramList,
+            eventList=eventList,
+            title=title,
+            func_key=inspect.currentframe().f_code.co_name
         )
 
         def updateTime(epoch):
@@ -1802,7 +1853,7 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, linechart_window)
         linechart_window.open()
-        linechart_window.setWindowTitle("GSM Data Line Chart")
+        linechart_window.setWindowTitle(title)
 
 
     def add_subwindow_with_widget(self, swa, widget, w=280, h=250, allow_no_log_opened=False):
@@ -2918,37 +2969,48 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i),
                             window.widget().func_key,
                         )
-                        self.current_workspace_settings.setValue(
-                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_df".format(i),
-                            window.widget().custom_df,
-                        )
-                        self.current_workspace_settings.setValue(
-                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_table_param_list".format(i),
-                            window.widget().custom_table_param_list,
-                        )
+                        if "Line Chart" not in window.widget().title:
+                            self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_custom_df".format(i),
+                                window.widget().custom_df,
+                            )
+                            self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_custom_table_param_list".format(i),
+                                window.widget().custom_table_param_list,
+                            )
+                            self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_refresh_df_func_or_py_eval_str".format(i),
+                            window.widget().refresh_data_from_dbcon_and_time_func,
+                            )
+                            self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i),
+                                json.dumps(window.widget().options),
+                            )
+                            self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_selected_ue".format(i),
+                                window.widget().selected_ue,
+                            )
+                        else:
+                            print(window.widget().paramList, window.widget().eventList)
+                            self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_linechart_param_list".format(i),
+                                json.dumps(window.widget().paramList),
+                            )
+                            self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_linechart_event_list".format(i),
+                                json.dumps(window.widget().eventList),
+                            )
+
                         self.current_workspace_settings.setValue(
                             GUI_SETTING_NAME_PREFIX + "window_{}_geom".format(i),
                             window.saveGeometry(),
                         )
-
                         if isinstance(window.widget(), TableWindow):
                             self.current_workspace_settings.setValue(
                                 GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i),
                                 window.widget().tableView.horizontalHeader().saveState(),
                             )
-
-                        self.current_workspace_settings.setValue(
-                            GUI_SETTING_NAME_PREFIX + "window_{}_refresh_df_func_or_py_eval_str".format(i),
-                            window.widget().refresh_data_from_dbcon_and_time_func,
-                        )
-                        self.current_workspace_settings.setValue(
-                            GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i),
-                            json.dumps(window.widget().options),
-                        )
-                        self.current_workspace_settings.setValue(
-                            GUI_SETTING_NAME_PREFIX + "window_{}_selected_ue".format(i),
-                            window.widget().selected_ue,
-                        )
+                        
                         i += 1
                         self.current_workspace_settings.setValue(GUI_SETTING_NAME_PREFIX + "n_windows", i)
                     except:
@@ -3299,7 +3361,6 @@ Log_hash list: {}""".format(
                         func = self.current_workspace_settings.value(
                             GUI_SETTING_NAME_PREFIX + "window_{}_func_key".format(i)
                         )
-
                         custom_df = self.current_workspace_settings.value(
                             GUI_SETTING_NAME_PREFIX + "window_{}_custom_df".format(i)
                         )
@@ -3320,17 +3381,29 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_selected_ue".format(i)
                         )
 
-                        options = json.loads(self.current_workspace_settings.value(
-                            GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i)
-                        ))
+                        if "Line Chart" not in title:
+                            options = json.loads(self.current_workspace_settings.value(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_options".format(i)
+                            ))
+                        else:
+                            linechart_event_list =  json.loads(self.current_workspace_settings.value(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_linechart_event_list".format(i)
+                            ))
 
-                        print("load_current_workspace() window i: {} title: {} options: {}".format(i, title,
-                                                                                                             options))
+                            linechart_param_list =  json.loads(self.current_workspace_settings.value(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_linechart_param_list".format(i)
+                            ))
+
+
+                        print("load_current_workspace() window i: {} title: {}".format(i, title))
+                        
                         if func is not None:
                             # on..._triggered func like on L3 triggered etc
                             func_key = "self." + func
                             if selected_ue is not None:
-                                func_key = func_key + "(selected_ue = '{}')".format(selected_ue)
+                                func_key = func_key + "(selected_ue = {})".format(selected_ue)
+                            elif len(linechart_param_list) > 0 or len(linechart_event_list) > 0 :
+                                func_key = func_key + "(paramList = {}, eventList = {})".format(linechart_param_list, linechart_event_list)
                             else:
                                 func_key = func_key + "()"
                             print(func_key)

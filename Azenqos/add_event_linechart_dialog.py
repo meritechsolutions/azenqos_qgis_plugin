@@ -5,9 +5,6 @@ from PyQt5.QtGui import QIcon, QPixmap
 import os
 from add_param_dialog import CustomQCompleter
 import azq_utils
-import contextlib
-import pandas as pd
-import sqlite3
 
 
 class add_event_linechart_dialog(QDialog):

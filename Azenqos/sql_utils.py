@@ -1,4 +1,6 @@
 import pandas as pd
+import re
+import db_preprocess
 import traceback
 import sys
 
@@ -112,7 +114,12 @@ def list_to_sql_list(items):
     return '[{}]'.format(','.join(quotedList))
 
 def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
-    print(sql)
+    pattern = re.compile(r'(?:select )?(\S*)\sas\s(\S*)(?:,\s?|\s*from)', re.IGNORECASE)
+    param_list = pattern.findall(sql)
+    param_dict = {}
+    for param, param_alias  in param_list:
+        if param != "''" and param != "time" and param != "log_hash":
+            param_dict[param_alias] = param
     try:
         df = pd.read_sql(sql, dbcon)
         if len(df) > 0:
@@ -123,7 +130,21 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
                     value_index = 0
                     if not pd.isna(value):
                         value_index = int(value)
-                    valid_df_dict[index] = df[index][value_index]
+                    value = df[index][value_index]
+                    valid_df_dict[index] = value
+                    if index in param_dict.keys():
+                        param = param_dict[index]
+                        if param in db_preprocess.cached_theme_dict.keys():
+                            theme_df = db_preprocess.cached_theme_dict[param]
+                            theme_df["Lower"] = theme_df["Lower"].astype(float)
+                            theme_df["Upper"] = theme_df["Upper"].astype(float)
+                            theme_range = theme_df["Upper"].max() - theme_df["Lower"].min()
+                            percent = (float(value) - theme_df["Lower"].min()) / theme_range
+                            color_df = theme_df.loc[(theme_df["Lower"]<=float(value))&(theme_df["Upper"]>float(value)), "ColorXml"]
+                            color = None
+                            if len(color_df) > 0:
+                                color = color_df.iloc[0]
+                            valid_df_dict[index] = (value, color, percent)
                 df = pd.DataFrame.from_dict(valid_df_dict, orient='index').T
             else:
                 df = df.iloc[[0]].reset_index(drop=True)

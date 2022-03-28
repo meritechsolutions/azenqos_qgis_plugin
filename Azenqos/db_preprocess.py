@@ -30,6 +30,7 @@ elm_table_main_col_types = {
     "detail_hex": "TEXT",
     "detail_str": "TEXT",
 }
+cached_theme_dict= {}
 
 def prepare_spatialite_required_tables(dbcon):
     dbcon.execute(
@@ -487,6 +488,8 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
     if theme_df is None:
         return None
+    global cached_theme_dict
+    cached_theme_dict[param] = theme_df
     if 'match_value' in theme_df.columns:
         # id columns like pci, earfcn
         theme_df.Lower = theme_df.match_value

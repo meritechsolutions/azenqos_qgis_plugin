@@ -1529,15 +1529,36 @@ class PdTableModel(QAbstractTableModel):
             return True
         return False
 
+    def get_complementary(self, color):
+        # color = color[1:]
+        # color = int(color, 16)
+        # comp_color = 0xFFFFFF ^ color
+        # comp_color = "#%06X" % comp_color
+        # return comp_color
+        if color[0] == '#':
+            color = color[1:]
+        red = int(color[0:2], 16)
+        green = int(color[2:4], 16)
+        blue = int(color[4:6], 16)
+        comp_color = "#FFFFFF"
+        if (red*0.299 + green*0.587 + blue*0.114) > 130:
+            comp_color = "#000000"
+        return comp_color
+
     def data(self, index, role=QtCore.Qt.DisplayRole):
         # print("pdtablemodel data() role:", role)
+        ret = self.df.iloc[index.row(), index.column()]
+        ret_tuple = None 
+        if isinstance(ret, tuple):
+            ret_tuple = ret
         if role == QtCore.Qt.DisplayRole:
             # print("pdtablemodel data() displayrole enter")
             try:
-                ret = self.df.iloc[index.row(), index.column()]
                 if pd.isnull(ret):
                     return None
                 if not isinstance(ret, str):
+                    if isinstance(ret, tuple):
+                        ret = ret[0]
                     if isinstance(ret, float):
                         ret = "%.02f" % ret
                     else:
@@ -1549,6 +1570,31 @@ class PdTableModel(QAbstractTableModel):
             except Exception as e:
                 print("WARNING: pdtablemodel data() exception: ", e)
                 return None
+        if role == QtCore.Qt.BackgroundRole:
+            try:
+                if isinstance(ret_tuple, tuple):
+                    percent = float(ret_tuple[2])
+                    color = "#FFFFFF"
+                    if ret[1] is not None:
+                        color = str(ret[1])
+                    gradient = QtGui.QLinearGradient(QtCore.QPointF(0, 0), QtCore.QPointF(1, 0))
+                    gradient.setColorAt(0, QtGui.QColor(color))
+                    gradient.setColorAt(percent, QtGui.QColor(color))
+                    gradient.setColorAt(percent+0.001, Qt.white)
+                    gradient.setColorAt(1, Qt.white)
+                    gradient.setCoordinateMode(QtGui.QLinearGradient.ObjectBoundingMode)
+                    return QtCore.QVariant(QtGui.QBrush(gradient))
+            except Exception as e:
+                print("WARNING: pdtablemodel data() exception: ", e)
+                return None
+            
+        if role == QtCore.Qt.ForegroundRole:
+            if isinstance(ret_tuple, tuple):
+                color = "#FFFFFF"
+                if ret[1] is not None:
+                    color = str(ret[1])
+                fg_color = self.get_complementary(color)
+                return QtCore.QVariant(QtGui.QColor(fg_color))
         else:
             return None
 

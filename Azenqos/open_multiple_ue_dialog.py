@@ -365,12 +365,12 @@ class open_multiple_ue_dialog(QDialog):
                 import import_db_dialog
                 import db_preprocess
                 import_db_dialog.check_theme(theme_fp = self.ui.theme_line_edit.text())
+                self.gc.logPath = azq_utils.tmp_gen_path()
                 db_preprocess.prepare_spatialite_views(dbcon, gc = self.gc)
                 dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
 
                 assert self.databasePath
                 self.gc.databasePath = self.databasePath
-                self.gc.logPath = azq_utils.tmp_gen_path()
                 self.gc.db_fp = self.gc.databasePath
 
             finally:

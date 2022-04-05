@@ -587,7 +587,7 @@ Log_hash list: {}""".format(
     ############# signalling menu slots
     @pyqtSlot()
     def on_actionLayer_3_Messages_triggered(self):
-        self.add_param_window("pd.read_sql('select log_hash, time, name, symbol as dir, protocol, detail_str from signalling',dbcon).sort_values(by='time')", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
+        self.add_param_window("pd.read_sql('select log_hash, time, name, symbol as dir, protocol, info, detail_str from signalling',dbcon).sort_values(by='time')", title="Layer-3 Messages", stretch_last_row=True, time_list_mode=True)
 
     @pyqtSlot()
     def on_actionEvents_triggered(self):
@@ -602,9 +602,9 @@ Log_hash list: {}""".format(
             except:
                 pass
         if self.gc.has_wave_file == True:
-            self.add_param_window('''pd.read_sql('select log_hash, time, name, info, "" as wave_file from events union all select log_hash, time, "MOS Score" as name, polqa_mos as info, wav_filename as wave_file from polqa_mos where polqa_mos is not null',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window('''pd.read_sql('select log_hash, time, name, info, detail, "" as wave_file from events union all select log_hash, time, "MOS Score" as name, polqa_mos as info, wav_filename as wave_file from polqa_mos where polqa_mos is not null',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
         else:
-            self.add_param_window('''pd.read_sql('select log_hash, time, name, info, "" as wave_file from events',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window('''pd.read_sql('select log_hash, time, name, info, detail, "" as wave_file from events',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
 
     ############# NR menu slots
     @pyqtSlot()
@@ -693,11 +693,11 @@ Log_hash list: {}""".format(
             '''
             select
             log_hash, time,
-            name, detail_str 
+            name, info, detail_str 
             from signalling
             union
             select log_hash, time,
-            name, info
+            name, info, detail
             from events
             order by log_hash, time
             '''.strip()

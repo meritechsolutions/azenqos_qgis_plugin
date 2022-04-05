@@ -11,6 +11,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap, QAbstractItemView
 from PyQt5.uic import loadUi
+from functools import partial
 
 import azq_utils
 import preprocess_azm
@@ -20,10 +21,10 @@ import custom_table_dataframe_model
 
 class custom_table_dialog(QtWidgets.QDialog):
     update_table = pyqtSignal(object)
-    on_result = pyqtSignal(object, object, object, object)
+    on_result = pyqtSignal(object, object, object, object, object)
 
 
-    def __init__(self, gc, param_list=[], window_name="Custom window", selected_ue=None):
+    def __init__(self, gc, param_list=[], window_name="Custom window", selected_ue=None, main_not_null = False):
         super(custom_table_dialog, self).__init__(None)
         self.gc = gc
         self.param_list = param_list
@@ -32,6 +33,7 @@ class custom_table_dialog(QtWidgets.QDialog):
         self.window_name = "Custom window"
         self.selected_ue = selected_ue
         self.selected_logs = None
+        self.main_not_null = main_not_null
         if self.selected_ue is not None:
             self.selected_logs = self.gc.device_configs[self.selected_ue]["log_hash"]
         self.window_name = window_name
@@ -57,9 +59,22 @@ class custom_table_dialog(QtWidgets.QDialog):
         selection_model.selectionChanged.connect(self.on_table_click)
         self.ui.saveButton.clicked.connect(self.on_save_parameter_button_click)
         self.ui.loadButton.clicked.connect(self.on_load_parameter_button_click)
+        if self.main_not_null:
+            self.ui.mainNotNullCheckBox.setChecked(True)
         if self.param_list is not None and len(self.param_list) > 0:
             self.model.setItems(self.param_list)
+        enableMainNotNullSlot = partial(self.check_main_not_null, self.ui.mainNotNullCheckBox)
+        disableMainNotNullSlot = partial(self.uncheck_main_not_null, self.ui.mainNotNullCheckBox)
+        self.ui.mainNotNullCheckBox.stateChanged.connect(
+            lambda x: enableMainNotNullSlot() if x else disableMainNotNullSlot()
+        )
         self.accepted.connect(self.on_ok_button_click)
+
+    def uncheck_main_not_null(self, checkbox):
+        self.main_not_null = False
+
+    def check_main_not_null(self, checkbox):
+        self.main_not_null = True
 
     def on_table_click(self):
         index = self.ui.tableView.selectedIndexes()
@@ -158,6 +173,8 @@ class custom_table_dialog(QtWidgets.QDialog):
                     main_param_name = param_df_list[0]["parameter name"]
                     param_df_list[0]["main parameter"] = True
                     del param_df_list[0]
+                if self.main_not_null:
+                    main_df = main_df.dropna().sort_values(by="time")
                 df_merge = main_df.copy()
                 df_merge = df_merge.dropna().sort_values(by="time")
                 main_df = pd.merge_asof(left=main_df.reset_index(), right=df_merge.reset_index(), left_on=['time'], right_on=['time'],by='log_hash', direction="backward", allow_exact_matches=True, tolerance=pd.Timedelta('2s'), suffixes=('_not_use', '')) 
@@ -196,4 +213,4 @@ class custom_table_dialog(QtWidgets.QDialog):
     def on_ok_button_click(self):
         df = self.merge_custom_param_to_df(self.param_list)
         self.window_name = self.ui.windowNameLineEdit.text()
-        self.on_result.emit(df, self.param_list, self.window_name, self.selected_ue)
+        self.on_result.emit(df, self.param_list, self.window_name, self.selected_ue, self.main_not_null)

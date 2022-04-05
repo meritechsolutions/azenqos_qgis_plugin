@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>428</width>
     <height>314</height>
    </rect>
   </property>
@@ -68,6 +68,13 @@
         <widget class="QPushButton" name="removeButton">
          <property name="text">
           <string>Remove</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="mainNotNullCheckBox">
+         <property name="text">
+          <string>Main not null</string>
          </property>
         </widget>
        </item>

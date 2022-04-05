@@ -633,7 +633,7 @@ Log_hash list: {}""".format(
         import nr_data_query
         self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", selected_ue=selected_ue)
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, allow_no_log_opened=False, selected_ue=None):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, custom_table_main_not_null=False, allow_no_log_opened=False, selected_ue=None):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
         widget = TableWindow(
@@ -646,6 +646,7 @@ Log_hash list: {}""".format(
             func_key=func_key,
             custom_df=custom_df,
             custom_table_param_list=custom_table_param_list,
+            custom_table_main_not_null=custom_table_main_not_null,
             selected_ue=selected_ue
         )
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=allow_no_log_opened)
@@ -720,7 +721,7 @@ Log_hash list: {}""".format(
             selected_ue = dlg.log
         import custom_table_dialog
         dlg = custom_table_dialog.custom_table_dialog(self.gc, selected_ue=selected_ue)
-        dlg.on_result.connect(lambda df, param_list, title, selected_ue: self.add_param_window(custom_df=df, title=title, time_list_mode=True, custom_table_param_list=param_list, selected_ue=selected_ue))
+        dlg.on_result.connect(lambda df, param_list, title, selected_ue, main_not_null: self.add_param_window(custom_df=df, title=title, time_list_mode=True, custom_table_param_list=param_list, selected_ue=selected_ue, custom_table_main_not_null=main_not_null))
         dlg.show()
 
     @pyqtSlot()

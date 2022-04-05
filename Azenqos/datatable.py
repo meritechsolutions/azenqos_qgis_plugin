@@ -87,6 +87,7 @@ class TableWindow(QWidget):
         mdi=None,
         func_key=None,
         custom_table_param_list=None,
+        custom_table_main_not_null=False,
         selected_ue=None,
 
         # these params will be written to options_dict
@@ -103,6 +104,7 @@ class TableWindow(QWidget):
         self.mdi = mdi
         self.func_key = func_key
         self.custom_table_param_list = custom_table_param_list
+        self.custom_table_main_not_null = custom_table_main_not_null
 
         ################ support old params not put in options dict
         print("options0:", options)
@@ -327,10 +329,11 @@ class TableWindow(QWidget):
                 self.refreshTableContents()
         if action == actions_dict["custom_table"]:
             import custom_table_dialog
-            dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list, self.title, selected_ue=self.selected_ue)
-            def on_result(df, param_list, title, selected_ue):
+            dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list, self.title, selected_ue=self.selected_ue, main_not_null=self.custom_table_main_not_null)
+            def on_result(df, param_list, title, selected_ue, main_not_null):
                 self.custom_df=df
                 self.custom_table_param_list=param_list
+                self.custom_table_main_not_null = main_not_null
                 self.title=title
                 self.selected_ue=selected_ue
                 self.setObjectName(self.title)

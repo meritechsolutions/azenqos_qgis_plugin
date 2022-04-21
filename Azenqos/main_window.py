@@ -602,7 +602,7 @@ Log_hash list: {}""".format(
             except:
                 pass
         if self.gc.has_wave_file == True:
-            self.add_param_window('''pd.read_sql('select log_hash, time, name, info, detail, "" as wave_file from events union all select log_hash, time, "MOS Score" as name, polqa_mos as info, wav_filename as wave_file from polqa_mos where polqa_mos is not null',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
+            self.add_param_window('''pd.read_sql('select log_hash, time, name, info, detail, "" as wave_file from events union all select log_hash, time, "MOS Score" as name, polqa_mos as info, "" as detail, wav_filename as wave_file from polqa_mos',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
         else:
             self.add_param_window('''pd.read_sql('select log_hash, time, name, info, detail, "" as wave_file from events',dbcon).sort_values(by='time')''', title="Events", stretch_last_row=True, time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
 

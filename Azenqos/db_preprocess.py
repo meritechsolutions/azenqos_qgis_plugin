@@ -1,5 +1,6 @@
 import os
 import sys
+import glob
 import traceback
 import uuid
 import xml.etree.ElementTree as xet
@@ -86,6 +87,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                 indoor_map_path = rotate_indoor_map_path
             if os.path.isfile(indoor_map_path):
                 gc.is_indoor = True
+        gc.pre_wav_file_list = glob.glob(os.path.join(gc.logPath, str(log_hash), "*_pre.wav"))
 
     df = pd.read_sql("select * from geometry_columns", dbcon)
     print("geometry_columns df:\n{}".format(df.head()))

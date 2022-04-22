@@ -56,6 +56,7 @@ class analyzer_vars:
         self.log_list = []
         self.device_configs = []
         self.is_indoor = False
+        self.pre_wav_file_list = []
         self.easy_overview_mode = False
         self.overview_opened = False
         self.allLayers = []

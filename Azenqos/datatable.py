@@ -604,6 +604,15 @@ class TableWindow(QWidget):
                     assert df is not None
                     assert isinstance(df, pd.DataFrame)
                     if self.time_list_mode:
+                        
+                        df["time"] = pd.to_datetime(df["time"])
+                        if self.title == "Events" and len(self.gc.pre_wav_file_list) > 0:
+                            import voice_call_setup_df
+                            pre_wav_file_df = voice_call_setup_df.get_voice_call_setup_df(self.gc.pre_wav_file_list)
+                            df = df.append(pre_wav_file_df)
+                            df["time"] = pd.to_datetime(df["time"])
+                            df["log_hash"] = df["log_hash"].astype(np.int64)
+
                         if "time" in df.columns:
                             df = df.sort_values(by="time")
                             if "log_hash" in df.columns and len(df) > 0:
@@ -764,16 +773,18 @@ class TableWindow(QWidget):
 
             dlg = add_map_layer_dialog.add_map_layer_dialog(self.gc, param_name, n_arg_max)
             dlg.show()
-        elif 'name' in row_sr.index and row_sr["name"].find("MOS Score") != -1:
+        elif 'name' in row_sr.index and (row_sr["name"] == "MOS Score" or row_sr["name"] == "voice call setup"):
             name = row_sr["name"]
             side = {}
+            side["name"] = row_sr["name"]
             side["log_hash"] = row_sr["log_hash"]
             side["wav_file"] = os.path.join(
                 azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"]
             )
-            side["text_file"] = os.path.join(
-                azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"].replace(".wav", "_polqa.txt"),
-            )
+            if row_sr["name"] == "MOS Score":
+                side["text_file"] = os.path.join(
+                    azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"].replace(".wav", "_polqa.txt"),
+                )
             side["time"] = row_sr["time"]
             self.detailWidget = DetailWidget(
                 self.gc, self, cellContent, name, side
@@ -1038,7 +1049,7 @@ class DetailWidget(QDialog):
         self.height = 480
         self.setWindowFlags(QtCore.Qt.Window)
         self.polqaWavFile = None
-        if self.messageName is not None and self.messageName.find("MOS Score") != -1:
+        if self.messageName is not None and (messageName == "MOS Score" or messageName == "voice call setup"):
             self.setUpPolqaMosScore()
         else:
             self.setupUi()
@@ -1220,6 +1231,7 @@ class DetailWidget(QDialog):
         
         self.show_ref_wave_check_box = QCheckBox("Show reference")
         self.show_ref_wave_check_box.setChecked(False)
+        self.show_ref_wave_check_box.hide()
         enable_show_ref_wave_check_box = partial(self.show_ref_wave, self.show_ref_wave_check_box)
         disable_show_ref_wave_check_box = partial(self.hide_ref_wave, self.show_ref_wave_check_box)
         self.show_ref_wave_check_box.stateChanged.connect(
@@ -1246,10 +1258,12 @@ class DetailWidget(QDialog):
         self.playBtn.clicked.connect(self.playWavFile)
         self.saveBtn.clicked.connect(self.saveWaveFile)
 
-        self.setLayout(gridlayout)
-        f = open(self.side["text_file"], "r")
-        self.textEdit.setPlainText(self.detailText + "\n" + f.read())
-        f.close()
+        if self.side["name"] == "MOS Score":
+            self.show_ref_wave_check_box.show()
+            self.setLayout(gridlayout)
+            f = open(self.side["text_file"], "r")
+            self.textEdit.setPlainText(self.detailText + "\n" + f.read())
+            f.close()
 
         self.polqaWavFile = (self.side["wav_file"])
         self.set_ref_wave()

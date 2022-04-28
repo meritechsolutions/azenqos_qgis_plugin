@@ -41,7 +41,8 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QPushButton,
     QFileDialog,
-    QSizePolicy
+    QSizePolicy,
+    QLabel
 )
 
 import azq_server_api
@@ -178,6 +179,7 @@ class TableWindow(QWidget):
         self.filterList = None
         self.filterMenu = None
         self.svg_icon_fp= None
+        self.image_path = None
         self.signal_ui_thread_emit_model_datachanged.connect(
             self.ui_thread_model_datachanged
         )
@@ -300,6 +302,23 @@ class TableWindow(QWidget):
         #                             self.proxyModel.setFilterByColumn(QRegExp(text, Qt.CaseInsensitive, QRegExp.FixedString),
         #                                                     col))
         # self.setFixedWidth(layout.sizeHint())
+        self.setLayout(layout)
+        self.show()
+
+    def setup_image_ui(self):
+        self.setObjectName(self.title)
+        self.setWindowTitle(self.title)
+        self.setGeometry(0, 0, 400, 300)
+        print("image_path", self.image_path)
+        self.label = QLabel(self)
+        self.pixmap = QPixmap(self.image_path)
+        self.label.setPixmap(self.pixmap)
+        self.label.resize(self.pixmap.width(),
+                          self.pixmap.height())
+        layout = QVBoxLayout(self)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.label)
         self.setLayout(layout)
         self.show()
 
@@ -454,13 +473,20 @@ class TableWindow(QWidget):
             self.tableHeader = custom_df.columns.values.tolist()
         self.signal_ui_thread_setup_ui.emit()
 
+    def set_image_window(self, image_path):
+        self.image_path = image_path
+        self.signal_ui_thread_setup_ui.emit()
+
     """
     for trigger like window.signal_ui_thread_setup_ui.emit() when skip_setup_ui flagged in ctor
     """
 
     def ui_thread_sutup_ui(self):
         print("ui_thread_sutup_ui")
-        self.setupUi()
+        if self.image_path is not None:
+            self.setup_image_ui()
+        else:
+            self.setupUi()
 
     def updateTableModelData(self, data):
         if self.tableModel is None:
@@ -1681,10 +1707,23 @@ def run_api_expression_and_set_results_to_table_window(
         )
         # time.sleep(1)
         print("api call ret_dict: {}".format(ret_dict))
-        df = azq_server_api.parse_py_eval_ret_dict_for_df(server, token, ret_dict)
-        if df is None:
-            df = pd.DataFrame({"result": [ret_dict["ret"]],})
-        window.setup_ui_with_custom_df(df)
+        target_fp = azq_server_api.parse_py_eval_ret_dict_for_df(server, token, ret_dict)
+        print("target_fp:", target_fp)
+        if "parquet" in target_fp:
+            print("read parquet to df")
+            df = pd.read_parquet(target_fp)
+            #df.columns = [x.decode("utf-8") for x in df.columns]
+            for col in df.columns:
+                try:
+                    df[col] = df[col].apply(lambda x: x.decode("utf-8"))
+                except:
+                    pass
+            if df is None:
+                df = pd.DataFrame({"result": [ret_dict["ret"]],})
+            window.setup_ui_with_custom_df(df)
+        elif "png" in target_fp:
+            print("add image to image window")
+            window.set_image_window(target_fp)
     except Exception:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))

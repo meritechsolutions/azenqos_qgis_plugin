@@ -468,22 +468,29 @@ def parse_py_eval_ret_dict_for_df(server, token, py_eval_ret_dict: dict):
     if (
         py_eval_ret_dict["ret_dump"] is not None
         and py_eval_ret_dict["ret_type"] is not None
-        and "pandas.core.frame.DataFrame" in py_eval_ret_dict["ret_type"]
+        and ("pandas.core.frame.DataFrame" in py_eval_ret_dict["ret_type"] 
+        or "azq_output.OpenpyxlJpgImage" in py_eval_ret_dict["ret_type"] )
     ):
         pq_url = api_relative_path_to_url(server, py_eval_ret_dict["ret_dump"])
         tmp_dir = azq_utils.tmp_gen_path()
         target_fp = os.path.join(
             tmp_dir, "tmp_server_py_eval_df_{}.parquet".format(uuid.uuid4())
         )
+        if "png" in py_eval_ret_dict["ret_dump"]:
+            print("ret_dump is image")
+            target_fp = os.path.join(
+                tmp_dir, "tmp_server_py_eval_df_{}.png".format(uuid.uuid4())
+            )
         azq_utils.download_file(pq_url, target_fp)
         assert os.path.isfile(target_fp) == True
-        df = pd.read_parquet(target_fp)
-        #df.columns = [x.decode("utf-8") for x in df.columns]
-        for col in df.columns:
-            try:
-                df[col] = df[col].apply(lambda x: x.decode("utf-8"))
-            except:
-                pass
-        return df
+        return target_fp
+        # df = pd.read_parquet(target_fp)
+        # #df.columns = [x.decode("utf-8") for x in df.columns]
+        # for col in df.columns:
+        #     try:
+        #         df[col] = df[col].apply(lambda x: x.decode("utf-8"))
+        #     except:
+        #         pass
+        # return df
     else:
         return None

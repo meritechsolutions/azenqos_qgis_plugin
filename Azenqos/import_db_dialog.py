@@ -12,7 +12,7 @@ from functools import partial
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QIcon, QPixmap, QProgressBar
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QRadioButton,
     QFileDialog,
+    QProgressBar
 )
 
 import azq_utils

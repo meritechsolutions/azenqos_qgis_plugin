@@ -41,8 +41,8 @@ if __name__ == "__main__":
         test(
             server="https://test0.azenqos.com",
             user="azq",
-            passwd="azqbone",
-            lhl="213456852568306093,213456852568298388",
+            passwd="azenqostest0798",
+            lhl="1419904400023234500",
         )
     else:
         test(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

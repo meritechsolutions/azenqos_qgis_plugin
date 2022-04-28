@@ -10,7 +10,8 @@ import pandas as pd
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QMenu, QFont
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QMenu
 # from qgis.gui import QgsColorButton
 from PyQt5.uic import loadUi
 

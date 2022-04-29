@@ -147,12 +147,20 @@
      <property name="title">
       <string>Data</string>
      </property>
+     <widget class="QMenu" name="menuWiFi_Scan_Chart">
+      <property name="title">
+       <string>WiFi Scan Chart</string>
+      </property>
+      <addaction name="action2_4_GHz"/>
+      <addaction name="action5_GHz"/>
+     </widget>
      <addaction name="actionNR_DATA_Line_Chart"/>
      <addaction name="actionLTE_DATA_Line_Chart"/>
      <addaction name="actionWCDMA_DATA_Line_Chart"/>
      <addaction name="actionGSM_DATA_Line_Chart"/>
      <addaction name="actionWiFi_Active"/>
      <addaction name="actionWiFi_Scan"/>
+     <addaction name="menuWiFi_Scan_Chart"/>
      <addaction name="actionGPRS_EDGE_Information"/>
      <addaction name="actionHSDPA_Statistics"/>
      <addaction name="actionHSUPA_Statistics"/>
@@ -1020,6 +1028,16 @@
   <action name="actionAdd_Event_Layer">
    <property name="text">
     <string>Add Event Layer</string>
+   </property>
+  </action>
+  <action name="action2_4_GHz">
+   <property name="text">
+    <string>2.4 GHz</string>
+   </property>
+  </action>
+  <action name="action5_GHz">
+   <property name="text">
+    <string>5 GHz</string>
    </property>
   </action>
  </widget>

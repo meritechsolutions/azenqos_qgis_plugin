@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
 )
 from PyQt5.uic import loadUi
-from qgis._core import QgsTask
+
 
 import qt_utils, azq_utils
 import spider_plot
@@ -63,6 +63,7 @@ try:
     from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
     from PyQt5.QtGui import QColor
     from qgis.PyQt.QtCore import QVariant
+    from qgis._core import QgsTask
 
     print("mainwindow working in qgis mode")
 except:
@@ -94,6 +95,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)  # exit upon ctrl-c
 import inspect
 import linechart_custom
 import linechart_multi_y_axis
+import wifi_scan_chart
 import time
 import pandas as pd
 import sqlite3
@@ -1212,6 +1214,27 @@ Log_hash list: {}""".format(
             selected_ue = selected_ue
         )
         self.add_subwindow_with_widget(swa, widget)
+    
+    @pyqtSlot()
+    def on_action2_4_GHz_triggered(self, selected_ue=None, mode="2.4"):
+        print("action wifi scan chart 2.4 GHz")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        title = "WiFi Scan 2.4 GHz"
+        linechart_window = wifi_scan_chart.wifi_scan_chart(
+            self.gc,
+            mode=mode,
+        )
+
+        swa = SubWindowArea(self.mdi, self.gc)
+        if self.add_subwindow_with_widget(swa, linechart_window):
+            linechart_window.open()
+            linechart_window.setWindowTitle(title)
 
     @pyqtSlot()
     def on_actionGPRS_EDGE_Information_triggered(self, selected_ue = None):
@@ -2627,6 +2650,8 @@ Log_hash list: {}""".format(
                     window.updateTime(sampledate)
                 elif isinstance(window, linechart_multi_y_axis.LineChart):
                     window.updateTime(sampledate)
+                elif isinstance(window, wifi_scan_chart.wifi_scan_chart):
+                    window.update_time(sampledate)
                 elif not window.title in self.gc.linechartWindowname:
                     print(
                         "%s: timeChange7 hilightrow window %s"

@@ -46,7 +46,10 @@ def get_Wifi_active_df(dbcon, time_before):
 
 
 def get_wifi_scan_df(dbcon, time_before, selected_logs=None):
-    dt_before = time_before["time"]
+    import datetime
+    dt_before = time_before
+    if not isinstance(dt_before, datetime.date):
+        dt_before = time_before["time"]
     sql = "select * from wifi_scanned_info where time between DATETIME('{}','-4 seconds') and '{}'".format(
         dt_before, dt_before
     )

@@ -1,5 +1,8 @@
 import subprocess
 import os
+import sys
+import traceback
+
 
 def get_module_path():
     return os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -35,6 +38,12 @@ def check_and_install_requirements():
         print("need_to_restart")
         cmd = ['python', '-m', 'pip', 'install', '-r', requirement_fp]
         print("cmd:", cmd)
-        subprocess.check_call(['python', '-m', 'pip', 'install', '-r', requirement_fp])
+        try:
+            subprocess.check_call(['python', '-m', 'pip', 'install', '-r', requirement_fp])
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: pip install exception:", exstr)
+
         return False
     return True

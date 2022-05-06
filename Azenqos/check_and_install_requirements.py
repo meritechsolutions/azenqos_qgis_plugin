@@ -38,12 +38,11 @@ def check_and_install_requirements():
         print("need_to_restart")
         cmd = ['python', '-m', 'pip', 'install', '-r', requirement_fp]
         print("cmd:", cmd)
-        try:
-            subprocess.check_call(['python', '-m', 'pip', 'install', '-r', requirement_fp])
-        except:
-            type_, value_, traceback_ = sys.exc_info()
-            exstr = str(traceback.format_exception(type_, value_, traceback_))
-            print("WARNING: pip install exception:", exstr)
+        process = subprocess.Popen(['python', '-m', 'pip', 'install', '-r', requirement_fp], stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=0)
+        (stdout, stderr) = process.communicate()
+
+        if process.returncode != 0:
+            raise Exception(stderr.decode("utf-8") )
 
         return False
     return True

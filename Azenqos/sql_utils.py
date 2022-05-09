@@ -114,7 +114,7 @@ def list_to_sql_list(items):
     return '[{}]'.format(','.join(quotedList))
 
 def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
-    pattern = re.compile(r'(?:select )?(\S*)\sas\s(\S*)(?:,\s?|\s*from)', re.IGNORECASE)
+    pattern = re.compile(r'(?:select )?(\S*)\sas\s\"?\'?([^\"\']+)\'?\"?(?:,?\s?|\s*from)', re.IGNORECASE)
     param_list = pattern.findall(sql)
     param_dict = {}
     for param, param_alias  in param_list:

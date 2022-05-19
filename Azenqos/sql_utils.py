@@ -148,14 +148,6 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
                             if value is None:
                                 valid_df_dict[index] = None
                 df = pd.DataFrame.from_dict(valid_df_dict, orient="index").T
-                for param in valid_df_dict:
-                    ret = df[param][0]      
-                    if isinstance(ret, str):
-                        if ret.startswith("ret_tuple"):
-                            ret = ret.replace("ret_tuple", "")
-                            ret = ret.split(",")
-                            ret = (float(ret[0]), ret[1], float(ret[2]))
-                            df[param][0] = ret
             else:
                 df = df.iloc[[0]].reset_index(drop=True)
 

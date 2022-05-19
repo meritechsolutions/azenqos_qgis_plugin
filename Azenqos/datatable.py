@@ -1591,7 +1591,12 @@ class PdTableModel(QAbstractTableModel):
     def data(self, index, role=QtCore.Qt.DisplayRole):
         # print("pdtablemodel data() role:", role)
         ret = self.df.iloc[index.row(), index.column()]
-        ret_tuple = None 
+        ret_tuple = None    
+        if isinstance(ret, str):
+            if ret.startswith("ret_tuple"):
+                ret = ret.replace("ret_tuple", "")
+                ret = ret.split(",")
+                ret = (float(ret[0]), ret[1], float(ret[2]))
         if isinstance(ret, tuple):
             ret_tuple = ret
         if role == QtCore.Qt.DisplayRole:

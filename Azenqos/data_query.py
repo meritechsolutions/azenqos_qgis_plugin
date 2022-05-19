@@ -66,6 +66,25 @@ def get_wifi_scan_df(dbcon, time_before, selected_logs=None):
     else:
         for i in range(1):
             df = df.append(pd.Series(), ignore_index=True)
+    level_param = "wifi_scanned_info_level"
+    if level_param in db_preprocess.cached_theme_dict.keys():
+        theme_df = db_preprocess.cached_theme_dict[level_param]
+        theme_df["Lower"] = theme_df["Lower"].astype(float)
+        theme_df["Upper"] = theme_df["Upper"].astype(float)
+        theme_range = theme_df["Upper"].max() - theme_df["Lower"].min()
+        tmp_df = df.copy()
+        tmp_df["percent"] = (tmp_df[level_param] - theme_df["Lower"].min()) / theme_range
+        tmp_df["color"] = None
+        def match_color(value, theme_df):
+            color_df = theme_df.loc[(theme_df["Lower"]<=float(value))&(theme_df["Upper"]>float(value)), "ColorXml"]
+            color = None
+            if len(color_df) > 0:
+                color = color_df.iloc[0]
+            return color
+        tmp_df.loc[tmp_df[level_param].notna(), "color"] = tmp_df.loc[tmp_df[level_param].notna(), level_param].apply(lambda x: match_color(x, theme_df))
+        tmp_df[level_param] = tmp_df[[level_param,"color","percent"]].apply(tuple, axis=1)
+        df[level_param] = tmp_df[level_param]
+        
     df = df.drop(columns=drop_col_list).sort_values(by="wifi_scanned_info_record_number")
     return df
 

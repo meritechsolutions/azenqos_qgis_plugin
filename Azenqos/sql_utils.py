@@ -114,11 +114,11 @@ def list_to_sql_list(items):
     return '[{}]'.format(','.join(quotedList))
 
 def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
-    pattern = re.compile(r'(?:select )?(\S*)\sas\s(\S*)(?:,\s?|\s*from)', re.IGNORECASE)
+    pattern = re.compile(r'\s*(?:select )?\"?\'?(\S+)\"?\'?\sas\s\"?\'?([\d\sA-Z]+)\'?\"?,?\s*(?:,?\s?|\s*from)', re.IGNORECASE)
     param_list = pattern.findall(sql)
     param_dict = {}
     for param, param_alias  in param_list:
-        if param != "''" and param != "time" and param != "log_hash":
+        if param != "''" and param != "'" and param != "time" and param != "log_hash":
             param_dict[param_alias] = param
     try:
         df = pd.read_sql(sql, dbcon)
@@ -141,11 +141,13 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
                             theme_range = theme_df["Upper"].max() - theme_df["Lower"].min()
                             percent = (float(value) - theme_df["Lower"].min()) / theme_range
                             color_df = theme_df.loc[(theme_df["Lower"]<=float(value))&(theme_df["Upper"]>float(value)), "ColorXml"]
-                            color = None
+                            color = "#FFFFFF"
                             if len(color_df) > 0:
                                 color = color_df.iloc[0]
-                            valid_df_dict[index] = (value, color, percent)
-                df = pd.DataFrame.from_dict(valid_df_dict, orient='index').T
+                            valid_df_dict[index] = "ret_tuple{},{},{}".format(value, color, percent)
+                            if value is None:
+                                valid_df_dict[index] = None
+                df = pd.DataFrame.from_dict(valid_df_dict, orient="index").T
             else:
                 df = df.iloc[[0]].reset_index(drop=True)
 

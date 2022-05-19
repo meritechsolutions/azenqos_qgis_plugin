@@ -354,7 +354,12 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
             pass
         try:
             if df_indoor_location is not None and len(df_indoor_location) > 0 and gc.real_world_indoor == True: 
-                sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid and log_hash = location.log_hash), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid and log_hash = location.log_hash);"
+                
+                df_commander_location = pd.read_sql_query("select * from commander_location", dbcon)
+                if len(df_indoor_location) == 1 and len(df_commander_location) > 1:
+                    sqlstr = "update location set positioning_lat = (select commander_location_lat from commander_location where posid = location.posid and log_hash = location.log_hash and commander_location_y is not null), positioning_lon = (select commander_location_lon from commander_location where posid = location.posid and log_hash = location.log_hash and commander_location_x is not null);"
+                else:
+                    sqlstr = "update location set positioning_lat = (select indoor_location_lat from indoor_location where posid = location.posid and log_hash = location.log_hash), positioning_lon = (select indoor_location_lon from indoor_location where posid = location.posid and log_hash = location.log_hash);"
                 print("copy indoor_location lat lon to location: %s" % sqlstr)
                 dbcon.execute(sqlstr)
                 dbcon.commit()

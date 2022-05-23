@@ -1,45 +1,31 @@
 import contextlib
 import sqlite3
 import os
-from pathlib import Path
-import json
-import copy
-
 import numpy as np
-import pandas as pd
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.uic import loadUi
-from functools import partial
 from worker import Worker
-from scipy import interpolate
-import pyqtgraph as pg
-import datetime
-
+from PyQt5.uic import loadUi
 import azq_utils
+import datetime
+from matplotlib.backends.qt_compat import  QtWidgets
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.figure import Figure
+from scipy import interpolate
+
 import data_query
-import preprocess_azm
-import add_custom_table_param_dialog
-import custom_table_dataframe_model
 
-class band_axis_item(pg.AxisItem):
-    """Internal timestamp for x-axis"""
 
-    def __init__(self, freq_definitions_dict, *args, **kwargs):
-        super(band_axis_item, self).__init__(*args, **kwargs)
-        self.freq_definitions_dict = freq_definitions_dict
-
-    def tickStrings(self, values, scale, spacing):
-        x_axis_list = []
-        for value in values:
-            if str(int(value)) in self.freq_definitions_dict.keys():
-                x_axis_list.append(str(self.freq_definitions_dict[str(int(value))]["channel"]))
-            else:
-                x_axis_list.append("")
-        return x_axis_list
-
-freq_definitions_dict_5GHz = {
+freq_definitions_dict_5GHz_low = {
+"4915" : {"channel": 183, "width": 10 },
+"4920" : {"channel": 184, "width": 20 },
+"4925" : {"channel": 185, "width": 10 },
+"4935" : {"channel": 187, "width": 10 },
+"4940" : {"channel": 188, "width": 20 },
+"4945" : {"channel": 189, "width": 10 },
+"4960" : {"channel": 192, "width": 20 },
+"4980" : {"channel": 196, "width": 20 },
 "5035" : {"channel": 7, "width": 10 },
 "5040" : {"channel": 8, "width": 20 },
 "5045" : {"channel": 9, "width": 10 },
@@ -64,6 +50,9 @@ freq_definitions_dict_5GHz = {
 "5310" : {"channel": 62, "width": 40 },
 "5320" : {"channel": 64, "width": 20 },
 "5340" : {"channel": 68, "width": 20 },
+}
+
+freq_definitions_dict_5GHz_high = {
 "5480" : {"channel": 96, "width": 20 },
 "5500" : {"channel": 100, "width": 20 },
 "5510" : {"channel": 102, "width": 40 },
@@ -97,16 +86,8 @@ freq_definitions_dict_5GHz = {
 "5825" : {"channel": 165, "width": 20 },
 "5845" : {"channel": 169, "width": 20 },
 "5865" : {"channel": 173, "width": 20 },
-"4915" : {"channel": 183, "width": 10 },
-"4920" : {"channel": 184, "width": 20 },
-"4925" : {"channel": 185, "width": 10 },
-"4935" : {"channel": 187, "width": 10 },
-"4940" : {"channel": 188, "width": 20 },
-"4945" : {"channel": 189, "width": 10 },
-"4960" : {"channel": 192, "width": 20 },
-"4980" : {"channel": 196, "width": 20 }
-
 }
+
 freq_definitions_dict_2_4GHz = {
 "2412" : {"channel": 1 , "width": 22 },
 "2417" : {"channel": 2 , "width": 22 },
@@ -124,14 +105,6 @@ freq_definitions_dict_2_4GHz = {
 "2484" : {"channel": 14, "width": 22 },
 }
 
-
-import numpy as np
-SAMPLE_DATA2 = np.linspace(-100, 100)
-print(type(SAMPLE_DATA2))
-
-test_list = [1,2,3,4]
-
-print(type(np.array(test_list)))
 class wifi_scan_chart(QtWidgets.QDialog):
     update_chart = pyqtSignal(object)
 
@@ -142,8 +115,10 @@ class wifi_scan_chart(QtWidgets.QDialog):
         self.selected_ue = selected_ue
         if mode == "2.4":
             self.freq_definitions_dict = freq_definitions_dict_2_4GHz
-        elif mode == "5":
-            self.freq_definitions_dict = freq_definitions_dict_5GHz
+        elif mode == "5l":
+            self.freq_definitions_dict = freq_definitions_dict_5GHz_low
+        elif mode == "5h":
+            self.freq_definitions_dict = freq_definitions_dict_5GHz_high
         self.selected_logs = None
         if self.selected_ue is not None:
             self.selected_logs = self.gc.device_configs[self.selected_ue]["log_hash"]
@@ -154,15 +129,13 @@ class wifi_scan_chart(QtWidgets.QDialog):
         self.ui = loadUi(azq_utils.get_module_fp("wifi_scan_chart.ui"), self)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         self.setWindowTitle("WiFi Scan Chart")
+        self.setGeometry(300, 300, 800, 400)
         
-        pg.setConfigOptions(background="w", useOpenGL=True)
-        pg.TickSliderItem(orientation="bottom", allowAdd=True)
-        self.graph_widget = None
-        self.graph_widget = pg.GraphicsWindow()
-        self.ui.chartLayout.addWidget(self.graph_widget)
-        self.graph_widget.axes = self.graph_widget.addPlot(
-            axisItems={"bottom": band_axis_item(self.freq_definitions_dict, orientation="bottom")}
-        )
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        self._ax_ = self.figure.subplots()
+        self.ui.chartLayout.addWidget(self.canvas)
+        self.last_df = None
         
         self.update_chart.connect(self.on_update_chart)
         if self.gc.currentDateTimeString is not None:
@@ -188,44 +161,37 @@ class wifi_scan_chart(QtWidgets.QDialog):
         print("onUpdateChart")
         self.plot(df)
 
-    def plot(self, df):
-        self.graph_widget.axes.clear()
+    def plot(self, df, **kwargs):
+        self._ax_.clear()
+        x_ticks = [int(key) for key in self.freq_definitions_dict.keys()]
+        self._ax_.axis(xmin=x_ticks[0]-4, xmax=x_ticks[-1]+4)
+        self._ax_.set_xticks(x_ticks)
+        x_tick_labels = [int(self.freq_definitions_dict[key]["channel"]) for key in self.freq_definitions_dict.keys()]
+        self._ax_.set_xticklabels(x_tick_labels)
         if len(df) > 0:
-            max_x = int(max(self.freq_definitions_dict.keys()))
-            min_x = int(min(self.freq_definitions_dict.keys()))
-            df = df.loc[(df["wifi_scanned_info_freq"]>=min_x) & (df["wifi_scanned_info_freq"]<=max_x)]
-            color_index = 0
-            for index, row in df.iterrows():
-                freq_list = []
-                level_list = []
-                freq = row.wifi_scanned_info_freq
-                level = row.wifi_scanned_info_level
-                width = self.freq_definitions_dict[str(freq)]["width"] / 2
-                freq_list.append(freq-width)
-                freq_list.append(freq)
-                freq_list.append(freq+width)
-                level_list.append(-100)
-                level_list.append(level)
-                level_list.append(-100)
-                # X_Y_Spline = make_interp_spline(freq_list, level_list)
-                tck = interpolate.splrep(level_list, freq_list, s=0)
-                xnew = np.arange(0, 2*np.pi, np.pi/50)
-                ynew = interpolate.splev(xnew, tck, der=0)
- 
-                # Returns evenly spaced numbers
-                # over a specified interval.
-                # X_ = np.linspace(freq_list.min(), freq_list.max(), 500)
-                # Y_ = X_Y_Spline(X_)
-                color = azq_utils.get_default_color_for_index(color_index)
-                new_line = self.graph_widget.axes.plot(
-                    pen=pg.mkPen(color, width=4),
-                )
-                new_line.setData(xnew, ynew)
-                # self.graph_widget.axes.addItem(pg.TextItem(
-                #     text="gggggggggggg",color=color))
-                color_index+=1
-                
-            self.graph_widget.axes.setLimits(
-                xMin=min_x,
-                xMax=max_x,
-            )
+            if not df.equals(self.last_df):
+                self.last_df = df
+                max_x = int(max(self.freq_definitions_dict.keys()))
+                min_x = int(min(self.freq_definitions_dict.keys()))
+                df = df.loc[(df["wifi_scanned_info_freq"]>=min_x) & (df["wifi_scanned_info_freq"]<=max_x)]
+                for index, row in df.iterrows():
+                    freq_list = []
+                    level_list = []
+                    freq = row.wifi_scanned_info_freq
+                    level = row.wifi_scanned_info_level
+                    name = row.wifi_scanned_info_ssid
+                    width = self.freq_definitions_dict[str(freq)]["width"] / 2
+                    freq_list.append(freq-width)
+                    freq_list.append(freq)
+                    freq_list.append(freq+width)
+                    level_list.append(-100)
+                    level_list.append(level)
+                    level_list.append(-100)
+                    self._x_ = np.linspace(freq_list[0], freq_list[-1], 100)
+                    self._y_ = interpolate.pchip_interpolate(freq_list, level_list, self._x_)
+                    line = self._ax_.plot(self._x_, self._y_)
+                    kwargs['color'] = line[0].get_color()
+                    kwargs['ha'] = 'center'
+                    kwargs['va'] = 'bottom'
+                    self._ax_.text(freq_list[1], level_list[1], name, kwargs)
+                self.canvas.draw()

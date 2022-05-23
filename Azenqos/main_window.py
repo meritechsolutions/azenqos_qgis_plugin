@@ -1235,6 +1235,48 @@ Log_hash list: {}""".format(
         if self.add_subwindow_with_widget(swa, linechart_window):
             linechart_window.open()
             linechart_window.setWindowTitle(title)
+    
+    @pyqtSlot()
+    def on_action5_GHz_triggered(self, selected_ue=None, mode="5l"):
+        print("action wifi scan chart 5 GHz")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        title = "WiFi Scan 5 GHz Low Frequencies"
+        linechart_window = wifi_scan_chart.wifi_scan_chart(
+            self.gc,
+            mode=mode,
+        )
+
+        swa = SubWindowArea(self.mdi, self.gc)
+        if self.add_subwindow_with_widget(swa, linechart_window):
+            linechart_window.open()
+            linechart_window.setWindowTitle(title)
+
+    @pyqtSlot()
+    def on_action5_GHz_High_triggered(self, selected_ue=None, mode="5h"):
+        print("action wifi scan chart 5 GHz")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        title = "WiFi Scan 5 GHz High Frequencies"
+        linechart_window = wifi_scan_chart.wifi_scan_chart(
+            self.gc,
+            mode=mode,
+        )
+
+        swa = SubWindowArea(self.mdi, self.gc)
+        if self.add_subwindow_with_widget(swa, linechart_window):
+            linechart_window.open()
+            linechart_window.setWindowTitle(title)
 
     @pyqtSlot()
     def on_actionGPRS_EDGE_Information_triggered(self, selected_ue = None):

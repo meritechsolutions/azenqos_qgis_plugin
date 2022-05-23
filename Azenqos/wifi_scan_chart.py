@@ -9,7 +9,6 @@ from worker import Worker
 from PyQt5.uic import loadUi
 import azq_utils
 import datetime
-from matplotlib.backends.qt_compat import  QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 from scipy import interpolate

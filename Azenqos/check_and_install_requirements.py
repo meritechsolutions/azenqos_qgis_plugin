@@ -1,8 +1,5 @@
 import subprocess
 import os
-import sys
-import traceback
-
 
 def get_module_path():
     return os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))

@@ -101,11 +101,15 @@ def tshark_decode_hex(side, name, protocol, detail):
     )
     print("tshark cmd:", cmd)
     decodeResult = None
-    if os.name == "nt":
-        decodeResult = subprocess.check_output(cmd, shell=False, env=env, creationflags=CREATE_NO_WINDOW)
-    else:
-        decodeResult = subprocess.check_output(cmd, shell=False, env=env)
-    decodeResult = decodeResult.decode("utf-8")
+    try:
+        if os.name == "nt":
+            decodeResult = subprocess.check_output(cmd, shell=False, env=env, creationflags=CREATE_NO_WINDOW)
+        else:
+            decodeResult = subprocess.check_output(cmd, shell=False, env=env)
+        decodeResult = decodeResult.decode("utf-8")
+    except subprocess.CalledProcessError as cpe:
+        decodeResult = cpe.output.decode()
+
     # print("decodeResult", decodeResult)
     result = decodeResult
     if "DLT: 161," in result:
@@ -128,6 +132,8 @@ def protocolToDissector(protocol, channelType):
     elif protocol in ["NR-RRC"]:
         assert channelType
         return "nr-rrc." + str(getNrSubdissector(channelType))
+    elif protocol in ["5GMM", "5GSM"]:
+        return "nas-5gs"  # https://www.wireshark.org/docs/dfref/#section_n >> nas-5gs
     raise Exception("unhandled/unknown protocl: {} chan: {}".format(protocol, channelType))
 
 

@@ -45,6 +45,15 @@ def test():
     print("ret:", ret)
     assert "LTE Radio Resource Control (RRC) protocol" in ret
 
+    ret = tshark_util.tshark_decode_hex("recv", "Security Mode Complete", "5GMM", '''
+        msg_raw_hex: 7e 00 5d 22 01 02 f0 70 e1 36 01 02
+        ''')
+    #print("5gmm ret:", ret)
+    assert "5G mobility management messages" in ret
+    assert "5G-EA0: Supported" in ret
+    assert "5G-EA7: Not supported" in ret
+
+
 
 if __name__ == "__main__":
     test()

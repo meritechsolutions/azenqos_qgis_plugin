@@ -43,7 +43,11 @@ def get_pcap_df(pcap_path_list, log_list):
             if str(log_hash) in csv_path or str(log_hash) in pcap_path:
                 pcap_log = log_hash
         if path.isfile(csv_path):
-            pass
+            f = open(csv_path)
+            if "Running as user" not in f.readline():
+                f.seek(0)
+            pcap_df = pd.read_csv(f)
+            f.close()
         else:
             env = tshark_util.prepare_env_and_libs()
             tsharkPath = os.path.join(
@@ -59,18 +63,17 @@ def get_pcap_df(pcap_path_list, log_list):
                 + ' "'
                 + pcap_path
                 + '" '
-                + "-t ud -n -p -2 -T fields -E separator=, -E quote=d -E header=y -e _ws.col.No. -e _ws.col.Time -e _ws.col.Source -e _ws.col.Destination -e _ws.col.Protocol -e tcp.srcport -e tcp.dstport -e udp.srcport -e udp.dstport -e _ws.col.Length -e _ws.col.Info > "
+                + "-t ud -n -p -2 -T fields -E separator=, -E quote=s -E header=y -e _ws.col.No. -e _ws.col.Time -e _ws.col.Source -e _ws.col.Destination -e _ws.col.Protocol -e tcp.srcport -e tcp.dstport -e udp.srcport -e udp.dstport -e _ws.col.Length -e _ws.col.Info > "
                 + ' "'
                 + csv_path
                 + '" '
             )
             subprocess.call(cmd, shell=True, env=env)
-
-        f = open(csv_path)
-        if "Running as user" not in f.readline():
-            f.seek(0)
-        pcap_df = pd.read_csv(f)
-        f.close()
+            f = open(csv_path)
+            if "Running as user" not in f.readline():
+                f.seek(0)
+            pcap_df = pd.read_csv(f, quotechar="'")
+            f.close()
         pcap_df["file_name"] = pcap_file_name
         if "_ws.col.Time" not in pcap_df.columns:
             return

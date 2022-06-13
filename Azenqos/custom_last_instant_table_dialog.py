@@ -4,7 +4,7 @@ import json
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QIcon, QPixmap, QAbstractItemView
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QMenu, QCompleter, QComboBox
 from PyQt5.uic import loadUi
 

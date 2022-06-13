@@ -635,7 +635,7 @@ Log_hash list: {}""".format(
         import nr_data_query
         self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", selected_ue=selected_ue)
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, custom_table_main_not_null=False, allow_no_log_opened=False, selected_ue=None):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, custom_last_instant_table_param_list=None, custom_table_main_not_null=False, allow_no_log_opened=False, selected_ue=None):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
         widget = TableWindow(
@@ -648,6 +648,7 @@ Log_hash list: {}""".format(
             func_key=func_key,
             custom_df=custom_df,
             custom_table_param_list=custom_table_param_list,
+            custom_last_instant_table_param_list=custom_last_instant_table_param_list,
             custom_table_main_not_null=custom_table_main_not_null,
             selected_ue=selected_ue
         )
@@ -711,6 +712,20 @@ Log_hash list: {}""".format(
             title = qt_utils.ask_text(self, title="New window title", msg="Please enter desired title of new window",
                                       existing_content="Custom table view")
             self.add_param_window(expression, title=title, time_list_mode=True, stretch_last_row=True)
+
+    @pyqtSlot()
+    def on_actionCustom_Instant_View_UI_triggered(self, selected_ue = None):
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        import custom_last_instant_table_dialog
+        dlg = custom_last_instant_table_dialog.custom_last_instant_table_dialog(self.gc, selected_ue=selected_ue)
+        dlg.on_result.connect(lambda param_list, title, selected_ue: self.add_param_window(custom_df=param_list, title=title, custom_last_instant_table_param_list=param_list, selected_ue=selected_ue))
+        dlg.show()
 
     @pyqtSlot()
     def on_actionCustom_Table_View_UI_triggered(self, selected_ue = None):
@@ -3047,6 +3062,10 @@ Log_hash list: {}""".format(
                                 window.widget().custom_table_param_list,
                             )
                             self.current_workspace_settings.setValue(
+                                GUI_SETTING_NAME_PREFIX + "window_{}_custom_last_instant_table_param_list".format(i),
+                                window.widget().custom_last_instant_table_param_list,
+                            )
+                            self.current_workspace_settings.setValue(
                                 GUI_SETTING_NAME_PREFIX + "window_{}_refresh_df_func_or_py_eval_str".format(i),
                             window.widget().refresh_data_from_dbcon_and_time_func,
                             )
@@ -3437,6 +3456,10 @@ Log_hash list: {}""".format(
                             GUI_SETTING_NAME_PREFIX + "window_{}_custom_table_param_list".format(i)
                         )
 
+                        custom_last_instant_table_param_list = self.current_workspace_settings.value(
+                            GUI_SETTING_NAME_PREFIX + "window_{}_custom_last_instant_table_param_list".format(i)
+                        )
+
                         hh_state = self.current_workspace_settings.value(
                             GUI_SETTING_NAME_PREFIX + "window_{}_table_horizontal_headerview_state".format(i)
                         )
@@ -3478,6 +3501,8 @@ Log_hash list: {}""".format(
                             eval(func_key)
                         elif custom_df is not None and custom_table_param_list is not None:
                             self.add_param_window(custom_df = custom_df, custom_table_param_list=custom_table_param_list, title=title, options=options, selected_ue=selected_ue)
+                        elif custom_last_instant_table_param_list is not None:
+                            self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title=title, options=options, selected_ue=selected_ue)
                         else:
                             # like for custom windows - newer style
                             self.add_param_window(refresh_df_func_or_py_eval_str, title=title, options=options, selected_ue=selected_ue)

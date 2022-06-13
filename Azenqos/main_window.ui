@@ -188,6 +188,7 @@
      </property>
      <addaction name="actionCustom_Instant_View"/>
      <addaction name="actionCustom_Table_View"/>
+     <addaction name="actionCustom_Instant_View_UI"/>
      <addaction name="actionCustom_Table_View_UI"/>
      <addaction name="actionCustom_Line_Chart"/>
     </widget>
@@ -1044,6 +1045,11 @@
   <action name="action5_GHz_High">
    <property name="text">
     <string>5 GHz High</string>
+   </property>
+  </action>
+  <action name="actionCustom_Instant_View_UI">
+   <property name="text">
+    <string>Custom Last-instant Table View</string>
    </property>
   </action>
  </widget>

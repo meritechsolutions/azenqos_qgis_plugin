@@ -62,7 +62,7 @@ class add_map_layer_dialog(QDialog):
             selected_ue = dlg.log
         if self.gc.databasePath is not None:
             with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                table_name = preprocess_azm.get_table_for_column(self.param_name .split("/")[0])
+                table_name = preprocess_azm.get_table_for_column(self.param_name.split("/")[0])
                 sqlstr = "select log_hash, time, {} from {}".format(self.param_name , table_name)
                 location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
                 layer_name = self.param_name

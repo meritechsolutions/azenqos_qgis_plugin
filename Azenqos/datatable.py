@@ -88,6 +88,7 @@ class TableWindow(QWidget):
         mdi=None,
         func_key=None,
         custom_table_param_list=None,
+        custom_last_instant_table_param_list=None,
         custom_table_main_not_null=False,
         selected_ue=None,
 
@@ -106,6 +107,7 @@ class TableWindow(QWidget):
         self.func_key = func_key
         self.custom_table_param_list = custom_table_param_list
         self.custom_table_main_not_null = custom_table_main_not_null
+        self.custom_last_instant_table_param_list = custom_last_instant_table_param_list
 
         ################ support old params not put in options dict
         print("options0:", options)
@@ -335,9 +337,12 @@ class TableWindow(QWidget):
             actions_dict["custom_expression"] = menu.addAction("Customize SQL/Python expression...")
         if self.custom_table_param_list:
             actions_dict["custom_table"] = menu.addAction("Customize table...")
-        if self.tableModel.df is not None:
-            actions_dict["to_csv"] = menu.addAction("Dump to CSV...")
-            actions_dict["to_parquet"] = menu.addAction("Dump to Parquet...")
+        if self.custom_last_instant_table_param_list:
+            actions_dict["custom_last_instant_table"] = menu.addAction("Customize table...")
+        if not self.custom_last_instant_table_param_list:
+            if self.tableModel.df is not None:
+                actions_dict["to_csv"] = menu.addAction("Dump to CSV...")
+                actions_dict["to_parquet"] = menu.addAction("Dump to Parquet...")
         action = menu.exec_(self.mapToGlobal(event.pos()))
         if action is None:
             return
@@ -346,7 +351,20 @@ class TableWindow(QWidget):
             if expression:
                 self.refresh_data_from_dbcon_and_time_func = expression
                 self.refreshTableContents()
-        if action == actions_dict["custom_table"]:
+        elif action == actions_dict["custom_last_instant_table"]:
+            import custom_last_instant_table_dialog
+            dlg = custom_last_instant_table_dialog.custom_last_instant_table_dialog(self.gc, self.custom_last_instant_table_param_list, self.title, selected_ue=self.selected_ue)
+            def on_result(param_list, title, selected_ue):
+                self.custom_df=param_list
+                self.custom_last_instant_table_param_list=param_list
+                self.title=title
+                self.selected_ue=selected_ue
+                self.setObjectName(self.title)
+                self.setWindowTitle(self.title)
+                self.refreshTableContents()
+            dlg.on_result.connect(on_result)
+            dlg.show()
+        elif action == actions_dict["custom_table"]:
             import custom_table_dialog
             dlg = custom_table_dialog.custom_table_dialog(self.gc, self.custom_table_param_list, self.title, selected_ue=self.selected_ue, main_not_null=self.custom_table_main_not_null)
             def on_result(df, param_list, title, selected_ue, main_not_null):
@@ -498,6 +516,7 @@ class TableWindow(QWidget):
 
     def setTableModel(self, dataList):
         print("setTableModel() dataList len: {}".format(len(dataList)))
+        refresh_dict = {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
         if self.customHeader:
             self.tableHeader = self.customHeader
 
@@ -506,7 +525,7 @@ class TableWindow(QWidget):
             self.set_pd_df(dataList)
             self.tableModel = PdTableModel(dataList, self)
         else:
-            self.tableModel = TableModel(dataList, self.tableHeader, self)
+            self.tableModel = TableModel(dataList, self.tableHeader, refresh_dict["time"], refresh_dict["log_hash"], self.gc, self)
         self.proxyModel = SortFilterProxyModel(self)
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
@@ -774,72 +793,75 @@ class TableWindow(QWidget):
         print("hilightRow: sampledate: %s done" % sampledate)
 
     def showDetail(self, item):
-        row_index = item.row()
-        print("showDetail row_index: %d" % row_index)
-        row_sr = self.tableModel.df.iloc[row_index]
-        # cellContent = str(item.data())
-        cellContent = ""
-        for index, val in row_sr.items():
-            cellContent += "[{}]: {}\n".format(index, val)
-        if self.parentWindow:
-            self.parentWindow.parentWidget()
-        else:
-            pass
-        if 'name' in row_sr.index and 'dir' in row_sr.index and 'protocol' in row_sr.index:
-            name = row_sr["name"]
-            side = row_sr["dir"]
-            protocol = row_sr["protocol"]
-            self.detailWidget = DetailWidget(
-                self.gc, self, cellContent, name, side, protocol
-            )
-        elif self.title.lower() == "add layer":
-            param_name = row_sr["var_name"]
-            n_arg_max = row_sr["n_arg_max"]
-            import add_map_layer_dialog
-
-            dlg = add_map_layer_dialog.add_map_layer_dialog(self.gc, param_name, n_arg_max)
-            dlg.show()
-        elif 'name' in row_sr.index and (row_sr["name"] == "MOS Score" or row_sr["name"] == "voice call setup"):
-            name = row_sr["name"]
-            side = {}
-            side["name"] = row_sr["name"]
-            side["log_hash"] = row_sr["log_hash"]
-            side["wav_file"] = os.path.join(
-                azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"]
-            )
-            if row_sr["name"] == "MOS Score":
-                side["text_file"] = os.path.join(
-                    azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"].replace(".wav", "_polqa.txt"),
-                )
-            side["time"] = row_sr["time"]
-            self.detailWidget = DetailWidget(
-                self.gc, self, cellContent, name, side
-            )
-        elif self.list_module:
-            import module_dialog
-            dlg = module_dialog.module_dialog(self, row_sr, self.gc, self.mdi)
-            dlg.show()
-        else:
-            self.detailWidget = DetailWidget(self.gc, self, cellContent)
-        """
-        print("showdetail self.tablename {}".format(self.tablename))
-        if self.tablename == "signalling":
-            name = item.sibling(item.row(), 2).data()
-            side = item.sibling(item.row(), 3).data()
-            protocol = item.sibling(item.row(), 4).data()
-            cellContent = item.sibling(item.row(), 5).data()
-            self.detailWidget = DetailWidget(
-                self.gc, parentWindow, cellContent, name, side, protocol
-            )
-        else:
-            if self.tablename == "events":
-                time = item.sibling(item.row(), 1).data()
-                name = item.sibling(item.row(), 2).data()
-                info = item.sibling(item.row(), 3).data()
-                self.detailWidget = DetailWidget(self.gc, parentWindow, info, name, time)
+        try:
+            row_index = item.row()
+            print("showDetail row_index: %d" % row_index)
+            row_sr = self.tableModel.df.iloc[row_index]
+            # cellContent = str(item.data())
+            cellContent = ""
+            for index, val in row_sr.items():
+                cellContent += "[{}]: {}\n".format(index, val)
+            if self.parentWindow:
+                self.parentWindow.parentWidget()
             else:
-                self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
-        """
+                pass
+            if 'name' in row_sr.index and 'dir' in row_sr.index and 'protocol' in row_sr.index:
+                name = row_sr["name"]
+                side = row_sr["dir"]
+                protocol = row_sr["protocol"]
+                self.detailWidget = DetailWidget(
+                    self.gc, self, cellContent, name, side, protocol
+                )
+            elif self.title.lower() == "add layer":
+                param_name = row_sr["var_name"]
+                n_arg_max = row_sr["n_arg_max"]
+                import add_map_layer_dialog
+
+                dlg = add_map_layer_dialog.add_map_layer_dialog(self.gc, param_name, n_arg_max)
+                dlg.show()
+            elif 'name' in row_sr.index and (row_sr["name"] == "MOS Score" or row_sr["name"] == "voice call setup"):
+                name = row_sr["name"]
+                side = {}
+                side["name"] = row_sr["name"]
+                side["log_hash"] = row_sr["log_hash"]
+                side["wav_file"] = os.path.join(
+                    azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"]
+                )
+                if row_sr["name"] == "MOS Score":
+                    side["text_file"] = os.path.join(
+                        azq_utils.tmp_gen_path(), str(row_sr["log_hash"]), row_sr["wave_file"].replace(".wav", "_polqa.txt"),
+                    )
+                side["time"] = row_sr["time"]
+                self.detailWidget = DetailWidget(
+                    self.gc, self, cellContent, name, side
+                )
+            elif self.list_module:
+                import module_dialog
+                dlg = module_dialog.module_dialog(self, row_sr, self.gc, self.mdi)
+                dlg.show()
+            else:
+                self.detailWidget = DetailWidget(self.gc, self, cellContent)
+            """
+            print("showdetail self.tablename {}".format(self.tablename))
+            if self.tablename == "signalling":
+                name = item.sibling(item.row(), 2).data()
+                side = item.sibling(item.row(), 3).data()
+                protocol = item.sibling(item.row(), 4).data()
+                cellContent = item.sibling(item.row(), 5).data()
+                self.detailWidget = DetailWidget(
+                    self.gc, parentWindow, cellContent, name, side, protocol
+                )
+            else:
+                if self.tablename == "events":
+                    time = item.sibling(item.row(), 1).data()
+                    name = item.sibling(item.row(), 2).data()
+                    info = item.sibling(item.row(), 3).data()
+                    self.detailWidget = DetailWidget(self.gc, parentWindow, info, name, time)
+                else:
+                    self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
+            """
+        except:
+            pass
 
     def update_selected_log_hash_time(self, item):
         print("update_selected_log_hash_time start self.ui_thread_selecting_row_dont_trigger_timechanged: {}".format(self.ui_thread_selecting_row_dont_trigger_timechanged))
@@ -1402,10 +1424,13 @@ class DetailWidget(QDialog):
 
 
 class TableModel(QAbstractTableModel):
-    def __init__(self, inputData, header, parent=None, *args):
+    def __init__(self, inputData, header, time, log_hash, gc, parent=None, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
         self.dataSource = inputData
+        self.time = time
+        self.log_hash = log_hash
+        self.gc = gc
         # self.testColumnValue()
 
     def rowCount(self, parent):
@@ -1416,11 +1441,83 @@ class TableModel(QAbstractTableModel):
 
     def columnCount(self, parent):
         columns = 0
-        if self.headerLabels:
-            columns = len(self.headerLabels)
+        if self.dataSource:
+            columns = len(self.dataSource[0])
         return columns
 
-    # override
+    def get_complementary(self, color):
+        if color[0] == '#':
+            color = color[1:]
+        red = int(color[0:2], 16)
+        green = int(color[2:4], 16)
+        blue = int(color[4:6], 16)
+        comp_color = "#FFFFFF"
+        if (red*0.299 + green*0.587 + blue*0.114) > 130:
+            comp_color = "#000000"
+        return comp_color
+
+    def data(self, index, role=Qt.DisplayRole):
+        if index.isValid():
+            if role == Qt.DisplayRole:
+                value_dict = self.dataSource[index.row()][index.column()]
+                value_dict["color"] = "#FFFFFF"
+                value_dict["percent"] = None
+                if "type" in value_dict.keys():
+                    if value_dict["type"] == "text":
+                        value = value_dict["value"]
+                    else:
+                        table_name = preprocess_azm.get_table_for_column(value_dict["value"])
+                        sql = "select {} from {}".format(value_dict["value"] , table_name)
+                        sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.log_hash, self.time)
+                        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                            df = pd.read_sql(sql, dbcon)
+                            if len(df) > 0:
+                                value = df[value_dict["value"]].iloc[-1]
+                                import db_preprocess
+                                if value_dict["value"] in db_preprocess.cached_theme_dict.keys():
+                                    theme_df = db_preprocess.cached_theme_dict[value_dict["value"]]
+                                    theme_df["Lower"] = theme_df["Lower"].astype(float)
+                                    theme_df["Upper"] = theme_df["Upper"].astype(float)
+                                    theme_range = theme_df["Upper"].max() - theme_df["Lower"].min()
+                                    value_dict["percent"] = (float(value) - theme_df["Lower"].min()) / theme_range
+                                    color_df = theme_df.loc[(theme_df["Lower"]<=float(value))&(theme_df["Upper"]>float(value)), "ColorXml"]
+                                    if len(color_df) > 0:
+                                        value_dict["color"] = color_df.iloc[0]
+                            else:
+                                value = ""
+                            if not isinstance(value, str):
+                                if isinstance(value, float):
+                                    value = "%.02f" % value
+                                else:
+                                    value = str(value)
+                else:
+                    value = ""
+                return value
+            
+            if role == QtCore.Qt.BackgroundRole:
+                try:
+                    value_dict = self.dataSource[index.row()][index.column()]
+                    if "percent" in value_dict.keys():
+                        if value_dict["percent"] is not None:
+                            # gradient = QtGui.QLinearGradient(QtCore.QPointF(0, 0), QtCore.QPointF(1, 0))
+                            # gradient.setColorAt(0, QtGui.QColor(value_dict["color"]))
+                            # gradient.setColorAt(value_dict["percent"], QtGui.QColor(value_dict["color"]))
+                            # gradient.setColorAt(value_dict["percent"]+0.001, Qt.white)
+                            # gradient.setColorAt(1, Qt.white)
+                            # gradient.setCoordinateMode(QtGui.QGradient.ObjectBoundingMode)
+                            return QtCore.QVariant(QtGui.QColor(value_dict["color"]))
+                except Exception as e:
+                    print("WARNING: pdtablemodel data() exception: ", e)
+                    return None
+                
+            if role == QtCore.Qt.ForegroundRole:
+                value_dict = self.dataSource[index.row()][index.column()]
+                if "color" in value_dict.keys():
+                    fg_color = self.get_complementary(value_dict["color"])
+                    return QtCore.QVariant(QtGui.QColor(fg_color))
+            else:
+                return None
+        
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
         if isinstance(data, list):
             self.dataSource = data
@@ -1431,24 +1528,6 @@ class TableModel(QAbstractTableModel):
             )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
             return True
         return False
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        # print("tablemodel data() role:", role)
-        if role == QtCore.Qt.DisplayRole:
-            # print("data() QtCore.Qt.DisplayRole")
-            row = index.row()
-            column = index.column()
-            return "{}".format(self.dataSource[row][column])
-        else:
-            return None
-
-    def dataString(self, index):
-        return self.dataSource[index.row()][index.column()]
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.headerLabels[section]
-        return QAbstractTableModel.headerData(self, section, orientation, role)
 
 def epochToDateString(epoch):
     try:
@@ -1573,11 +1652,6 @@ class PdTableModel(QAbstractTableModel):
         return False
 
     def get_complementary(self, color):
-        # color = color[1:]
-        # color = int(color, 16)
-        # comp_color = 0xFFFFFF ^ color
-        # comp_color = "#%06X" % comp_color
-        # return comp_color
         if color[0] == '#':
             color = color[1:]
         red = int(color[0:2], 16)
@@ -1621,17 +1695,17 @@ class PdTableModel(QAbstractTableModel):
         if role == QtCore.Qt.BackgroundRole:
             try:
                 if isinstance(ret_tuple, tuple):
-                    percent = float(ret_tuple[2])
+                    # percent = float(ret_tuple[2])
                     color = "#FFFFFF"
                     if ret[1] is not None:
                         color = str(ret[1])
-                    gradient = QtGui.QLinearGradient(QtCore.QPointF(0, 0), QtCore.QPointF(1, 0))
-                    gradient.setColorAt(0, QtGui.QColor(color))
-                    gradient.setColorAt(percent, QtGui.QColor(color))
-                    gradient.setColorAt(percent+0.001, Qt.white)
-                    gradient.setColorAt(1, Qt.white)
-                    gradient.setCoordinateMode(QtGui.QLinearGradient.ObjectBoundingMode)
-                    return QtCore.QVariant(QtGui.QBrush(gradient))
+                    # gradient = QtGui.QLinearGradient(QtCore.QPointF(0, 0), QtCore.QPointF(1, 0))
+                    # gradient.setColorAt(0, QtGui.QColor(color))
+                    # gradient.setColorAt(percent, QtGui.QColor(color))
+                    # gradient.setColorAt(percent+0.001, Qt.white)
+                    # gradient.setColorAt(1, Qt.white)
+                    # gradient.setCoordinateMode(QtGui.QLinearGradient.ObjectBoundingMode)
+                    return QtCore.QVariant(QtGui.QColor(color))
             except Exception as e:
                 print("WARNING: pdtablemodel data() exception: ", e)
                 return None

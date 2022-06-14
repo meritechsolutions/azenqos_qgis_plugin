@@ -1,5 +1,6 @@
 import subprocess
 import os
+import qt_utils
 
 def get_module_path():
     return os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -35,11 +36,11 @@ def check_and_install_requirements():
         print("need_to_restart")
         cmd = ['python', '-m', 'pip', 'install', '-r', requirement_fp]
         print("cmd:", cmd)
-        process = subprocess.Popen(['python', '-m', 'pip', 'install', '-r', requirement_fp], stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=0)
-        (stdout, stderr) = process.communicate()
+        try:
+            subprocess.check_output(['python', '-m', 'pip', 'install', '-r', requirement_fp],stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            outstr = e.output
+            qt_utils.msgbox("Azenqos plugin failed to install required dependencies, please email below error msg to support@azenqos.com:\n\n" + outstr.decode("utf-8"), title="AZENQOS Dependency Install Fail")
+            return False 
 
-        if process.returncode != 0:
-            raise Exception(stderr.decode("utf-8") )
-
-        return False
     return True

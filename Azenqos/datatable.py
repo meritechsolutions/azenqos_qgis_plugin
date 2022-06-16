@@ -594,6 +594,8 @@ class TableWindow(QWidget):
                             sql_str = eval_str
                             print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
                             df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, selected_logs=self.selected_logs)
+                            if not isinstance(df, pd.DataFrame):
+                                df = pd.DataFrame({"py_eval_result":[df]})
                         else:
                             print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
                             df = eval(eval_str)
@@ -608,6 +610,8 @@ class TableWindow(QWidget):
                                 sql_str = eval_str
                                 print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
                                 df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, selected_logs=self.selected_logs)
+                                if not isinstance(df, pd.DataFrame):
+                                    df = pd.DataFrame()
                                 df_list.append(df)
                             else:
                                 print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))
@@ -627,6 +631,8 @@ class TableWindow(QWidget):
                                     sql_str = eval_str
                                     print("datatable refersh param title: {} sql sql_str: {}".format(self.title, sql_str))
                                     df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon, sql_str, log_hash, time, col_name=key, selected_logs=self.selected_logs)
+                                    if not isinstance(df, pd.DataFrame):
+                                        df = pd.DataFrame()
                                     df_list.append(df)
                                 else:
                                     print("datatable refersh param title: {} py eval_str: {}".format(self.title, eval_str))

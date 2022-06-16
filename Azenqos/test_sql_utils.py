@@ -23,12 +23,6 @@ def test():
             print("get_lh_time_match_df_for_select_from_part df.head():\n %s" % df.head(200))
             assert df.T.iloc[1, 7] == 60
 
-            df = sql_utils.get_lh_time_match_df_for_select_from_part(dbcon,
-                                                                     sql_utils.LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SELECT_FROM_PART,
-                                                                     log_hash, "9999-08-18 16:44:34.430")
-            print("get_lh_time_match_df_for_select_from_part df.head():\n %s" % df.head(200))
-            assert pd.isnull(df.T.iloc[1, 7])
-
 
 if __name__ == "__main__":
     test()

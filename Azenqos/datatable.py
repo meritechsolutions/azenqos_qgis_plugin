@@ -351,7 +351,7 @@ class TableWindow(QWidget):
             if expression:
                 self.refresh_data_from_dbcon_and_time_func = expression
                 self.refreshTableContents()
-        elif action == actions_dict["custom_last_instant_table"]:
+        elif "custom_last_instant_table" in actions_dict and action == actions_dict["custom_last_instant_table"]:
             import custom_last_instant_table_dialog
             dlg = custom_last_instant_table_dialog.custom_last_instant_table_dialog(self.gc, self.custom_last_instant_table_param_list, self.title, selected_ue=self.selected_ue)
             def on_result(param_list, title, selected_ue):

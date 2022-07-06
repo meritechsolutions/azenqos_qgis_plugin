@@ -168,8 +168,12 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         if len(selected_cell.keys()) > 0 and "type" in selected_cell.keys():
             self.ui.elemTypecomboBox.setCurrentText(selected_cell["type"])
             self.ui.textLineEdit.setText(selected_cell["value"])
-            self.ui.paramComboBox.setCurrentText(selected_cell["param"])
-            self.ui.argComboBox.setCurrentText(selected_cell["arg"])
+            param_index = self.ui.paramComboBox.findText(selected_cell["param"], Qt.MatchFixedString)
+            if param_index >= 0:
+                self.ui.paramComboBox.setCurrentIndex(param_index)
+            arg_index = self.ui.argComboBox.findText(selected_cell["arg"], Qt.MatchFixedString)
+            if arg_index >= 0:
+                self.ui.argComboBox.setCurrentIndex(arg_index)
 
 
     def on_add_row_parameter_button_click(self):

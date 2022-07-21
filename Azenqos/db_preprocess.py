@@ -135,7 +135,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
     params_to_gen = []
-    resample_param_list = ["lte_serv_cell_info_ecgi"]
+    resample_param_list = ["lte_serv_cell_info_ecgi", "lte_serv_cell_info_dl_bandwidth_mhz", "lte_serv_cell_info_ul_bandwidth_mhz", "lte_serv_cell_info_eci", "lte_serv_cell_info_tac", "lte_serv_cell_info_mcc", "lte_serv_cell_info_mnc", "lte_serv_cell_info_enb_id"]
     if main_rat_params_only:
         params_to_gen = list(system_sql_query.rat_to_main_param_dict.values())
     else:

@@ -135,6 +135,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     ### create views one per param as specified in default_theme.xml file
     # get list of params in azenqos theme xml
     params_to_gen = []
+    resample_param_list = ["lte_serv_cell_info_ecgi"]
     if main_rat_params_only:
         params_to_gen = list(system_sql_query.rat_to_main_param_dict.values())
     else:
@@ -142,6 +143,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
 
         
     print("params_to_gen:", params_to_gen)
+    params_to_gen = params_to_gen + resample_param_list
     dbcon.commit()
     # create layer_styles table if not exist
     tables_to_rm_stray_neg1_rows = ["signalling", "events"]
@@ -197,6 +199,13 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                 )
                 print("not table_has_geom so gen sql merge in from location table by time - DONE")
             else:
+                if param in resample_param_list:
+                    df = pd.read_sql("select * from {}".format(table), dbcon, parse_dates=["time"]).sort_values(by="time")
+                    df = df.drop(["geom", "positioning_lat", "positioning_lon"], axis=1, errors="ignore")
+                    df_location = pd.read_sql("select time, log_hash, geom, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null", dbcon, parse_dates=["time"]).sort_values(by="time")
+                    df = pd.merge_asof(left=df_location, right=df, left_on=["time"], right_on=["time"],by="log_hash", direction="forward", allow_exact_matches=True, tolerance=pd.Timedelta("1s"), suffixes=("_not_use", "")) 
+                    df[param] = df[param].ffill()
+                    df.to_sql(table, dbcon, if_exists="replace", index=False)
                 print("start cre")
                 cre_type = "table"
                 if cre_table == False:
@@ -502,6 +511,8 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         theme_df.Lower = theme_df.match_value
         theme_df.Upper = theme_df.match_value
     ranges_xml = "<ranges>\n"
+    match_value_counts = (theme_df.Lower == theme_df.Upper).all()
+
     try:
         # QGIS ranges count (right click > show layer count) wont match sql counts below if we dont sort this way
         theme_df["Upper"] = pd.to_numeric(theme_df["Upper"])
@@ -510,8 +521,6 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))
         print("WARNING: theme_df.sort_values exception:", exstr)
-
-    match_value_counts = (theme_df.Lower == theme_df.Upper).all()
     if view_len is None and dbcon is not None:
         view_len = pd.read_sql("select count(*) from {} where {} is not null".format(view, param), dbcon).iloc[0, 0]
     match_value_counts_df = None
@@ -547,8 +556,16 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
                 type_, value_, traceback_ = sys.exc_info()
                 exstr = str(traceback.format_exception(type_, value_, traceback_))
                 print("WARNING: calc range percent exception:", exstr)
-        ranges_xml += """<range symbol="{index}" label="{lower} to {upper}{percent}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
-            index=index, lower=row.Lower, upper=row.Upper, percent=percent_part
+        label = "{lower} {percent}".format(lower=row.Lower, percent=percent_part)
+        if row.Lower is not None and row.Upper is not None:
+            try:
+                row.Lower = pd.to_numeric(row.Lower)
+            except:
+                pass
+            if row.Lower != row.Upper:
+                label = "{lower} to {upper}{percent}".format(lower=row.Lower, upper=row.Upper, percent=percent_part)
+        ranges_xml += """<range symbol="{index}" label="{label}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
+            index=index, label=label, lower=row.Lower, upper=row.Upper
         )
     ranges_xml += "</ranges>\n"
     symbols_xml = "<symbols>\n"

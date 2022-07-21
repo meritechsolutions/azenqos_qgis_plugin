@@ -1142,7 +1142,7 @@ Log_hash list: {}""".format(
     def on_actionAdd_Layer_triggered(self):
         print("action add layer")
         elm_df = preprocess_azm.get_elm_df_from_csv()
-        elm_df = elm_df.loc[(elm_df["var_type"] == "Double") | (elm_df["var_type"] == "Integer"), ("var_name", "name", "n_arg_max")].reset_index(drop=True)
+        elm_df = elm_df[["var_name", "name", "n_arg_max"]].reset_index(drop=True)
         swa = SubWindowArea(self.mdi, self.gc)
 
         widget = TableWindow(

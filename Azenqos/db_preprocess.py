@@ -500,10 +500,16 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
 
 
 def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=False):
+    g_azq_global_elm_info_df = preprocess_azm.get_elm_df_from_csv()
+    param_is_str=False
     if theme_df is None:
         theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon)
     if theme_df is None:
         return None
+    param_name = preprocess_azm.get_elm_name_from_param_col_with_arg(param)
+    param_type = g_azq_global_elm_info_df.loc[g_azq_global_elm_info_df["var_name"] == param_name, "db_type"].iloc[0]
+    if param_type == "text":
+        param_is_str = True
     global cached_theme_dict
     cached_theme_dict[param] = theme_df
     if 'match_value' in theme_df.columns:
@@ -511,6 +517,7 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         theme_df.Lower = theme_df.match_value
         theme_df.Upper = theme_df.match_value
     ranges_xml = "<ranges>\n"
+    categories_xml = "<categories>\n"
     match_value_counts = (theme_df.Lower == theme_df.Upper).all()
 
     try:
@@ -567,7 +574,11 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         ranges_xml += """<range symbol="{index}" label="{label}" render="true" lower="{lower}" upper="{upper}" includeLower="true" includeUpper="false"/>\n""".format(
             index=index, label=label, lower=row.Lower, upper=row.Upper
         )
+        categories_xml += """<category render="true" type="string" label="{label}" value="{lower}" symbol="{index}"/>""".format(
+            index=index, label=label, lower=row.Lower
+        )
     ranges_xml += "</ranges>\n"
+    categories_xml += "</categories>\n"
     symbols_xml = "<symbols>\n"
     for index, row in theme_df.iterrows():
         color = row.ColorXml
@@ -611,16 +622,25 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
     symbols_xml += "</symbols>\n"
     # print("symbols_xml: %s" % symbols_xml)
     default_qml_fp = os.path.join(azq_utils.get_module_path(), "default_style.qml")
+    default_qml_param = "lte_inst_rsrp_1"
+    if param_is_str:
+        default_qml_fp = os.path.join(azq_utils.get_module_path(), "default_style_categorize.qml")
+        default_qml_param = "lte_pdsch_stream0_modulation_1"
+
     default_qml = None
     with open(default_qml_fp, "rb") as f:
         default_qml = f.read().decode("ascii")
-    default_qml_param = "lte_inst_rsrp_1"
 
     qml = default_qml.replace(default_qml_param, param)
     root = xet.fromstring(qml)
     renderer = root.find("renderer-v2")
-    renderer.remove(renderer.find("ranges"))
-    renderer.append(xet.fromstring(ranges_xml))
+    
+    if param_is_str:
+        renderer.remove(renderer.find("categories"))
+        renderer.append(xet.fromstring(categories_xml))
+    else:
+        renderer.remove(renderer.find("ranges"))
+        renderer.append(xet.fromstring(ranges_xml))
     renderer.remove(renderer.find("symbols"))
     renderer.append(xet.fromstring(symbols_xml))
     ret = xet.tostring(root)

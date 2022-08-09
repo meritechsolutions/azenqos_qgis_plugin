@@ -12,6 +12,7 @@ import azq_utils
 import preprocess_azm
 import db_preprocess
 
+call_type_dict = {"call_init":"call_setup_duration", "call_established":"call_setup_duration", "call_end":"call_end_cause", "call_block":"call_end_cause", "call_drop":"call_end_cause"}
 
 class add_map_layer_dialog(QDialog):
     def __init__(self, gc, param, n_arg_max):
@@ -66,17 +67,32 @@ class add_map_layer_dialog(QDialog):
                 sqlstr = "select log_hash, time, {} from {}".format(self.param_name , table_name)
                 location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
                 layer_name = self.param_name
+                pp_voice_table = None
+                if self.param_name in call_type_dict.keys():
+                    self.param_name = call_type_dict[self.param_name]
+                    pp_voice_table = "pp_voice_report"
+                    sqlstr = "select * from pp_voice_report"
                 if selected_ue is not None:
                     import sql_utils
                     title_ue_suffix = "(" + self.gc.device_configs[self.selected_ue]["name"] + ")"
                     if title_ue_suffix not in self.param_name:
-                        layer_name = self.param_name + title_ue_suffix 
+                        layer_name = layer_name + title_ue_suffix 
                         selected_logs = self.gc.device_configs[self.selected_ue]["log_hash"]
                         where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in selected_logs]))
                         sqlstr = sql_utils.add_first_where_filt(sqlstr, where)
                         location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
                 df = pd.read_sql(sqlstr, dbcon, parse_dates=['time'])
                 df = df.loc[df[self.param_name].notna()]
+                if layer_name == 'call_init':
+                    df = df.query('not call_init_time.isnull()')
+                elif layer_name == 'call_block':
+                    df = df.query('detected_radio_voice_call_end_type == "Call Block"')
+                elif layer_name == 'call_drop':
+                    df = df.query('detected_radio_voice_call_end_type == "Call Drop"')
+                elif layer_name == 'call_establish':
+                    df = df.query('not call_established_time.isnull()')
+                elif layer_name == 'call_end':
+                    df = df[(df.detected_radio_voice_call_end_type == "Call End") & pd.notnull(df.call_established_time)]
                 df_location = pd.read_sql(location_sqlstr, dbcon, parse_dates=['time'])
                 if self.gc.is_indoor:
                     df = db_preprocess.add_pos_lat_lon_to_indoor_df(df, df_location).rename(
@@ -91,4 +107,4 @@ class add_map_layer_dialog(QDialog):
                         QMessageBox.Ok,
                     )
                     return
-                azq_utils.create_layer_in_qgis(self.gc.databasePath, df, layer_name, theme_param = self.param_name)
+                azq_utils.create_layer_in_qgis(self.gc.databasePath, df, layer_name, theme_param = self.param_name, pp_voice_table=pp_voice_table)

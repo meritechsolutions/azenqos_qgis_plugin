@@ -2041,7 +2041,7 @@ def resample_per_log_hash_time(param_df, resample_param, use_last=False):
     return param_df
 
 
-def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None, add_to_qgis=True, new_db=True, svg_icon_fp=None, icon_fp=None):
+def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None, add_to_qgis=True, new_db=True, svg_icon_fp=None, icon_fp=None, pp_voice_table=None):
     try:
         import preprocess_azm
         import qgis_layers_gen
@@ -2051,13 +2051,15 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
             assert os.path.isfile(databasePath)
             tmpdbfp = databasePath
         assert not os.path.isfile(tmpdbfp)
-        if (("lat" not in df.columns) or ("lon" not in df.columns)) and databasePath is not None:
+        if ((("lat" not in df.columns) and ("lon" not in df.columns)) and (("positioning_lat" not in df.columns) and ("positioning_lon" not in df.columns))) and databasePath is not None:
             print("need to merge lat and lon")
             with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
                 df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
                     columns={"positioning_lat": "lat", "positioning_lon": "lon"}
                 )
         table = "layer_dump" if theme_param is None else preprocess_azm.get_table_for_column(theme_param)
+        if pp_voice_table is not None:
+            table = pp_voice_table
         qgis_layers_gen.dump_df_to_spatialite_db(
             df, tmpdbfp, table, is_indoor=is_indoor
         )

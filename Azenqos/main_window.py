@@ -1141,8 +1141,20 @@ Log_hash list: {}""".format(
     @pyqtSlot()
     def on_actionAdd_Layer_triggered(self):
         print("action add layer")
+        has_voice_report = False
+        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+            try:
+                pp_voice_report_df = pd.read_sql("select * from pp_voice_report", dbcon)
+                if len(pp_voice_report_df) > 0:
+                    has_voice_report = True
+            except:
+                pass
         elm_df = preprocess_azm.get_elm_df_from_csv()
         elm_df = elm_df[["var_name", "name", "n_arg_max"]].reset_index(drop=True)
+        call_types = ["call_init", "call_established", "call_end", "call_block", "call_drop"]
+        if has_voice_report:
+            for call_type in call_types:
+                elm_df = elm_df.append({"var_name":call_type , "name":"", "n_arg_max":1}, ignore_index=True)
         swa = SubWindowArea(self.mdi, self.gc)
 
         widget = TableWindow(

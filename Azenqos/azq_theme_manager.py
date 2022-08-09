@@ -2173,6 +2173,8 @@ def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
             retdf.loc[i].Lower = str(data_min + ((data_width) * i))
             retdf.loc[i].Upper = str(data_min + ((data_width) * (i + 1)))
             retdf.loc[i].PointSize = 6
+            if i == int(n_buckets) - 1:
+                retdf.loc[i].Upper = str(data_min + ((data_width) * (i + 1)) + 1)
 
         """
         color_data = [

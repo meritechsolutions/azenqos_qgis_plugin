@@ -12,6 +12,7 @@ import psutil
 import azq_utils
 import preprocess_azm
 import system_sql_query
+import add_map_layer_dialog
 
 try:
     from qgis.core import (
@@ -57,6 +58,13 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                     table_to_layer_dict = {}
                     layer_id_to_visible_flag_dict = {}
                     qml_tmp_fp_list = None
+                    call_types = ["call_init", "call_setup", "call_established", "call_end", "call_block", "call_drop"]
+                    try:
+                        pp_voice_report_df = pd.read_sql("select * from pp_voice_report", dbcon)
+                        if len(pp_voice_report_df) > 0:
+                            has_voice_report = True
+                    except:
+                        pass
 
                     # pre-gen qml theme file
                     azq_utils.timer_start("gen_theme_qml")
@@ -121,6 +129,15 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                     table, exstr
                                 )
                                 )
+                        if has_voice_report:
+                            for call_type in call_types:
+                                try:
+                                    selected_ue = None
+                                    if len(device_configs) > 1:
+                                        selected_ue = ue
+                                    add_map_layer_dialog.create_param_layer(gc, call_type, selected_ue)
+                                except:
+                                    pass
                         ue += 1
 
                     return table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer

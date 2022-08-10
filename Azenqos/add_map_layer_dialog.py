@@ -50,6 +50,7 @@ class add_map_layer_dialog(QDialog):
         self.arg = self.ui.comboBox_2.currentText()
 
     def on_accept_button_clicked(self):
+        selected_ue = None
         try:
             if len(self.gc.device_configs) > 1 :
                 import select_log_dialog

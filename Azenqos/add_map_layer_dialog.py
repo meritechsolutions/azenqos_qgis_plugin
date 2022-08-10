@@ -53,7 +53,7 @@ class add_map_layer_dialog(QDialog):
         try:
             if len(self.gc.device_configs) > 1 :
                 import select_log_dialog
-                dlg = select_log_dialog.select_log_dialog(gc.device_configs)
+                dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
                 result = dlg.exec_()
                 if not result:
                     return

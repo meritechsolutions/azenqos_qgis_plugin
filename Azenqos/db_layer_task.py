@@ -59,6 +59,7 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                     layer_id_to_visible_flag_dict = {}
                     qml_tmp_fp_list = None
                     call_types = ["call_init", "call_setup", "call_established", "call_end", "call_block", "call_drop"]
+                    has_voice_report = False
                     try:
                         pp_voice_report_df = pd.read_sql("select * from pp_voice_report", dbcon)
                         if len(pp_voice_report_df) > 0:

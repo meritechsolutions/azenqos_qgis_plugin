@@ -260,7 +260,7 @@ class TableWindow(QWidget):
         self.tableView.setStyleSheet(
             """
             * {
-            font-size: 11px;
+            font-size: 8pt;
             }
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
             """
@@ -289,7 +289,8 @@ class TableWindow(QWidget):
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
 
         # self.tableView.verticalHeader().setMinimumSectionSize(12)
-        self.tableView.verticalHeader().setDefaultSectionSize(14)
+        self.tableView.setWordWrap(False)
+        self.tableView.resizeRowsToContents()
         self.tableView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tableView.horizontalHeader().setStretchLastSection(True)
         self.tableView.verticalHeader().setStretchLastSection(self.stretch_last_row)
@@ -1193,7 +1194,7 @@ class DetailWidget(QDialog):
         self.textEdit.setReadOnly(True)
         self.text_style = """
             * {
-            font-size: 11px;
+            font-size: 8pt;
             }
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
             """

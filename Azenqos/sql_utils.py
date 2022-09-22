@@ -156,6 +156,8 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
             #     df.loc[0] = None  # add new row so wont be empty df when transpose (otherwise datatable.py show would be different n columns and wont get refreshed when n columns increased)
             df = df.T.reset_index()  # pop out as column
             if col_name is not None:
+                if len(df.columns) == 1:
+                    df["tmp_col"] = None
                 df = df.rename(columns={df.columns[1]: col_name})
         return df
     except Exception:

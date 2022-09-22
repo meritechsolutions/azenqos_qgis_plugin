@@ -125,7 +125,7 @@ class LineChart(QtWidgets.QDialog):
         self.tableView.setStyleSheet(
             """
             * {
-            font-size: 11px;
+            font-size: 8pt;
             }
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
             """

@@ -2,7 +2,6 @@ import azq_server_api
 
 
 def test():
-    return
     raised = False
     try:
         azq_server_api.api_login_get_token(

@@ -285,12 +285,13 @@ class TableWindow(QWidget):
 
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.tableView.horizontalHeader().setMinimumSectionSize(40)
-        self.tableView.horizontalHeader().setDefaultSectionSize(60)
+        self.tableView.horizontalHeader().setDefaultSectionSize(70)
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
 
         # self.tableView.verticalHeader().setMinimumSectionSize(12)
         self.tableView.setWordWrap(False)
         self.tableView.resizeRowsToContents()
+        self.tableView.verticalHeader().setDefaultSectionSize(self.tableView.verticalHeader().minimumSectionSize())
         self.tableView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tableView.horizontalHeader().setStretchLastSection(True)
         self.tableView.verticalHeader().setStretchLastSection(self.stretch_last_row)
@@ -620,7 +621,7 @@ class TableWindow(QWidget):
                                 if not isinstance(df, pd.DataFrame):
                                     df = pd.DataFrame({"py_eval_result":[df]})
                                 df_list.append(df)
-                        df = pd.concat(df_list)
+                        df = pd.concat(df_list).reset_index(drop=True)
                     elif isinstance(self.refresh_data_from_dbcon_and_time_func, dict):
                         time = refresh_dict["time"]
                         log_hash = refresh_dict["log_hash"]
@@ -641,9 +642,9 @@ class TableWindow(QWidget):
                                     if not isinstance(df, pd.DataFrame):
                                         df = pd.DataFrame({"py_eval_result":[df]})
                                     df_list.append(df)
-                            df = pd.concat(df_list)
+                            df = pd.concat(df_list).reset_index(drop=True)
                             df_dict_list.append(df)
-                        df = pd.concat(df_dict_list, axis=1)
+                        df = pd.concat(df_dict_list, axis=1).reset_index(drop=True)
                         df = df.loc[:,~df.columns.duplicated()]
                     else:
                         print("datatable refersh param title: {} refresh_data_from_dbcon_and_time_func: {}".format(self.title, self.refresh_data_from_dbcon_and_time_func))

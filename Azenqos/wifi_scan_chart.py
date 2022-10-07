@@ -2,7 +2,7 @@ import contextlib
 import sqlite3
 import os
 import numpy as np
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 from worker import Worker
@@ -112,8 +112,14 @@ class wifi_scan_chart(QtWidgets.QDialog):
         self.gc = gc
         self.title = title
         self.selected_ue = selected_ue
+        self.canvas_size_w = 3000
+        self.subplot_left = 0.02
+        self.subplot_right = 0.98
         if mode == "2.4":
             self.freq_definitions_dict = freq_definitions_dict_2_4GHz
+            self.canvas_size_w = 800
+            self.subplot_left = 0.08
+            self.subplot_right = 0.92
         elif mode == "5l":
             self.freq_definitions_dict = freq_definitions_dict_5GHz_low
         elif mode == "5h":
@@ -132,8 +138,18 @@ class wifi_scan_chart(QtWidgets.QDialog):
         
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
+        self.canvas.setMinimumSize(self.canvas_size_w, 200)
+        
+        self.scroll_area = QtWidgets.QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.ui.chartLayout.addWidget(self.scroll_area)
         self._ax_ = self.figure.subplots()
-        self.ui.chartLayout.addWidget(self.canvas)
+        self.figure.subplots_adjust(left=self.subplot_left, right=self.subplot_right, wspace=0, hspace=0)
+
+        self.scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+
+        self.scroll_area.setWidget(self.canvas)
         self.last_df = None
         
         self.update_chart.connect(self.on_update_chart)
@@ -163,7 +179,7 @@ class wifi_scan_chart(QtWidgets.QDialog):
     def plot(self, df, **kwargs):
         self._ax_.clear()
         x_ticks = [int(key) for key in self.freq_definitions_dict.keys()]
-        self._ax_.axis(xmin=x_ticks[0]-4, xmax=x_ticks[-1]+4)
+        self._ax_.axis(xmin=x_ticks[0]-10, xmax=x_ticks[-1]+10)
         self._ax_.set_xticks(x_ticks)
         x_tick_labels = [int(self.freq_definitions_dict[key]["channel"]) for key in self.freq_definitions_dict.keys()]
         self._ax_.set_xticklabels(x_tick_labels)

@@ -11,6 +11,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QDialog, QLineEdit
 from PyQt5.uic import loadUi
+from functools import partial
 
 import azq_server_api
 import azq_utils
@@ -52,6 +53,16 @@ class login_dialog(QDialog):
         dirname = os.path.dirname(__file__)
         self.setWindowIcon(QIcon(QPixmap(os.path.join(dirname, "icon.png"))))
         self.ui = loadUi(azq_utils.get_module_fp("login_dialog.ui"), self)
+        self.ui.local_log_cb.setEnabled(False)
+        self.ui.local_log_cb.setChecked(False)
+        enableSlot = partial(self.use_local_log, self.ui.local_log_cb)
+        disableSlot = partial(self.not_use_local_log, self.ui.local_log_cb)
+        self.ui.local_log_cb.stateChanged.connect(
+            lambda x: enableSlot() if x else disableSlot()
+        )
+        if self.gc.db_fp is not None :
+            self.ui.local_log_cb.setEnabled(True)
+            self.ui.local_log_cb.setChecked(True)
         self.ui.pass_le.setEchoMode(QLineEdit.Password)
         self.ui.progressbar.setVisible(False)
         self.setWindowTitle("AZENQOS Server login")
@@ -63,11 +74,20 @@ class login_dialog(QDialog):
         self.ui.lhl_le.setPlaceholderText("Leave blank for server overview mode")
         self.ui.lhl_le.setText(azq_utils.read_settings_file("prev_login_dialog_lhl"))
 
+    def use_local_log(self, checkbox):
+        self.lhl = ", ".join(map(str, self.gc.log_list))
+        print("self.lhl", self.lhl)
+
+    def not_use_local_log(self, checkbox):
+        self.lhl = self.ui.lhl_le.text().strip()
+        print("self.lhl", self.lhl)
+
     def read_ui_input_to_vars(self):
         self.server = self.ui.server_url_le.text().strip()
         self.user = self.ui.login_le.text().strip()
         self.passwd = self.ui.pass_le.text().strip()
-        self.lhl = self.ui.lhl_le.text().strip()
+        if self.lhl is None or len(self.lhl) == 0:
+            self.lhl = self.ui.lhl_le.text().strip()
         return [self.server, self.user, self.passwd, self.lhl]
 
     def on_progress_update(self, val):

@@ -132,7 +132,7 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
                         value_index = int(value)
                     value = df[index][value_index]
                     valid_df_dict[index] = value
-                    if index in param_dict.keys():
+                    if value is not None and index in param_dict.keys():
                         param = param_dict[index]
                         if param in db_preprocess.cached_theme_dict.keys():
                             theme_df = db_preprocess.cached_theme_dict[param]
@@ -145,8 +145,6 @@ def get_lh_time_match_df(dbcon, sql, col_name=None, trasposed=True):
                             if len(color_df) > 0:
                                 color = color_df.iloc[0]
                             valid_df_dict[index] = "ret_tuple{},{},{}".format(value, color, percent)
-                            if value is None:
-                                valid_df_dict[index] = None
                 df = pd.DataFrame.from_dict(valid_df_dict, orient="index").T
             else:
                 df = df.iloc[[0]].reset_index(drop=True)

@@ -422,7 +422,7 @@ Log_hash list: {}""".format(
             mdi=self.mdi,
             list_module=True,
         )
-        self.add_subwindow_with_widget(swa, widget)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True)
 
     @pyqtSlot()
     def on_actionRun_PY_EVAL_code_triggered(self):
@@ -443,7 +443,7 @@ Log_hash list: {}""".format(
                 self.gc.login_dialog.lhl,
                 py_eval_code,
             )
-            self.add_subwindow_with_widget(swa, widget)
+            self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True)
 
     def run_py_eval_code_code_and_emit_to_window_once_done(self, py_eval_code, window):
 
@@ -473,7 +473,7 @@ Log_hash list: {}""".format(
                 self.gc.login_dialog.lhl,
                 py_eval_code,
             )
-            self.add_subwindow_with_widget(swa, widget)
+            self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True)
 
     def is_logged_in(self):
         return self.gc.is_logged_in()

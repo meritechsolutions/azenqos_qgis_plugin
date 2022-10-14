@@ -56,7 +56,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>18</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -308,8 +308,6 @@
     <addaction name="actionServer_overview_layers"/>
     <addaction name="actionServerAIPrediction"/>
     <addaction name="actionRun_server_modules"/>
-    <addaction name="actionRun_PY_EVAL_code"/>
-    <addaction name="actionRun_SQL_code"/>
     <addaction name="separator"/>
     <addaction name="actionSession_info"/>
     <addaction name="actionLogout"/>

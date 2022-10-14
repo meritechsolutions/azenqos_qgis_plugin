@@ -75,10 +75,12 @@ class login_dialog(QDialog):
         self.ui.lhl_le.setText(azq_utils.read_settings_file("prev_login_dialog_lhl"))
 
     def use_local_log(self, checkbox):
+        self.ui.lhl_le.setEnabled(False)
         self.lhl = ", ".join(map(str, self.gc.log_list))
         print("self.lhl", self.lhl)
 
     def not_use_local_log(self, checkbox):
+        self.ui.lhl_le.setEnabled(True)
         self.lhl = self.ui.lhl_le.text().strip()
         print("self.lhl", self.lhl)
 

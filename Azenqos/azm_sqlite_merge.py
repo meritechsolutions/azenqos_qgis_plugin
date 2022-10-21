@@ -120,6 +120,10 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
                 if is_last_azm:
                     sql_script += "INSERT INTO spatial_ref_sys VALUES(4326,'epsg',4326,'WGS 84','+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');\n"
                 assert sql_script
+            
+                pp_tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%' and name LIKE 'pp%';", dbcon).name.tolist()
+                if len(pp_tables) > 0:
+                    check_col_diff = True
 
                 if check_col_diff:
                     print("... checking for schema/column differences need to specify columns in INSERT of dump")

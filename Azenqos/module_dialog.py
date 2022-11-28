@@ -2,6 +2,7 @@ import os
 from functools import partial
 import json
 import requests
+import webbrowser
 
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon, QPixmap
@@ -59,21 +60,11 @@ class module_dialog(QDialog):
         )
         f.close()
         
-        print(resp) 
-        print(resp.text)
-        # mod_str = self.ui.param_te.toPlainText()
-        # title = "test"
-        # swa = main_window.SubWindowArea(self.mdi, self.gc)
-        # window = datatable.create_table_window_from_api_expression_ret(
-        #     None,
-        #     title,
-        #     self.gc,
-        #     self.gc.login_dialog.server,
-        #     self.gc.login_dialog.token,
-        #     self.gc.login_dialog.lhl,
-        #     mod_str,
-        # )
-        # self.add_subwindow_with_widget(swa, window)
+        test_url = "{}/lab{}".format(self.gc.login_dialog.server, resp.text).replace("https", "http")
+        print(test_url)
+        webbrowser.open(test_url)
+    
+
 
     def enable_mod(self, checkbox):
         self.ui.param_te.setEnabled(False)

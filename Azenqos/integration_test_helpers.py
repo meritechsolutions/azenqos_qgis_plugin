@@ -30,7 +30,7 @@ def get_global_vars(login=True):
         user = "trial_admin"
         if "TEST_USER" in os.environ:
             user = os.environ["TEST_USER"]
-        passwd = "3.14isnotpina"
+        passwd = "314isnotpina"
         if "TEST_PASS" in os.environ:
             passwd = os.environ["TEST_PASS"]
         silent_login(gv, server, user, passwd)

@@ -5,7 +5,7 @@ def test():
     _test(
         server="https://test0.azenqos.com",
         user="trial_admin",
-        passwd="3.14isnotpina",
+        passwd="314isnotpina",
         lhl="345757788188057704",
     )
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         _test(
             server="https://test0.azenqos.com",
             user="trial_admin",
-            passwd="3.14isnotpina",
+            passwd="314isnotpina",
             lhl="345757788188057704",
         )
     else:

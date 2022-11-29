@@ -12,7 +12,6 @@ import integration_test_helpers
 
 
 def _test(server, user, passwd, lhl):
-    return
     app = QApplication([])
     print("app: ", app)  # use it so pyflakes wont complain - we need a ref to qapplicaiton otherwise we'll get segfault
     print("server", server)
@@ -74,7 +73,7 @@ if __name__ == "__main__":
         _test(
             server="https://test0.azenqos.com",
             user="trial_admin",
-            passwd="3.14isnotpina",
+            passwd="314isnotpina",
             lhl="",
         )
     else:

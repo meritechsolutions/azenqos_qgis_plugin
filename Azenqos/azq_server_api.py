@@ -13,7 +13,7 @@ import azq_utils
 from azq_utils import signal_emit
 
 
-def api_login_get_token(server, user, passwd, passwd_sha=None):
+def _api_login_get_token(server, user, passwd, passwd_sha=None):
     host = urlparse(server).netloc
     auth_token = azq_utils.calc_sha(user) + (
         azq_utils.calc_sha(passwd) if passwd_sha is None else passwd_sha
@@ -34,6 +34,31 @@ def api_login_get_token(server, user, passwd, passwd_sha=None):
 
         raise Exception("Got response status: %s" % responses[resp.status_code])
     raise Exception("invalid state")
+
+
+def api_login_get_token(server, user, passwd, https=True):
+    host = urlparse(server).netloc
+    # print("send auth_token: %s" % auth_token)
+    scheme = "https"
+    if not https:
+        scheme = "http"
+    resp = requests.post(
+        "{}://{}/uapi/login".format(scheme, host),
+        data=json.dumps(
+            {"Username": user, "Password": passwd}
+        ),
+        verify=False,
+    )
+    if resp.status_code == 200:
+        if resp.text:
+            return resp.text
+        else:
+            raise Exception("Got empty response")
+    else:
+        from http.client import responses
+
+        raise Exception("Got response status: %s" % responses[resp.status_code])
+
 
 
 def api_create_process(server, token, lhl, azq_report_gen_expression):

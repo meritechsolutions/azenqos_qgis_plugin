@@ -35,7 +35,7 @@ if __name__ == "__main__":
         test(
             server="https://test0.azenqos.com",
             user="trial_admin",
-            passwd="3.14isnotpina",
+            passwd="314isnotpina",
             lhl="474974357483649200,345757788188057704",
         )
     else:

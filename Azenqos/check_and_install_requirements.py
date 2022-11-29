@@ -17,8 +17,8 @@ def check_and_install_requirements():
     # pkg_list = [x.strip() for x in pkg_list]
     wheel_dp = get_local_fp('wheel')
     assert os.path.isdir(wheel_dp)
-    cp_pattern = f"cp{sys.version_info.major}{sys.version_info.minor}"
-    compat_wheel_pattern = f"*-*-{cp_pattern}*.whl"
+    cp_pattern = "cp{}{}".format(sys.version_info.major, sys.version_info.minor)
+    compat_wheel_pattern = "*-*-{}*.whl".format(cp_pattern)
     
     import glob
     whl_list = glob.glob(os.path.join(wheel_dp, compat_wheel_pattern))

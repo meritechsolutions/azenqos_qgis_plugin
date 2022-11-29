@@ -13,29 +13,6 @@ import azq_utils
 from azq_utils import signal_emit
 
 
-def _api_login_get_token(server, user, passwd, passwd_sha=None):
-    host = urlparse(server).netloc
-    auth_token = azq_utils.calc_sha(user) + (
-        azq_utils.calc_sha(passwd) if passwd_sha is None else passwd_sha
-    )
-    # print("send auth_token: %s" % auth_token)
-    resp = requests.get(
-        "https://{}/api/login".format(host),
-        headers={"Authorization": "Bearer {}".format(auth_token),},
-        verify=False,
-    )
-    if resp.status_code == 200:
-        if resp.text:
-            return resp.text
-        else:
-            raise Exception("Got empty response")
-    else:
-        from http.client import responses
-
-        raise Exception("Got response status: %s" % responses[resp.status_code])
-    raise Exception("invalid state")
-
-
 def api_login_get_token(server, user, passwd, https=True):
     host = urlparse(server).netloc
     # print("send auth_token: %s" % auth_token)

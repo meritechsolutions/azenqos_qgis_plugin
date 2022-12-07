@@ -60,7 +60,7 @@ class module_dialog(QDialog):
         )
         f.close()
         
-        test_url = "{}/lab{}".format(self.gc.login_dialog.server, resp.text).replace("https", "http")
+        test_url = "{}/lab{}".format(self.gc.login_dialog.server, resp.text)
         print(test_url)
         webbrowser.open(test_url)
     

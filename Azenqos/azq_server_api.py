@@ -15,8 +15,10 @@ from azq_utils import signal_emit
 
 def api_login_get_token(server, user, passwd, https=True):
     host = urlparse(server).netloc
-    # print("send auth_token: %s" % auth_token)
+    print("api_login_get_token server: %s host: %s" % (server, host))
     scheme = "https"
+    if server == "localhost":
+        https = False
     if not https:
         scheme = "http"
     resp = requests.post(
@@ -329,7 +331,7 @@ def api_login_and_dl_db_zip(
             print("zip_url:", zip_url)
             signal_emit(progress_update_signal, 60)
             signal_emit(status_update_signal, "Downloading db zip from server...")
-            azq_utils.download_file(zip_url, target_fp)
+            azq_utils.download_file(zip_url, target_fp, auth_token=token)
 
         if download_db_zip and zip_url:
             assert target_fp
@@ -483,7 +485,7 @@ def parse_py_eval_ret_dict_for_df(server, token, py_eval_ret_dict: dict):
             target_fp = os.path.join(
                 tmp_dir, "tmp_server_py_eval_df_{}.png".format(uuid.uuid4())
             )
-        azq_utils.download_file(pq_url, target_fp)
+        azq_utils.download_file(pq_url, target_fp, auth_token=token)
         assert os.path.isfile(target_fp) == True
         return target_fp
         # df = pd.read_parquet(target_fp)

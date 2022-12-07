@@ -63,7 +63,7 @@ def prepare_spatialite_required_tables(dbcon):
 
     dbcon.execute(
         """
-        delete from geometry_columns where true;
+        delete from geometry_columns where 1=1;
         """
     )
 
@@ -160,7 +160,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                 gc.params_to_gen[table].append(param)
             assert table
             view = param
-            table_cols = pd.read_sql("select * from {} where false".format(table), dbcon).columns
+            table_cols = pd.read_sql("select * from {} where 1=0".format(table), dbcon).columns
             table_has_geom = "geom" in table_cols
             # table_has_modem_time = "modem_time" in table_cols
             print("table: {} table_has_geom {}".format(table, table_has_geom))
@@ -239,7 +239,7 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
             print("exec sql")
             dbcon.execute(sqlstr)
             print("read cols")
-            view_cols = pd.read_sql("select * from {} where false".format(view), dbcon).columns
+            view_cols = pd.read_sql("select * from {} where 1=0".format(view), dbcon).columns
             assert "geom" in view_cols
             assert param in view_cols
             if cre_table:

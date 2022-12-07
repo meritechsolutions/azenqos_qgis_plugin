@@ -130,7 +130,7 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
                     tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';",
                                          dbcon).name
                     for table in tables:
-                        cols = list(pd.read_sql("select * from {} where false".format(table), dbcon).columns)  # use list as we will compare this list next
+                        cols = list(pd.read_sql("select * from {} where 1=0".format(table), dbcon).columns)  # use list as we will compare this list next
                         if is_first_azm:
                             first_azm_table_to_cols_dict[table] = cols
                         else:

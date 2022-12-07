@@ -1560,9 +1560,10 @@ def calc_sha(src):
     return hasho.hexdigest()
 
 
-def download_file(url, local_fp):
+def download_file(url, local_fp, auth_token=""):
     # NOTE the stream=True parameter below
-    with requests.get(url, stream=True, verify=False) as r:
+    headers = {"Authorization": "Bearer {}".format(auth_token), }
+    with requests.get(url, stream=True, verify=False, headers=headers) as r:
         r.raise_for_status()
         with open(local_fp, "wb") as f:
             for chunk in r.iter_content(chunk_size=2048 * 1000):

@@ -522,7 +522,7 @@ class TableWindow(QWidget):
         if self.customHeader:
             self.tableHeader = self.customHeader
 
-        self.dataList = dataList
+        # self.dataList = dataList
         if isinstance(dataList, pd.DataFrame):
             self.set_pd_df(dataList)
             self.tableModel = PdTableModel(dataList, self)
@@ -692,7 +692,7 @@ class TableWindow(QWidget):
                 self.set_pd_df(pd.DataFrame({"Failed": [exstr]}))
 
         if self.dataList is not None:
-            if create_table_model:
+            if create_table_model and isinstance(self.dataList, pd.DataFrame):
                 print("datatable refreshTableContents() settablemodel")
                 self.signal_ui_thread_emit_new_model.emit()
             else:
@@ -1435,11 +1435,74 @@ class TableModel(QAbstractTableModel):
     def __init__(self, inputData, header, time, log_hash, gc, parent=None, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
-        self.dataSource = inputData
         self.time = time
         self.log_hash = log_hash
         self.gc = gc
+        inputData_copy = self.fetchData(inputData)
+        self.dataSource = inputData_copy
+
         # self.testColumnValue()
+
+    def fetchData(self, inputData):
+        table_col_dict = {}
+        valid_df_dict = {}
+        if isinstance(inputData, list):
+            for data_list in inputData:
+                for param_dict in data_list:
+                    if "type" in param_dict.keys():
+                        if param_dict["type"] == "element":
+                            table_name = preprocess_azm.get_table_for_column_with_cache(param_dict["param_name"])
+                            if table_name in table_col_dict.keys():
+                                table_col_dict[table_name].append(param_dict["param_name"])
+                            else:
+                                table_col_dict[table_name] = [param_dict["param_name"]]
+            for table in table_col_dict:
+                table_col_dict[table] = list(set(table_col_dict[table]))
+                sql = "select {} from {}".format(", ".join(table_col_dict[table]) , table)
+                sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.log_hash, self.time)
+                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                    df = pd.read_sql(sql, dbcon)
+                    if len(df) > 0:
+                        if df.last_valid_index() is not None:
+                            last_valid_each_col = df.apply(pd.Series.last_valid_index)
+                            valid_df_dict[table] = {}
+                            for index, value in last_valid_each_col.items():
+                                value_index = 0
+                                if not pd.isna(value):
+                                    value_index = int(value)
+                                value = df[index][value_index]
+                                valid_df_dict[table][index] = value
+            
+            for data_list in inputData:
+                for param_dict in data_list:
+                    if "type" in param_dict.keys():
+                        if param_dict["type"] == "element":
+                            table_name = preprocess_azm.get_table_for_column_with_cache(param_dict["param_name"])
+                            param_dict["color"] = "#FFFFFF"
+                            param_dict["percent"] = None
+                            value = ""
+                            if table_name in valid_df_dict.keys():
+                                value = valid_df_dict[table_name][param_dict["param_name"]]
+                                if value is not None:
+                                    import db_preprocess
+                                    if param_dict["param_name"] in db_preprocess.cached_theme_dict.keys():
+                                        theme_df = db_preprocess.cached_theme_dict[param_dict["param_name"]]
+                                        theme_df["Lower"] = theme_df["Lower"].astype(float)
+                                        theme_df["Upper"] = theme_df["Upper"].astype(float)
+                                        theme_range = theme_df["Upper"].max() - theme_df["Lower"].min()
+                                        param_dict["percent"] = (float(value) - theme_df["Lower"].min()) / theme_range
+                                        color_df = theme_df.loc[(theme_df["Lower"]<=float(value))&(theme_df["Upper"]>float(value)), "ColorXml"]
+                                        if len(color_df) > 0:
+                                            param_dict["color"] = color_df.iloc[0]
+                                else:
+                                    value = ""
+                            if not isinstance(value, str):
+                                if isinstance(value, float):
+                                    value = "%.02f" % value
+                                else:
+                                    value = str(value)
+                            param_dict["value"] = value
+        return inputData
 
     def rowCount(self, parent):
         rows = 0
@@ -1468,38 +1531,9 @@ class TableModel(QAbstractTableModel):
         if index.isValid():
             if role == Qt.DisplayRole:
                 value_dict = self.dataSource[index.row()][index.column()]
-                value_dict["color"] = "#FFFFFF"
-                value_dict["percent"] = None
+                value = ""
                 if "type" in value_dict.keys():
-                    if value_dict["type"] == "text":
-                        value = value_dict["value"]
-                    else:
-                        table_name = preprocess_azm.get_table_for_column(value_dict["value"])
-                        sql = "select {} from {}".format(value_dict["value"] , table_name)
-                        sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.log_hash, self.time)
-                        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                            df = pd.read_sql(sql, dbcon)
-                            if len(df) > 0:
-                                value = df[value_dict["value"]].iloc[-1]
-                                import db_preprocess
-                                if value_dict["value"] in db_preprocess.cached_theme_dict.keys():
-                                    theme_df = db_preprocess.cached_theme_dict[value_dict["value"]]
-                                    theme_df["Lower"] = theme_df["Lower"].astype(float)
-                                    theme_df["Upper"] = theme_df["Upper"].astype(float)
-                                    theme_range = theme_df["Upper"].max() - theme_df["Lower"].min()
-                                    value_dict["percent"] = (float(value) - theme_df["Lower"].min()) / theme_range
-                                    color_df = theme_df.loc[(theme_df["Lower"]<=float(value))&(theme_df["Upper"]>float(value)), "ColorXml"]
-                                    if len(color_df) > 0:
-                                        value_dict["color"] = color_df.iloc[0]
-                            else:
-                                value = ""
-                            if not isinstance(value, str):
-                                if isinstance(value, float):
-                                    value = "%.02f" % value
-                                else:
-                                    value = str(value)
-                else:
-                    value = ""
+                    value = value_dict["value"]
                 return value
             
             if role == QtCore.Qt.BackgroundRole:
@@ -1528,7 +1562,12 @@ class TableModel(QAbstractTableModel):
         
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
         if isinstance(data, list):
-            self.dataSource = data
+            
+            refresh_dict = {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
+            self.time = refresh_dict["time"]
+            self.log_hash = refresh_dict["log_hash"]
+            data_copy = self.fetchData(data)
+            self.dataSource = data_copy
             index_topleft = self.index(0, 0)
             index_bottomright = self.index(100, 100)
             self.dataChanged.emit(

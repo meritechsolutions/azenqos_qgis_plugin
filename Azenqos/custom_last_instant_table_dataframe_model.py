@@ -27,7 +27,11 @@ class PandasModel(QAbstractTableModel):
                 value_dict = self._data[index.row()][index.column()]
                 if len(value_dict.keys()) > 0:
                     if "value" in value_dict.keys():
-                        value = value_dict["value"]
+                        if value_dict["type"] == "text":
+                            value = value_dict["value"]
+                        else:
+                            value = value_dict["param_name"]
+
                 return str(value)
 
     def setData(self, index, value, role):

@@ -24,9 +24,13 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         super(custom_last_instant_table_dialog, self).__init__(None)
         self.gc = gc
         self.param_list = param_list
-        self.param_df = preprocess_azm.get_number_param()
+        df = preprocess_azm.get_elm_df_from_csv()[["var_name", "n_arg_max"]]
+        df = df.dropna()
+        df = df.loc[~df.var_name.str.startswith("event_")]
+        self.param_df = df
         self.param_df = self.param_df.append({"var_name": "log_hash", "n_arg_max":0}, ignore_index=True)
         self.param_df = self.param_df.reset_index(drop=True)
+        self.param_df["var_name"] = self.param_df["var_name"].astype(str)
         self.cell_type = "text"
         self.param = self.param_df["var_name"][0]
         self.param_name = self.param

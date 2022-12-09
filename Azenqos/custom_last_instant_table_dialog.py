@@ -25,6 +25,7 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         self.gc = gc
         self.param_list = param_list
         self.param_df = preprocess_azm.get_number_param()
+        self.param_df = self.param_df.append({"var_name": "log_hash", "n_arg_max":0}, ignore_index=True)
         self.param_df = self.param_df.reset_index(drop=True)
         self.cell_type = "text"
         self.param = self.param_df["var_name"][0]
@@ -146,14 +147,15 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
             self.model.setItems(self.param_list)
 
     def on_param_add(self):
-        value = self.param_name
+        param_name = self.param_name
         param = self.param
+        value = None
         arg = self.arg
         if self.cell_type == "text":
             value = self.ui.textLineEdit.text()
             param = None
             arg = None
-        self.param_list[self.selected_row][self.selected_col] = {"type":self.cell_type, "value":value, "param":param, "arg":arg, "color":"#FFFFFF", "percent":None}
+        self.param_list[self.selected_row][self.selected_col] = {"type":self.cell_type, "value":value, "param":param, "arg":arg, "color":"#FFFFFF", "percent":None, "param_name":param_name}
         self.model.setItems(self.param_list)
     
     def on_table_click(self, item):
@@ -209,13 +211,10 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         if filename:
             if filename[0]:
                 filepath = filename[0]
-                try:
-                    with open(filepath, 'r') as f:
-                        self.param_list = json.load(f)
-                        self.model.setItems(self.param_list)
-                        super().accept()
-                except:
-                    pass
+                with open(filepath, 'r') as f:
+                    self.param_list = json.load(f)
+                    self.model.setItems(self.param_list)
+                    super().accept()
 
     def on_update_table(self, model):
         self.ui.tableView.setModel(model)

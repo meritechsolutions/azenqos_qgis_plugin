@@ -1190,6 +1190,14 @@ def get_elm_df_from_csv():
 
     return g_azq_global_elm_info_df.copy()
 
+g_azq_global_match_table_dict = {}
+def get_table_for_column_with_cache(param_col_with_arg):
+    global g_azq_global_match_table_dict
+    if param_col_with_arg in g_azq_global_match_table_dict.keys():
+        return g_azq_global_match_table_dict[param_col_with_arg]
+    table = get_table_for_column(param_col_with_arg)
+    g_azq_global_match_table_dict[param_col_with_arg] = table
+    return table
 
 def get_table_for_column(param_col_with_arg):
 

@@ -1,0 +1,522 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Sample duration",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_sample_duration",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_sample_duration"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA TTI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_tti",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_tti"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Sample frames",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_sample_frames",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_sample_frames"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Happy bit TTIs (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_happy_bit_ttis",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_happy_bit_ttis"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Serving RGCH Up (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_serving_rgch_up",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_serving_rgch_up"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Serving RGCH Down (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_serving_rgch_down",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_serving_rgch_down"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Serving RGCH Hold (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_serving_rgch_hold",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_serving_rgch_hold"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA NonServing RGCH Down (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_nonserving_rgch_down",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_nonserving_rgch_down"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA NonServing RGCH Hold (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_nonserving_rgch_hold",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_nonserving_rgch_hold"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA N AGCH Receive success",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_n_agch_receive_success",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_n_agch_receive_success"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Average AGCH",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_average_agch",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_average_agch"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Average SGI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_average_sgi",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_average_sgi"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA new transmission (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_new_transmission",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_new_transmission"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA retransmission (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_retransmission",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_retransmission"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA DTX (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_dtx",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_dtx"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA N NACK after max retrans",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_n_nack_after_max_retrans",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_n_nack_after_max_retrans"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA N MAC e Resets",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_n_mac_e_resets",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_n_mac_e_resets"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Power Limited TTIs (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_n_power_limited_ttis",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_n_power_limited_ttis"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Serving Grant Limited TTIs (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_n_serving_grant_limited_ttis",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_n_serving_grant_limited_ttis"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA SBLER (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_p_sbler",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_p_sbler"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Avg Raw Throughput",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_avg_raw_throughput",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_avg_raw_throughput"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Avg Scheduled Throughput",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_avg_scheduled_throughput",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_avg_scheduled_throughput"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSUPA Total E DPDCH Throughput",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsupa_total_e_dpdch_throughput",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsupa_total_e_dpdch_throughput"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "WCDMA RLC UL Throughput",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_wcdma_rlc_ul_throughput",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_wcdma_rlc_ul_throughput"
+        }
+    ]
+]

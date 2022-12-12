@@ -1,0 +1,302 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE CA",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_ca",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_ca"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE Sc num",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_sc_num",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_sc_num"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE DL througput (MBps)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_tp_combined_dl_mbps",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_tp_combined_dl_mbps"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE UL througput (MBps)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_tp_combined_ul_mbps",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_tp_combined_ul_mbps"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE DL MCS1",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_dl_mcs1",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_dl_mcs1"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE DL MCS2",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_dl_mcs2",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_dl_mcs2"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE UL MCS1",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_ul_mcs1",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_ul_mcs1"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE DL N RB",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_n_dl_rb",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_n_dl_rb"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE DL N RB max",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_n_dl_rb_max",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_n_dl_rb_max"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE UL N RB",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_n_ul_rb",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_n_ul_rb"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE UL N RB max",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_n_dl_rb_max",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_n_dl_rb_max"
+        }
+    ]
+]

@@ -85,6 +85,13 @@
         <widget class="QTableView" name="tableView"/>
        </item>
        <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>*First row is always header</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QDialogButtonBox" name="buttonBox">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

@@ -1,0 +1,242 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "MCC",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "serving_system_mcc",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "serving_system_mcc"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "MNC",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "serving_system_mnc",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "serving_system_mnc"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LAC",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "serving_system_lac",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "serving_system_lac"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Service Status",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "cm_service_status",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "cm_service_status"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Service Domain",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "cm_service_domain",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "cm_service_domain"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Service Capability",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "cm_service_capability",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "cm_service_capability"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "System Mode",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "cm_system_mode",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "cm_system_mode"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Roaming Status",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "cm_roaming_status",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "cm_roaming_status"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "System ID Type",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "cm_system_id_type",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "cm_system_id_type"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "WCDMA RRC State",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_rrc_state",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_rrc_state"
+        }
+    ]
+]

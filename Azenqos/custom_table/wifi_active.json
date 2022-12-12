@@ -1,0 +1,242 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "BSSID",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_bssid",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_bssid"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SSID",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_ssid",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_ssid"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RSSI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_rssi",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_rssi"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "IP Addr",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_ipaddr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_ipaddr"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Link Speed (Mbps.)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_linkspeed",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_linkspeed"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "MAC Addr",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_macaddr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_macaddr"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Encryption",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_encryption",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_encryption"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Ch.",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_channel",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_channel"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Freq",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_freq",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_freq"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "ISP",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wifi_active_isp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wifi_active_isp"
+        }
+    ]
+]

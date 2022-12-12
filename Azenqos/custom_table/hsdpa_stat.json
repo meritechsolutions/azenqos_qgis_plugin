@@ -1,0 +1,562 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA Scheduled Rate",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_scheduled_rate",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_scheduled_rate"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA Served Rate",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_served_rate",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_served_rate"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HS-DSCH Throughput",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_thoughput",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_thoughput"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA SBLER on 1st transmission",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_sbler_on_1st_transmission",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_sbler_on_1st_transmission"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA SBLER",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_sbler",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_sbler"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA Num Codes Used Avg.",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_num_codes_used_avg",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_num_codes_used_avg"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA MOD QPSK Percent",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_mod_qpsk_percent",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_mod_qpsk_percent"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA MOD 16QAM Percent",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_mod_16qam_percent",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_mod_16qam_percent"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA MOD 64QAM Percent",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_mod_64qam_percent",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_mod_64qam_percent"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA Meas from num 2MS slots",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_meas_from_num_2ms_slots",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_meas_from_num_2ms_slots"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA Num SCCH DEMOD Attempts",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_num_scch_demod_attempts",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_num_scch_demod_attempts"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA Num DEMOD Valid",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_num_demod_valid",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_num_demod_valid"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data HSPAP Dual Carrier Enabled",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_dual_carrier_enabled",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_dual_carrier_enabled"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data HSPAP 64QAM Configured",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_64qam_configured",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_64qam_configured"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data_HSPAP_DUAL_CARRIER_ENABLED_PERCENT",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_dual_carrier_enabled_percent",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_dual_carrier_enabled_percent"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data_HSPAP_MIMO_ENABLED",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_mimo_enabled",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_mimo_enabled"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data_HSPAP_UE_CATEGORY",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_ue_category",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_ue_category"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data_HSPAP_2TB_REQUESTED_PERCENT",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_2tb_requested_percent",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_2tb_requested_percent"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data_HSPAP_1TB_REQUESTED_PERCENT",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_1tb_requested_percent",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_1tb_requested_percent"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA HS-SCCH Usage Percent",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_hs_scch_usage_percent",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_hs_scch_usage_percent"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "HSDPA CQI number avg.",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hsdpa_cqi_number_avg",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hsdpa_cqi_number_avg"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data HSPAP CQI B",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_cqi_b",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_cqi_b"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data HSPAP CQI A",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_cqi_a",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_cqi_a"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data HSPAP CQI DC Primary Carrier",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_cqi_dc_primary_carrier",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_cqi_dc_primary_carrier"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Data HSPAP CQI DC Secondary Carrier",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_hspap_cqi_dc_secondary_carrier",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_hspap_cqi_dc_secondary_carrier"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "WCDMA RLC DL Throughput",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_wcdma_rlc_dl_throughput",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_wcdma_rlc_dl_throughput"
+        }
+    ]
+]

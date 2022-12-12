@@ -1,0 +1,242 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RxLev Full",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_rxlev_full_dbm",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_rxlev_full_dbm"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RxLev Sub",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_rxlev_sub_dbm",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_rxlev_sub_dbm"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RxQual Full",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_rxqual_full",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_rxqual_full"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RxQual Sub",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_rxqual_sub",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_rxqual_sub"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "TA",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_ta",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_ta"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RLT (Max)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_radiolinktimeout_max",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_radiolinktimeout_max"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RLT (Current)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_radiolinktimeout_current",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_radiolinktimeout_current"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "DTX Used",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_dtxused",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_dtxused"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "TxPower",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_txpower",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_txpower"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "FER",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_fer",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_fer"
+        }
+    ]
+]

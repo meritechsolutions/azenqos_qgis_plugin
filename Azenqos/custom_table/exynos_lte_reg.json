@@ -1,0 +1,182 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Home PLMN",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_home_plmn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_home_plmn"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Reg PLMN",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_reg_plmn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_reg_plmn"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE TAC",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_tac",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_tac"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE ECI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_eci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_eci"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE PS Cause",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_ps_cause",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_ps_cause"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE CS Cause",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_cs_cause",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_cs_cause"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE WakeupInfo",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_wakeup_info",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_wakeup_info"
+        }
+    ]
+]

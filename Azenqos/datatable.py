@@ -1508,7 +1508,7 @@ class TableModel(QAbstractTableModel):
         rows = 0
         if self.dataSource:
             rows = len(self.dataSource)
-        return rows
+        return rows-1
 
     def columnCount(self, parent):
         columns = 0
@@ -1528,9 +1528,10 @@ class TableModel(QAbstractTableModel):
         return comp_color
 
     def data(self, index, role=Qt.DisplayRole):
-        if index.isValid():
+        row = index.row()+1
+        if index.isValid() and row < len(self.dataSource):
             if role == Qt.DisplayRole:
-                value_dict = self.dataSource[index.row()][index.column()]
+                value_dict = self.dataSource[row][index.column()]
                 value = ""
                 if "type" in value_dict.keys():
                     value = value_dict["value"]
@@ -1538,7 +1539,7 @@ class TableModel(QAbstractTableModel):
             
             if role == QtCore.Qt.BackgroundRole:
                 try:
-                    value_dict = self.dataSource[index.row()][index.column()]
+                    value_dict = self.dataSource[row][index.column()]
                     if "percent" in value_dict.keys():
                         if value_dict["percent"] is not None:
                             # gradient = QtGui.QLinearGradient(QtCore.QPointF(0, 0), QtCore.QPointF(1, 0))
@@ -1553,7 +1554,7 @@ class TableModel(QAbstractTableModel):
                     return None
                 
             if role == QtCore.Qt.ForegroundRole:
-                value_dict = self.dataSource[index.row()][index.column()]
+                value_dict = self.dataSource[row][index.column()]
                 if "color" in value_dict.keys():
                     fg_color = self.get_complementary(value_dict["color"])
                     return QtCore.QVariant(QtGui.QColor(fg_color))
@@ -1562,7 +1563,6 @@ class TableModel(QAbstractTableModel):
         
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
         if isinstance(data, list):
-            
             refresh_dict = {"time": self.gc.currentDateTimeString, "log_hash": self.gc.selected_point_match_dict["log_hash"]}
             self.time = refresh_dict["time"]
             self.log_hash = refresh_dict["log_hash"]
@@ -1575,6 +1575,13 @@ class TableModel(QAbstractTableModel):
             )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
             return True
         return False
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            if "value" in self.dataSource[0][section].keys():
+                if self.dataSource[0][section]["value"] is not None:
+                    return self.dataSource[0][section]["value"]
+        return super().headerData(section, orientation, role)
 
 def epochToDateString(epoch):
     try:

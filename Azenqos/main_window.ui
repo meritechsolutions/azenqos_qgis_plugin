@@ -103,16 +103,11 @@
      <addaction name="action5GNR_Radio"/>
      <addaction name="action5GNR_Data"/>
      <addaction name="action5GNR_Serving_Neighbors"/>
-     <addaction name="action5GNR_Beams"/>
      <addaction name="actionNR_Line_Chart"/>
      <addaction name="actionNR_PCI_Footprint"/>
      <addaction name="actionExynosServiceMode_NR_Radio"/>
      <addaction name="actionExynosServiceMode_NR_Data"/>
      <addaction name="actionExynosServiceMode_NR_Reg"/>
-     <addaction name="separator"/>
-     <addaction name="action5GNR_Radio_Parameters"/>
-     <addaction name="action5GNR_Data_Params"/>
-     <addaction name="separator"/>
     </widget>
     <widget class="QMenu" name="menuSignalling">
      <property name="title">

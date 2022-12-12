@@ -1,0 +1,222 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Tx Power",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_txagc",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_txagc"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Max Tx Power",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_maxtxpwr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_maxtxpwr"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RSSI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_rssi",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_rssi"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SIR",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_sir",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_sir"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RRC State",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_rrc_state",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_rrc_state"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Speech Codec TX",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_speechcodectx",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_speechcodectx"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Speech Codec RX",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_speechcodecrx",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_speechcodecrx"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Cell ID",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "android_cellid",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "android_cellid"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RNC ID",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "android_rnc_id",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "android_rnc_id"
+        }
+    ]
+]

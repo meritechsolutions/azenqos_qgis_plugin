@@ -1,0 +1,958 @@
+[
+    [
+        {
+            "type": "text",
+            "value": "--- PARAMETER ---",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "text",
+            "value": "Band",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "text",
+            "value": "ARFCN",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "text",
+            "value": "PCI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "text",
+            "value": "Bmldx",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "text",
+            "value": "RSRP",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "text",
+            "value": "RSRQ",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "text",
+            "value": "SINR",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        },
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+    ],
+    [
+        {
+            "type": "text",
+            "value": "PCell",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_band",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_band_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_dl_arfcn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_dl_arfcn_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_pci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_pci_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ssb_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ssb_index_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrp_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrq",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrq_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_sinr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_sinr_1"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SCell1",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_band",
+            "arg": "2",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_band_2"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_dl_arfcn",
+            "arg": "2",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_dl_arfcn_2"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_pci",
+            "arg": "2",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_pci_2"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ssb_index",
+            "arg": "2",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ssb_index_2"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrp",
+            "arg": "2",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrp_2"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrq",
+            "arg": "2",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrq_2"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_sinr",
+            "arg": "2",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_sinr_2"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SCell2",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_band",
+            "arg": "3",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_band_3"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_dl_arfcn",
+            "arg": "3",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_dl_arfcn_3"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_pci",
+            "arg": "3",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_pci_3"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ssb_index",
+            "arg": "3",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ssb_index_3"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrp",
+            "arg": "3",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrp_3"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrq",
+            "arg": "3",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrq_3"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_sinr",
+            "arg": "3",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_sinr_3"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SCell3",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_band",
+            "arg": "4",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_band_4"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_dl_arfcn",
+            "arg": "4",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_dl_arfcn_4"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_pci",
+            "arg": "4",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_pci_4"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ssb_index",
+            "arg": "4",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ssb_index_4"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrp",
+            "arg": "4",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrp_4"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrq",
+            "arg": "4",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrq_4"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_sinr",
+            "arg": "4",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_sinr_4"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SCell4",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_band",
+            "arg": "5",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_band_5"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_dl_arfcn",
+            "arg": "5",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_dl_arfcn_5"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_pci",
+            "arg": "5",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_pci_5"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ssb_index",
+            "arg": "5",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ssb_index_5"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrp",
+            "arg": "5",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrp_5"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrq",
+            "arg": "5",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrq_5"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_sinr",
+            "arg": "5",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_sinr_5"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SCell5",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_band",
+            "arg": "6",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_band_6"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_dl_arfcn",
+            "arg": "6",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_dl_arfcn_6"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_pci",
+            "arg": "6",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_pci_6"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ssb_index",
+            "arg": "6",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ssb_index_6"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrp",
+            "arg": "6",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrp_6"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrq",
+            "arg": "6",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrq_6"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_sinr",
+            "arg": "6",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_sinr_6"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SCell6",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_band",
+            "arg": "7",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_band_7"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_dl_arfcn",
+            "arg": "7",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_dl_arfcn_7"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_pci",
+            "arg": "7",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_pci_7"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ssb_index",
+            "arg": "7",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ssb_index_7"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrp",
+            "arg": "7",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrp_7"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrq",
+            "arg": "7",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrq_7"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_sinr",
+            "arg": "7",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_sinr_7"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SCell7",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_band",
+            "arg": "8",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_band_8"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_dl_arfcn",
+            "arg": "8",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_dl_arfcn_8"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_pci",
+            "arg": "8",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_pci_8"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ssb_index",
+            "arg": "8",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ssb_index_8"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrp",
+            "arg": "8",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrp_8"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_rsrq",
+            "arg": "8",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_rsrq_8"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_servingbeam_ss_sinr",
+            "arg": "8",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_servingbeam_ss_sinr_8"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "DCell1",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {},
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam1_dl_arfcn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam1_dl_arfcn_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam1_pci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam1_pci_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam1_ssb_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam1_ssb_index_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam1_ss_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam1_ss_rsrp_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam1_ss_rsrq",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam1_ss_rsrq_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam1_ss_sinr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam1_ss_sinr_1"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "DCell2",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {},
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam2_dl_arfcn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam2_dl_arfcn_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam2_pci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam2_pci_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam2_ssb_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam2_ssb_index_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam2_ss_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam2_ss_rsrp_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam2_ss_rsrq",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam2_ss_rsrq_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam2_ss_sinr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam2_ss_sinr_1"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "DCell3",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {},
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam3_dl_arfcn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam3_dl_arfcn_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam3_pci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam3_pci_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam3_ssb_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam3_ssb_index_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam3_ss_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam3_ss_rsrp_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam3_ss_rsrq",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam3_ss_rsrq_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam3_ss_sinr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam3_ss_sinr_1"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "DCell4",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "mos_score"
+        },
+        {},
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam4_dl_arfcn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam4_dl_arfcn_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam4_pci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam4_pci_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam4_ssb_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam4_ssb_index_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam4_ss_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam4_ss_rsrp_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam4_ss_rsrq",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam4_ss_rsrq_1"
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "nr_detectedbeam4_ss_sinr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "nr_detectedbeam4_ss_sinr_1"
+        }
+    ]
+]

@@ -1,0 +1,222 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "GPRS Attach Duration",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_gprs_attach_duration",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_gprs_attach_duration"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "PDP Context Activation Duration",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_pdp_context_activation_duration",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_pdp_context_activation_duration"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RLC DL Throughput (kbit/s)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_gsm_rlc_ul_throughput",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_gsm_rlc_ul_throughput"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RLC UL Throughput (kbit/s)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_gsm_rlc_dl_throughput",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_gsm_rlc_dl_throughput"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "DL Coding Scheme",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_egprs_dl_coding_scheme_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_egprs_dl_coding_scheme_index"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "UL Coding Scheme",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_egprs_ul_coding_scheme_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_egprs_ul_coding_scheme_index"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "DL Timeslot Used",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_gprs_timeslot_used_dl",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_gprs_timeslot_used_dl"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Ul Timeslot Used",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_gprs_timeslot_used_ul",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_gprs_timeslot_used_ul"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "GPRS C/I",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "data_gprs_ci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "data_gprs_ci"
+        }
+    ]
+]

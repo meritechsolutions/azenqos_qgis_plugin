@@ -1,0 +1,342 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Cellname",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_cellfile_matched_cellname",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_cellfile_matched_cellname"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "CGI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_cgi",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_cgi"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Channel Type",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_channeltype",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_channeltype"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Sub Channel Number",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_subchannelnumber",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_subchannelnumber"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Mobile Allocation Index Offset (MAIO)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_maio",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_maio"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Hopping Sequence Number (HSN)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_hsn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_hsn"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Cipering Algorithm",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_cipheringalgorithm",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_cipheringalgorithm"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "MS Power Control Level",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_ms_powercontrollevel",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_ms_powercontrollevel"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Channel Mode",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_channelmode",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_channelmode"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Speech Codec TX",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_speechcodectx",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_speechcodectx"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Speech Codec RX",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_speechcodecrx",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_speechcodecrx"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Hopping Frequencies",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_hoppingfrequencies",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_hoppingfrequencies"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "ARFCN BCCH",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_arfcn_bcch",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_arfcn_bcch"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "ARFCN TCH",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_arfcn_tch",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_arfcn_tch"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Time Slot",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_timeslot",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_timeslot"
+        }
+    ]
+]

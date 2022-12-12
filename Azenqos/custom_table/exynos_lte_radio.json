@@ -1,0 +1,342 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE Band",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_band",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_band"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE EARFCN",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_dl_earfcn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_dl_earfcn"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE PCI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_pci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_pci"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE RSRP",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_rsrp"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE RSRQ",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_rsrq",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_rsrq"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE SINR",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_sinr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_sinr"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE RSSI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_rssi",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_rssi"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE RRC State",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_rrc_state",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_rrc_state"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE PCell TM",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_pcell_tm",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_pcell_tm"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE RI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_mimo_ri",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_mimo_ri"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE Bandwidth (MHz)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_bw_mhz",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_bw_mhz"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE Ant RSRP Diff",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_ant_rsrp_diff",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_ant_rsrp_diff"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE Ant RSRP Diff avg",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_ant_rsrp_diff_avg",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_ant_rsrp_diff_avg"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE TxPower",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_tx_power",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_tx_power"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "LTE UL EARFCN",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_lte_ul_earfcn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_lte_ul_earfcn"
+        }
+    ]
+]

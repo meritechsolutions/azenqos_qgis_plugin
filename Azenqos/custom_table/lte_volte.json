@@ -1,0 +1,342 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Codec:",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "text",
+            "value": "",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "AMR SpeechCodec-RX",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_speechcodecrx",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_speechcodecrx"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "AMR SpeechCodec-TX",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "gsm_speechcodectx",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "gsm_speechcodectx"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Delay interval avg:",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "text",
+            "value": "",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Audio Packet delay (ms.)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "vocoder_amr_audio_packet_delay_avg",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "vocoder_amr_audio_packet_delay_avg"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTP Packet delay (ms.)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_volte_rtp_pkt_delay_avg",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_volte_rtp_pkt_delay_avg"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP SR Params:",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "text",
+            "value": "",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP Round trip time (ms.)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_volte_rtp_round_trip_time",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_volte_rtp_round_trip_time"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP SR Params - Jitter DL:",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "text",
+            "value": "",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP SR Jitter DL (ts unit)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_volte_rtp_jitter_dl",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_volte_rtp_jitter_dl"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP SR Params - Jitter UL:",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "text",
+            "value": "",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP SR Jitter UL (ts unit)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_volte_rtp_jitter_ul",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_volte_rtp_jitter_ul"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP SR Params - Packet loss rate:",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "text",
+            "value": "",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP SR Packet loss DL (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_volte_rtp_packet_loss_rate_dl",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_volte_rtp_packet_loss_rate_dl"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RTCP SR Packet loss UL (%)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_volte_rtp_packet_loss_rate_ul",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_volte_rtp_packet_loss_rate_ul"
+        }
+    ]
+]

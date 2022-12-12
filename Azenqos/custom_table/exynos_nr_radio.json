@@ -1,0 +1,502 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SA Status",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_mode_sa",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_mode_sa"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NSA ENDC Status",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_endc_status",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_endc_status"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR Band",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_band",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_band"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR ARFCN",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_arfcn",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_arfcn"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR PCI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_pci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_pci"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR SSB Index",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_ssb_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_ssb_index"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR SSB RSRP",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_ssb_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_ssb_rsrp"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR RSRP",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_rsrp"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR RSRQ",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_rsrq",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_rsrq"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR RSSI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_rssi",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_rssi"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR SINR",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_sinr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_sinr"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR PDSCH SINR",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "xynos_basic_info_nr_pdsch_sinr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_pdsch_sinr_1"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR Bandwidth (MHz)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_ch_bw",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_ch_bw"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR SCS",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_scs",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_scs"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR BWP",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_bwp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_bwp"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR DSS Status",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_dss_status",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_dss_status"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Best Serv-SSB-Index",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_best_serving_ssb_index",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_best_serving_ssb_index"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Best Serv-SSB-RSRP",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_best_serving_ssb_rsrp",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_best_serving_ssb_rsrp"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Num Sec-Serv-Cells",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_no_sec_serv_cell",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_no_sec_serv_cell"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR TxPwr",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_txpwr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_txpwr"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR ENDC TotalTxPwr",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_endc_total_txpwr",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_endc_total_txpwr"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "--- SA-only params ---",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "text",
+            "value": "",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "NR RRC State",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "exynos_basic_info_nr_rrc_state",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "exynos_basic_info_nr_rrc_state"
+        }
+    ]
+]

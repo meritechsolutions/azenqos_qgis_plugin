@@ -1,0 +1,382 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PCell ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": "2516930113632575566",
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR DL FREQ"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_dl_frequency",
+            "param_name": "nr_dl_frequency_1",
+            "percent": null,
+            "type": "element",
+            "value": "2620.95"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR ARFCN"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_dl_arfcn",
+            "param_name": "nr_dl_arfcn_1",
+            "percent": NaN,
+            "type": "element",
+            "value": "524190.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR Band"
+        },
+        {
+            "arg": "1",
+            "color": "#CD5C5C",
+            "param": "nr_band",
+            "param_name": "nr_band_1",
+            "percent": 0.0,
+            "type": "element",
+            "value": "41.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR PCI"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_servingbeam_pci",
+            "param_name": "nr_servingbeam_pci_1",
+            "percent": NaN,
+            "type": "element",
+            "value": "4.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR SSB Index"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_servingbeam_ssb_index",
+            "param_name": "nr_servingbeam_ssb_index_1",
+            "percent": null,
+            "type": "element",
+            "value": "2.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR SS RSRP"
+        },
+        {
+            "arg": "1",
+            "color": "#0000FF",
+            "param": "nr_servingbeam_ss_rsrp",
+            "param_name": "nr_servingbeam_ss_rsrp_1",
+            "percent": 0.5345666666666666,
+            "type": "element",
+            "value": "-69.81"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR SS RSRQ"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_servingbeam_ss_rsrq",
+            "param_name": "nr_servingbeam_ss_rsrq_1",
+            "percent": 1.0705,
+            "type": "element",
+            "value": "1.41"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR SS SINR"
+        },
+        {
+            "arg": "1",
+            "color": "#00FF00",
+            "param": "nr_servingbeam_ss_sinr",
+            "param_name": "nr_servingbeam_ss_sinr_1",
+            "percent": 0.3456666666666667,
+            "type": "element",
+            "value": "10.74"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR SubCarrier Size"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_numerology_scs",
+            "param_name": "nr_numerology_scs_1",
+            "percent": null,
+            "type": "element",
+            "value": "30.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR N Rx Ant"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_num_rx_ant",
+            "param_name": "nr_num_rx_ant_1",
+            "percent": null,
+            "type": "element",
+            "value": "4.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR CRI"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_cri",
+            "param_name": "nr_cri_1",
+            "percent": null,
+            "type": "element",
+            "value": "2"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR RI"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFF00",
+            "param": "nr_ri",
+            "param_name": "nr_ri_1",
+            "percent": 0.25,
+            "type": "element",
+            "value": "2.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR NumLayers"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_numlayers",
+            "param_name": "nr_numlayers_1",
+            "percent": null,
+            "type": "element",
+            "value": "2.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR ENDC Total Tx Power"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_endc_total_tx_power",
+            "param_name": "nr_endc_total_tx_power",
+            "percent": null,
+            "type": "element",
+            "value": "23.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR PUSCH Tx Power"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_pusch_tx_power",
+            "param_name": "nr_pusch_tx_power_1",
+            "percent": null,
+            "type": "element",
+            "value": "12.33"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR PUCCH Tx Power"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_pucch_tx_power",
+            "param_name": "nr_pucch_tx_power_1",
+            "percent": null,
+            "type": "element",
+            "value": "0.00"
+        }
+    ],
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "NR SRX Tx Power"
+        },
+        {
+            "arg": "1",
+            "color": "#FFFFFF",
+            "param": "nr_srs_tx_power",
+            "param_name": "nr_srs_tx_power_1",
+            "percent": null,
+            "type": "element",
+            "value": "15.33"
+        }
+    ]
+]

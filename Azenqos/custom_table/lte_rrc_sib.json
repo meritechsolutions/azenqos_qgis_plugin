@@ -1,0 +1,202 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SIB1 MCC",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_sib1_mcc",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_sib1_mcc"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SIB1 MNC",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_sib1_mnc",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_sib1_mnc"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SIB1 TAC",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_sib1_tac",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_sib1_tac"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SIB1 ECI (Cell ID)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_sib1_eci",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_sib1_eci"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SIB1 eNodeB ID",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_sib1_enb_id",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_sib1_enb_id"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "SIB1 LCI",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_sib1_local_cell_id",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_sib1_local_cell_id"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Transmission Mode (RRC-tm)",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_transmission_mode_l3",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_transmission_mode_l3"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "RRC State",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "lte_rrc_state",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "lte_rrc_state"
+        }
+    ]
+]

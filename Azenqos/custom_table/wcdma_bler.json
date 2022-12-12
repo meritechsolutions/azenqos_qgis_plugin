@@ -1,0 +1,102 @@
+[
+    [
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- PARAMETER ---"
+        },
+        {
+            "arg": null,
+            "color": "#FFFFFF",
+            "param": null,
+            "param_name": null,
+            "percent": null,
+            "type": "text",
+            "value": "--- VALUE ---"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "Log Hash",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "log_hash",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "log_hash"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "BLER Average Percent",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_bler_average_percent_all_channels",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_bler_average_percent_all_channels"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "BLER Calculation Window Size",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_bler_calculation_window_size",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_bler_calculation_window_size"
+        }
+    ],
+    [
+        {
+            "type": "text",
+            "value": "BLER N Transport Channels",
+            "param": null,
+            "arg": null,
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": null
+        },
+        {
+            "type": "element",
+            "value": null,
+            "param": "wcdma_bler_n_transport_channels",
+            "arg": "1",
+            "color": "#FFFFFF",
+            "percent": null,
+            "param_name": "wcdma_bler_n_transport_channels"
+        }
+    ]
+]

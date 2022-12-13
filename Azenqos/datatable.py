@@ -527,7 +527,7 @@ class TableWindow(QWidget):
             self.set_pd_df(dataList)
             self.tableModel = PdTableModel(dataList, self)
         else:
-            self.tableModel = TableModel(dataList, self.tableHeader, refresh_dict["time"], refresh_dict["log_hash"], self.gc, self)
+            self.tableModel = TableModel(dataList, self.tableHeader, refresh_dict["time"], refresh_dict["log_hash"], self.gc, self.selected_logs, self)
         self.proxyModel = SortFilterProxyModel(self)
         self.proxyModel.setSourceModel(self.tableModel)
         self.tableView.setModel(self.proxyModel)
@@ -1432,12 +1432,13 @@ class DetailWidget(QDialog):
 
 
 class TableModel(QAbstractTableModel):
-    def __init__(self, inputData, header, time, log_hash, gc, parent=None, *args):
+    def __init__(self, inputData, header, time, log_hash, gc, selected_logs=None, parent=None, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self.headerLabels = header
         self.time = time
         self.log_hash = log_hash
         self.gc = gc
+        self.selected_logs = selected_logs
         inputData_copy = self.fetchData(inputData)
         self.dataSource = inputData_copy
 
@@ -1446,6 +1447,9 @@ class TableModel(QAbstractTableModel):
     def fetchData(self, inputData):
         table_col_dict = {}
         valid_df_dict = {}
+        log_hash = self.log_hash
+        if self.selected_logs is not None:
+            log_hash = self.selected_logs
         if isinstance(inputData, list):
             for data_list in inputData:
                 for param_dict in data_list:
@@ -1459,7 +1463,7 @@ class TableModel(QAbstractTableModel):
             for table in table_col_dict:
                 table_col_dict[table] = list(set(table_col_dict[table]))
                 sql = "select {} from {}".format(", ".join(table_col_dict[table]) , table)
-                sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.log_hash, self.time)
+                sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, log_hash, self.time)
                 with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                     df = pd.read_sql(sql, dbcon)
                     if len(df) > 0:

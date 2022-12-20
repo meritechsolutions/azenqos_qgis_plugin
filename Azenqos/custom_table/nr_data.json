@@ -112,11 +112,11 @@
         {
             "type": "element",
             "value": null,
-            "param": "nr_mac_tp_dl_mbps",
+            "param": "nr_p_plus_scell_nr_dl_mac_tput_mbps",
             "arg": "1",
             "color": "#FFFFFF",
             "percent": null,
-            "param_name": "nr_mac_tp_dl_mbps_1"
+            "param_name": "nr_p_plus_scell_nr_dl_mac_tput_mbps"
         }
     ],
     [

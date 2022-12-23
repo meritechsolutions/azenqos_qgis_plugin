@@ -11,7 +11,7 @@ import azq_utils
 import datetime
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
-from scipy import interpolate
+
 
 import data_query
 
@@ -202,8 +202,13 @@ class wifi_scan_chart(QtWidgets.QDialog):
                     level_list.append(-100)
                     level_list.append(level)
                     level_list.append(-100)
+
                     self._x_ = np.linspace(freq_list[0], freq_list[-1], 100)
+
+                    from scipy import interpolate
+
                     self._y_ = interpolate.pchip_interpolate(freq_list, level_list, self._x_)
+
                     line = self._ax_.plot(self._x_, self._y_)
                     kwargs['color'] = line[0].get_color()
                     kwargs['ha'] = 'center'

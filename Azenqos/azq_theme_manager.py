@@ -560,28 +560,27 @@ def get_theme_df_for_column(
             elm_info = preprocess_azm.get_elm_info(param_col)
         # print "got table name:", table_name
         # print "get col df"
-        col_to_select = preprocess_azm.get_elm_name_from_param_col_with_arg(param_col)
-        if elm_info is not None:
-            try:
-                print("elm_info:", elm_info, "elm_info.n_arg_max type", type(elm_info.n_arg_max))
-                # if empty means 1
-                if elm_info.n_arg_max:
-                    n_arg_max = pd.to_numeric(elm_info.n_arg_max)
-                    if n_arg_max > 1:
-                        col_to_select += "_1"
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print("WARNING: gen colname from nargmax check exception: " + exstr)
+        # col_to_select = preprocess_azm.get_elm_name_from_param_col_with_arg(param_col)
+        # if elm_info is not None:
+        #     try:
+        #         print("elm_info:", elm_info, "elm_info.n_arg_max type", type(elm_info.n_arg_max))
+        #         # if empty means 1
+        #         if elm_info.n_arg_max:
+        #             n_arg_max = pd.to_numeric(elm_info.n_arg_max)
+        #             if n_arg_max > 1:
+        #                 col_to_select += "_1"
+        #     except:
+        #         type_, value_, traceback_ = sys.exc_info()
+        #         exstr = str(traceback.format_exception(type_, value_, traceback_))
+        #         print("WARNING: gen colname from nargmax check exception: " + exstr)
 
-        datadfsql = "select {} from {}".format(col_to_select, table_name)
-        print("col_to_select:", col_to_select, "start sql:", datadfsql)
+        datadfsql = "select {} from {}".format(param_col, table_name)
+        print("col_to_select:", param_col, "start sql:", datadfsql)
         data_df = pd.read_sql(datadfsql, dbcon)
         if data_df is not None:
-            print("col_to_select:", col_to_select, "done - data_df len:", len(data_df))
+            print("col_to_select:", param_col, "done - data_df len:", len(data_df))
         else:
-            print("col_to_select:", col_to_select, "done - data_df is None")
-        param_col = col_to_select
+            print("col_to_select:", param_col, "done - data_df is None")
 
     # print "generate_theme_from_data for param_col {} and ret".format(param_col)
 

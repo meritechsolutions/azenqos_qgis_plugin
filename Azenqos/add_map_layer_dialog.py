@@ -33,7 +33,7 @@ class add_map_layer_dialog(QDialog):
         self.ui.comboBox.addItem(self.param)
         self.ui.comboBox.setEditable(False)
         self.ui.comboBox.setEnabled(False)
-        self.ui.comboBox_2.addItem(self.arg)
+        # self.ui.comboBox_2.addItem(self.arg)
         for i in range(int(self.n_arg_max)):
             arg = str(i+1)
             self.ui.comboBox_2.addItem(arg)
@@ -59,7 +59,7 @@ class add_map_layer_dialog(QDialog):
                 if not result:
                     return
                 selected_ue = dlg.log
-            create_param_layer(self.gc, self.param, selected_ue)
+            create_param_layer(self.gc, self.param_name, selected_ue)
         except Exception as e:
             QMessageBox.warning(
                 None,

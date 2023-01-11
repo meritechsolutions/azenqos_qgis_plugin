@@ -16,7 +16,7 @@ from functools import partial
 import azq_server_api
 import azq_utils
 
-MAX_LHL_LEN = 100
+MAX_LHL_LEN = 500
 GUI_SETTING_NAME_PREFIX = "{}/".format(os.path.basename(__file__))
 DOCKER_NW_SERVER_URL = "https://nginx:8443"
 import signal

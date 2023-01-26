@@ -1867,8 +1867,8 @@ Log_hash list: {}""".format(
             selected_ue = dlg.log
         if len(paramList) == 0:
             paramList=[
-                {"name": "wcdma_aset_ecio_avg", "selected_ue": selected_ue},
-                {"name": "wcdma_aset_rscp_avg", "selected_ue": selected_ue},
+                {"name": "wcdma_aset_ecio_1", "selected_ue": selected_ue},
+                {"name": "wcdma_aset_rscp_1", "selected_ue": selected_ue},
                 {"name": "wcdma_rssi", "selected_ue": selected_ue},
                 {"name": "wcdma_bler_average_percent_all_channels", "selected_ue": selected_ue},
             ]

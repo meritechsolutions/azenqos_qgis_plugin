@@ -2043,8 +2043,8 @@ Log_hash list: {}""".format(
             from PyQt5 import QtCore
 
             self.gc.timeSlider.setBaseSize(QtCore.QSize(500, 0))
-            self.gc.timeSlider.setPageStep(1000)  # 1 second for pageup/down, use neg for pgup to go backwards
-            self.gc.timeSlider.setSingleStep(100)  # 1 second for pageup/down
+            self.gc.timeSlider.setPageStep(1)  # 1 second for pageup/down, use neg for pgup to go backwards
+            self.gc.timeSlider.setSingleStep(1)  # 1 second for pageup/down
             self.gc.timeSlider.setInvertedControls(True)  # so pageup would go to past, pagedown would go to future time
             self.gc.timeSlider.setSliderPosition(0)
             self.gc.timeSlider.setOrientation(QtCore.Qt.Horizontal)

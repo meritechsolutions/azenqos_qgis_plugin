@@ -46,7 +46,12 @@ def tshark_decode_hex(side, name, protocol, detail):
         hexStr = "o "
     hexStr = hexStr + "000000 "
     msg = "msg_raw_hex: "
-    hexStr = hexStr + detail[detail.rindex(msg) + len(msg):]
+    msg_raw_hex = detail[detail.rindex(msg) + len(msg):]
+    if protocol == "5GSM":
+        hexStr += "2e " if not msg_raw_hex.startswith("2e") else ""
+    if protocol == "5GMM":
+        hexStr += "7e " if not msg_raw_hex.startswith("7e") else ""
+    hexStr += msg_raw_hex
     hexStr = hexStr.split("\n")[0]
     print("text2pcap input content:", hexStr)
 

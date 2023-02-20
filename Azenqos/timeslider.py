@@ -21,7 +21,7 @@ class timeSlider(QSlider):
         # Set integer max and min on parent. These stay constant.
         # self._min_int = self.gc.minTimeValue
         super().setMinimum(0)
-        self._max_int = int(self.gc.sliderLength * 1000)
+        self._max_int = int(self.gc.sliderLength)
         super().setMaximum(self._max_int)
         # The "actual" min and max values seen by user.
         self._min_value = 0.0

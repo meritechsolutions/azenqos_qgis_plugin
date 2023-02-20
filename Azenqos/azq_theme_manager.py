@@ -552,12 +552,12 @@ def get_theme_df_for_column(
     print("generate theme_df from data 0")
 
     if data_df is None:
-        elm_info = None
+        # elm_info = None
         dprint("data_df is None - get it from dbcon...")
         # print "get table name"
         if table_name is None:
             table_name = preprocess_azm.get_table_for_column(param_col)
-            elm_info = preprocess_azm.get_elm_info(param_col)
+            # elm_info = preprocess_azm.get_elm_info(param_col)
         # print "got table name:", table_name
         # print "get col df"
         # col_to_select = preprocess_azm.get_elm_name_from_param_col_with_arg(param_col)

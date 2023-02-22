@@ -1682,6 +1682,7 @@ class PdTableModel(QAbstractTableModel):
             )  # this wont have an effect if called from non-ui thread hence we use signal_ui_thread_emit_model_datachanged...
             """
             self.parent.signal_ui_thread_emit_model_datachanged.emit()
+            self.parent.findCurrentRow()
             print("pdtablemodel setStrColFilters emit done")
         else:
             print("pdtablemodel setStrColFilters not changed")

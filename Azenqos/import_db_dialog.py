@@ -628,7 +628,7 @@ class import_db_dialog(QDialog):
 
 
     def setIncrementValue(self):
-        self.gc.sliderLength = self.gc.maxTimeValue - self.gc.minTimeValue
+        self.gc.sliderLength = 2147483647
         self.gc.sliderLength = round(self.gc.sliderLength, 3)
 
     def removeMainMenu(self):

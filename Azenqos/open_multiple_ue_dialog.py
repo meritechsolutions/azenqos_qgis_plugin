@@ -340,7 +340,7 @@ class open_multiple_ue_dialog(QDialog):
         return True
 
     def setIncrementValue(self):
-        self.gc.sliderLength = self.gc.maxTimeValue - self.gc.minTimeValue
+        self.gc.sliderLength = 2147483647
         self.gc.sliderLength = round(self.gc.sliderLength, 3)
 
     def addDatabase(self):

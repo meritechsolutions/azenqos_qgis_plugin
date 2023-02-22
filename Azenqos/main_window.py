@@ -2468,9 +2468,8 @@ Log_hash list: {}""".format(
         selectedTimestamp = None
         selectedTimestamp = azq_utils.datetimeStringtoTimestamp(selected_time)
         if selectedTimestamp:
-            timeSliderValue = self.gc.sliderLength - (
-                self.gc.maxTimeValue - selectedTimestamp
-            )
+            timeSliderValue = selectedTimestamp - self.gc.minTimeValue
+            timeSliderValue = round(timeSliderValue, 3)
             self.gc.timeSlider.setValue(timeSliderValue)
             self.gc.timeSlider.update()
 

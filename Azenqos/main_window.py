@@ -1242,6 +1242,17 @@ Log_hash list: {}""".format(
         import calculate_poi_dialog
         dlg = calculate_poi_dialog.calculate_poi(self.gc, self.poi_result_signal, self.poi_progress_signal, self.poi_open_signal)
         dlg.show()
+    ############# Add POI Layer menu slots
+
+    
+    @pyqtSlot()
+    def on_actionCalculate_KPI_from_exclusion_by_polygon_triggered(self):
+        print("action calculate kpi exclusion")
+        import polygon_kpi_exclusion_widget
+        widget = polygon_kpi_exclusion_widget.polygon_kpi_exclusion(self, self.gc)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
+
 
     ############# Data menu slots
 

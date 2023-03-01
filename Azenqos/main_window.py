@@ -1252,6 +1252,16 @@ Log_hash list: {}""".format(
         widget = polygon_kpi_exclusion_widget.polygon_kpi_exclusion(self, self.gc)
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
+    ############# Add POI Layer menu slots
+
+    
+    @pyqtSlot()
+    def on_actionLayer_Distance_Binning_triggered(self):
+        print("action distance bin")
+        import distance_bin
+        widget = distance_bin.distance_bin(self, self.gc)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
 
 
     ############# Data menu slots

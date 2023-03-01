@@ -280,6 +280,7 @@
     <addaction name="actionAdd_POI_Layer"/>
     <addaction name="actionCalculate_POI_Coverage"/>
     <addaction name="actionCalculate_KPI_from_exclusion_by_polygon"/>
+    <addaction name="actionLayer_Distance_Binning"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -1049,6 +1050,11 @@
   <action name="actionCalculate_KPI_from_exclusion_by_polygon">
    <property name="text">
     <string>Calculate KPI from exclusion by polygon</string>
+   </property>
+  </action>
+  <action name="actionLayer_Distance_Binning">
+   <property name="text">
+    <string>Layer Distance Binning</string>
    </property>
   </action>
  </widget>

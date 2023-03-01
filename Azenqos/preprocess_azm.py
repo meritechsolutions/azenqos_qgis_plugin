@@ -1211,7 +1211,7 @@ def get_table_for_column(param_col_with_arg):
     return str(row.db_table).strip()
 
 
-def get_elm_info(param_col_with_arg):
+def get_elm_info(param_col_with_arg, filter_number_param=False):
     elm_type = "double"
     # elm_id = None
 
@@ -1224,6 +1224,8 @@ def get_elm_info(param_col_with_arg):
         # now get elm_id
         elm_df = get_elm_df_from_csv()
         matched_rows = elm_df.query("var_name == '{}'".format(elm_name))
+        if filter_number_param:
+            matched_rows = elm_df.query("var_type == 'Double' or var_type == 'Integer'")
         dprint("match for elm_name result nrows:", len(matched_rows))
         if len(matched_rows) > 0:
             row = matched_rows.iloc[0].copy()

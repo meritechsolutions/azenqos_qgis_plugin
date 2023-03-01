@@ -73,12 +73,13 @@ class polygon_kpi_exclusion(QWidget):
     def select_input_layer(self):
         self.input_layer_name = self.ui.inputLayerComboBox.currentText()
         feature_layer = QgsProject.instance().mapLayersByName(self.input_layer_name)[0]
-        columns = [f.name() for f in feature_layer.fields()]
-        for column in columns:
-            self.ui.filterParamComboBox.addItem(column)
-        if self.input_layer_name in columns:
-            self.filter_value = self.input_layer_name
-            self.filterParamComboBox.setCurrentText(self.input_layer_name)
+        if self.input_layer_name != "OSM":
+            columns = [f.name() for f in feature_layer.fields()]
+            for column in columns:
+                self.ui.filterParamComboBox.addItem(column)
+            if self.input_layer_name in columns:
+                self.filter_value = self.input_layer_name
+                self.filterParamComboBox.setCurrentText(self.input_layer_name)
 
 
     def on_calculate_button_click(self):

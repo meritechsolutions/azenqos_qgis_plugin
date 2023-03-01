@@ -107,7 +107,6 @@ class distance_bin(QWidget):
                                                         distance_bin_meters, agg_dict=distance_bin_agg_dict,
                                                         keep_new_cols=False)
         df_prepare_data = df_prepare_data[ori_cols]
-        print("ttttt", ori_cols)
         
         if self.gvars.is_indoor:
             location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
@@ -117,4 +116,4 @@ class distance_bin(QWidget):
             if "geom" in df_prepare_data.columns:
                 del df_prepare_data["geom"]
 
-        azq_utils.create_layer_in_qgis(self.gvars.databasePath, df_prepare_data, self.input_layer_name+"_binneng_"+self.distance, theme_param = self.main_parameter)
+        azq_utils.create_layer_in_qgis(self.gvars.databasePath, df_prepare_data, self.input_layer_name+"_binning_"+self.distance, theme_param = self.main_parameter)

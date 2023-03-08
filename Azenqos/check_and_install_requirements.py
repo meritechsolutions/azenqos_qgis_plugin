@@ -19,10 +19,12 @@ def check_and_install_requirements():
     assert os.path.isdir(wheel_dp)
     cp_pattern = "cp{}{}".format(sys.version_info.major, sys.version_info.minor)
     compat_wheel_pattern = "*-*-{}*.whl".format(cp_pattern)
+    any_wheel_pattern = "*-any.whl"
     
     import glob
     whl_list = glob.glob(os.path.join(wheel_dp, compat_wheel_pattern))
     whl_list = sorted(whl_list) #install numpy before scipy
+    whl_list.extend(glob.glob(os.path.join(wheel_dp, any_wheel_pattern)))
 
     requirement_fp = get_local_fp('requirements.txt')
     requirement_list = None

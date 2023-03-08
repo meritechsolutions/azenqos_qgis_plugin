@@ -47,13 +47,16 @@ def check_and_install_requirements():
 
     if needs_install:
         print("need_to_restart")
-        for whl in whl_list:
-            subprocess.call(['python', '-m', 'pip', 'install', whl])
-        try:
-            subprocess.check_output(['python', '-m', 'pip', 'install', '-r', requirement_fp], stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            outstr = e.output
-            qt_utils.msgbox("Azenqos plugin failed to install required dependencies, please email below error msg to support@azenqos.com:\n\n" + outstr.decode("utf-8"), title="AZENQOS Dependency Install Fail")
-            return False 
+        
+        if os.name == "nt":
+            for whl in whl_list:
+                subprocess.call(['python', '-m', 'pip', 'install', whl])
+        else:
+            try:
+                subprocess.check_output(['python', '-m', 'pip', 'install', '-r', requirement_fp], stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                outstr = e.output
+                qt_utils.msgbox("Azenqos plugin failed to install required dependencies, please email below error msg to support@azenqos.com:\n\n" + outstr.decode("utf-8"), title="AZENQOS Dependency Install Fail")
+        return False 
 
     return True

@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from functools import cmp_to_key
 
 import qt_utils
 
@@ -10,6 +11,19 @@ def get_module_path():
 
 def get_local_fp(fn):
     return os.path.join(get_module_path(), fn)
+
+priority_whl_list = ["six", "pytz", "certifi", "urllib3", "chardet", "idna", "requests", "python_dateutil", "packaging", "numpy", "pandas", "scipy", "pyarrow", "psutil", "fsspec", "cramjam", "fastparquet", "pyqtgraph", "spatialite"]
+def compare(item1, item2):
+    item1_index = 999
+    item2_index = 999
+    index = 0
+    for whl in priority_whl_list:
+        if whl+"-" in item1:
+            item1_index = index
+        if whl+"-" in item2:
+            item2_index = index
+        index += 1    
+    return item1_index - item2_index
 
 def check_and_install_requirements():
     needs_install = False
@@ -23,27 +37,36 @@ def check_and_install_requirements():
     
     import glob
     whl_list = glob.glob(os.path.join(wheel_dp, compat_wheel_pattern))
-    whl_list = sorted(whl_list) #install numpy before scipy
     whl_list.extend(glob.glob(os.path.join(wheel_dp, any_wheel_pattern)))
+    whl_list = sorted(whl_list, key=cmp_to_key(compare)) #install numpy before scipy
 
     requirement_fp = get_local_fp('requirements.txt')
     requirement_list = None
-    with open(requirement_fp,"r") as f:
-        requirement_list = f.read().splitlines()
-    for requirement in requirement_list:
-        requirement = requirement.lower().strip()
-        sub_index = requirement.index('==')
-        lib_name = requirement[0:sub_index]
-        version = requirement[sub_index+2:]
-        try:
-            exec("import {}".format(lib_name))
-            existing_version = eval("{}.__version__".format(lib_name))
-            if version != existing_version:
-                raise Exception
-        except:
-            needs_install = True
-            print("not found:", requirement)
-            break
+    
+    if os.name == "nt":
+        output = subprocess.check_output(["pip", "freeze"]).decode("utf-8")
+        for whl in whl_list:
+            whl_basename = os.path.basename(whl)
+            if whl_basename not in output:
+                needs_install = True
+                break
+    else:
+        with open(requirement_fp,"r") as f:
+            requirement_list = f.read().splitlines()
+        for requirement in requirement_list:
+            requirement = requirement.lower().strip()
+            sub_index = requirement.index('==')
+            lib_name = requirement[0:sub_index]
+            version = requirement[sub_index+2:]
+            try:
+                exec("import {}".format(lib_name))
+                existing_version = eval("{}.__version__".format(lib_name))
+                if version != existing_version:
+                    raise Exception
+            except:
+                needs_install = True
+                print("not found:", requirement)
+                break
 
     if needs_install:
         print("need_to_restart")

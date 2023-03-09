@@ -2077,7 +2077,6 @@ Log_hash list: {}""".format(
 
             # Play Speed Textbox
             self.speedLabel = QLabel(self)
-            self.speedLabel.setGeometry(QtCore.QRect(480, 82, 40, 22))
             self.speedLabel.setObjectName("Speed")
             self.playSpeed = QLineEdit(self)
             self.onlyDouble = QDoubleValidator(self)
@@ -2091,16 +2090,10 @@ Log_hash list: {}""".format(
 
             # Datetime Textbox
             self.timeEdit = QDateTimeEdit(self)
-            self.timeEdit.setGeometry(QtCore.QRect(480, 56, 140, 22))
             self.timeEdit.setObjectName("timeEdit")
             self.timeEdit.setDisplayFormat("hh:mm:ss.zzz")
             self.timeEdit.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
             self.timeEdit.setReadOnly(True)
-
-            # Time label
-            self.timeSliderLabel = QLabel(self)
-            self.timeSliderLabel.setGeometry(QtCore.QRect(300, 30, 100, 16))
-            self.timeSliderLabel.setObjectName("timeSliderLabel")
 
             self.setupPlayStopButton()
 
@@ -2206,7 +2199,6 @@ Log_hash list: {}""".format(
         self.toolbar.addWidget(self.sync_connected_phone_button)
         self.toolbar.addWidget(self.live_button)
         self.toolbar.addSeparator()
-        self.toolbar.addWidget(self.timeSliderLabel)
         self.toolbar.addWidget(self.playButton)
         self.toolbar.addWidget(self.pauseButton)
         self.toolbar.addWidget(self.gc.timeSlider)
@@ -2272,8 +2264,6 @@ Log_hash list: {}""".format(
             self.gc.slowDownValue = value
 
     def setupPlayStopButton(self):
-        self.horizontalLayout = QWidget(self)
-        self.horizontalLayout.setGeometry(QtCore.QRect(290, 70, 90, 48))
         self.playButton = QToolButton()
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playButton.setToolTip(
@@ -2282,10 +2272,6 @@ Log_hash list: {}""".format(
         self.pauseButton = QToolButton()
         self.pauseButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
         self.pauseButton.setToolTip("<b>Pause</b><br> <i>Pause</i> log replay")
-        layout = QHBoxLayout(self.horizontalLayout)
-        layout.addStretch(1)
-        layout.addWidget(self.playButton)
-        layout.addWidget(self.pauseButton)
         self.playButton.clicked.connect(self.startPlaytimeThread)
         self.pauseButton.clicked.connect(self.pauseTime)
 

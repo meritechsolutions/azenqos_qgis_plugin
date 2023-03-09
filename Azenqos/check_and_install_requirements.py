@@ -72,6 +72,7 @@ def check_and_install_requirements():
         print("need_to_restart")
         
         if os.name == "nt":
+            subprocess.call(['pip', 'uninstall', ' '.join(priority_whl_list), '-y'])
             for whl in whl_list:
                 subprocess.call(['python', '-m', 'pip', 'install', whl])
         else:

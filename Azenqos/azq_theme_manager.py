@@ -2105,30 +2105,17 @@ def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
                 #####
 
                 if cell_file_theme_df is None:
-                    retdf.loc[retlen].ColorXml = match_color
+                    retdf.loc[retlen, "ColorXml"] = match_color
                     # print ("cell_file_theme_df is None")
                 else:
-                    # now we have unique color list for thousands of colors already - already set from psc/pci/bcch
-                    if False and match_color in cell_file_theme_list:
-                        print("match_color is in cell_file_theme_df.ColorXml")
-                        tmp_color_index = retlen + 1
-                        tmp_color = match_color
-                        while tmp_color in cell_file_theme_list:
-                            tmp_color = get_default_color_for_index(tmp_color_index)
-                            print(("re-generate param color :", param_col))
-                            dprint("match_value :", uv)
-                            tmp_color_index += 1
-
-                        retdf.loc[retlen].ColorXml = tmp_color
-                    else:
-                        retdf.loc[retlen].ColorXml = match_color
-                        # dprint ("match_color is not in cell_file_theme_df.ColorXml")
-                        dprint(match_color)
-                        dprint(list(cell_file_theme_df.ColorXml))
-                    cell_file_theme_list.append(retdf.loc[retlen].ColorXml)
-                retdf.loc[retlen].match_value = uv
+                    retdf.loc[retlen, "ColorXml"] = match_color
+                    # dprint ("match_color is not in cell_file_theme_df.ColorXml")
+                    dprint(match_color)
+                    dprint(list(cell_file_theme_df.ColorXml))
+                    cell_file_theme_list.append(retdf.loc[retlen, "ColorXml"])
+                retdf.loc[retlen, "match_value"] = uv
                 # print "retdf.loc[retlen].match_value type",type(retdf.loc[retlen].match_value)," uv type ",type(uv)
-                retdf.loc[retlen].PointSize = 6
+                retdf.loc[retlen, "PointSize"] = 6
                 retlen += 1
 
         print("for uv in unique_vals done")
@@ -2168,12 +2155,12 @@ def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
 
         for i in range(int(n_buckets)):
             retdf.loc[i] = None
-            retdf.loc[i].ColorXml = get_default_color_for_index(i)
-            retdf.loc[i].Lower = str(data_min + ((data_width) * i))
-            retdf.loc[i].Upper = str(data_min + ((data_width) * (i + 1)))
-            retdf.loc[i].PointSize = 6
+            retdf.loc[i, "ColorXml"] = get_default_color_for_index(i)
+            retdf.loc[i, "Lower"] = str(data_min + ((data_width) * i))
+            retdf.loc[i, "Upper"] = str(data_min + ((data_width) * (i + 1)))
+            retdf.loc[i, "PointSize"] = 6
             if i == int(n_buckets) - 1:
-                retdf.loc[i].Upper = str(data_min + ((data_width) * (i + 1)) + 1)
+                retdf.loc[i, "Upper"] = str(data_min + ((data_width) * (i + 1)) + 1)
 
         """
         color_data = [
@@ -2205,10 +2192,10 @@ def generate_theme_with_step(start, end, step):
     last_upper = start
     for i in range(n_buckets):
         retdf.loc[i] = None
-        retdf.loc[i].ColorXml = get_default_color_for_index(i)
-        retdf.loc[i].Lower = str(last_upper)
+        retdf.loc[i, "ColorXml"] = get_default_color_for_index(i)
+        retdf.loc[i, "Lower"] = str(last_upper)
         last_upper += step
-        retdf.loc[i].Upper = str(last_upper)
-        retdf.loc[i].PointSize = 6
+        retdf.loc[i, "Upper"] = str(last_upper)
+        retdf.loc[i, "PointSize"] = 6
 
     return retdf

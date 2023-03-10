@@ -27,6 +27,10 @@ def compare(item1, item2):
 
 def check_and_install_requirements():
     needs_install = False
+    import azq_utils
+    import version
+    if version.VERSION == azq_utils.read_settings_file("current_plugun_version"):
+        return True
 
     # pkg_list = [x.strip() for x in pkg_list]
     wheel_dp = get_local_fp('wheel')
@@ -81,6 +85,8 @@ def check_and_install_requirements():
             except subprocess.CalledProcessError as e:
                 outstr = e.output
                 qt_utils.msgbox("Azenqos plugin failed to install required dependencies, please email below error msg to support@azenqos.com:\n\n" + outstr.decode("utf-8"), title="AZENQOS Dependency Install Fail")
+        
+        azq_utils.write_settings_file("current_plugun_version", version.VERSION)
         return False 
 
     return True

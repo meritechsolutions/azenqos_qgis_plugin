@@ -29,7 +29,7 @@ def check_and_install_requirements():
     needs_install = False
     import azq_utils
     import version
-    if version.VERSION == azq_utils.read_settings_file("current_plugun_version"):
+    if str(version.VERSION) == str(azq_utils.read_settings_file("current_plugun_version")):
         return True
 
     # pkg_list = [x.strip() for x in pkg_list]
@@ -86,7 +86,7 @@ def check_and_install_requirements():
                 outstr = e.output
                 qt_utils.msgbox("Azenqos plugin failed to install required dependencies, please email below error msg to support@azenqos.com:\n\n" + outstr.decode("utf-8"), title="AZENQOS Dependency Install Fail")
         
-        azq_utils.write_settings_file("current_plugun_version", version.VERSION)
+        azq_utils.write_settings_file("current_plugun_version", str(version.VERSION))
         return False 
 
     return True

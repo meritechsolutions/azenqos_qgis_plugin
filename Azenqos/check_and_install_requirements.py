@@ -88,5 +88,7 @@ def check_and_install_requirements():
         
         azq_utils.write_settings_file("current_plugun_version", str(version.VERSION))
         return False 
+    
+    azq_utils.write_settings_file("current_plugun_version", str(version.VERSION))
 
     return True

@@ -78,7 +78,7 @@ def check_and_install_requirements():
         if os.name == "nt":
             subprocess.call(['pip', 'uninstall', ' '.join(priority_whl_list), '-y'])
             for whl in whl_list:
-                subprocess.call(['python', '-m', 'pip', 'install', whl])
+                subprocess.call(['python', '-m', 'pip', 'install', '--no-dependencies', whl])
         else:
             try:
                 subprocess.check_output(['python', '-m', 'pip', 'install', '-r', requirement_fp], stderr=subprocess.STDOUT)

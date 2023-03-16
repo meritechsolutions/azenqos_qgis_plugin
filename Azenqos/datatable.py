@@ -72,6 +72,7 @@ class TableWindow(QWidget):
     signal_ui_thread_emit_new_model = pyqtSignal()
     signal_ui_thread_setup_ui = pyqtSignal()  # use with skip_setup_ui in ctor
     signal_ui_thread_emit_select_row = pyqtSignal(int)
+    signal_ui_thread_emit_select_row_time = pyqtSignal(float)
 
     progress_update_signal = pyqtSignal(int)
     status_update_signal = pyqtSignal(str)
@@ -935,7 +936,8 @@ class TableWindow(QWidget):
                     self.gc.selected_point_match_dict = dict.fromkeys(analyzer_vars.SELECTED_POINT_MATCH_PARAMS)  # new dict with non vals in keys
                     self.gc.selected_point_match_dict["time"] = selected_row_time
                     self.gc.selected_point_match_dict["log_hash"] = selected_row_log_hash
-                    self.gc.timeSlider.setValue(sliderValue)
+                    self.signal_ui_thread_emit_select_row_time.emit(sliderValue)
+                    # self.gc.timeSlider.setValue(sliderValue)
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))

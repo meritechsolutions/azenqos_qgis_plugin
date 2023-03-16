@@ -144,6 +144,7 @@ class main_window(QMainWindow):
         self.is_leg_nr_tables = False
         self.asked_easy_mode = False
         self.close_all_layers = True
+        self.update_from_data_table = None
         self.timechange_to_service_counter = atomic_int(0)
         self.signal_ui_thread_emit_time_slider_updated.connect(
             self.ui_thread_emit_time_slider_updated
@@ -622,6 +623,12 @@ Log_hash list: {}""".format(
             custom_table_main_not_null=custom_table_main_not_null,
             selected_ue=selected_ue
         )
+        
+        def updateTime(time):
+            self.update_from_data_table = widget
+            self.setTimeValue(time)
+
+        widget.signal_ui_thread_emit_select_row_time.connect(updateTime)
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=allow_no_log_opened)
         #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
@@ -2783,13 +2790,15 @@ Log_hash list: {}""".format(
                         "%s: timeChange7 hilightrow window %s"
                         % (os.path.basename(__file__), window.title)
                     )
-                    window.hilightRow(sampledate)
+                    if window != self.update_from_data_table:
+                        window.hilightRow(sampledate)
                 else:
                     print(
                         "%s: timeChange7 movechart window %s"
                         % (os.path.basename(__file__), window.title)
                     )
                     window.moveChart(sampledate)
+            self.update_from_data_table = None
         print("%s: timeChange9" % os.path.basename(__file__))
         # text = "[--" + str(len(self.gc.tableList) + "--]"
         # QgsMessageLog.logMessage(text)

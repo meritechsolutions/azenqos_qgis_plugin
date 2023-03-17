@@ -1,8 +1,10 @@
 import os
 import sys
 import time
+import asyncio
 
 # Adding folder path
+from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QSlider
 
@@ -88,7 +90,7 @@ class timeSliderThread(QThread):
             pass
 
     def run(self):
-        self.playTime()
+        asyncio.run(self.playTime())
 
     def getCurrentValue(self):
         if self.currentSliderValue:
@@ -96,7 +98,7 @@ class timeSliderThread(QThread):
         else:
             return 0
 
-    def playTime(self):
+    async def playTime(self):
         self.gc.timeSlider.setDisabled(True)
         timeskip = 0
         if float(1 / self.gc.fastForwardValue) >= 0.25:
@@ -111,58 +113,25 @@ class timeSliderThread(QThread):
                 "timeslider self.currentSliderValue: {}".format(self.currentSliderValue)
             )
             if self.currentSliderValue:
-                for x in np.arange(
-                    self.currentSliderValue,
-                    self.gc.sliderLength,
-                    ((1 * self.gc.slowDownValue) + timeskip),
-                ):
-                    if not self.gc.isSliderPlay:
-                        break
-                    else:
-                        time.sleep(sleeptime)
-                        print(
-                            "valupper timeskip",
-                            timeskip,
-                            "gc.timeSlider.value()",
-                            self.gc.timeSlider.value(),
-                            "gc.slowDownValue",
-                            self.gc.slowDownValue,
-                        )
-                        value = self.gc.timeSlider.value() + (
-                            (1 * self.gc.slowDownValue) + timeskip
-                        )
-                        print("timeslider upper emit: {}".format(value))
-                        self.gc.selected_point_match_dict["log_hash"] = None  # clear selected log_hash has time moved from this play thread
-                        self.changeValue.emit(value)
-
-                    if x >= self.gc.sliderLength:
-                        self.gc.isSliderPlay = False
-                        break
+                while self.gc.isSliderPlay and self.currentSliderValue < self.gc.sliderLength:
+                    await asyncio.sleep(sleeptime)
+                    value = self.gc.timeSlider.value() + ((1 * self.gc.slowDownValue) + timeskip)
+                    self.gc.selected_point_match_dict["log_hash"] = None
+                    self.changeValue.emit(value)
+                    self.currentSliderValue += ((1 * self.gc.slowDownValue) + timeskip)
+                    
+                if self.currentSliderValue >= self.gc.sliderLength:
+                    self.gc.isSliderPlay = False
             else:
-                for x in np.arange(
-                    0, self.gc.sliderLength, ((1 * self.gc.slowDownValue) + timeskip)
-                ):
-                    if not self.gc.isSliderPlay:
-                        break
-                    else:
-                        time.sleep(sleeptime)
-                        print(
-                            "vallower timeskip",
-                            timeskip,
-                            "gc.timeSlider.value()",
-                            self.gc.timeSlider.value(),
-                            "gc.slowDownValue",
-                            self.gc.slowDownValue,
-                        )
-                        value = self.gc.timeSlider.value() + (
-                            (1 * self.gc.slowDownValue) + timeskip
-                        )
-                        print("timeslider lower emit: {}".format(value))
-                        self.changeValue.emit(value)
-
-                    if x >= self.gc.sliderLength:
-                        self.gc.isSliderPlay = False
-                        break
+                x = 0
+                while self.gc.isSliderPlay and x < self.gc.sliderLength:
+                    await asyncio.sleep(sleeptime)
+                    value = self.gc.timeSlider.value() + ((1 * self.gc.slowDownValue) + timeskip)
+                    self.changeValue.emit(value)
+                    x += ((1 * self.gc.slowDownValue) + timeskip)
+                    
+                if x >= self.gc.sliderLength:
+                    self.gc.isSliderPlay = False
         else:
             self.quit()
 

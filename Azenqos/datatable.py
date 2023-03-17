@@ -291,7 +291,7 @@ class TableWindow(QWidget):
 
         # self.tableView.verticalHeader().setMinimumSectionSize(12)
         self.tableView.setWordWrap(False)
-        self.tableView.resizeRowsToContents()
+        # self.tableView.resizeRowsToContents()
         self.tableView.verticalHeader().setDefaultSectionSize(self.tableView.verticalHeader().minimumSectionSize())
         self.tableView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tableView.horizontalHeader().setStretchLastSection(True)
@@ -937,7 +937,7 @@ class TableWindow(QWidget):
                     self.gc.selected_point_match_dict["time"] = selected_row_time
                     self.gc.selected_point_match_dict["log_hash"] = selected_row_log_hash
                     self.signal_ui_thread_emit_select_row_time.emit(sliderValue)
-                    # self.gc.timeSlider.setValue(sliderValue)
+                    self.find_row_time_string = selected_row_time_string
                 except:
                     type_, value_, traceback_ = sys.exc_info()
                     exstr = str(traceback.format_exception(type_, value_, traceback_))

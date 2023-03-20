@@ -27,10 +27,17 @@ def compare(item1, item2):
 
 def check_and_install_requirements():
     needs_install = False
-    import azq_utils
     import version
-    if str(version.VERSION) == str(azq_utils.read_settings_file("current_plugun_version")):
-        return True
+    module_path = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    current_plugin_version_path = os.path.join(module_path,"current_plugin_version")
+
+    try:
+        with open(current_plugin_version_path, "r") as f:
+            ret = f.readline()
+            if str(version.VERSION) == ret.strip():
+                return True
+    except:
+        pass
 
     # pkg_list = [x.strip() for x in pkg_list]
     wheel_dp = get_local_fp('wheel')
@@ -46,14 +53,15 @@ def check_and_install_requirements():
 
     requirement_fp = get_local_fp('requirements.txt')
     requirement_list = None
-    
+    not_exist_whl_list = []
     if os.name == "nt":
         output = subprocess.check_output(["pip", "freeze"]).decode("utf-8")
         for whl in whl_list:
             whl_basename = os.path.basename(whl)
             if whl_basename not in output:
-                needs_install = True
-                break
+                not_exist_whl_list.append(whl)
+        if len(not_exist_whl_list) > 0:
+            needs_install = True
     else:
         with open(requirement_fp,"r") as f:
             requirement_list = f.read().splitlines()
@@ -76,8 +84,11 @@ def check_and_install_requirements():
         print("need_to_restart")
         
         if os.name == "nt":
-            subprocess.call(['pip', 'uninstall', ' '.join(priority_whl_list), '-y'])
-            for whl in whl_list:
+            for whl in not_exist_whl_list:
+                try:
+                    subprocess.check_call(['pip', 'uninstall', '-y', whl])
+                except:
+                    pass
                 subprocess.call(['python', '-m', 'pip', 'install', '--no-dependencies', whl])
         else:
             try:
@@ -86,9 +97,12 @@ def check_and_install_requirements():
                 outstr = e.output
                 qt_utils.msgbox("Azenqos plugin failed to install required dependencies, please email below error msg to support@azenqos.com:\n\n" + outstr.decode("utf-8"), title="AZENQOS Dependency Install Fail")
         
-        azq_utils.write_settings_file("current_plugun_version", str(version.VERSION))
+        
+        with open(current_plugin_version_path, "w") as f:
+            ret = f.write(str(version.VERSION))
         return False 
     
-    azq_utils.write_settings_file("current_plugun_version", str(version.VERSION))
+    with open(current_plugin_version_path, "w") as f:
+        ret = f.write(str(version.VERSION))
 
     return True

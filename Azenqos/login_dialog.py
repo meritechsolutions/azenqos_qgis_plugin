@@ -191,7 +191,7 @@ class login_dialog(QDialog):
         print("lhl:", lhl)
         try:
             if lhl:
-                lhl = pd.Series(lhl, dtype=np.int64)
+                lhl = pd.Series(lhl)
         except:
             QtWidgets.QMessageBox.critical(
                 None,
@@ -200,6 +200,7 @@ class login_dialog(QDialog):
                 QtWidgets.QMessageBox.Ok,
             )
             return False
+        lhl = lhl.astype(np.int64)
 
         if len(lhl) > MAX_LHL_LEN:
             QtWidgets.QMessageBox.critical(

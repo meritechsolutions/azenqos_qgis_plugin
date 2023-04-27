@@ -92,11 +92,11 @@
         {
             "type": "element",
             "value": null,
-            "param": "data_gsm_rlc_ul_throughput",
+            "param": "data_gsm_rlc_dl_throughput",
             "arg": "1",
             "color": "#FFFFFF",
             "percent": null,
-            "param_name": "data_gsm_rlc_ul_throughput"
+            "param_name": "data_gsm_rlc_dl_throughput"
         }
     ],
     [
@@ -112,11 +112,11 @@
         {
             "type": "element",
             "value": null,
-            "param": "data_gsm_rlc_dl_throughput",
+            "param": "data_gsm_rlc_ul_throughput",
             "arg": "1",
             "color": "#FFFFFF",
             "percent": null,
-            "param_name": "data_gsm_rlc_dl_throughput"
+            "param_name": "data_gsm_rlc_ul_throughput"
         }
     ],
     [
@@ -182,7 +182,7 @@
     [
         {
             "type": "text",
-            "value": "Ul Timeslot Used",
+            "value": "UL Timeslot Used",
             "param": null,
             "arg": null,
             "color": "#FFFFFF",

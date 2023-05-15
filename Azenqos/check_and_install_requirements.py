@@ -2,7 +2,6 @@ import subprocess
 import os
 import sys
 from functools import cmp_to_key
-from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import qt_utils
 
@@ -29,17 +28,17 @@ def compare(item1, item2):
 def check_and_install_requirements():
     needs_install = False
     import version
-    module_path = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    import azq_utils
+    module_path = azq_utils.tmp_gen_path_parent()
     current_plugin_version_path = os.path.join(module_path,"current_plugin_version")
 
-    if os.name == "nt":
-        try:
-            with open(current_plugin_version_path, "r") as f:
-                ret = f.readline()
-                if str(version.VERSION) == ret.strip():
-                    return True
-        except:
-            pass
+    try:
+        with open(current_plugin_version_path, "r") as f:
+            ret = f.readline()
+            if str(version.VERSION) == ret.strip():
+                return True
+    except:
+        pass
 
     # pkg_list = [x.strip() for x in pkg_list]
     wheel_dp = get_local_fp('wheel')
@@ -71,14 +70,15 @@ def check_and_install_requirements():
             requirement = requirement.lower().strip()
             sub_index = requirement.index('==')
             lib_name = requirement[0:sub_index]
-            output = subprocess.check_output(["pip", "freeze"]).decode("utf-8")
-            if lib_name.lower() not in output:
-                msgBox = QMessageBox(None)
-                msgBox.setWindowTitle("Restart")
-                msgBox.setText("{} not in {} will install requirement".format(lib_name.lower(), output))
-                msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
-                msgBox.exec_()
+            lib_version = requirement[sub_index+2:]
+            try:
+                exec("import {}".format(lib_name))
+                existing_version = eval("{}.__version__".format(lib_name))
+                if lib_version != existing_version:
+                    raise Exception
+            except:
                 needs_install = True
+                print("not found:", requirement)
                 break
 
     if needs_install:
@@ -91,8 +91,6 @@ def check_and_install_requirements():
                 except:
                     pass
                 subprocess.call(['python', '-m', 'pip', 'install', '--no-dependencies', whl])
-            with open(current_plugin_version_path, "w") as f:
-                ret = f.write(str(version.VERSION))
         else:
             try:
                 subprocess.check_output(['python', '-m', 'pip', 'install', '-r', requirement_fp], stderr=subprocess.STDOUT)
@@ -101,10 +99,12 @@ def check_and_install_requirements():
                 qt_utils.msgbox("Azenqos plugin failed to install required dependencies, please email below error msg to support@azenqos.com:\n\n" + outstr.decode("utf-8"), title="AZENQOS Dependency Install Fail")
         
         
-        return False 
-    
-    if os.name == "nt":
         with open(current_plugin_version_path, "w") as f:
             ret = f.write(str(version.VERSION))
+            
+        return False 
+    
+    with open(current_plugin_version_path, "w") as f:
+        ret = f.write(str(version.VERSION))
 
     return True

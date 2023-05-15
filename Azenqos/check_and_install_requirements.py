@@ -2,6 +2,7 @@ import subprocess
 import os
 import sys
 from functools import cmp_to_key
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 
 import qt_utils
 
@@ -71,7 +72,12 @@ def check_and_install_requirements():
             sub_index = requirement.index('==')
             lib_name = requirement[0:sub_index]
             output = subprocess.check_output(["pip", "freeze"]).decode("utf-8")
-            if lib_name not in output:
+            if lib_name.lower() not in output:
+                msgBox = QMessageBox(None)
+                msgBox.setWindowTitle("Restart")
+                msgBox.setText("{} not in {} will install requirement".format(lib_name.lower(), output))
+                msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
+                msgBox.exec_()
                 needs_install = True
                 break
 

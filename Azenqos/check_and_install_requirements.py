@@ -70,11 +70,11 @@ def check_and_install_requirements():
             requirement = requirement.lower().strip()
             sub_index = requirement.index('==')
             lib_name = requirement[0:sub_index]
-            version = requirement[sub_index+2:]
+            lib_version = requirement[sub_index+2:]
             try:
                 exec("import {}".format(lib_name))
                 existing_version = eval("{}.__version__".format(lib_name))
-                if version != existing_version:
+                if lib_version != existing_version:
                     raise Exception
             except:
                 needs_install = True

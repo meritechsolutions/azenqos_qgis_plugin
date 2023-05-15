@@ -31,13 +31,14 @@ def check_and_install_requirements():
     module_path = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
     current_plugin_version_path = os.path.join(module_path,"current_plugin_version")
 
-    try:
-        with open(current_plugin_version_path, "r") as f:
-            ret = f.readline()
-            if str(version.VERSION) == ret.strip():
-                return True
-    except:
-        pass
+    if os.name == "nt":
+        try:
+            with open(current_plugin_version_path, "r") as f:
+                ret = f.readline()
+                if str(version.VERSION) == ret.strip():
+                    return True
+        except:
+            pass
 
     # pkg_list = [x.strip() for x in pkg_list]
     wheel_dp = get_local_fp('wheel')
@@ -90,6 +91,8 @@ def check_and_install_requirements():
                 except:
                     pass
                 subprocess.call(['python', '-m', 'pip', 'install', '--no-dependencies', whl])
+            with open(current_plugin_version_path, "w") as f:
+                ret = f.write(str(version.VERSION))
         else:
             try:
                 subprocess.check_output(['python', '-m', 'pip', 'install', '-r', requirement_fp], stderr=subprocess.STDOUT)
@@ -98,11 +101,10 @@ def check_and_install_requirements():
                 qt_utils.msgbox("Azenqos plugin failed to install required dependencies, please email below error msg to support@azenqos.com:\n\n" + outstr.decode("utf-8"), title="AZENQOS Dependency Install Fail")
         
         
-        with open(current_plugin_version_path, "w") as f:
-            ret = f.write(str(version.VERSION))
         return False 
     
-    with open(current_plugin_version_path, "w") as f:
-        ret = f.write(str(version.VERSION))
+    if os.name == "nt":
+        with open(current_plugin_version_path, "w") as f:
+            ret = f.write(str(version.VERSION))
 
     return True

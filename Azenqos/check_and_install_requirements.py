@@ -70,15 +70,9 @@ def check_and_install_requirements():
             requirement = requirement.lower().strip()
             sub_index = requirement.index('==')
             lib_name = requirement[0:sub_index]
-            lib_version = requirement[sub_index+2:]
-            try:
-                exec("import {}".format(lib_name))
-                existing_version = eval("{}.__version__".format(lib_name))
-                if lib_version != existing_version:
-                    raise Exception
-            except:
+            output = subprocess.check_output(["pip", "freeze"]).decode("utf-8")
+            if lib_name not in output:
                 needs_install = True
-                print("not found:", requirement)
                 break
 
     if needs_install:

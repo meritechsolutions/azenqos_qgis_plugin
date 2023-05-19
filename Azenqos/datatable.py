@@ -331,11 +331,9 @@ class TableWindow(QWidget):
     def contextMenuEvent(self, event):
         menu = QMenu(self)
         actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None, "custom_table": None}
-        if self.time_list_mode and self.df is not None and 'log_hash' in self.df.columns and 'time' in self.df.columns:
-            actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
-        if self.df is not None and "lat" in self.df.columns and "lon" in self.df.columns:
-            self.svg_icon_fp = azq_utils.get_module_fp("map-marker-alt.svg")
-            actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
+        if self.df is not None and self.time_list_mode:
+            if ('log_hash' in self.df.columns and 'time' in self.df.columns) or ("lat" in self.df.columns and "lon" in self.df.columns):
+                actions_dict["create_qgis_layer"] = menu.addAction("Create QGIS Map layer...")
         if isinstance(self.refresh_data_from_dbcon_and_time_func, (str, list, dict)):
             actions_dict["custom_expression"] = menu.addAction("Customize SQL/Python expression...")
         if self.custom_table_param_list:
@@ -442,6 +440,8 @@ class TableWindow(QWidget):
                     self, "New layer", "Please specify layer name:"
                 )
                 if layer_name:
+                    if "event" in layer_name.lower():
+                        self.svg_icon_fp = azq_utils.get_module_fp("map-marker-alt.svg")
                     azq_utils.create_layer_in_qgis(self.gc.databasePath, self.tableModel.df, layer_name, is_indoor=self.gc.is_indoor, svg_icon_fp=self.svg_icon_fp)
 
 

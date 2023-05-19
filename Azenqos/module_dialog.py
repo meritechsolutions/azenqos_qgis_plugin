@@ -10,6 +10,8 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5.uic import loadUi
 
 import azq_utils
+import main_window
+import datatable
 
 
 class module_dialog(QDialog):
@@ -42,16 +44,18 @@ class module_dialog(QDialog):
         )
         self.ui.checkBox.setChecked(True)
         self.ui.pushButton.clicked.connect(self.run_module)
+        self.ui.openJupyterButton.clicked.connect(self.open_jupyter_notebook)
+        
 
-    def run_module(self):
+    def open_jupyter_notebook(self):
         f = open(azq_utils.get_module_fp("azq_base.ipynb"), "r")
         iptnb_text = f.read()
         iptnb_text = iptnb_text.replace("!@#$LOG_LIST", self.gc.login_dialog.lhl)
         iptnb_text = iptnb_text.replace("!@#$MODULE_NAME", self.row_sr["module"])
         func = self.ui.param_te.toPlainText()
         func = func.replace('"', "'")
+        func = func.replace("\n", "")
         iptnb_text = iptnb_text.replace("!@#$MODULE_FUNC", func)
-        
         resp = requests.post(
             "{}/api/upload_ipynb".format(self.gc.login_dialog.server),
             headers={"Authorization": "Bearer {}".format(self.gc.login_dialog.token),},
@@ -63,6 +67,22 @@ class module_dialog(QDialog):
         test_url = "{}/lab{}".format(self.gc.login_dialog.server, resp.text)
         print(test_url)
         webbrowser.open(test_url)
+
+    
+    def run_module(self):
+        mod_str = self.ui.param_te.toPlainText()
+        title = self.ui.module_le.text()
+        swa = main_window.SubWindowArea(self.mdi, self.gc)
+        window = datatable.create_table_window_from_api_expression_ret(
+            None,
+            title,
+            self.gc,
+            self.gc.login_dialog.server,
+            self.gc.login_dialog.token,
+            self.gc.login_dialog.lhl,
+            mod_str,
+        )
+        self.add_subwindow_with_widget(swa, window)
     
 
 

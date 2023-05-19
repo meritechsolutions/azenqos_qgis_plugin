@@ -1849,7 +1849,11 @@ def run_api_expression_and_set_results_to_table_window(
         print("api call ret_dict: {}".format(ret_dict))
         target_fp = azq_server_api.parse_py_eval_ret_dict_for_df(server, token, ret_dict)
         print("target_fp:", target_fp)
-        if "parquet" in target_fp:
+
+        if target_fp is None and ret_dict["ret"] is not None:
+            df = pd.DataFrame({"result": [ret_dict["ret"]],})
+            window.setup_ui_with_custom_df(df)
+        elif "parquet" in target_fp:
             print("read parquet to df")
             df = pd.read_parquet(target_fp)
             #df.columns = [x.decode("utf-8") for x in df.columns]

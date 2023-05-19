@@ -214,6 +214,8 @@ class login_dialog(QDialog):
         try:
             if not self.server.startswith("https://"):
                 self.server = "https://"+self.server
+            if self.server.endswith("/"):
+                self.server = self.server[0:-1]
             assert urlparse(self.server).netloc
         except:
             QtWidgets.QMessageBox.critical(

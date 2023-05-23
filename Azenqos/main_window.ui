@@ -260,6 +260,12 @@
      </property>
      <addaction name="actionOSM"/>
     </widget>
+    <widget class="QMenu" name="menuOTT">
+     <property name="title">
+      <string>OTT</string>
+     </property>
+     <addaction name="actionVideo_Streaming"/>
+    </widget>
     <addaction name="menuNR"/>
     <addaction name="menuLTE"/>
     <addaction name="menuWCDMA"/>
@@ -268,6 +274,7 @@
     <addaction name="menuData"/>
     <addaction name="menuSystem"/>
     <addaction name="menuLog"/>
+    <addaction name="menuOTT"/>
     <addaction name="actionPCAP"/>
     <addaction name="menuSession_1"/>
     <addaction name="menuSession_2"/>
@@ -1055,6 +1062,11 @@
   <action name="actionLayer_Distance_Binning">
    <property name="text">
     <string>Layer Distance Binning</string>
+   </property>
+  </action>
+  <action name="actionVideo_Streaming">
+   <property name="text">
+    <string>Video Streaming</string>
    </property>
   </action>
  </widget>

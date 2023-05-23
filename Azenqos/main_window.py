@@ -466,8 +466,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import system_sql_query
-        # self.add_param_window(system_sql_query.GSM_WCDMA_SYSTEM_INFO_SQL_LIST, title="GSM/WCDMA System Info", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/gsm_wcdma_system_info.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="GSM/WCDMA System Info", selected_ue=selected_ue)
@@ -483,8 +481,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import system_sql_query
-        # self.add_param_window(system_sql_query.LTE_SYSTEM_INFO_SQL_LIST, title="LTE System Info", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/lte_system_info.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="GLTE System Info", selected_ue=selected_ue)
@@ -584,8 +580,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import nr_radio_query
-        # self.add_param_window(nr_radio_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/nr_radio.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="NR Radio Parameters", selected_ue=selected_ue)
@@ -600,8 +594,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import nr_data_query
-        # self.add_param_window(nr_data_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/nr_data.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="NR Data Parameters", selected_ue=selected_ue)
@@ -739,8 +731,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import exynos_service_mode_nr_query
-        # self.add_param_window(exynos_service_mode_nr_query.RADIO_SELECT_FROM_PART, title="ExynosServiceMode NR Radio", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/exynos_nr_radio.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="ExynosServiceMode NR Radio", selected_ue=selected_ue)
@@ -755,8 +745,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import exynos_service_mode_nr_query
-        # self.add_param_window(exynos_service_mode_nr_query.DATA_SELECT_FROM_PART, title="ExynosServiceMode NR Data", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/exynos_nr_data.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="ExynosServiceMode NR Data", selected_ue=selected_ue)
@@ -771,8 +759,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import exynos_service_mode_nr_query
-        # self.add_param_window(exynos_service_mode_nr_query.REG_SELECT_FROM_PART, title="ExynosServiceMode NR Reg", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/exynos_nr_rag.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="ExynosServiceMode NR Reg", selected_ue=selected_ue)
@@ -787,8 +773,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import exynos_service_mode_lte_query
-        # self.add_param_window(exynos_service_mode_lte_query.RADIO_SELECT_FROM_PART, title="ExynosServiceMode LTE Radio", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/exynos_lte_radio.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="ExynosServiceMode LTE Radio", selected_ue=selected_ue)
@@ -803,8 +787,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import exynos_service_mode_lte_query
-        # self.add_param_window(exynos_service_mode_lte_query.DATA_SELECT_FROM_PART, title="ExynosServiceMode LTE Data", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/exynos_lte_data.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="ExynosServiceMode LTE Data", selected_ue=selected_ue)
@@ -819,29 +801,9 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import exynos_service_mode_lte_query
-        # self.add_param_window(exynos_service_mode_lte_query.REG_SELECT_FROM_PART, title="ExynosServiceMode LTE Reg", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/exynos_lte_reg.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="ExynosServiceMode LTE Reg", selected_ue=selected_ue)
-
-
-    # @pyqtSlot()
-    # def on_action5GNR_Radio_Parameters_triggered(self, selected_ue = None):
-    #     print("action old nr radio params")
-    #     if selected_ue is None and len(self.gc.device_configs) > 1:
-    #         import select_log_dialog
-    #         dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
-    #         result = dlg.exec_()
-    #         if not result:
-    #             return
-    #         selected_ue = dlg.log
-    #     import nr_sql_query
-    #     if self.is_leg_nr_tables == False:
-    #         self.add_param_window(nr_sql_query.NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
-    #     else:
-    #         print("is legacy nr")
-    #         self.add_param_window(nr_sql_query.OLD_NR_RADIO_PARAMS_SQL_LIST, title="NR Radio Parameters", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
 
     @pyqtSlot()
     def on_action5GNR_Serving_Neighbors_triggered(self, selected_ue = None):
@@ -853,45 +815,10 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import nr_sql_query
-        # if self.is_leg_nr_tables == False:
-        #     self.add_param_window(nr_sql_query.NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
-        # else:
-        #     print("is legacy nr")
-        #     self.add_param_window(nr_sql_query.OLD_NR_SERV_AND_NEIGH_SQL_LIST_DICT, title="NR Serving + Neighbors", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/nr_serv_neigh.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="NR Serving + Neighbors", selected_ue=selected_ue)
 
-    # @pyqtSlot()
-    # def on_action5GNR_Beams_triggered(self, selected_ue = None):
-    #     print("action nr beams")
-    #     if selected_ue is None and len(self.gc.device_configs) > 1:
-    #         import select_log_dialog
-    #         dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
-    #         result = dlg.exec_()
-    #         if not result:
-    #             return
-    #         selected_ue = dlg.log
-    #     import nr_sql_query
-    #     self.add_param_window(nr_sql_query.NR_BEAMS_SQL_LIST_DICT, title="NR Beams")
-
-    # @pyqtSlot()
-    # def on_action5GNR_Data_Params_triggered(self, selected_ue = None):
-    #     print("action old nr data")
-    #     if selected_ue is None and len(self.gc.device_configs) > 1:
-    #         import select_log_dialog
-    #         dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
-    #         result = dlg.exec_()
-    #         if not result:
-    #             return
-    #         selected_ue = dlg.log
-    #     import nr_sql_query
-    #     if self.is_leg_nr_tables == False:
-    #         self.add_param_window(nr_sql_query.NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
-    #     else:
-    #         print("is legacy nr")
-    #         self.add_param_window(nr_sql_query.OLD_NR_DATA_PARAMS_SQL_LIST, title="NR Data", func_key=inspect.currentframe().f_code.co_name, selected_ue=selected_ue)
 
     ############# LTE menu slots
     @pyqtSlot()
@@ -904,8 +831,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import lte_sql_query
-        # self.add_param_window(lte_sql_query.LTE_RADIO_PARAMS_SQL_LIST_DICT, title="LTE Radio Parameters", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/lte_radio.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="LTE Radio Parameters", selected_ue=selected_ue)
@@ -920,8 +845,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import lte_sql_query
-        # self.add_param_window(lte_sql_query.LTE_SERV_AND_NEIGH_SQL_LIST_DICT, title="LTE Serving + Neighbors", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/lte_serv_neigh.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="LTE Serving + Neighbors", selected_ue=selected_ue)
@@ -936,8 +859,6 @@ Log_hash list: {}""".format(
             if not result:
                 return
             selected_ue = dlg.log
-        # import lte_sql_query
-        # self.add_param_window(lte_sql_query.LTE_DATA_PARAMS_SQL_LIST_DICT, title="LTE Data Params", selected_ue=selected_ue)
         with open(azq_utils.get_module_fp("custom_table/lte_data.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="LTE Data Parameters", selected_ue=selected_ue)
@@ -1179,6 +1100,26 @@ Log_hash list: {}""".format(
             func_key=inspect.currentframe().f_code.co_name,
         )
         self.add_subwindow_with_widget(swa, widget)
+
+    ############# OTT menu slots
+
+    @pyqtSlot()
+    def on_actionVideo_Streaming_triggered(self):
+        print("action action video streaming")
+
+        has_video_mos = False
+        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+            try:
+                pp_video_mos_df = pd.read_sql("select * from pp_statement_sum_ott_video_streaming_mos", dbcon)
+                if len(pp_video_mos_df) > 0:
+                    has_video_mos = True
+            except:
+                pass
+        if has_video_mos:
+            self.add_param_window('''pd.read_sql("select ott_vdo.log_hash, ott_vdo.time, ott_vdo.ott_video_streaming_start_time, ott_vdo.ott_video_streaming_end_time, ott_vdo.ott_video_streaming_session_id, ott_vdo.ott_video_streaming_video_url, ott_vdo.ott_video_streaming_mos_enabled, ott_vdo.ott_video_streaming_end_result, ott_vdo.ott_video_streaming_end_result_detail, pp_ott_vdo.ott_video_streaming_mos_score from ott_video_streaming as ott_vdo left join pp_statement_sum_ott_video_streaming_mos as pp_ott_vdo on ott_vdo.log_hash = pp_ott_vdo.log_hash and ott_vdo.ott_video_streaming_session_id = pp_ott_vdo.ott_video_streaming_session_id",dbcon).sort_values(by='time')''', title="OTT Video Streaming", time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
+        else:
+            self.add_param_window('''pd.read_sql("select log_hash, time, ott_video_streaming_start_time, ott_video_streaming_end_time, ott_video_streaming_session_id, ott_video_streaming_video_url, ott_video_streaming_mos_enabled, ott_video_streaming_end_result, ott_video_streaming_end_result_detail, 'requires server processing' as ott_video_streaming_mos_score from ott_video_streaming",dbcon).sort_values(by='time')''', title="OTT Video Streaming", time_list_mode=True, func_key=inspect.currentframe().f_code.co_name)
+            
 
     ############# Add Layer menu slots
 

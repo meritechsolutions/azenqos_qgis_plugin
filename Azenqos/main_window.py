@@ -2233,7 +2233,7 @@ Log_hash list: {}""".format(
             self.timeSliderThread.getCurrentValue(),
         )
         print("self.gc.sliderLength", self.gc.sliderLength)
-        if self.timeSliderThread.getCurrentValue() < self.gc.sliderLength:
+        if self.timeSliderThread.getCurrentValue() < self.gc.timeSlider._value_range:
             self.gc.isSliderPlay = True
             self.playButton.setDisabled(True)
             self.playSpeed.setDisabled(True)
@@ -2295,7 +2295,7 @@ Log_hash list: {}""".format(
         self.gc.timeSlider.setValue(value)
         print("mw self.gc.timeSlider.value()", self.gc.timeSlider.value())
         self.gc.timeSlider.update()
-        if value >= self.gc.sliderLength:
+        if value >= self.gc.timeSlider._value_range:
             self.pauseTime()
 
     def task_done_slot(self, msg):

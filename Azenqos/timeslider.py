@@ -53,6 +53,7 @@ class timeSlider(QSlider):
             "self._max_int",
             self._max_int,
         )
+        value = min(value, self._value_range)
         resultValue = value / self._value_range * self._max_int
         resultValue = round(resultValue)
         super().setValue(resultValue)

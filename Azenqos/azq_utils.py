@@ -102,6 +102,18 @@ def read_settings_file(fname, auto_decode=True, decrypt=False):
         #print("WARNING: read_local_file - exception: {}".format(exstr))
     return None
 
+def df_log_hash_time_resample(fulldf, resample_param, sort_by_time_only=False, add_copy_of_last_row_time_offset_millis=None, use_last=False):
+    df = resample_per_log_hash_time(fulldf, resample_param, use_last=use_last)
+    if sort_by_time_only:
+        df = df.sort_values("time")
+    if len(df) and add_copy_of_last_row_time_offset_millis:
+        print("add_copy_of_last_row_time_offset_millis")
+        last_row_copy = df.tail(1).copy()
+        print("last_row_copy ori:", last_row_copy)
+        last_row_copy.index += pd.Timedelta('{}ms'.format(add_copy_of_last_row_time_offset_millis))
+        print("last_row_copy after add offset ts:", last_row_copy)
+        df = pd.concat([df, last_row_copy])
+    return df
 
 def get_default_color_for_index(i):
     def r():
@@ -2042,7 +2054,7 @@ def resample_per_log_hash_time(param_df, resample_param, use_last=False):
     return param_df
 
 
-def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None, add_to_qgis=True, new_db=True, svg_icon_fp=None, icon_fp=None, pp_voice_table=None):
+def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_param=None, add_to_qgis=True, new_db=True, svg_icon_fp=None, icon_fp=None, pp_voice_table=None, data_df=None):
     try:
         import preprocess_azm
         import qgis_layers_gen
@@ -2061,14 +2073,18 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
         table = "layer_dump" if theme_param is None else preprocess_azm.get_table_for_column(theme_param)
         if pp_voice_table is not None:
             table = pp_voice_table
+        elif theme_param == "rat":
+            table = "technology"
+            
         qgis_layers_gen.dump_df_to_spatialite_db(
             df, tmpdbfp, table, is_indoor=is_indoor
         )
+
         assert os.path.isfile(tmpdbfp)
         with contextlib.closing(sqlite3.connect(tmpdbfp)) as dbcon:
             return qgis_layers_gen.create_qgis_layer_from_spatialite_db(
             tmpdbfp, table, label_col="name" if "name" in df.columns else None, theme_param=theme_param, display_name=layer_name, dbcon_for_theme_legend_counts=dbcon, add_to_qgis=add_to_qgis
-            , svg_icon_fp=svg_icon_fp, icon_fp=icon_fp)
+            , svg_icon_fp=svg_icon_fp, icon_fp=icon_fp, data_df=data_df)
     except:
         type_, value_, traceback_ = sys.exc_info()
         exstr = str(traceback.format_exception(type_, value_, traceback_))

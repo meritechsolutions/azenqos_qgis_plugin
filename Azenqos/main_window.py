@@ -451,10 +451,18 @@ Log_hash list: {}""".format(
 
     ############# system menu slots
     @pyqtSlot()
-    def on_actionTechnology_triggered(self):
+    def on_actionTechnology_triggered(self, selected_ue = None):
         print("technology")
-        import system_sql_query
-        self.add_param_window(system_sql_query.SYSTEM_TECHNOLOGY_SQL_LIST, title="Technology", stretch_last_row=True, time_list_mode=True)
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        import rat_plot_df
+        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+            self.add_param_window(custom_df = rat_plot_df.get(dbcon),  title="Technology", selected_ue=selected_ue, time_list_mode=True)
 
     @pyqtSlot()
     def on_actionGSM_WCDMA_System_Info_triggered(self, selected_ue = None):

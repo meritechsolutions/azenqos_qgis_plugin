@@ -30,6 +30,7 @@ elm_table_main_col_types = {
     "detail": "TEXT",
     "detail_hex": "TEXT",
     "detail_str": "TEXT",
+    "rat": "TEXT",
 }
 cached_theme_dict= {}
 
@@ -499,19 +500,22 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
     return df
 
 call_type_dict = {"call_setup_duration":"double", "call_end_cause":"text"}
+rat_type_dict = {"rat":"text", "technology":"text"}
 
-def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=False):
+def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=False, data_df=None):
     g_azq_global_elm_info_df = preprocess_azm.get_elm_df_from_csv()
     param_is_str=False
     table_name = None
     if view == "pp_voice_report":
         table_name = view
     if theme_df is None:
-        theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon, table_name=table_name)
+        theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon, table_name=table_name, data_df=data_df)
     if theme_df is None:
         return None
     if param in call_type_dict.keys():
         param_type = call_type_dict[param]
+    elif param in rat_type_dict.keys():
+        param_type = rat_type_dict[param]
     else:
         param_name = preprocess_azm.get_elm_name_from_param_col_with_arg(param)
         param_type = g_azq_global_elm_info_df.loc[g_azq_global_elm_info_df["var_name"] == param_name, "db_type"].iloc[0]

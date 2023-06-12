@@ -68,7 +68,7 @@ def dump_df_to_spatialite_db(df, dbfp, table, is_indoor=False):
     assert os.path.isfile(dbfp)
 
 
-def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None, dbcon_for_theme_legend_counts=None, custom_sql=None, svg_icon_fp=None, icon_fp=None):
+def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_fp=None, visible=True, expanded=False, add_to_qgis=True, theme_param=None, display_name=None, dbcon_for_theme_legend_counts=None, custom_sql=None, svg_icon_fp=None, icon_fp=None, data_df=None):
     print("create_qgis_layer_from_spatialite_db: table", table)
     # https://qgis-docs.readthedocs.io/en/latest/docs/pyqgis_developer_cookbook/loadlayer.html
     schema = ''
@@ -84,7 +84,7 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
     if style_qml_fp is None and theme_param is not None:
         print("create qml for uri start")
         try:
-            qml_fp = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon_for_theme_legend_counts, to_tmp_file=True)
+            qml_fp = db_preprocess.gen_style_qml_for_theme(None, table, None, theme_param, dbcon_for_theme_legend_counts, to_tmp_file=True, data_df=data_df)
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))

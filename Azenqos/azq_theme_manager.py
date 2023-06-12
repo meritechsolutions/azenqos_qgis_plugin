@@ -2009,7 +2009,7 @@ def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
             retdf = g_generate_theme_from_data_dict[param_col]
         else:"""
 
-        retdf = pd.DataFrame(columns=color_header)
+        retdf = pd.DataFrame(columns=color_header, dtype=object)
 
         # print "generate_theme_from_data - start retdf:", retdf
 
@@ -2050,7 +2050,7 @@ def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
                 pass  #
             else:
                 # print "unique value uv {} NOT in existing retdf - add it at end".format(uv)
-                retdf.loc[retlen] = None
+                # retdf.loc[retlen] = None
                 match_color = get_default_color_for_index(retlen)
 
                 ##### override color for special params
@@ -2058,28 +2058,23 @@ def generate_theme_from_data(df, param_col, all_unique_vals_per_theme=False):
                     if uv is not None:
                         if param_col == "rat":
                             try:
-                                print(
-                                    "rat match_color override start ori match_color:",
-                                    match_color,
-                                )
-                                if uv == "GSM":
+                                print("rat match_color override start ori match_color:", match_color)
+                                if uv == "GSM":                            
                                     match_color = get_default_color_for_index(0)
-                                elif uv == "WCDMA":
+                                elif uv == "WCDMA":                            
                                     match_color = get_default_color_for_index(1)
-                                elif uv == "LTE":
+                                elif uv == "LTE":                            
                                     match_color = get_default_color_for_index(2)
+                                elif uv == "NR":                            
+                                    match_color = get_default_color_for_index(3)
                                 else:
                                     raise Exception("invalid rat uv: {}".format(uv))
                                 print("rat match_color override done:", match_color)
                             except:
                                 type_, value_, traceback_ = sys.exc_info()
-                                exstr = str(
-                                    traceback.format_exception(
-                                        type_, value_, traceback_
-                                    )
-                                )
+                                exstr = str(traceback.format_exception(type_, value_, traceback_))
                                 print("WARNING: rat color override exception: " + exstr)
-
+                                
                         elif (
                             ("_physical_cell_id" in param_col)
                             or param_col.startswith("wcdma_aset_sc")

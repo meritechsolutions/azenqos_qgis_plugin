@@ -7,6 +7,7 @@ import sys
 import traceback
 import uuid
 from multiprocessing.pool import ThreadPool
+import collections
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,7 @@ import azq_utils
 import preprocess_azm
 
 
-def merge(in_azm_list, n_proc=3, progress_update_signal=None):
+def merge(in_azm_list, n_proc=2, progress_update_signal=None):
     out_tmp_dir = os.path.join(azq_utils.tmp_gen_path(), "tmp_combine_db_result_{}".format(uuid.uuid4()))
     os.makedirs(out_tmp_dir)
     assert os.path.isdir(out_tmp_dir)
@@ -33,6 +34,7 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
         extract_progress = 15 / n
 
         # extract dbs of all azms to their own temp dirs
+        check_col_dict = {}
         for i in range(n):
             if progress_update_signal is not None:
                 progress_update_signal.emit(extract_progress*(i+1))
@@ -54,7 +56,11 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
                     tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%' and name LIKE 'pp%';", dbcon).name.tolist()
                     tables.append("polqa_mos")
                     for table in tables:
-                        check_len_table = len(pd.read_sql("SELECT * FROM {};".format(table),dbcon))
+                        tmp_df = pd.read_sql("SELECT * FROM {};".format(table),dbcon)
+                        if table not in check_col_dict.keys():
+                            check_col_dict[table] = []
+                        check_col_dict[table] += tmp_df.columns.tolist()
+                        check_len_table = len(tmp_df)
                         if check_len_table == 0:
                             dbcon.executescript("DROP TABLE {};".format(table))
                     dbcon.commit()
@@ -66,6 +72,37 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
             tmp_dirs.append(tmp_dir)
             assert os.path.isfile(new_dbfp)
             dbfps.append(new_dbfp)
+
+        drop_col_dict = {}
+        copy_col_dict = {}
+        for key in check_col_dict.keys():
+            group_col_dict = dict(collections.Counter(check_col_dict[key]))
+            for col in group_col_dict.keys():
+                if group_col_dict[col] < n:
+                    if key not in drop_col_dict.keys():
+                        drop_col_dict[key] = []
+                    drop_col_dict[key].append(col)
+                elif group_col_dict[col] == n:
+                    if key not in copy_col_dict.keys():
+                        copy_col_dict[key] = []
+                    copy_col_dict[key].append(col)
+        
+        for dbfp in dbfps:
+            with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
+                for table in drop_col_dict.keys():
+                    if "log_hash" in drop_col_dict[table]:
+                        try:
+                            dbcon.executescript("DROP TABLE {};".format(table))
+                        except:
+                            pass
+                    else:
+                        try:
+                            dbcon.executescript("CREATE TABLE tmp_new_table  AS SELECT {} FROM {};".format(", ".join(copy_col_dict[table]), table))
+                            dbcon.executescript("DROP TABLE {};".format(table))
+                            dbcon.executescript("ALTER TABLE tmp_new_table RENAME TO {};".format(table))
+                        except:
+                            pass
+                dbcon.commit()
 
         # get azm app versions of each
         azm_vers = None

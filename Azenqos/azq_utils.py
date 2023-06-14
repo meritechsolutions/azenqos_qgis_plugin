@@ -1936,7 +1936,7 @@ def popen_no_shell(cmd):
 def dump_sqlite(dbfp, dump_to_file_first=False, rm_rollbacks=True, auto_add_commit=True):
     sqlite_bin = get_sqlite_bin()
     if dump_to_file_first:
-        dump_fp = tmp_gen_fp("tmp_sqlite_dump.sql")
+        dump_fp = tmp_gen_fp("tmp_sqlite_dump_{}.sql".format(uuid.uuid4()))
         if os.path.isfile(dump_fp):
             os.remove(dump_fp)
         assert not os.path.isfile(dump_fp)
@@ -1946,8 +1946,9 @@ def dump_sqlite(dbfp, dump_to_file_first=False, rm_rollbacks=True, auto_add_comm
         assert ret == 0
         assert os.path.isfile(dump_fp)
         print("... reading sql:", dbfp)
-        with open(dump_fp, "r") as f:
+        with open(dump_fp, "r", encoding="utf-8", errors="replace") as f:
             sql_script = f.read()
+            f.close()
     else:
         cmd = [sqlite_bin, dbfp, ".dump"]
         print("... dumping db file to ram:", dbfp, "cmd:", cmd)

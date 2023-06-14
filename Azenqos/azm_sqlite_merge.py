@@ -16,7 +16,7 @@ import azq_utils
 import preprocess_azm
 
 
-def merge(in_azm_list, n_proc=2, progress_update_signal=None):
+def merge(in_azm_list, progress_update_signal=None):
     out_tmp_dir = os.path.join(azq_utils.tmp_gen_path(), "tmp_combine_db_result_{}".format(uuid.uuid4()))
     os.makedirs(out_tmp_dir)
     assert os.path.isdir(out_tmp_dir)
@@ -127,16 +127,13 @@ def merge(in_azm_list, n_proc=2, progress_update_signal=None):
         if progress_update_signal is not None:
             progress_update_signal.emit(20)
 
-        sql_scripts = None
+        sql_scripts = []
 
         # dump then import data of each db into target sqlite db
-        pool = mp.Pool(n_proc) if os.name == "posix" else ThreadPool(n_proc)  # windows qgis if mp it will open multiple instances of qgis
         print("=== dumping all sqlite logs concurrently...")
         azq_utils.timer_start("perf_dump_threaded")
-        try:
-            sql_scripts = pool.map(get_sql_script, azm_df.dbfp.values.tolist())
-        finally:
-            pool.close()
+        for dbfp in azm_df.dbfp.values.tolist():
+            sql_scripts.append(get_sql_script(dbfp))
         azq_utils.timer_print("perf_dump_threaded")
         print("=== dumping all sqlite logs concurrently... done")
         merge_progress = 30 / len(azm_df)

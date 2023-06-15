@@ -1933,35 +1933,18 @@ def popen_no_shell(cmd):
     return proc
 
 
-def dump_sqlite(dbfp, dump_to_file_first=False, rm_rollbacks=True, auto_add_commit=True):
+def dump_sqlite(dbfp):
     sqlite_bin = get_sqlite_bin()
-    if dump_to_file_first:
-        dump_fp = tmp_gen_fp("tmp_sqlite_dump_{}.sql".format(uuid.uuid4()))
-        if os.path.isfile(dump_fp):
-            os.remove(dump_fp)
-        assert not os.path.isfile(dump_fp)
-        cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
-        print("... dumping db file to sql:", dbfp, "cmd:", cmd)
-        ret = call_no_shell(cmd)
-        assert ret == 0
-        assert os.path.isfile(dump_fp)
-        print("... reading sql:", dbfp)
-        with open(dump_fp, "r", encoding="utf-8", errors="replace") as f:
-            sql_script = f.read()
-            f.close()
-    else:
-        cmd = [sqlite_bin, dbfp, ".dump"]
-        print("... dumping db file to ram:", dbfp, "cmd:", cmd)
-        sql_script = check_output_no_shell(cmd)
-    assert sql_script
-    if rm_rollbacks:
-        sql_script = sql_script.replace("ROLLBACK;", "")
-    if auto_add_commit:
-        if "BEGIN TRANSACTION;" in sql_script:
-            if "COMMIT;" not in sql_script:
-                sql_script += "\n"+"COMMIT;"+"\n"
-    return sql_script
-
+    dump_fp = tmp_gen_fp("tmp_sqlite_dump_{}.sql".format(uuid.uuid4()))
+    if os.path.isfile(dump_fp):
+        os.remove(dump_fp)
+    assert not os.path.isfile(dump_fp)
+    cmd = [sqlite_bin, dbfp, "-cmd", ".out '{}'".format(dump_fp), ".dump"]
+    print("... dumping db file to sql:", dbfp, "cmd:", cmd)
+    ret = call_no_shell(cmd)
+    assert ret == 0
+    assert os.path.isfile(dump_fp)
+    return dump_fp
 
 def get_sqlite_bin():
     return os.path.join(

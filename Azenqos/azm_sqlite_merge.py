@@ -8,6 +8,8 @@ import traceback
 import uuid
 from multiprocessing.pool import ThreadPool
 import collections
+import io
+import re
 
 import numpy as np
 import pandas as pd
@@ -16,7 +18,7 @@ import azq_utils
 import preprocess_azm
 
 
-def merge(in_azm_list, n_proc=3, progress_update_signal=None):
+def merge(in_azm_list, n_proc=5, progress_update_signal=None):
     out_tmp_dir = os.path.join(azq_utils.tmp_gen_path(), "tmp_combine_db_result_{}".format(uuid.uuid4()))
     os.makedirs(out_tmp_dir)
     assert os.path.isdir(out_tmp_dir)
@@ -137,56 +139,39 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
             sql_scripts = pool.map(get_sql_script, azm_df.dbfp.values.tolist())
         finally:
             pool.close()
-        # for dbfp in azm_df.dbfp.values.tolist():
-        #     sql_scripts.append(get_sql_script(dbfp))
+
         azq_utils.timer_print("perf_dump_threaded")
         print("=== dumping all sqlite logs concurrently... done")
         merge_progress = 30 / len(azm_df)
 
-        first_azm_table_to_cols_dict = {}
         for index, row in azm_df.iterrows():
             if progress_update_signal is not None:
 
                 progress_update_signal.emit(merge_progress*(index+1)+20)
             print("=== dumping db to merged azm [{}/{}] ===".format(index+1, len(azm_df)))
-            is_first_azm = index == azm_df.index[0]
             is_last_azm = index == azm_df.index[-1]
             dbfp = row.dbfp
             assert os.path.isfile(dbfp)
-            sql_script = sql_scripts[index]
+            sql_script_fp = sql_scripts[index]
             with contextlib.closing(sqlite3.connect(dbfp)) as dbcon:
-                # iterdump somehow doesnt work in my system with these dbs, doing dump with sqlite3 cmd shell binaries instead
-                if is_last_azm:
-                    sql_script += "INSERT INTO spatial_ref_sys VALUES(4326,'epsg',4326,'WGS 84','+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');\n"
-                assert sql_script
-            
-                pp_tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%' and name LIKE 'pp%';", dbcon).name.tolist()
-                if len(pp_tables) > 0:
-                    check_col_diff = True
-
-                if check_col_diff:
-                    print("... checking for schema/column differences need to specify columns in INSERT of dump")
-                    tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%';",
-                                         dbcon).name
-                    for table in tables:
-                        cols = list(pd.read_sql("select * from {} where 1=0".format(table), dbcon).columns)  # use list as we will compare this list next
-                        if is_first_azm:
-                            first_azm_table_to_cols_dict[table] = cols
-                        else:
-                            if table not in first_azm_table_to_cols_dict.keys():
-                                print("table: {} not in first azm - no need adjust".format(table))
-                                first_azm_table_to_cols_dict[table] = cols
-                            else:
-                                if cols == first_azm_table_to_cols_dict[table]:
-                                    pass
-                                    #print("table: {} same columns - no need adjust".format(table))
-                                else:
-                                    print("table: {} diff columns - need adjust to specify columns".format(table))
-                                    sql_script = sql_script.replace("INSERT INTO {} VALUES".format(table),
-                                                            "INSERT INTO {} ({}) VALUES".format(table, ",".join(cols)))
-
-                #print("sql_script:", sql_script)
                 print("... merginng to target db file:", out_db_fp)
+                chunk_size = 8192
+                sql_script_io = io.StringIO()
+                regex_pattern = re.compile(r'CREATE TABLE(?: IF NOT EXISTS)?')
+
+                with open(sql_script_fp, "r", encoding="utf-8", errors="replace") as f:
+                    while True:
+                        data = f.read(chunk_size)
+                        if not data:
+                            break 
+                        sql_script_io.write(data)
+                    
+                    sql_script_io.write(" delete from spatial_ref_sys;\n")
+                    if is_last_azm:
+                        sql_script_io.write("INSERT INTO spatial_ref_sys VALUES(4326,'epsg',4326,'WGS 84','+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');\n")
+
+                sql_script = sql_script_io.getvalue()
+                sql_script = regex_pattern.sub('CREATE TABLE IF NOT EXISTS', sql_script)
                 out_dbcon.executescript(sql_script)
 
         # commit new db conn
@@ -209,11 +194,7 @@ def merge(in_azm_list, n_proc=3, progress_update_signal=None):
 
 
 def get_sql_script(dbfp):
-    sql_script = azq_utils.dump_sqlite(dbfp, dump_to_file_first=True)
-    # print("... modding sql for merging - schema")
-    sql_script = sql_script.replace('CREATE TABLE IF NOT EXISTS ', 'CREATE TABLE ')
-    sql_script = sql_script.replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ')
-    sql_script += " delete from spatial_ref_sys;\n"
+    sql_script = azq_utils.dump_sqlite(dbfp)
     return sql_script
 
 

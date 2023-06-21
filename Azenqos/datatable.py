@@ -513,9 +513,10 @@ class TableWindow(QWidget):
         if self.tableModel is None:
             self.setTableModel(data)
         if self.tableModel is not None:
-            print("updateTableModelData()")
-            self.tableModel.setData(None, data)
-            self.signal_ui_thread_emit_model_datachanged.emit()  # this func is called from the sync thread which is non-ui so setdata() above's emit of dataChanged signal wont have effect, emit this signal to trigger dataChanged emit from ui thread...
+            self.setTableModel(data)
+            # print("updateTableModelData()")
+            # self.tableModel.setData(None, data)
+            # self.signal_ui_thread_emit_model_datachanged.emit()  # this func is called from the sync thread which is non-ui so setdata() above's emit of dataChanged signal wont have effect, emit this signal to trigger dataChanged emit from ui thread...
 
     def setTableModel(self, dataList):
         print("setTableModel() dataList len: {}".format(len(dataList)))
@@ -1448,79 +1449,61 @@ class TableModel(QAbstractTableModel):
 
     def fetchData(self, inputData):
         table_col_dict = {}
-        valid_df_dict = {}
-        log_hash = self.log_hash
-        if self.selected_logs is not None:
-            log_hash = self.selected_logs
-        if isinstance(inputData, list):
-            for data_list in inputData:
-                for param_dict in data_list:
-                    if "type" in param_dict.keys():
-                        if param_dict["type"] == "element":
-                            table_name = preprocess_azm.get_table_for_column_with_cache(param_dict["param_name"])
-                            if table_name in table_col_dict.keys():
-                                table_col_dict[table_name].append(param_dict["param_name"])
-                            else:
-                                table_col_dict[table_name] = [param_dict["param_name"]]
-            for table in table_col_dict:
-                table_col_dict[table] = list(set(table_col_dict[table]))
-                sql = "select {} from {}".format(", ".join(table_col_dict[table]) , table)
-                sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, log_hash, self.time)
-                with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                    df = pd.read_sql(sql, dbcon)
-                    if len(df) > 0:
-                        if df.last_valid_index() is not None:
-                            last_valid_each_col = df.apply(pd.Series.last_valid_index)
-                            valid_df_dict[table] = {}
-                            for index, value in last_valid_each_col.items():
-                                value_index = 0
-                                if not pd.isna(value):
-                                    value_index = int(value)
-                                value = df[index][value_index]
-                                valid_df_dict[table][index] = value
-            
-            for data_list in inputData:
-                for param_dict in data_list:
-                    if "type" in param_dict.keys():
-                        if param_dict["type"] == "element":
-                            table_name = preprocess_azm.get_table_for_column_with_cache(param_dict["param_name"])
-                            param_dict["color"] = "#FFFFFF"
-                            param_dict["percent"] = None
-                            value = ""
-                            if table_name in valid_df_dict.keys():
-                                value = valid_df_dict[table_name][param_dict["param_name"]]
-                                if value is not None:
-                                    import db_preprocess
-                                    if param_dict["param_name"] in db_preprocess.cached_theme_dict.keys():
-                                        theme_df = db_preprocess.cached_theme_dict[param_dict["param_name"]]
-                                        theme_df["Lower"] = theme_df["Lower"].astype(float)
-                                        theme_df["Upper"] = theme_df["Upper"].astype(float)
-                                        theme_range = theme_df["Upper"].max() - theme_df["Lower"].min()
-                                        param_dict["percent"] = (float(value) - theme_df["Lower"].min()) / theme_range
-                                        color_df = theme_df.loc[(theme_df["Lower"]<=float(value))&(theme_df["Upper"]>float(value)), "ColorXml"]
-                                        if len(color_df) > 0:
-                                            param_dict["color"] = color_df.iloc[0]
-                                else:
-                                    value = ""
-                            if not isinstance(value, str):
-                                if isinstance(value, float):
-                                    value = "%.02f" % value
-                                else:
-                                    value = str(value)
-                            param_dict["value"] = value
+        valid_data_dict = {}
+        log_hash = self.log_hash if self.selected_logs is None else self.selected_logs
+
+        for data_list in inputData:
+            for param_dict in data_list:
+                if param_dict.get("type") == "element":
+                    table_name = preprocess_azm.get_table_for_column_with_cache(param_dict["param_name"])
+                    if table_name in table_col_dict:
+                        table_col_dict[table_name].append(param_dict["param_name"])
+                    else:
+                        table_col_dict[table_name] = [param_dict["param_name"]]
+
+        for table in table_col_dict:
+            table_col_dict[table] = list(set(table_col_dict[table]))
+            sql = f"SELECT {', '.join(table_col_dict[table])} FROM {table}"
+            sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, log_hash, self.time)
+            with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                df = pd.read_sql(sql, dbcon)
+                if not df.empty and df.last_valid_index() is not None:
+                    last_valid_each_col = df.apply(pd.Series.last_valid_index)
+                    valid_data_dict[table] = {}
+                    for index, value in last_valid_each_col.items():
+                        value_index = 0 if pd.isna(value) else int(value)
+                        valid_data_dict[table][index] = df[index][value_index]
+
+        for data_list in inputData:
+            for param_dict in data_list:
+                if param_dict.get("type") == "element":
+                    table_name = preprocess_azm.get_table_for_column_with_cache(param_dict["param_name"])
+                    param_dict["color"] = "#FFFFFF"
+                    param_dict["percent"] = None
+                    value = valid_data_dict.get(table_name, {}).get(param_dict["param_name"])
+                    if value is not None:
+                        import db_preprocess
+                        if param_dict["param_name"] in db_preprocess.cached_theme_dict:
+                            theme_df = db_preprocess.cached_theme_dict[param_dict["param_name"]]
+                            theme_df["Lower"] = theme_df["Lower"].astype(float)
+                            theme_df["Upper"] = theme_df["Upper"].astype(float)
+                            theme_range = theme_df["Upper"].max() - theme_df["Lower"].min()
+                            param_dict["percent"] = (float(value) - theme_df["Lower"].min()) / theme_range
+                            color_df = theme_df.loc[(theme_df["Lower"] <= float(value)) & (theme_df["Upper"] > float(value)), "ColorXml"]
+                            if not color_df.empty:
+                                param_dict["color"] = color_df.iloc[0]
+                    else:
+                        value = ""
+                    value = "%.02f" % value if isinstance(value, float) else str(value)
+                    param_dict["value"] = value
+
         return inputData
 
     def rowCount(self, parent):
-        rows = 0
-        if self.dataSource:
-            rows = len(self.dataSource)
-        return rows-1
+        return len(self.dataSource) - 1 if self.dataSource else 0
 
     def columnCount(self, parent):
-        columns = 0
-        if self.dataSource:
-            columns = len(self.dataSource[0])
-        return columns
+        return len(self.dataSource[0]) if self.dataSource else 0
 
     def get_complementary(self, color):
         if color[0] == '#':
@@ -1534,38 +1517,24 @@ class TableModel(QAbstractTableModel):
         return comp_color
 
     def data(self, index, role=Qt.DisplayRole):
-        row = index.row()+1
+        row = index.row() + 1
         if index.isValid() and row < len(self.dataSource):
             if role == Qt.DisplayRole:
                 value_dict = self.dataSource[row][index.column()]
-                value = ""
-                if "type" in value_dict.keys():
-                    value = value_dict["value"]
-                return value
-            
+                return value_dict.get("value", "")
+
             if role == QtCore.Qt.BackgroundRole:
-                try:
-                    value_dict = self.dataSource[row][index.column()]
-                    if "percent" in value_dict.keys():
-                        if value_dict["percent"] is not None:
-                            # gradient = QtGui.QLinearGradient(QtCore.QPointF(0, 0), QtCore.QPointF(1, 0))
-                            # gradient.setColorAt(0, QtGui.QColor(value_dict["color"]))
-                            # gradient.setColorAt(value_dict["percent"], QtGui.QColor(value_dict["color"]))
-                            # gradient.setColorAt(value_dict["percent"]+0.001, Qt.white)
-                            # gradient.setColorAt(1, Qt.white)
-                            # gradient.setCoordinateMode(QtGui.QGradient.ObjectBoundingMode)
-                            return QtCore.QVariant(QtGui.QColor(value_dict["color"]))
-                except Exception as e:
-                    print("WARNING: pdtablemodel data() exception: ", e)
-                    return None
-                
+                value_dict = self.dataSource[row][index.column()]
+                if "percent" in value_dict:
+                    percent = value_dict["percent"]
+                    if percent is not None:
+                        return QtGui.QColor(value_dict["color"])
+
             if role == QtCore.Qt.ForegroundRole:
                 value_dict = self.dataSource[row][index.column()]
-                if "color" in value_dict.keys():
+                if "color" in value_dict:
                     fg_color = self.get_complementary(value_dict["color"])
-                    return QtCore.QVariant(QtGui.QColor(fg_color))
-            else:
-                return None
+                    return QtGui.QColor(fg_color)
         
     def setData(self, index, data, role=QtCore.Qt.DisplayRole):
         if isinstance(data, list):

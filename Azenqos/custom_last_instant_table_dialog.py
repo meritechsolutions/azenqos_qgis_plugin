@@ -76,6 +76,7 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         self.ui.paramComboBox.setEnabled(False)
         self.ui.argComboBox.setEnabled(False)
         self.ui.addParamButton.setEnabled(False)
+        self.ui.clearCellButton.setEnabled(False)
         self.ui.paramLabel.hide()
         self.ui.paramComboBox.hide()
         self.ui.argLabel.hide()
@@ -87,6 +88,7 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         self.ui.tableView.customContextMenuRequested.connect(self.on_right_table_click)
         self.ui.tableView.clicked.connect(self.on_table_click)
         self.ui.addParamButton.clicked.connect(self.on_param_add)
+        self.ui.clearCellButton.clicked.connect(self.clear_selected_cell)
         self.ui.saveButton.clicked.connect(self.on_save_parameter_button_click)
         self.ui.loadButton.clicked.connect(self.on_load_parameter_button_click)
         self.accepted.connect(self.on_ok_button_click)
@@ -142,12 +144,36 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
             menu = QMenu()
             delete_row = menu.addAction("Delete Row")
             delete_column = menu.addAction("Delete Column")
+            insert_row_above = menu.addAction("Insert Row Above")
+            insert_row_below = menu.addAction("Insert Row Below")
+            insert_column_left = menu.addAction("Insert Column Left")
+            insert_column_right = menu.addAction("Insert Column Right")
             action = menu.exec_(self.ui.tableView.mapToGlobal(QPos))
             if action == delete_row:
                 del self.param_list[row] 
             elif action == delete_column:
-                for row in self.param_list:
-                    del row[col]
+                for param in self.param_list:
+                    del param[col]
+            elif action == insert_row_above:
+                n_col = len(self.param_list[row])
+                print(n_col)
+                new_row = []
+                for i in range(n_col):
+                    new_row.append({})
+                print(new_row)
+                self.param_list.insert(row, new_row)
+            elif action == insert_row_below:
+                n_col = len(self.param_list[row])
+                new_row = []
+                for i in range(n_col):
+                    new_row.append({})
+                self.param_list.insert(row+1, new_row)
+            elif action == insert_column_left:
+                for i in range(len(self.param_list)):
+                    self.param_list[i].insert(col, {})
+            elif action == insert_column_right:
+                for i in range(len(self.param_list)):
+                    self.param_list[i].insert(col+1, {})
             self.model.setItems(self.param_list)
 
     def on_param_add(self):
@@ -161,6 +187,10 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
             arg = None
         self.param_list[self.selected_row][self.selected_col] = {"type":self.cell_type, "value":value, "param":param, "arg":arg, "color":"#FFFFFF", "percent":None, "param_name":param_name}
         self.model.setItems(self.param_list)
+
+    def clear_selected_cell(self):
+        self.param_list[self.selected_row][self.selected_col] = {}
+        self.model.setItems(self.param_list)
     
     def on_table_click(self, item):
         self.ui.elemTypecomboBox.setEnabled(True)
@@ -168,6 +198,7 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         self.ui.paramComboBox.setEnabled(True)
         self.ui.argComboBox.setEnabled(True)
         self.ui.addParamButton.setEnabled(True)
+        self.ui.clearCellButton.setEnabled(True)
         self.selected_row = item.row()
         self.selected_col = item.column()
         selected_cell = self.param_list[self.selected_row][self.selected_col]

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>417</width>
-    <height>266</height>
+    <width>658</width>
+    <height>353</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -63,6 +63,34 @@
           <widget class="QPushButton" name="addColButton">
            <property name="text">
             <string>Add Column</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="moveRowUpButton">
+           <property name="text">
+            <string>Up</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="moveRowDownButton">
+           <property name="text">
+            <string>Down</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="moveColumnLeftButton">
+           <property name="text">
+            <string>Left</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="moveColumnRightButton">
+           <property name="text">
+            <string>Right</string>
            </property>
           </widget>
          </item>

@@ -38,6 +38,7 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         self.arg = "1"
         self.selected_row = None
         self.selected_col = None
+        self.selected_header_index = None
 
         self.window_name = "Custom window"
         self.selected_ue = selected_ue
@@ -77,6 +78,22 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         self.ui.argComboBox.setEnabled(False)
         self.ui.addParamButton.setEnabled(False)
         self.ui.clearCellButton.setEnabled(False)
+        self.ui.moveColumnLeftButton.setEnabled(False)
+        self.ui.moveColumnRightButton.setEnabled(False)
+        self.ui.moveRowDownButton.setEnabled(False)
+        self.ui.moveRowUpButton.setEnabled(False)
+        self.ui.moveColumnLeftButton.setEnabled(False)
+        self.ui.moveColumnRightButton.setEnabled(False)
+        self.ui.moveRowDownButton.setEnabled(False)
+        self.ui.moveRowUpButton.setEnabled(False)
+
+        self.ui.moveColumnLeftButton.clicked.connect(self.on_move_column_left_button_click)
+        self.ui.moveColumnRightButton.clicked.connect(self.on_move_column_right_button_click)
+        self.ui.moveRowDownButton.clicked.connect(self.on_move_row_down_button_click)
+        self.ui.moveRowUpButton.clicked.connect(self.on_move_row_up_button_click)
+
+        self.ui.tableView.horizontalHeader().sectionClicked.connect(self.on_horizontal_header_click)
+        self.ui.tableView.verticalHeader().sectionClicked.connect(self.on_vertical_header_click)
         self.ui.paramLabel.hide()
         self.ui.paramComboBox.hide()
         self.ui.argLabel.hide()
@@ -135,6 +152,70 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
 
     def set_arg(self):
         self.arg = self.ui.argComboBox.currentText()
+    
+    def swap_positions(self, list, pos1, pos2):
+        list[pos1], list[pos2] = list[pos2], list[pos1]
+        return list
+    
+    def on_move_column_left_button_click(self):
+        from_column = self.selected_header_index
+        to_column = self.selected_header_index-1
+        i = 0
+        for row in self.param_list:
+            if self.selected_header_index == 0:
+                return
+            self.param_list[i] = self.swap_positions(self.param_list[i], from_column, to_column)
+            i+=1
+        self.model.setItems(self.param_list)
+        self.selected_header_index = to_column
+        self.ui.tableView.selectColumn(to_column)
+            
+    def on_move_column_right_button_click(self):
+        from_column = self.selected_header_index
+        to_column = self.selected_header_index+1
+        i = 0
+        for row in self.param_list:
+            if self.selected_header_index >= len(row)-1:
+                return
+            self.param_list[i] = self.swap_positions(self.param_list[i], from_column, to_column)
+            i+=1
+        self.model.setItems(self.param_list)
+        self.selected_header_index = to_column
+        self.ui.tableView.selectColumn(to_column)
+
+    def on_move_row_down_button_click(self):
+        if self.selected_header_index >= len(self.param_list)-1:
+            return
+        from_row = self.selected_header_index
+        to_row = self.selected_header_index+1
+        self.param_list = self.swap_positions(self.param_list, from_row, to_row)
+        self.model.setItems(self.param_list)
+        self.selected_header_index = to_row
+        self.ui.tableView.selectRow(to_row)
+
+    def on_move_row_up_button_click(self):
+        if self.selected_header_index == 0:
+            return
+        from_row = self.selected_header_index
+        to_row = self.selected_header_index-1
+        self.param_list = self.swap_positions(self.param_list, from_row, to_row)
+        self.model.setItems(self.param_list)
+        self.selected_header_index = to_row
+        self.ui.tableView.selectRow(to_row)
+    
+    def on_horizontal_header_click(self, QPos=None):
+        self.ui.moveColumnLeftButton.setEnabled(True)
+        self.ui.moveColumnRightButton.setEnabled(True)
+        self.ui.moveRowDownButton.setEnabled(False)
+        self.ui.moveRowUpButton.setEnabled(False)
+        self.selected_header_index = QPos
+
+    def on_vertical_header_click(self, QPos=None):
+        self.ui.moveColumnLeftButton.setEnabled(False)
+        self.ui.moveColumnRightButton.setEnabled(False)
+        self.ui.moveRowDownButton.setEnabled(True)
+        self.ui.moveRowUpButton.setEnabled(True)
+        self.selected_header_index = QPos
 
     def on_right_table_click(self, QPos=None):
         index = self.ui.tableView.indexAt(QPos)
@@ -193,6 +274,10 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         self.model.setItems(self.param_list)
     
     def on_table_click(self, item):
+        self.ui.moveColumnLeftButton.setEnabled(False)
+        self.ui.moveColumnRightButton.setEnabled(False)
+        self.ui.moveRowDownButton.setEnabled(False)
+        self.ui.moveRowUpButton.setEnabled(False)
         self.ui.elemTypecomboBox.setEnabled(True)
         self.ui.textLineEdit.setEnabled(True)
         self.ui.paramComboBox.setEnabled(True)

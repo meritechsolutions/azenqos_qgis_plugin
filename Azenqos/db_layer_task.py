@@ -94,7 +94,7 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                     device_configs = gc.device_configs
                     if gc.overview_opened or len(gc.device_configs) == 0:
                         device_configs = [0]
-                    ue = 1
+                    ue = 0
                     for device in device_configs:
                         for i in range(len(table_list)):
                             table = table_list[i]
@@ -142,18 +142,15 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                     add_map_layer_dialog.create_param_layer(gc, call_type, selected_ue)
                                 except:
                                     pass
-                        # try:
-                        selected_ue = None
+
                         layer_name = "rat"
                         theme_param = "rat"
                         where = ""
 
                         if len(device_configs) > 1:
-                            selected_ue = ue
-                            title_ue_suffix = "(" + gc.device_configs[selected_ue]["name"] + ")"
+                            title_ue_suffix = "(" + device["name"] + ")"
                             layer_name = layer_name + title_ue_suffix 
-                            selected_logs = gc.device_configs[selected_ue]["log_hash"]
-                            where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in selected_logs]))
+                            where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in device["log_hash"]]))
                         df = rat_plot_df.get(dbcon, where=where)
 
                         location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
@@ -167,8 +164,7 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                         if len(df) == 0:
                             raise Exception("No rat in this log")
                         azq_utils.create_layer_in_qgis(gc.databasePath, df, layer_name, theme_param = theme_param, data_df=df)
-                        # except:
-                        #     pass
+                        
                         ue += 1
 
                     return table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer

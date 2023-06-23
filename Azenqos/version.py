@@ -1,2 +1,2 @@
-VERSION = 2.240
+VERSION = 2.242
 

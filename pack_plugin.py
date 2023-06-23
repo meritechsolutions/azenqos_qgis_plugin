@@ -14,7 +14,7 @@ def pack(output_fp="azenqos_plugin"):
         shutil.rmtree(destination_dir)
 
     # Excluded folders
-    excluded_folders = ["test_check_and_recover_db"]
+    excluded_folders = ["tmp_gen"]
 
     # Function to determine if a directory should be excluded
     def should_exclude(dir_path):

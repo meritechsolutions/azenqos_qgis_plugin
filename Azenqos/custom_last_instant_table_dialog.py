@@ -13,6 +13,7 @@ from add_param_dialog import CustomQCompleter
 import azq_utils
 import preprocess_azm
 import custom_last_instant_table_dataframe_model
+import qt_utils
 
 
 class custom_last_instant_table_dialog(QtWidgets.QDialog):
@@ -231,10 +232,14 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
             insert_column_right = menu.addAction("Insert Column Right")
             action = menu.exec_(self.ui.tableView.mapToGlobal(QPos))
             if action == delete_row:
-                del self.param_list[row] 
+                reply = qt_utils.ask_yes_no(None, "Delete Row", "Do you want to delete the selected row?")
+                if reply == 0:
+                    del self.param_list[row] 
             elif action == delete_column:
-                for param in self.param_list:
-                    del param[col]
+                reply = qt_utils.ask_yes_no(None, "Delete Column", "Do you want to delete the selected Column?")
+                if reply == 0:
+                    for param in self.param_list:
+                        del param[col]
             elif action == insert_row_above:
                 n_col = len(self.param_list[row])
                 print(n_col)

@@ -33,7 +33,7 @@ while True:
 today = date.today()
 date_str = today.strftime("%Y-%m-%d")
 version = "%.03f" % version.VERSION
-file_name = "azenqos_qgis_plugin_{}_{}.zip".format(date_str, version)
+file_name = "azenqos_qgis_plugin_{}.zip".format(version)
 remote_path = remote_directory + "/" + file_name
 
 print("Pack Plugin Start")
@@ -44,9 +44,14 @@ print(local_path)
 assert os.path.exists(local_path)
 
 print("Upload Plugin Start")
-sftp = ssh.open_sftp()
-sftp.put(local_path, remote_path)
-sftp.close()
+while True:
+    try:
+        sftp = ssh.open_sftp()
+        sftp.put(local_path, remote_path)
+        sftp.close()
+        break
+    except:
+        pass
 print("Upload Plugin Done")
 
 os.remove(local_path)

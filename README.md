@@ -10,9 +10,14 @@ Please open below document for full details on installation, features and usage:
 
 <https://docs.google.com/document/d/13ERtna5Rwuh0qgYUB0n8qihoW6hCO30TCJAIw_tXri0/edit?usp=sharing>
 
+Windows Installation instructions(recommended)
+-------------------------
+  - Download the Azenqos QGIS Plugin(Bundle) from <https://files.azenqos.com/plugin/> (latest version).
+  - Extract the downloaded zip file.
+  - Locate and run the "setup.exe" file.
+
 Installation instructions
 -------------------------
-
 - Install QGIS Standalone Installer from: 
   - Open a web browser to: <https://qgis.org/en/site/forusers/download.html>
   - Click on 'Downloads for Windows'

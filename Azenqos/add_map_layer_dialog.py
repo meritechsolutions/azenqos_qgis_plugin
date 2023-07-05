@@ -95,6 +95,11 @@ def create_param_layer(gc, param_name, selected_ue=None):
                     location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
             df = pd.read_sql(sqlstr, dbcon, parse_dates=['time'])
             df = df.loc[df[param_name].notna()]
+            if table_name == "logs":
+                df = df.drop(["geom"], axis=1, errors="ignore")
+                df_location = pd.read_sql("select time, log_hash, geom from location where geom is not null", dbcon, parse_dates=["time"]).sort_values(by="time")
+                df = pd.merge_asof(left=df_location, right=df, left_on=["time"], right_on=["time"],by="log_hash", direction="backward", allow_exact_matches=True, tolerance=pd.Timedelta("300s"))
+                df[param_name] = df[param_name].ffill()
             theme_param = param_name
             if layer_name.startswith('call_init'):
                 theme_param = None

@@ -167,11 +167,10 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
             print("table: {} table_has_geom {}".format(table, table_has_geom))
             if table == "logs":
                 df = pd.read_sql("select * from {}".format(table), dbcon, parse_dates=["time"]).sort_values(by="time")
-                print(df.head)
                 df = df.drop(["geom"], axis=1, errors="ignore")
-                print(df.columns)
                 df_location = pd.read_sql("select time, log_hash, geom from location where geom is not null", dbcon, parse_dates=["time"]).sort_values(by="time")
-                df = pd.merge_asof(left=df, right=df_location, left_on=["time"], right_on=["time"],by="log_hash", direction="forward", allow_exact_matches=True, tolerance=pd.Timedelta("300s"))
+                df = pd.merge_asof(left=df_location, right=df, left_on=["time"], right_on=["time"],by="log_hash", direction="backward", allow_exact_matches=True, tolerance=pd.Timedelta("300s"))
+                df[param] = df[param].ffill()
                 df.to_sql(table, dbcon, if_exists="replace", index=False)
 
             if cre_table:

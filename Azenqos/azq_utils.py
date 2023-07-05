@@ -2048,18 +2048,25 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
             assert os.path.isfile(databasePath)
             tmpdbfp = databasePath
         assert not os.path.isfile(tmpdbfp)
-        if ((("lat" not in df.columns) and ("lon" not in df.columns)) and (("positioning_lat" not in df.columns) and ("positioning_lon" not in df.columns))) and databasePath is not None:
-            print("need to merge lat and lon")
-            with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
-                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
-                    columns={"positioning_lat": "lat", "positioning_lon": "lon"}
-                )
+
         table = "layer_dump" if theme_param is None else preprocess_azm.get_table_for_column(theme_param)
         if pp_voice_table is not None:
             table = pp_voice_table
         elif theme_param == "rat":
             table = "technology"
             
+        within_millis_of_gps=30 * 1000
+        asof_lat_lon_direction="backward"
+        if table == "logs" or table == "log_info":
+            within_millis_of_gps=30 * 10000
+            asof_lat_lon_direction="forward"
+
+        if ((("lat" not in df.columns) and ("lon" not in df.columns)) and (("positioning_lat" not in df.columns) and ("positioning_lon" not in df.columns))) and databasePath is not None:
+            print("need to merge lat and lon")
+            with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
+                df = preprocess_azm.merge_lat_lon_into_df(dbcon, df, within_millis_of_gps=within_millis_of_gps, asof_lat_lon_direction=asof_lat_lon_direction).rename(
+                    columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                )
         qgis_layers_gen.dump_df_to_spatialite_db(
             df, tmpdbfp, table, is_indoor=is_indoor
         )

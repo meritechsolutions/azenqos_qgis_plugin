@@ -165,6 +165,15 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
             table_has_geom = "geom" in table_cols
             # table_has_modem_time = "modem_time" in table_cols
             print("table: {} table_has_geom {}".format(table, table_has_geom))
+            if table == "logs":
+                df = pd.read_sql("select * from {}".format(table), dbcon, parse_dates=["time"]).sort_values(by="time")
+                print(df.head)
+                df = df.drop(["geom"], axis=1, errors="ignore")
+                print(df.columns)
+                df_location = pd.read_sql("select time, log_hash, geom from location where geom is not null", dbcon, parse_dates=["time"]).sort_values(by="time")
+                df = pd.merge_asof(left=df, right=df_location, left_on=["time"], right_on=["time"],by="log_hash", direction="forward", allow_exact_matches=True, tolerance=pd.Timedelta("300s"))
+                df.to_sql(table, dbcon, if_exists="replace", index=False)
+
             if cre_table:
                 print("read count")
                 table_len = pd.read_sql("select count(*) from {}".format(table), dbcon).iloc[0,0]
@@ -501,6 +510,7 @@ def add_pos_lat_lon_to_indoor_df(df, df_location):
 
 call_type_dict = {"call_setup_duration":"double", "call_end_cause":"text"}
 rat_type_dict = {"rat":"text", "technology":"text"}
+logs_type_dict = {"log_start_time":"datetime", "log_end_time":"datetime", "log_tag":"text", "log_ori_file_name":"text", "log_app_version":"text", "log_license_edition":"text", "log_required_pc_version":"text", "log_timezone_offset":"text"}
 
 def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=False, data_df=None):
     g_azq_global_elm_info_df = preprocess_azm.get_elm_df_from_csv()
@@ -516,6 +526,8 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         param_type = call_type_dict[param]
     elif param in rat_type_dict.keys():
         param_type = rat_type_dict[param]
+    elif param in logs_type_dict.keys():
+        param_type = logs_type_dict[param]
     else:
         param_name = preprocess_azm.get_elm_name_from_param_col_with_arg(param)
         param_type = g_azq_global_elm_info_df.loc[g_azq_global_elm_info_df["var_name"] == param_name, "db_type"].iloc[0]

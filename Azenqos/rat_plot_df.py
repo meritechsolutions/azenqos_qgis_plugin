@@ -40,7 +40,8 @@ def get(dbcon, where = "", drop_dup=True, nr_ffill_limit=10):
                 cols = [c for c in df_merge.columns if c.lower()[-7:] != 'not_use']
                 df=df_merge[cols]
                 df = df.ffill(limit=nr_ffill_limit) # To handle many duplicate nulls in nr_cell_meas table
-            per_rat_df_list.append(df)
+            if len(df) > 0:
+                per_rat_df_list.append(df)
 
         except Exception as e:
             type_, value_, traceback_ = sys.exc_info()

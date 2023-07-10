@@ -142,27 +142,29 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                     add_map_layer_dialog.create_param_layer(gc, call_type, selected_ue)
                                 except:
                                     pass
+                        try:
+                            layer_name = "rat"
+                            theme_param = "rat"
+                            where = ""
 
-                        layer_name = "rat"
-                        theme_param = "rat"
-                        where = ""
+                            if len(device_configs) > 1:
+                                title_ue_suffix = "(" + device["name"] + ")"
+                                layer_name = layer_name + title_ue_suffix 
+                                where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in device["log_hash"]]))
+                            df = rat_plot_df.get(dbcon, where=where)
 
-                        if len(device_configs) > 1:
-                            title_ue_suffix = "(" + device["name"] + ")"
-                            layer_name = layer_name + title_ue_suffix 
-                            where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in device["log_hash"]]))
-                        df = rat_plot_df.get(dbcon, where=where)
-
-                        if df is not None and len(df) > 0:
-                            location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
-                            location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
-                            df_location = pd.read_sql(location_sqlstr, dbcon, parse_dates=['time'])
-                            if gc.is_indoor:
-                                df = db_preprocess.add_pos_lat_lon_to_indoor_df(df, df_location).rename(
-                                columns={"positioning_lat": "lat", "positioning_lon": "lon"}).reset_index(drop=True)
-                                if "geom" in df.columns:
-                                    del df["geom"]
-                            azq_utils.create_layer_in_qgis(gc.databasePath, df, layer_name, theme_param = theme_param, data_df=df)
+                            if df is not None and len(df) > 0:
+                                location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
+                                location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
+                                df_location = pd.read_sql(location_sqlstr, dbcon, parse_dates=['time'])
+                                if gc.is_indoor:
+                                    df = db_preprocess.add_pos_lat_lon_to_indoor_df(df, df_location).rename(
+                                    columns={"positioning_lat": "lat", "positioning_lon": "lon"}).reset_index(drop=True)
+                                    if "geom" in df.columns:
+                                        del df["geom"]
+                                azq_utils.create_layer_in_qgis(gc.databasePath, df, layer_name, theme_param = theme_param, data_df=df)
+                        except:
+                            pass
                         
                         ue += 1
 

@@ -2919,7 +2919,6 @@ Log_hash list: {}""".format(
 
             print("cleanup: len(self.gc.openedWindows)", len(self.gc.openedWindows))
             for widget in self.gc.openedWindows:
-                print("closing widget title:", widget.title)
                 try:
                     widget.close()
                 except Exception as e:

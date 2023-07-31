@@ -21,6 +21,9 @@ import requests
 from PyQt5 import QtWidgets, QtCore
 
 import dprint
+import PIL
+from PIL import Image, ImageGrab
+
 
 TMP_FOLDER_NAME = "tmp_gen"
 CONTAINER_MODE_TMP_GEN_PATH = "/host_shared_dir/tmp_gen"
@@ -2178,3 +2181,7 @@ def th_translate(msg):
         val = th_translate_replace_dict[key]
         msg = msg.replace(key, val)
     return msg
+
+
+def take_screenshot_pil_obj(bbox=None):
+    return ImageGrab.grab(bbox=bbox)

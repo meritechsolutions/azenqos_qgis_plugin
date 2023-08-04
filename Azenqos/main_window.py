@@ -29,12 +29,14 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QFrame,
     QToolBar,
+    QHeaderView,
 )
 from PyQt5.uic import loadUi
 
 
 import qt_utils, azq_utils
 import spider_plot
+import sql_utils
 from timeslider import timeSliderThread, timeSlider
 
 from datatable import TableWindow, create_table_window_from_api_expression_ret
@@ -615,7 +617,8 @@ Log_hash list: {}""".format(
 
     def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, custom_last_instant_table_param_list=None, custom_table_main_not_null=False, allow_no_log_opened=False, selected_ue=None,
                          col_min_size=40,
-                         col_default_size=70
+                         col_default_size=70,
+                         resize_to_contents=False,
     ):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
@@ -642,7 +645,8 @@ Log_hash list: {}""".format(
 
         widget.signal_ui_thread_emit_select_row_time.connect(updateTime)
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=allow_no_log_opened)
-        #widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        if resize_to_contents:
+            widget.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
 
     @pyqtSlot()
@@ -842,7 +846,7 @@ Log_hash list: {}""".format(
 
     ############# LTE menu slots
     @pyqtSlot()
-    def on_actionLTE_Radio_Parameters_triggered(self, selected_ue=None, col_min_size=40, col_default_size=70):
+    def on_actionLTE_Radio_Parameters_triggered(self, selected_ue=None, col_min_size=40, col_default_size=70, resize_to_contents=False):
         print("action lte radio params")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -861,6 +865,7 @@ Log_hash list: {}""".format(
                 stretch_last_row=False,
                 col_min_size=col_min_size,
                 col_default_size=col_default_size,
+                resize_to_contents=resize_to_contents,
                 )
 
     @pyqtSlot()
@@ -2715,6 +2720,7 @@ Log_hash list: {}""".format(
             for device in self.gc.device_configs:
                 worker = Worker(azq_utils.live_mode(self.gc, device, db_queue))
                 self.gc.threadpool.start(worker)
+        self.ui.top_label.setText("")
         print("open_logs: DONE")
 
     def timeChange(self):
@@ -2791,7 +2797,6 @@ Log_hash list: {}""".format(
         # print("%s: timeChange7" % os.path.basename(__file__))
         # print("signal_ui_thread_emit_time_slider_updated.emit()")
         self.signal_ui_thread_emit_time_slider_updated.emit(self.gc.currentTimestamp)
-
         self.hilightFeature()
 
         opened_windows = list(self.gc.mdi.subWindowList())
@@ -2838,6 +2843,115 @@ Log_hash list: {}""".format(
                 self.gc.threadpool.activeThreadCount(),
             )
         )
+        tt = f"Synced: {self.gc.currentDateTimeString}"
+        gp = self.get_global_top_params()
+        if gp:
+            tt += " Prev "+gp
+        self.ui.top_label.setText(tt)
+
+
+    def get_global_top_params(self):
+        ret = ""
+        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+            try:
+                rat_to_params_to_col_dict = {
+                    "LTE": [
+                        {
+                        "RSRP": "lte_inst_rsrp_1",
+                        "SINR": "lte_sinr_1",
+                        },
+                        {
+                        "Band": "lte_band_1",
+                        "EARFCN": "lte_earfcn_1",
+                        "PCI": "lte_physical_cell_id_1",
+                        "Enb": "lte_sib1_enb_id",
+                        "lci": "lte_sib1_local_cell_id",
+                        }
+                    ],
+                    "NR": [
+                        {
+                        "RSRP": "nr_servingbeam_ss_rsrp_1",
+                        "SINR": "nr_servingbeam_ss_sinr_1",
+                        },
+                        {
+                        "Band": "nr_band_1",
+                        "ARFCN": "nr_dl_arfcn_1",
+                        "PCI": "nr_servingbeam_pci_1",
+                        "Gnb": "nr_sib1_gnb_id",
+                        "lci": "lte_sib1_local_cell_id",
+                        }
+                    ],
+                    "WCDMA": [
+                        {
+                        "RSCP": "wcdma_aset_rscp_1",
+                        "Ec/Io": "wcdma_aset_ecio_1",
+                        },
+                        {
+                        "UARFCN": "wcdma_aset_cellfreq_1",
+                        "PSC": "wcdma_aset_sc_1",
+                        }
+                    ],
+                    "GSM": [
+                        {
+                        "RxLev": "gsm_rxlev_sub_dbm",
+                        "RxQual": "gsm_rxqual_sub",
+                        },
+                        {
+                        "ARFCN": "gsm_arfcn_bcch",
+                        "BSIC": "gsm_bsic",
+                        }
+                    ]
+                }
+                for rat, params_to_col_dict_list in rat_to_params_to_col_dict.items():
+                    this_rat_got_vals = False
+                    rows = []
+                    for params_to_col_dict in params_to_col_dict_list:
+                        row_ret = ""
+                        for pname, col in params_to_col_dict.items():
+                            try:
+                                table = preprocess_azm.get_table_for_column(col)
+                                sql = f"SELECT time, {col} FROM {table}"
+                                import azq_theme_manager
+                                lookback_secs = 3600*24 if azq_theme_manager.is_param_col_an_id(col) else 5
+                                print("lookback_secs:", lookback_secs)
+                                sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.gc.selected_row_log_hash, self.gc.currentDateTimeString, lookback_secs=lookback_secs)
+                                print("sql:", sql)
+                                df = pd.read_sql(sql, dbcon).sort_values("time", ascending=False)
+                                print("df:", df)
+                                if not df.empty and df.last_valid_index() is not None:
+                                    val = df.iloc[0, 1]
+                                    if pd.notnull(val):
+                                        try:
+                                            if "." in str(val):
+                                                val = "%.02f" % float(val)
+                                            else:
+                                                val = int(val)
+                                        except:
+                                            pass
+                                        row_ret += f" {pname}: {val}"
+                                        this_rat_got_vals = True
+                            except:
+                                type_, value_, traceback_ = sys.exc_info()
+                                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                                print(
+                                    "WARNING: get_global_top_params inner sql exception: {}".format(
+                                        exstr
+                                    )
+                                )
+                        if row_ret:
+                            rows.append(row_ret)
+                    if this_rat_got_vals:
+                        ret = rat + ":"+"\n".join(rows)
+                        break
+            except:
+                type_, value_, traceback_ = sys.exc_info()
+                exstr = str(traceback.format_exception(type_, value_, traceback_))
+                print(
+                    "WARNING: get_global_top_params exception: {}".format(
+                        exstr
+                    )
+                )
+        return ret
 
 
     def hilightFeature(self):
@@ -3319,7 +3433,7 @@ Log_hash list: {}""".format(
             if reply == 0:
                 self.gc.easy_overview_mode = True
                 print("show server overview")
-                self.on_actionServer_overview_layers_triggered()  # TODO open this year - 60 second bin
+                self.on_actionServer_overview_layers_triggered()
                 self.on_actionServerAIPrediction_triggered()
                 print("load POI layer")
                 self.pre_load_poi_layer()

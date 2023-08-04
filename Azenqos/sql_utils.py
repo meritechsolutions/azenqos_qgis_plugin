@@ -20,7 +20,7 @@ from exynos_basic_info_nr
 '''
 
 LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART = '''
-where {log_hash_filt_part} time between DATETIME('{time}','-5 seconds') and '{time}'
+where {log_hash_filt_part} time between DATETIME('{time}','-{lookback_secs} seconds') and '{time}'
 '''
 
 LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SUFFIX = '''.format(
@@ -100,10 +100,11 @@ def get_ex_eval_str_for_select_from_part(select_from_part):
     LOG_HASH_TIME_MATCH_EVAL_STR_EXAMPLE_SUFFIX
 
 
-def sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time):
+def sql_lh_time_match_for_select_from_part(select_from_part, log_hash, time, lookback_secs:int=5):
     if log_hash is not None and not isinstance(log_hash, list):
         log_hash = [log_hash]
     return select_from_part+LOG_HASH_TIME_MATCH_DEFAULT_WHERE_PART.format(
+        lookback_secs=lookback_secs,
         log_hash_filt_part='log_hash in ({}) and '.format(','.join([str(selected_log) for selected_log in log_hash])) if log_hash is not None else '',
         time=time
     )

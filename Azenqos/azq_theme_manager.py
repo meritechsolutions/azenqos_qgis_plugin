@@ -166,7 +166,11 @@ def is_param_col_an_id(param_col, table_name=None):
     param_col = preprocess_azm.get_elm_name_from_param_col_with_arg(param_col)
 
     print(("check is_param_col_an_id:", param_col))
-
+    if not table_name:
+        try:
+            table_name = preprocess_azm.get_table_for_column(param_col)
+        except:
+            pass
     if not table_name is None:
         if table_name in id_tables:
             print(("check is_param_col_an_id:", param_col, "ret true"))

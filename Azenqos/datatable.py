@@ -98,6 +98,8 @@ class TableWindow(QWidget):
         list_module=False,
         stretch_last_row=False,
         options=None,
+        col_min_size=40,
+        col_default_size=70
     ):
         super().__init__(parent)
         if options is None:
@@ -128,6 +130,8 @@ class TableWindow(QWidget):
         self.list_module = options["list_module"]
         self.stretch_last_row = options["stretch_last_row"]
         self.options = options
+        self.col_min_size = col_min_size
+        self.col_default_size = col_default_size
         ################
 
         # self.settings.setValue("func_key",self.func_key)
@@ -285,8 +289,8 @@ class TableWindow(QWidget):
         layout.addWidget(self.tableView)
 
         self.tableView.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
-        self.tableView.horizontalHeader().setMinimumSectionSize(40)
-        self.tableView.horizontalHeader().setDefaultSectionSize(70)
+        self.tableView.horizontalHeader().setMinimumSectionSize(self.col_min_size)
+        self.tableView.horizontalHeader().setDefaultSectionSize(self.col_default_size)
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
 
         # self.tableView.verticalHeader().setMinimumSectionSize(12)

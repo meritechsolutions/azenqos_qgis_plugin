@@ -27,6 +27,8 @@ from PyQt5.QtWidgets import (
     QStyle,
     QMessageBox,
     QPushButton,
+    QFrame,
+    QToolBar,
 )
 from PyQt5.uic import loadUi
 
@@ -103,6 +105,12 @@ import sqlite3
 TIME_COL_DEFAULT_WIDTH = 150
 NAME_COL_DEFAULT_WIDTH = 180
 CURRENT_WORKSPACE_FN = "last_workspace.ini"
+
+class VLine(QFrame):
+    # a simple VLine, like the one you get from designer
+    def __init__(self):
+        super(VLine, self).__init__()
+        self.setFrameShape(self.VLine|self.Sunken)
 
 class main_window(QMainWindow):
 
@@ -210,7 +218,6 @@ class main_window(QMainWindow):
         t = threading.Thread(target=emit_init_done)
         t.start()
         ######################################################################################################
-
         print("main_window __init__() done")
 
     def set_open_cellfile_progress(self, value):
@@ -606,7 +613,10 @@ Log_hash list: {}""".format(
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="NR Data Parameters", selected_ue=selected_ue)
 
-    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, custom_last_instant_table_param_list=None, custom_table_main_not_null=False, allow_no_log_opened=False, selected_ue=None):
+    def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, custom_last_instant_table_param_list=None, custom_table_main_not_null=False, allow_no_log_opened=False, selected_ue=None,
+                         col_min_size=40,
+                         col_default_size=70
+    ):
         swa = SubWindowArea(self.mdi, self.gc)
         print("add_param_window: time_list_mode:", time_list_mode)
         widget = TableWindow(
@@ -621,7 +631,9 @@ Log_hash list: {}""".format(
             custom_table_param_list=custom_table_param_list,
             custom_last_instant_table_param_list=custom_last_instant_table_param_list,
             custom_table_main_not_null=custom_table_main_not_null,
-            selected_ue=selected_ue
+            selected_ue=selected_ue,
+            col_min_size=col_min_size,
+            col_default_size=col_default_size,
         )
         
         def updateTime(time):
@@ -830,7 +842,7 @@ Log_hash list: {}""".format(
 
     ############# LTE menu slots
     @pyqtSlot()
-    def on_actionLTE_Radio_Parameters_triggered(self, selected_ue = None):
+    def on_actionLTE_Radio_Parameters_triggered(self, selected_ue=None, col_min_size=40, col_default_size=70):
         print("action lte radio params")
         if selected_ue is None and len(self.gc.device_configs) > 1:
             import select_log_dialog
@@ -841,7 +853,15 @@ Log_hash list: {}""".format(
             selected_ue = dlg.log
         with open(azq_utils.get_module_fp("custom_table/lte_radio.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
-            self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="LTE Radio Parameters", selected_ue=selected_ue)
+            self.add_param_window(
+                custom_df=custom_last_instant_table_param_list,
+                custom_last_instant_table_param_list=custom_last_instant_table_param_list,
+                title="LTE Radio Parameters",
+                selected_ue=selected_ue,
+                stretch_last_row=False,
+                col_min_size=col_min_size,
+                col_default_size=col_default_size,
+                )
 
     @pyqtSlot()
     def on_actionLTE_Serving_Neighbors_triggered(self, selected_ue = None):
@@ -1995,6 +2015,7 @@ Log_hash list: {}""".format(
 
     def setupUi(self):
         self.ui = loadUi(azq_utils.get_module_fp("main_window.ui"), self)
+
         self.toolbar = self.ui.toolBar
         self.ui.statusbar.showMessage("Please open a log to start...")
         try:
@@ -2297,6 +2318,14 @@ Log_hash list: {}""".format(
         threading.Event()
         self.gc.isSliderPlay = False
 
+
+    def updateTime_str(self, time_str: str):
+        epoch = azq_utils.datetimeStringtoTimestamp(time_str)
+        timestampValue = epoch - self.gc.minTimeValue
+        print("updateTime_str: timestampValue:", timestampValue)
+        self.setTimeValue(timestampValue)
+
+
     def setTimeValue(self, value):
         print("%s: setTimeValue %s" % (os.path.basename(__file__), value))
         print(value)
@@ -2315,8 +2344,36 @@ Log_hash list: {}""".format(
         elif msg == "init":
             print("task_done_slot init start")
             self.set_project_crs()
+            #ss = azq_utils.take_screenshot_pil_obj()
+            #print("task_done_slot save ss start")
+            #ss.save("/host_shared_dir/tmp_gen/ss.png")
+            #print("task_done_slot save ss")
             print("task_done_slot init done")
-
+            AZQ_REPLAY_ENV_ACTIONS_KEY = "AZQ_REPLAY_ENV_ACTIONS_KEY"
+            if os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
+                try:
+                    print("AZQ_REPLAY_ENV_ACTIONS_KEY actions START")
+                    action_list = json.loads(
+                        os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]
+                    )
+                    for action in action_list:
+                        print("action START:", action)
+                        assert isinstance(action, str)
+                        main_window.curInstance = self
+                        action_ret = eval(action)
+                        print("action DONE: action_ret", action_ret)
+                    print("AZQ_REPLAY_ENV_ACTIONS_KEY actions DONE")
+                except:
+                    type_, value_, traceback_ = sys.exc_info()
+                    exstr = str(
+                        traceback.format_exception(type_, value_, traceback_)
+                    )
+                    print(
+                        "ABORT: timeChangeImpl - exception: {}".format(
+                            exstr
+                        )
+                    )
+                    os._exit(os.EX_TEMPFAIL)
 
     def ui_thread_emit_time_slider_updated(self, timestamp):
         print("ui_thread_emit_time_slider_updated")
@@ -2551,57 +2608,77 @@ Log_hash list: {}""".format(
             )
 
 
-    def open_logs(self, connected_mode_refresh=False, ask_close_all_layers=True, multi_ue_mode = False):
-        if self.gc.databasePath:
-            if ask_close_all_layers:
-                reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?", question=True)
+    def open_logs(self, connected_mode_refresh=False, ask_close_all_layers=True, multi_ue_mode=False, auto_mode_azm=None, auto_mode_theme=None, auto_mode_cellfiles=[]):
+        print("open_logs: START")
+        if auto_mode_azm:
+            print("auto_mode_azm START:", auto_mode_azm)
+            assert os.path.isfile(auto_mode_azm)
+            if auto_mode_theme:
+                assert os.path.isfile(auto_mode_theme)
+                print("auto_mode_azm import theme")
+                azq_theme_manager.set_default_theme_file(auto_mode_theme)
+            if auto_mode_cellfiles:
+                print("auto_mode_azm import cellfiles")
+                azq_cell_file.check_cell_files(auto_mode_cellfiles)
+                self.gc.cell_files = auto_mode_cellfiles
 
-                if reply == QMessageBox.Cancel:
-                    return
-                self.close_all_layers = False
-                if reply == QMessageBox.Yes:
-                    self.close_all_layers = True
-            self.gc.databasePath = None
-            self.gc.db_fp = None
-            self.cleanup()
-            '''
-            msgBox = QMessageBox()
-            msgBox.setWindowTitle("Log already open")
-            if self.qgis_iface is not None:
-                msgBox.setText("To open a new log, click on the AZENQOS QGIS plugin icon/menu to close this and start a new session...")
+            importer = import_db_dialog.import_db_dialog(self, self.gc)
+            importer.import_azm(auto_mode_azm)
+            importer.addDatabase()
+            print("auto_mode_azm DONE:", auto_mode_azm)
+        else:
+            if self.gc.databasePath:
+                if ask_close_all_layers:
+                    reply = qt_utils.ask_yes_no(None, "Open log", "Close all layers?", question=True)
+
+                    if reply == QMessageBox.Cancel:
+                        return
+                    self.close_all_layers = False
+                    if reply == QMessageBox.Yes:
+                        self.close_all_layers = True
+                self.gc.databasePath = None
+                self.gc.db_fp = None
+                self.cleanup()
+                '''
+                msgBox = QMessageBox()
+                msgBox.setWindowTitle("Log already open")
+                if self.qgis_iface is not None:
+                    msgBox.setText("To open a new log, click on the AZENQOS QGIS plugin icon/menu to close this and start a new session...")
+                else:
+                    msgBox.setText("To open a new log, please close/exit first...")
+                msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
+                msgBox.exec_()            
+                return
+                '''
+            if not multi_ue_mode:
+                dlg = import_db_dialog.import_db_dialog(self, self.gc, connected_mode_refresh=connected_mode_refresh)
+                dlg.show()
+                ret = dlg.exec()
+                print("import_db_dialog ret: {}".format(ret))
             else:
-                msgBox.setText("To open a new log, please close/exit first...")
-            msgBox.addButton(QPushButton("OK"), QMessageBox.YesRole)
-            msgBox.exec_()            
-            return
-            '''
-        if not multi_ue_mode:
-            dlg = import_db_dialog.import_db_dialog(self, self.gc, connected_mode_refresh=connected_mode_refresh)
-            dlg.show()
-            ret = dlg.exec()
-            print("import_db_dialog ret: {}".format(ret))
-        else:
-            dlg = open_multiple_ue_dialog.open_multiple_ue_dialog(self, self.gc)
-            dlg.show()
-            ret = dlg.exec()
+                dlg = open_multiple_ue_dialog.open_multiple_ue_dialog(self, self.gc)
+                dlg.show()
+                ret = dlg.exec()
 
-        if self.gc.log_mode == "adb":
-            self.sync_connected_phone_button.setEnabled(True)
-            self.live_button.setEnabled(True)
-        else:
-            self.sync_connected_phone_button.setEnabled(False)
-            self.live_button.setEnabled(False)
+            if self.gc.log_mode == "adb":
+                self.sync_connected_phone_button.setEnabled(True)
+                self.live_button.setEnabled(True)
+            else:
+                self.sync_connected_phone_button.setEnabled(False)
+                self.live_button.setEnabled(False)
         if not self.gc.databasePath:
+            print("not self.gc.databasePath so return")
             # dialog not completed successfully
             return
-        if self.gc.db_fp and self.qgis_iface:
-            print("starting layertask")
-            if self.close_all_layers:
-                self.add_map_layer()
-            self.add_spider_layer()
-            self.add_indoor_map_layers()
-            self.add_cell_layers()
-            self.add_db_layers()
+        if self.gc.db_fp:
+            if self.qgis_iface:
+                print("starting layertask")
+                if self.close_all_layers:
+                    self.add_map_layer()
+                self.add_spider_layer()
+                self.add_indoor_map_layers()
+                self.add_cell_layers()
+                self.add_db_layers()
         else:
             print("log not opened")
             return
@@ -2610,9 +2687,10 @@ Log_hash list: {}""".format(
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
             self.gc.timeSlider.setValue(0)
         if self.gc.databasePath:
-            self.load_current_workspace()
+            if not auto_mode_azm:
+                self.load_current_workspace()
             self.ui.statusbar.showMessage(
-                "Opened log db: {}".format(self.gc.databasePath)
+                "Opened log: {}".format(self.gc.azm_name if self.gc.azm_name else self.gc.databasePath)
             )
             if connected_mode_refresh:
                 if self.gc.sliderLength:
@@ -2637,6 +2715,7 @@ Log_hash list: {}""".format(
             for device in self.gc.device_configs:
                 worker = Worker(azq_utils.live_mode(self.gc, device, db_queue))
                 self.gc.threadpool.start(worker)
+        print("open_logs: DONE")
 
     def timeChange(self):
 

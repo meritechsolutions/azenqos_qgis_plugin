@@ -22,7 +22,7 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>800</width>
+     <width>0</width>
      <height>0</height>
     </size>
    </property>
@@ -46,6 +46,21 @@
      <number>1</number>
     </property>
     <item>
+     <widget class="QLabel" name="top_label">
+      <property name="font">
+       <font>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="text">
+       <string>Welcome - open a log to start...</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QMdiArea" name="mdi"/>
     </item>
    </layout>
@@ -56,7 +71,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

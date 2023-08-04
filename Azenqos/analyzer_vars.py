@@ -35,6 +35,7 @@ class analyzer_vars:
         self.mostFeaturesLayer = None
         self.log_mode = ""
         self.databasePath = None
+        self.azm_name = None
         self.db_fp = None  # same as databasePath but in snake_case
         self.cell_files = []
         self.minTimeValue = 0

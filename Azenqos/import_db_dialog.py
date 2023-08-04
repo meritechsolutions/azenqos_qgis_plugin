@@ -519,13 +519,7 @@ class import_db_dialog(QDialog):
             assert isinstance(zip_fp, str)
             assert os.path.isfile(zip_fp)
             if zip_fp.endswith(".azm") or zip_fp.endswith(".zip"):
-                self.databasePath = preprocess_azm.extract_entry_from_zip(
-                    zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
-                )
-                with contextlib.closing(sqlite3.connect(self.databasePath)) as dbcon:
-                    log_hash = pd.read_sql("SELECT log_hash FROM logs LIMIT 1;",dbcon).log_hash[0]
-                    out_tmp_each_log_dir = os.path.join(azq_utils.tmp_gen_path(), str(log_hash))
-                    preprocess_azm.extract_all_from_zip(zip_fp, out_tmp_each_log_dir)
+                self.import_azm(zip_fp)
             elif zip_fp.endswith(".db"):
                 databasePath = os.path.join(azq_utils.tmp_gen_path(), "azqdata.db")
                 shutil.copy(zip_fp, databasePath)
@@ -538,16 +532,6 @@ class import_db_dialog(QDialog):
             self.progress_update_signal.emit(70)
             self.import_status_signal.emit("Preparing database... creating layers as per theme")
             ret = self.addDatabase()  # this will create views/tables per param as per specified theme so must check theme before here
-            if not ret:
-                self.import_status_signal.emit("Preparing database... FAILED")
-                raise Exception(
-                    "Failed to open azqdata.db file inside the unzipped supplied azm file"
-                )
-            else:
-                self.progress_update_signal.emit(90)
-                self.import_status_signal.emit("Preparing database... done")
-                self.import_done_signal.emit("")
-                success = True
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -556,6 +540,16 @@ class import_db_dialog(QDialog):
         self.progress_update_signal.emit(100)
         self.import_status_signal.emit("Import logs - "+("SUCCESS" if success else "FAILED"))
 
+    def import_azm(self, zip_fp):
+        import preprocess_azm
+        self.gc.azm_name = os.path.basename(zip_fp)
+        self.databasePath = preprocess_azm.extract_entry_from_zip(
+            zip_fp, "azqdata.db", azq_utils.tmp_gen_path()
+        )
+        with contextlib.closing(sqlite3.connect(self.databasePath)) as dbcon:
+            log_hash = pd.read_sql("SELECT log_hash FROM logs LIMIT 1;", dbcon).log_hash[0]
+            out_tmp_each_log_dir = os.path.join(azq_utils.tmp_gen_path(), str(log_hash))
+            preprocess_azm.extract_all_from_zip(zip_fp, out_tmp_each_log_dir)
 
     def getTimeForSlider(self):
         startTime = None
@@ -592,6 +586,8 @@ class import_db_dialog(QDialog):
         return True
 
     def addDatabase(self):
+        print("addDatabase START")
+        ret = False
         # check db
         assert os.path.isfile(self.databasePath)
         with contextlib.closing(sqlite3.connect(self.databasePath)) as dbcon:
@@ -618,13 +614,24 @@ class import_db_dialog(QDialog):
                 assert self.databasePath
                 self.gc.databasePath = self.databasePath
                 self.gc.db_fp = self.gc.databasePath
-
+                print("addDatabase DONE SUCCESS")
             finally:
                 try:
                     dbcon.close()
                 except:
                     pass
-            return True
+                print("addDatabase DONE")
+            ret = True
+        if not ret:
+            self.import_status_signal.emit("Preparing database... FAILED")
+            raise Exception(
+                "Failed to open azqdata.db file inside the unzipped supplied azm file"
+            )
+        else:
+            self.progress_update_signal.emit(90)
+            self.import_status_signal.emit("Preparing database... done")
+            self.import_done_signal.emit("")
+            success = True
 
 
     def setIncrementValue(self):

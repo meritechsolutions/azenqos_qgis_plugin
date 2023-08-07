@@ -91,7 +91,6 @@ class polygon_kpi_exclusion(QWidget):
             qt_utils.msgbox("Please input an expressionn")
             return
 
-        x = 0
         try:
             test_eval = eval(self.expression)
             if not isinstance(test_eval, bool):
@@ -112,7 +111,6 @@ class polygon_kpi_exclusion(QWidget):
             is_in_polygon = False
             for polygon in polygon_list:
                 if polygon.geometry().intersects(feature.geometry()):
-                    x = feature[self.filter_value]
                     is_in_polygon = True
                     if eval(self.expression):
                         new_feature_list.append(feature)

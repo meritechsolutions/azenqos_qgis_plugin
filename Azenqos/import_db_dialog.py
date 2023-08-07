@@ -500,7 +500,6 @@ class import_db_dialog(QDialog):
         zip_fp = self.zip_fp
         success = False
         try:
-            import preprocess_azm
             azq_utils.cleanup_died_processes_tmp_folders()
             azq_utils.tmp_gen_new_instance()  # so wont overwrite to old folders where db might be still in use
 
@@ -531,7 +530,7 @@ class import_db_dialog(QDialog):
             
             self.progress_update_signal.emit(70)
             self.import_status_signal.emit("Preparing database... creating layers as per theme")
-            ret = self.addDatabase()  # this will create views/tables per param as per specified theme so must check theme before here
+            success = self.addDatabase()  # this will create views/tables per param as per specified theme so must check theme before here
         except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
@@ -631,7 +630,8 @@ class import_db_dialog(QDialog):
             self.progress_update_signal.emit(90)
             self.import_status_signal.emit("Preparing database... done")
             self.import_done_signal.emit("")
-            success = True
+            return ret
+            
 
 
     def setIncrementValue(self):

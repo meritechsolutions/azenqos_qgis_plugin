@@ -1,16 +1,12 @@
 import os
 import sys
-import time
 import asyncio
 
 # Adding folder path
-from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QSlider
 
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
-
-import numpy as np
 
 
 class timeSlider(QSlider):

@@ -43,7 +43,7 @@ def get(dbcon, where = "", drop_dup=True, nr_ffill_limit=10):
             if len(df) > 0:
                 per_rat_df_list.append(df)
 
-        except Exception as e:
+        except:
             type_, value_, traceback_ = sys.exc_info()
             exstr = str(traceback.format_exception(type_, value_, traceback_))
             print("WARNING: gen per_rat_df failed exception:", exstr)

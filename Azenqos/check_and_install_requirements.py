@@ -26,8 +26,6 @@ def compare(item1, item2):
     return item1_index - item2_index
 
 def check_and_install_requirements():
-    if os.name == "nt":
-        return
     needs_install = False
     import version
     import azq_utils

@@ -2356,7 +2356,7 @@ Log_hash list: {}""".format(
             print("task_done_slot init done")
             print("os.environ:", os.environ)
             AZQ_REPLAY_ENV_ACTIONS_KEY = "AZQ_REPLAY_ENV_ACTIONS_KEY"
-            if os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
+            if AZQ_REPLAY_ENV_ACTIONS_KEY in os.environ and os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
                 try:
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions START")
                     action_list = json.loads(

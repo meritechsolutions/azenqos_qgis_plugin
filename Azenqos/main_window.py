@@ -2797,7 +2797,7 @@ Log_hash list: {}""".format(
         self.timeSliderThread.set(value)
         # print("%s: timeChange5" % os.path.basename(__file__))
         self.gc.currentTimestamp = timestampValue
-        # print("%s: timeChange6" % os.path.basename(__file__))
+        print("%s: timeChange6 set self.gc.currentTimestamp:", self.gc.currentTimestamp)
         self.gc.currentDateTimeString = "%s" % (
             datetime.datetime.fromtimestamp(self.gc.currentTimestamp).strftime(
                 "%Y-%m-%d %H:%M:%S.%f"

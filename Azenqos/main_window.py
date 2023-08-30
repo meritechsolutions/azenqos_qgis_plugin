@@ -255,6 +255,14 @@ class main_window(QMainWindow):
         print("tile")
         self.mdi.tileSubWindows()
 
+
+    @pyqtSlot()
+    def on_actionCloseAllSubWindows_triggered(self):
+        print("tile")
+        self.mdi.closeAllSubWindows()
+
+
+
     @pyqtSlot()
     def on_actionCascade_triggered(self):
         print("cascade")
@@ -2825,7 +2833,16 @@ Log_hash list: {}""".format(
                         % (os.path.basename(__file__), window.title)
                     )
                     if window != self.update_from_data_table:
-                        window.hilightRow(sampledate)
+                        try:
+                            window.hilightRow(sampledate)
+                        except:
+                            type_, value_, traceback_ = sys.exc_info()
+                            exstr = str(traceback.format_exception(type_, value_, traceback_))
+                            print(
+                                "WARNING: window.hilightRow(sampledate) exception: {}".format(
+                                    exstr
+                                )
+                            )
                 else:
                     print(
                         "%s: timeChange7 movechart window %s"
@@ -2913,7 +2930,8 @@ Log_hash list: {}""".format(
                                 table = preprocess_azm.get_table_for_column(col)
                                 sql = f"SELECT time, {col} FROM {table}"
                                 import azq_theme_manager
-                                lookback_secs = 3600*24 if azq_theme_manager.is_param_col_an_id(col) else 5
+                                is_id = azq_theme_manager.is_param_col_an_id(col)
+                                lookback_secs = 3600*24 if is_id else 5
                                 print("lookback_secs:", lookback_secs)
                                 sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.gc.selected_row_log_hash, self.gc.currentDateTimeString, lookback_secs=lookback_secs)
                                 print("sql:", sql)
@@ -2930,7 +2948,8 @@ Log_hash list: {}""".format(
                                         except:
                                             pass
                                         row_ret += f" {pname}: {val}"
-                                        this_rat_got_vals = True
+                                        if not is_id:
+                                            this_rat_got_vals = True
                             except:
                                 type_, value_, traceback_ = sys.exc_info()
                                 exstr = str(traceback.format_exception(type_, value_, traceback_))

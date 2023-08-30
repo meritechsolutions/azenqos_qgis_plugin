@@ -663,7 +663,7 @@ class TableWindow(QWidget):
                     assert df is not None
                     assert isinstance(df, pd.DataFrame)
                     if self.time_list_mode:
-                        
+                        assert "time" in df.columns
                         df["time"] = pd.to_datetime(df["time"])
                         if self.title == "Events" and len(self.gc.pre_wav_file_list) > 0:
                             import voice_call_setup_df

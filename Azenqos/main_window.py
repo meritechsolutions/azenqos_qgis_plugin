@@ -2362,7 +2362,7 @@ Log_hash list: {}""".format(
             #ss.save("/host_shared_dir/tmp_gen/ss.png")
             #print("task_done_slot save ss")
             print("task_done_slot init done")
-            print("os.environ:", os.environ)
+            #print("os.environ:", os.environ)
             AZQ_REPLAY_ENV_ACTIONS_KEY = "AZQ_REPLAY_ENV_ACTIONS_KEY"
             if AZQ_REPLAY_ENV_ACTIONS_KEY in os.environ and os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
                 try:

@@ -332,7 +332,18 @@ class main_window(QMainWindow):
     def on_actionSupport_triggered(self):
         print("action support")
         qt_utils.msgbox("Please email support@azenqos.com", "Technical support", self)
-        
+
+
+    def add_image_view_swa(self, image_fp:str, width:int, height:int):
+        swa = SubWindowArea(self.mdi, self.gc)
+        im = QPixmap(image_fp)
+        im = im.scaled(width, height, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        label = QLabel()
+        #lblImage->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored );
+        self.add_subwindow_with_widget(swa, label, allow_no_log_opened=True)
+        label.setPixmap(im)
+        label.setScaledContents(True)
+
     @pyqtSlot()
     def on_actionUser_Guide_triggered(self):
         url = QtCore.QUrl('https://docs.google.com/document/d/13ERtna5Rwuh0qgYUB0n8qihoW6hCO30TCJAIw_tXri0/edit?usp=sharing')
@@ -622,6 +633,8 @@ Log_hash list: {}""".format(
         with open(azq_utils.get_module_fp("custom_table/nr_data.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="NR Data Parameters", selected_ue=selected_ue)
+
+
 
     def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, custom_last_instant_table_param_list=None, custom_table_main_not_null=False, allow_no_log_opened=False, selected_ue=None,
                          col_min_size=40,
@@ -2817,6 +2830,11 @@ Log_hash list: {}""".format(
         if len(self.gc.openedWindows) > 0:
             for window in self.gc.openedWindows:
                 is_visible = False
+                window_title = ""
+                try:
+                    window_title = window.title
+                except:
+                    pass
                 try:
                     is_visible = window.isVisible()  # handle c++ window deleted runtime error
                 except:
@@ -2830,10 +2848,10 @@ Log_hash list: {}""".format(
                     window.updateTime(sampledate)
                 elif isinstance(window, wifi_scan_chart.wifi_scan_chart):
                     window.update_time(sampledate)
-                elif not window.title in self.gc.linechartWindowname:
+                elif not window_title in self.gc.linechartWindowname:
                     print(
                         "%s: timeChange7 hilightrow window %s"
-                        % (os.path.basename(__file__), window.title)
+                        % (os.path.basename(__file__), window_title)
                     )
                     if window != self.update_from_data_table:
                         try:
@@ -2849,7 +2867,7 @@ Log_hash list: {}""".format(
                 else:
                     print(
                         "%s: timeChange7 movechart window %s"
-                        % (os.path.basename(__file__), window.title)
+                        % (os.path.basename(__file__), window_title)
                     )
                     window.moveChart(sampledate)
             self.update_from_data_table = None

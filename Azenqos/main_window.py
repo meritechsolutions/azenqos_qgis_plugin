@@ -2631,12 +2631,14 @@ Log_hash list: {}""".format(
                 assert os.path.isfile(auto_mode_theme)
                 print("auto_mode_azm import theme")
                 azq_theme_manager.set_default_theme_file(auto_mode_theme)
+            '''
             if auto_mode_cellfiles:
                 print("auto_mode_azm import cellfiles")
                 azq_cell_file.check_cell_files(auto_mode_cellfiles)
                 self.gc.cell_files = auto_mode_cellfiles
+            '''
 
-            importer = import_db_dialog.import_db_dialog(self, self.gc)
+            importer = import_db_dialog.import_db_dialog(self, self.gc, auto_mode=True)
             importer.import_azm(auto_mode_azm)
             importer.addDatabase()
             print("auto_mode_azm DONE:", auto_mode_azm)

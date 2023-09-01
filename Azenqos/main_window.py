@@ -2876,6 +2876,17 @@ Log_hash list: {}""".format(
         with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
             try:
                 rat_to_params_to_col_dict = {
+                    "NR": [
+                        {
+                            "RSRP": "nr_servingbeam_ss_rsrp_1",
+                            "SINR": "nr_servingbeam_ss_sinr_1",
+                        },
+                        {
+                            "Band": "nr_band_1",
+                            "ARFCN": "nr_dl_arfcn_1",
+                            "PCI": "nr_servingbeam_pci_1",
+                        }
+                    ],
                     "LTE": [
                         {
                         "RSRP": "lte_inst_rsrp_1",
@@ -2886,19 +2897,6 @@ Log_hash list: {}""".format(
                         "EARFCN": "lte_earfcn_1",
                         "PCI": "lte_physical_cell_id_1",
                         "Enb": "lte_sib1_enb_id",
-                        "lci": "lte_sib1_local_cell_id",
-                        }
-                    ],
-                    "NR": [
-                        {
-                        "RSRP": "nr_servingbeam_ss_rsrp_1",
-                        "SINR": "nr_servingbeam_ss_sinr_1",
-                        },
-                        {
-                        "Band": "nr_band_1",
-                        "ARFCN": "nr_dl_arfcn_1",
-                        "PCI": "nr_servingbeam_pci_1",
-                        "Gnb": "nr_sib1_gnb_id",
                         "lci": "lte_sib1_local_cell_id",
                         }
                     ],

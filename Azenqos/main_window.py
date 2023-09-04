@@ -255,6 +255,14 @@ class main_window(QMainWindow):
         print("tile")
         self.mdi.tileSubWindows()
 
+
+    @pyqtSlot()
+    def on_actionCloseAllSubWindows_triggered(self):
+        print("tile")
+        self.mdi.closeAllSubWindows()
+
+
+
     @pyqtSlot()
     def on_actionCascade_triggered(self):
         print("cascade")
@@ -324,7 +332,18 @@ class main_window(QMainWindow):
     def on_actionSupport_triggered(self):
         print("action support")
         qt_utils.msgbox("Please email support@azenqos.com", "Technical support", self)
-        
+
+
+    def add_image_view_swa(self, image_fp:str, width:int, height:int):
+        swa = SubWindowArea(self.mdi, self.gc)
+        im = QPixmap(image_fp)
+        im = im.scaled(width, height, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        label = QLabel()
+        #lblImage->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored );
+        self.add_subwindow_with_widget(swa, label, allow_no_log_opened=True)
+        label.setPixmap(im)
+        label.setScaledContents(True)
+
     @pyqtSlot()
     def on_actionUser_Guide_triggered(self):
         url = QtCore.QUrl('https://docs.google.com/document/d/13ERtna5Rwuh0qgYUB0n8qihoW6hCO30TCJAIw_tXri0/edit?usp=sharing')
@@ -614,6 +633,8 @@ Log_hash list: {}""".format(
         with open(azq_utils.get_module_fp("custom_table/nr_data.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="NR Data Parameters", selected_ue=selected_ue)
+
+
 
     def add_param_window(self, refresh_func_or_py_eval_str_or_sql_str=None, title="Param Window", time_list_mode=False, stretch_last_row=False, options=None, func_key=None, custom_df=None, custom_table_param_list=None, custom_last_instant_table_param_list=None, custom_table_main_not_null=False, allow_no_log_opened=False, selected_ue=None,
                          col_min_size=40,
@@ -2354,9 +2375,9 @@ Log_hash list: {}""".format(
             #ss.save("/host_shared_dir/tmp_gen/ss.png")
             #print("task_done_slot save ss")
             print("task_done_slot init done")
-            print("os.environ:", os.environ)
+            #print("os.environ:", os.environ)
             AZQ_REPLAY_ENV_ACTIONS_KEY = "AZQ_REPLAY_ENV_ACTIONS_KEY"
-            if os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
+            if AZQ_REPLAY_ENV_ACTIONS_KEY in os.environ and os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
                 try:
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions START")
                     action_list = json.loads(
@@ -2623,12 +2644,14 @@ Log_hash list: {}""".format(
                 assert os.path.isfile(auto_mode_theme)
                 print("auto_mode_azm import theme")
                 azq_theme_manager.set_default_theme_file(auto_mode_theme)
+            '''
             if auto_mode_cellfiles:
                 print("auto_mode_azm import cellfiles")
                 azq_cell_file.check_cell_files(auto_mode_cellfiles)
                 self.gc.cell_files = auto_mode_cellfiles
+            '''
 
-            importer = import_db_dialog.import_db_dialog(self, self.gc)
+            importer = import_db_dialog.import_db_dialog(self, self.gc, auto_mode=True)
             importer.import_azm(auto_mode_azm)
             importer.addDatabase()
             print("auto_mode_azm DONE:", auto_mode_azm)
@@ -2789,12 +2812,13 @@ Log_hash list: {}""".format(
         self.timeSliderThread.set(value)
         # print("%s: timeChange5" % os.path.basename(__file__))
         self.gc.currentTimestamp = timestampValue
-        # print("%s: timeChange6" % os.path.basename(__file__))
+
         self.gc.currentDateTimeString = "%s" % (
             datetime.datetime.fromtimestamp(self.gc.currentTimestamp).strftime(
                 "%Y-%m-%d %H:%M:%S.%f"
             )[:-3]
         )
+        print("%s: timeChange6 set self.gc.currentTimestamp:", self.gc.currentTimestamp, "self.gc.currentDateTimeString", self.gc.currentDateTimeString)
         # print("%s: timeChange7" % os.path.basename(__file__))
         # print("signal_ui_thread_emit_time_slider_updated.emit()")
         self.signal_ui_thread_emit_time_slider_updated.emit(self.gc.currentTimestamp)
@@ -2806,6 +2830,11 @@ Log_hash list: {}""".format(
         if len(self.gc.openedWindows) > 0:
             for window in self.gc.openedWindows:
                 is_visible = False
+                window_title = ""
+                try:
+                    window_title = window.title
+                except:
+                    pass
                 try:
                     is_visible = window.isVisible()  # handle c++ window deleted runtime error
                 except:
@@ -2819,17 +2848,26 @@ Log_hash list: {}""".format(
                     window.updateTime(sampledate)
                 elif isinstance(window, wifi_scan_chart.wifi_scan_chart):
                     window.update_time(sampledate)
-                elif not window.title in self.gc.linechartWindowname:
+                elif not window_title in self.gc.linechartWindowname:
                     print(
                         "%s: timeChange7 hilightrow window %s"
-                        % (os.path.basename(__file__), window.title)
+                        % (os.path.basename(__file__), window_title)
                     )
                     if window != self.update_from_data_table:
-                        window.hilightRow(sampledate)
+                        try:
+                            window.hilightRow(sampledate)
+                        except:
+                            type_, value_, traceback_ = sys.exc_info()
+                            exstr = str(traceback.format_exception(type_, value_, traceback_))
+                            print(
+                                "WARNING: window.hilightRow(sampledate) exception: {}".format(
+                                    exstr
+                                )
+                            )
                 else:
                     print(
                         "%s: timeChange7 movechart window %s"
-                        % (os.path.basename(__file__), window.title)
+                        % (os.path.basename(__file__), window_title)
                     )
                     window.moveChart(sampledate)
             self.update_from_data_table = None
@@ -2856,6 +2894,17 @@ Log_hash list: {}""".format(
         with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
             try:
                 rat_to_params_to_col_dict = {
+                    "NR": [
+                        {
+                            "RSRP": "nr_servingbeam_ss_rsrp_1",
+                            "SINR": "nr_servingbeam_ss_sinr_1",
+                        },
+                        {
+                            "Band": "nr_band_1",
+                            "ARFCN": "nr_dl_arfcn_1",
+                            "PCI": "nr_servingbeam_pci_1",
+                        }
+                    ],
                     "LTE": [
                         {
                         "RSRP": "lte_inst_rsrp_1",
@@ -2866,19 +2915,6 @@ Log_hash list: {}""".format(
                         "EARFCN": "lte_earfcn_1",
                         "PCI": "lte_physical_cell_id_1",
                         "Enb": "lte_sib1_enb_id",
-                        "lci": "lte_sib1_local_cell_id",
-                        }
-                    ],
-                    "NR": [
-                        {
-                        "RSRP": "nr_servingbeam_ss_rsrp_1",
-                        "SINR": "nr_servingbeam_ss_sinr_1",
-                        },
-                        {
-                        "Band": "nr_band_1",
-                        "ARFCN": "nr_dl_arfcn_1",
-                        "PCI": "nr_servingbeam_pci_1",
-                        "Gnb": "nr_sib1_gnb_id",
                         "lci": "lte_sib1_local_cell_id",
                         }
                     ],
@@ -2913,7 +2949,8 @@ Log_hash list: {}""".format(
                                 table = preprocess_azm.get_table_for_column(col)
                                 sql = f"SELECT time, {col} FROM {table}"
                                 import azq_theme_manager
-                                lookback_secs = 3600*24 if azq_theme_manager.is_param_col_an_id(col) else 5
+                                is_id = azq_theme_manager.is_param_col_an_id(col)
+                                lookback_secs = 3600*24 if is_id else 5
                                 print("lookback_secs:", lookback_secs)
                                 sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.gc.selected_row_log_hash, self.gc.currentDateTimeString, lookback_secs=lookback_secs)
                                 print("sql:", sql)
@@ -2930,7 +2967,8 @@ Log_hash list: {}""".format(
                                         except:
                                             pass
                                         row_ret += f" {pname}: {val}"
-                                        this_rat_got_vals = True
+                                        if not is_id:
+                                            this_rat_got_vals = True
                             except:
                                 type_, value_, traceback_ = sys.exc_info()
                                 exstr = str(traceback.format_exception(type_, value_, traceback_))

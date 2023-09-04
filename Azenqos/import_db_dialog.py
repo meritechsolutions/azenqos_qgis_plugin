@@ -52,7 +52,7 @@ class import_db_dialog(QDialog):
     import_status_signal = pyqtSignal(str)
     progress_update_signal = pyqtSignal(int)
 
-    def __init__(self, parent_window, gc, connected_mode_refresh=False):
+    def __init__(self, parent_window, gc, connected_mode_refresh=False, auto_mode=False):
         super(import_db_dialog, self).__init__(parent=parent_window)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.gc = gc
@@ -62,6 +62,7 @@ class import_db_dialog(QDialog):
         self.import_done_signal.connect(self.ui_handler_import_done)
         self.import_status_signal.connect(self.ui_handler_import_status)
         self.progress_update_signal.connect(self.progress)
+        self.auto_mode = auto_mode
         self.setupUi(self)
         self.connected_mode_refresh = connected_mode_refresh
         if self.connected_mode_refresh:
@@ -607,7 +608,8 @@ class import_db_dialog(QDialog):
                 self.gc.logPath = azq_utils.tmp_gen_path()
                 # check theme
                 check_theme(theme_fp = self.themePathLineEdit.text())
-                db_preprocess.prepare_spatialite_views(dbcon, gc = self.gc, real_world_indoor=self.real_world_indoor)
+                if not self.auto_mode:
+                    db_preprocess.prepare_spatialite_views(dbcon, gc = self.gc, real_world_indoor=self.real_world_indoor)
                 dbcon.close()  # in some rare cases 'with' doesnt flush dbcon correctly as close()
 
                 assert self.databasePath

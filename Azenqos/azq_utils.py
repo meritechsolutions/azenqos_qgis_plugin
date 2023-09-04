@@ -1906,8 +1906,12 @@ def adb_kill_server_threaded():
 
 
 def adb_kill_server():
-    ret = call_no_shell((get_adb_command(), 'kill-server'))
-    print("adb_kill_server() ret", ret)
+    try:
+        ret = call_no_shell((get_adb_command(), 'kill-server'))
+        print("adb_kill_server() ret", ret)
+    except Exception as e:
+        print("WARNING: adb_kill_server exception:", e)
+
 
 
 def scrcpy_popen(adb_device):

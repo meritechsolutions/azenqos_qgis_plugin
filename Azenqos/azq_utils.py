@@ -21,7 +21,10 @@ import requests
 from PyQt5 import QtWidgets, QtCore
 
 import dprint
-from PIL import ImageGrab
+try:
+    from PIL import ImageGrab
+except:
+    pass
 
 
 TMP_FOLDER_NAME = "tmp_gen"

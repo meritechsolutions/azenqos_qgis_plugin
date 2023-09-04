@@ -2951,11 +2951,12 @@ Log_hash list: {}""".format(
                                 import azq_theme_manager
                                 is_id = azq_theme_manager.is_param_col_an_id(col)
                                 lookback_secs = 3600*24 if is_id else 5
-                                print("lookback_secs:", lookback_secs)
+                                print("top_params lookback_secs:", lookback_secs)
                                 sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.gc.selected_row_log_hash, self.gc.currentDateTimeString, lookback_secs=lookback_secs)
-                                print("sql:", sql)
+                                sql += f"and {col} is not null"
+                                print("top_params sql:", sql)
                                 df = pd.read_sql(sql, dbcon).sort_values("time", ascending=False)
-                                print("df:", df)
+                                print("top_params df:", df)
                                 if not df.empty and df.last_valid_index() is not None:
                                     val = df.iloc[0, 1]
                                     if pd.notnull(val):
@@ -2968,6 +2969,7 @@ Log_hash list: {}""".format(
                                             pass
                                         row_ret += f" {pname}: {val}"
                                         if not is_id:
+                                            print("top_params this_rat_got_vals")
                                             this_rat_got_vals = True
                             except:
                                 type_, value_, traceback_ = sys.exc_info()
@@ -2981,6 +2983,7 @@ Log_hash list: {}""".format(
                             rows.append(row_ret)
                     if this_rat_got_vals:
                         ret = rat + ":"+"\n".join(rows)
+                        print("this_rat_got_vals ret", ret)
                         break
             except:
                 type_, value_, traceback_ = sys.exc_info()

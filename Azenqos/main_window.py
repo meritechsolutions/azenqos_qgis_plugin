@@ -162,6 +162,7 @@ class main_window(QMainWindow):
         self.task_done_signal.connect(
             self.task_done_slot
         )
+        self.last_window = None
 
         self.signal_trigger_zoom_to_active_layer.connect(
             self.slot_trigger_zoom_to_active_layer
@@ -249,6 +250,14 @@ class main_window(QMainWindow):
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
             if self.gc.live_mode_update_time:
                 self.gc.timeSlider.setValue(self.gc.sliderLength - 1)
+
+    def dump_last_window(self, fp):
+        print("dump_last_window START")
+        if self.last_window is not None:
+            print("dump_last_window START dump_data")
+            self.last_window.tableModel.dump_data(fp, to_csv=True)
+            print("dump_last_window END dump_data fp:", fp, "exists:", os.path.isfile(fp))
+        print("dump_last_window END")
 
     @pyqtSlot()
     def on_actionTile_triggered(self):
@@ -659,6 +668,7 @@ Log_hash list: {}""".format(
             col_min_size=col_min_size,
             col_default_size=col_default_size,
         )
+        self.last_window = widget
         
         def updateTime(time):
             self.update_from_data_table = widget

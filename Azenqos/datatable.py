@@ -22,7 +22,7 @@ from PyQt5.QtCore import (
     pyqtSignal,
     Qt,
     QItemSelection,
-    QAbstractTableModel,
+    QAbstractTableModel
 )
 import PyQt5.QtGui as QtGui
 from PyQt5.QtGui import QStandardItemModel, QIcon, QPixmap, QStandardItem
@@ -332,6 +332,42 @@ class TableWindow(QWidget):
         self.show()
 
 
+    def dump_data(self, fp, to_csv=True):
+        gui_mode = not fp
+        try:
+            if gui_mode:
+                fp, _ = QFileDialog.getSaveFileName(
+                    self, "Select dump file/location", QtCore.QDir.rootPath(), "*.csv" if to_csv else "*.parquet"
+                )
+            if fp:
+                df = self.tableModel.df
+                if len(df) and "log_hash" in df.columns and "time" in df.columns:
+                    if ("lat" not in df.columns) or ("lon" not in df.columns):
+                        print("need to merge lat and lon")
+                        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                            df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+                                columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                            )
+                if to_csv:
+                    if not fp.endswith(".csv"):
+                        fp += ".csv"
+                    df.to_csv(fp, index=False, quoting=csv.QUOTE_ALL)
+                else:
+                    if not fp.endswith(".parquet"):
+                        fp += ".parquet"
+                    df.to_parquet(fp)
+                if gui_mode:
+                    qt_utils.msgbox("Dumped to file: {}".format(fp))
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print(
+                "WARNING: datatable outer dump table to file contextmenu exception: {}".format(
+                    exstr
+                )
+            )
+            if not gui_mode:
+                qt_utils.msgbox("dump failed: " + exstr, title="Failed")
     def contextMenuEvent(self, event):
         menu = QMenu(self)
         actions_dict = {"create_qgis_layer": None, "custom_expression": None, "to_csv": None, "to_parquet": None, "custom_table": None}
@@ -384,37 +420,8 @@ class TableWindow(QWidget):
             dlg.on_result.connect(on_result)
             dlg.show()
         elif action == actions_dict["to_csv"] or action == actions_dict["to_parquet"]:
-            df = self.tableModel.df
-            try:
-                if len(df) and "log_hash" in df.columns and "time" in df.columns:
-                    if ("lat" not in df.columns) or ("lon" not in df.columns):
-                        print("need to merge lat and lon")
-                        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
-                            df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
-                                columns={"positioning_lat": "lat", "positioning_lon": "lon"}
-                            )
-                fp, _ = QFileDialog.getSaveFileName(
-                    self, "Select dump file/location", QtCore.QDir.rootPath(), "*.csv" if action == actions_dict["to_csv"] else "*.parquet"
-                )
-                if fp:
-                    if action == actions_dict["to_csv"]:
-                        if not fp.endswith(".csv"):
-                            fp += ".csv"
-                        df.to_csv(fp, index=False, quoting=csv.QUOTE_ALL)
-                    else:
-                        if not fp.endswith(".parquet"):
-                            fp += ".parquet"
-                        df.to_parquet(fp)
-                    qt_utils.msgbox("Dumped to file: {}".format(fp))
-            except:
-                type_, value_, traceback_ = sys.exc_info()
-                exstr = str(traceback.format_exception(type_, value_, traceback_))
-                print(
-                    "WARNING: datatable title {} dump table to file contextmenu exception: {}".format(
-                        self.title, exstr
-                    )
-                )
-                qt_utils.msgbox("dump failed: " + exstr, title="Failed")
+            to_csv = action == actions_dict["to_csv"]
+            self.dump_data("", to_csv)
 
         elif action == actions_dict["create_qgis_layer"]:
             if self.gc.qgis_iface is None:
@@ -1451,6 +1458,52 @@ class TableModel(QAbstractTableModel):
 
         # self.testColumnValue()
 
+    def dump_data(self, fp, to_csv=True):
+        gui_mode = not fp
+        try:
+            if gui_mode:
+                fp, _ = QFileDialog.getSaveFileName(
+                    self, "Select dump file/location", QtCore.QDir.rootPath(), "*.csv" if to_csv else "*.parquet"
+                )
+            if fp:
+                print("tablemodel dump_data0 self.columnCount(None)", self.columnCount(None))
+                print("tablemodel dump_data0 self.rowCount(None)", self.rowCount(None))
+                data_dict = {}
+                for col in range(self.columnCount(None)):
+                    data_dict[col] = []
+                for row in range(self.rowCount(None)):
+                    for col in range(self.columnCount(None)):
+                        text = str(self.data(self.index(row, col)))
+                        data_dict[col].append(text)
+                        # write v, add separator...
+                    # finish row...
+                df = pd.DataFrame(data_dict)
+                print("tablemodel dump_data1 df:\n", df)
+                if to_csv:
+                    if not fp.endswith(".csv"):
+                        fp += ".csv"
+                    print("tablemodel dump_data2 to_csv start")
+                    df.to_csv(fp, index=False, quoting=csv.QUOTE_ALL)
+                    print("tablemodel dump_data2 to_csv done")
+                else:
+                    if not fp.endswith(".parquet"):
+                        fp += ".parquet"
+                    print("tablemodel dump_data2 to_parquet start")
+                    df.to_parquet(fp)
+                    print("tablemodel dump_data2 to_parquet done")
+                if gui_mode:
+                    qt_utils.msgbox("Dumped to file: {}".format(fp))
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print(
+                "WARNING: datatable tablemodel sql dump table to file contextmenu exception: {}".format(
+                   exstr
+                )
+            )
+            if not gui_mode:
+                qt_utils.msgbox("dump failed: " + exstr, title="Failed")
+
     def fetchData(self, inputData):
         table_col_dict = {}
         valid_data_dict = {}
@@ -1615,6 +1668,43 @@ class PdTableModel(QAbstractTableModel):
     def setFilterFromMenu(self, filterFromMenu):
         self.filterFromMenu = filterFromMenu
         self.filter()
+
+    def dump_data(self, fp, to_csv=True):
+        gui_mode = not fp
+        try:
+            if gui_mode:
+                fp, _ = QFileDialog.getSaveFileName(
+                    self, "Select dump file/location", QtCore.QDir.rootPath(), "*.csv" if to_csv else "*.parquet"
+                )
+            if fp:
+                df = self.df
+                if len(df) and "log_hash" in df.columns and "time" in df.columns:
+                    if ("lat" not in df.columns) or ("lon" not in df.columns):
+                        print("need to merge lat and lon")
+                        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+                            df = preprocess_azm.merge_lat_lon_into_df(dbcon, df).rename(
+                                columns={"positioning_lat": "lat", "positioning_lon": "lon"}
+                            )
+                if to_csv:
+                    if not fp.endswith(".csv"):
+                        fp += ".csv"
+                    df.to_csv(fp, index=False, quoting=csv.QUOTE_ALL)
+                else:
+                    if not fp.endswith(".parquet"):
+                        fp += ".parquet"
+                    df.to_parquet(fp)
+                if gui_mode:
+                    qt_utils.msgbox("Dumped to file: {}".format(fp))
+        except:
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print(
+                "WARNING: pdtablemodel datatable dump table to file contextmenu exception: {}".format(
+                    exstr
+                )
+            )
+            if not gui_mode:
+                qt_utils.msgbox("dump failed: " + exstr, title="Failed")
 
     def rowCount(self, parent):
         return len(self.df)

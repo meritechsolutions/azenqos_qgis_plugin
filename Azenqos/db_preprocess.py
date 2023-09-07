@@ -528,6 +528,8 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         param_type = rat_type_dict[param]
     elif param in logs_type_dict.keys():
         param_type = logs_type_dict[param]
+    elif "pilot_pollution" in param:
+        param_type = "int"
     else:
         param_name = preprocess_azm.get_elm_name_from_param_col_with_arg(param)
         param_type = g_azq_global_elm_info_df.loc[g_azq_global_elm_info_df["var_name"] == param_name, "db_type"].iloc[0]
@@ -546,6 +548,7 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
     try:
         # QGIS ranges count (right click > show layer count) wont match sql counts below if we dont sort this way
         theme_df["Upper"] = pd.to_numeric(theme_df["Upper"])
+        theme_df["Lower"] = pd.to_numeric(theme_df["Lower"])
         theme_df.sort_values("Upper", ascending=False, inplace=True)
     except:
         type_, value_, traceback_ = sys.exc_info()

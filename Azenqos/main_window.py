@@ -7,6 +7,7 @@ import shutil
 import threading
 import traceback
 import azq_cell_file
+import add_pilot_pollution_layer
 
 import PyQt5
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -162,6 +163,7 @@ class main_window(QMainWindow):
         self.task_done_signal.connect(
             self.task_done_slot
         )
+        self.last_window = None
 
         self.signal_trigger_zoom_to_active_layer.connect(
             self.slot_trigger_zoom_to_active_layer
@@ -249,6 +251,14 @@ class main_window(QMainWindow):
             self.gc.timeSlider.setRange(0, self.gc.sliderLength)
             if self.gc.live_mode_update_time:
                 self.gc.timeSlider.setValue(self.gc.sliderLength - 1)
+
+    def dump_last_window(self, fp):
+        print("dump_last_window START")
+        if self.last_window is not None:
+            print("dump_last_window START dump_data")
+            self.last_window.tableModel.dump_data(fp, to_csv=True)
+            print("dump_last_window END dump_data fp:", fp, "exists:", os.path.isfile(fp))
+        print("dump_last_window END")
 
     @pyqtSlot()
     def on_actionTile_triggered(self):
@@ -659,6 +669,7 @@ Log_hash list: {}""".format(
             col_min_size=col_min_size,
             col_default_size=col_default_size,
         )
+        self.last_window = widget
         
         def updateTime(time):
             self.update_from_data_table = widget
@@ -863,7 +874,19 @@ Log_hash list: {}""".format(
         with open(azq_utils.get_module_fp("custom_table/nr_serv_neigh.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="NR Serving + Neighbors", selected_ue=selected_ue)
+            self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="ExynosServiceMode LTE Reg", selected_ue=selected_ue)
 
+    @pyqtSlot()
+    def on_actionNR_Pilot_Pollution_triggered(self, selected_ue = None):
+        print("action nr pilot pollution")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        add_pilot_pollution_layer.add_layer(self.gc.databasePath, technology="nr", selected_ue=selected_ue, is_indoor=self.gc.is_indoor, device_configs=self.gc.device_configs)
 
     ############# LTE menu slots
     @pyqtSlot()
@@ -981,6 +1004,18 @@ Log_hash list: {}""".format(
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="LTE VoLTE", selected_ue=selected_ue)
 
+    @pyqtSlot()
+    def on_actionLTE_Pilot_Pollution_triggered(self, selected_ue = None):
+        print("action lte pilot pollution")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        add_pilot_pollution_layer.add_layer(self.gc.databasePath, technology="lte", selected_ue=selected_ue, is_indoor=self.gc.is_indoor, device_configs=self.gc.device_configs)
+
     ############# WCDMA menu slots
 
     @pyqtSlot()
@@ -1046,6 +1081,18 @@ Log_hash list: {}""".format(
         with open(azq_utils.get_module_fp("custom_table/wcdma_bearer.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="WCDMA Bearers", selected_ue=selected_ue)
+
+    @pyqtSlot()
+    def on_actionWCDMA_Pilot_Pollution_triggered(self, selected_ue = None):
+        print("action wcdma pilot pollution")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        add_pilot_pollution_layer.add_layer(self.gc.databasePath, technology="wcdma", selected_ue=selected_ue, is_indoor=self.gc.is_indoor, device_configs=self.gc.device_configs)
 
     ############# GSM menu slots
 
@@ -2951,11 +2998,12 @@ Log_hash list: {}""".format(
                                 import azq_theme_manager
                                 is_id = azq_theme_manager.is_param_col_an_id(col)
                                 lookback_secs = 3600*24 if is_id else 5
-                                print("lookback_secs:", lookback_secs)
+                                print("top_params lookback_secs:", lookback_secs)
                                 sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, self.gc.selected_row_log_hash, self.gc.currentDateTimeString, lookback_secs=lookback_secs)
-                                print("sql:", sql)
+                                sql += f"and {col} is not null"
+                                print("top_params sql:", sql)
                                 df = pd.read_sql(sql, dbcon).sort_values("time", ascending=False)
-                                print("df:", df)
+                                print("top_params df:", df)
                                 if not df.empty and df.last_valid_index() is not None:
                                     val = df.iloc[0, 1]
                                     if pd.notnull(val):
@@ -2968,6 +3016,7 @@ Log_hash list: {}""".format(
                                             pass
                                         row_ret += f" {pname}: {val}"
                                         if not is_id:
+                                            print("top_params this_rat_got_vals")
                                             this_rat_got_vals = True
                             except:
                                 type_, value_, traceback_ = sys.exc_info()
@@ -2981,6 +3030,7 @@ Log_hash list: {}""".format(
                             rows.append(row_ret)
                     if this_rat_got_vals:
                         ret = rat + ":"+"\n".join(rows)
+                        print("this_rat_got_vals ret", ret)
                         break
             except:
                 type_, value_, traceback_ = sys.exc_info()

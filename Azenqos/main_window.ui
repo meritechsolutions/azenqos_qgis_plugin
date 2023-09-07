@@ -71,7 +71,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -107,6 +107,7 @@
      <addaction name="actionLTE_VoLTE"/>
      <addaction name="actionLTE_Line_Chart"/>
      <addaction name="actionLTE_PCI_Footprint"/>
+     <addaction name="actionLTE_Pilot_Pollution"/>
      <addaction name="actionExynos_LTE_Radio"/>
      <addaction name="actionExynosServiceMode_LTE_Data"/>
      <addaction name="actionExynosServiceMode_LTE_Reg"/>
@@ -120,6 +121,7 @@
      <addaction name="action5GNR_Serving_Neighbors"/>
      <addaction name="actionNR_Line_Chart"/>
      <addaction name="actionNR_PCI_Footprint"/>
+     <addaction name="actionNR_Pilot_Pollution"/>
      <addaction name="actionExynosServiceMode_NR_Radio"/>
      <addaction name="actionExynosServiceMode_NR_Data"/>
      <addaction name="actionExynosServiceMode_NR_Reg"/>
@@ -141,6 +143,7 @@
      <addaction name="actionWCDMA_Bearers"/>
      <addaction name="actionWCDMA_Line_Chart"/>
      <addaction name="actionWCDMA_PSC_Footprint"/>
+     <addaction name="actionWCDMA_Pilot_Pollution"/>
     </widget>
     <widget class="QMenu" name="menuGSM">
      <property name="title">
@@ -1082,6 +1085,21 @@
   <action name="actionVideo_Streaming">
    <property name="text">
     <string>Video Streaming</string>
+   </property>
+  </action>
+  <action name="actionNR_Pilot_Pollution">
+   <property name="text">
+    <string>NR Pilot Pollution</string>
+   </property>
+  </action>
+  <action name="actionLTE_Pilot_Pollution">
+   <property name="text">
+    <string>LTE Pilot Pollution</string>
+   </property>
+  </action>
+  <action name="actionWCDMA_Pilot_Pollution">
+   <property name="text">
+    <string>WCDMA Pilot Pollution</string>
    </property>
   </action>
  </widget>

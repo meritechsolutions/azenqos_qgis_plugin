@@ -2063,7 +2063,9 @@ def create_layer_in_qgis(databasePath, df, layer_name, is_indoor=False, theme_pa
             table = pp_voice_table
         elif theme_param == "rat":
             table = "technology"
-            
+        elif theme_param == "pilot_pollution":
+            table = "pilot_pollution"
+        
         within_millis_of_gps=30 * 1000
         asof_lat_lon_direction="backward"
         if table == "logs" or table == "log_info":

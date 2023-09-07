@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import sqlite3
 import contextlib
+import qt_utils
 
 def get_nr_pilot_pollution_df(dbcon, where, diff_range):
     sql_str = 'select log_hash, time, nr_servingbeam_ss_rsrp_1 as main, nr_band_1 as b_main, nr_servingbeam_ss_rsrp_2 as c0, nr_band_2 as b0,' \
@@ -163,7 +164,7 @@ def get_wcdma_pilot_pollution_df(dbcon, where, diff_range):
     return df
 
 
-def add_layer(databasePath, technology, selected_ue=None, filter_freq=True, diff_range=5, is_indoor=False, device_configs=None):
+def add_layer(databasePath, technology, selected_ue=None, filter_freq=True, diff_range=5, is_indoor=False, device_configs=None, show_msg_box=True):
     
     with contextlib.closing(sqlite3.connect(databasePath)) as dbcon:
         technology = technology.lower()
@@ -186,7 +187,6 @@ def add_layer(databasePath, technology, selected_ue=None, filter_freq=True, diff
         elif technology == "wcdma":
             df = get_wcdma_pilot_pollution_df(dbcon, where, diff_range)
 
-        print(df)
         if df is not None and len(df) > 0:
             location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
             location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
@@ -197,3 +197,8 @@ def add_layer(databasePath, technology, selected_ue=None, filter_freq=True, diff
                 if "geom" in df.columns:
                     del df["geom"]
             azq_utils.create_layer_in_qgis(databasePath, df, layer_name=layer_name, theme_param=theme_param, data_df=df)
+            if show_msg_box:
+                qt_utils.msgbox("Add pilot pollution success", title="Info")
+        else:
+            if show_msg_box:
+                qt_utils.msgbox("No pilot pollution detected", title="Info")

@@ -1,7 +1,6 @@
 import azq_utils
 import sql_utils
 import db_preprocess
-import lte_band_ref_df
 
 import pandas as pd
 import os
@@ -116,7 +115,12 @@ def get_lte_pilot_pollution_df(dbcon, where, filter_freq=True, diff_range=5):
                 ' lte_neigh_rsrp_15 as c17, lte_neigh_earfcn_15 as f17, lte_neigh_rsrp_16 as c18, lte_neigh_earfcn_16 as f18 from lte_neigh_meas order by time'
     neigh_sql = sql_utils.add_first_where_filt(neigh_sql, where)
     neigh_df = pd.read_sql(neigh_sql, dbcon, parse_dates='time')
-    ref_df = lte_band_ref_df.get_lte_band_ref_df()
+    ref_df = pd.read_csv(
+            os.path.join(
+                azq_utils.get_module_path(),
+                "lte_band_freq_earfcn_3gpp_36_101.csv"
+            )
+        )
     
     for index, row in ref_df.iterrows():
         earfcn_start = row["earfcn_start"]

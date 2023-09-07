@@ -7,6 +7,7 @@ import shutil
 import threading
 import traceback
 import azq_cell_file
+import add_pilot_pollution_layer
 
 import PyQt5
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -863,7 +864,19 @@ Log_hash list: {}""".format(
         with open(azq_utils.get_module_fp("custom_table/nr_serv_neigh.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="NR Serving + Neighbors", selected_ue=selected_ue)
+            self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="ExynosServiceMode LTE Reg", selected_ue=selected_ue)
 
+    @pyqtSlot()
+    def on_actionNR_Pilot_Pollution_triggered(self, selected_ue = None):
+        print("action nr pilot pollution")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        add_pilot_pollution_layer.add_layer(self.gc.databasePath, technology="nr", selected_ue=selected_ue, is_indoor=self.gc.is_indoor, device_configs=self.gc.device_configs)
 
     ############# LTE menu slots
     @pyqtSlot()
@@ -981,6 +994,18 @@ Log_hash list: {}""".format(
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="LTE VoLTE", selected_ue=selected_ue)
 
+    @pyqtSlot()
+    def on_actionLTE_Pilot_Pollution_triggered(self, selected_ue = None):
+        print("action lte pilot pollution")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        add_pilot_pollution_layer.add_layer(self.gc.databasePath, technology="lte", selected_ue=selected_ue, is_indoor=self.gc.is_indoor, device_configs=self.gc.device_configs)
+
     ############# WCDMA menu slots
 
     @pyqtSlot()
@@ -1046,6 +1071,18 @@ Log_hash list: {}""".format(
         with open(azq_utils.get_module_fp("custom_table/wcdma_bearer.json"), 'r') as f:
             custom_last_instant_table_param_list = json.load(f)
             self.add_param_window(custom_df = custom_last_instant_table_param_list, custom_last_instant_table_param_list=custom_last_instant_table_param_list, title="WCDMA Bearers", selected_ue=selected_ue)
+
+    @pyqtSlot()
+    def on_actionWCDMA_Pilot_Pollution_triggered(self, selected_ue = None):
+        print("action wcdma pilot pollution")
+        if selected_ue is None and len(self.gc.device_configs) > 1:
+            import select_log_dialog
+            dlg = select_log_dialog.select_log_dialog(self.gc.device_configs)
+            result = dlg.exec_()
+            if not result:
+                return
+            selected_ue = dlg.log
+        add_pilot_pollution_layer.add_layer(self.gc.databasePath, technology="wcdma", selected_ue=selected_ue, is_indoor=self.gc.is_indoor, device_configs=self.gc.device_configs)
 
     ############# GSM menu slots
 

@@ -2450,6 +2450,44 @@
         <isMS4>false</isMS4>
         <exportMap>true</exportMap>
       </ReportGeneratorSetting>
+      <ReportGeneratorSetting xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+        <colorThemeList/>
+        <elementID>pilot_pollution</elementID>
+        <argument>1</argument>
+        <isReverseComulative>false</isReverseComulative>
+        <isUseDefaultRangeSetting>false</isUseDefaultRangeSetting>
+        <rangeList>
+          <ColorTheme.Bin>
+            <ColorXml>#0000FF</ColorXml>
+            <Lower>1</Lower>
+            <Upper>1</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#FFFF00</ColorXml>
+            <Lower>2</Lower>
+            <Upper>2</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#FF0000</ColorXml>
+            <Lower>3</Lower>
+            <Upper>3</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+          <ColorTheme.Bin>
+            <ColorXml>#FF00FF</ColorXml>
+            <Lower>4</Lower>
+            <Upper>100</Upper>
+            <PointSize>1</PointSize>
+          </ColorTheme.Bin>
+        </rangeList>
+        <isMS1>true</isMS1>
+        <isMS2>false</isMS2>
+        <isMS3>false</isMS3>
+        <isMS4>false</isMS4>
+        <exportMap>true</exportMap>
+      </ReportGeneratorSetting>
     </ArrayOfReportGeneratorSetting>
   </reportSettingList>
   <mapEventVisibleDict>

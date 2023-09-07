@@ -165,6 +165,33 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                 azq_utils.create_layer_in_qgis(gc.databasePath, df, layer_name, theme_param = theme_param, data_df=df)
                         except:
                             pass
+
+                        try:
+                            selected_ue = None
+                            if len(device_configs) > 1:
+                                selected_ue = ue
+                            import add_pilot_pollution_layer
+                            add_pilot_pollution_layer.add_layer(gc.databasePath, technology="nr", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
+                        except:
+                            pass
+                        
+                        try:
+                            selected_ue = None
+                            if len(device_configs) > 1:
+                                selected_ue = ue
+                            import add_pilot_pollution_layer
+                            add_pilot_pollution_layer.add_layer(gc.databasePath, technology="lte", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
+                        except:
+                            pass
+                        
+                        try:
+                            selected_ue = None
+                            if len(device_configs) > 1:
+                                selected_ue = ue
+                            import add_pilot_pollution_layer
+                            add_pilot_pollution_layer.add_layer(gc.databasePath, technology="wcdma", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
+                        except:
+                            pass
                         
                         ue += 1
 

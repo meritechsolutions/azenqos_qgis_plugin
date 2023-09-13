@@ -79,16 +79,16 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     prepare_spatialite_required_tables(dbcon)
 
     if gc is not None:
-        gc.real_world_indoor = real_world_indoor
+        gc.real_world_indoor = False
         gc.log_list = pd.read_sql("select distinct log_hash from logs", dbcon)["log_hash"].values.tolist()
         for log_hash in gc.log_list:
             rotate_indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map_rotated.png")
             indoor_map_path = os.path.join(gc.logPath, str(log_hash), "map.jpg")
-            if os.path.isfile(rotate_indoor_map_path) and gc.real_world_indoor == True:
+            if os.path.isfile(rotate_indoor_map_path) and real_world_indoor == True:
                 indoor_map_path = rotate_indoor_map_path
+                gc.real_world_indoor = True
             if os.path.isfile(indoor_map_path):
                 gc.is_indoor = True
-                gc.real_world_indoor = False
         gc.pre_wav_file_list = glob.glob(os.path.join(gc.logPath, str(log_hash), "*_pre.wav"))
 
     df = pd.read_sql("select * from geometry_columns", dbcon)

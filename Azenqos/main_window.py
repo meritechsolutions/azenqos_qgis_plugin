@@ -668,6 +668,7 @@ Log_hash list: {}""".format(
             selected_ue=selected_ue,
             col_min_size=col_min_size,
             col_default_size=col_default_size,
+            gc=self.gc,
         )
         self.last_window = widget
         
@@ -2651,6 +2652,13 @@ Log_hash list: {}""".format(
         print("clickCanvas done")
 
 
+    def set_default_font_size_override(self, font_size):
+        self.gc.default_font_size_override = font_size
+
+    def set_default_top_params_font_size_override(self, font_size):
+        self.gc.default_top_params_font_size_override = font_size
+
+
     def loadAllMessages(self):
         getSelected = self.presentationTreeWidget.selectedItems()
         if getSelected:
@@ -2930,9 +2938,28 @@ Log_hash list: {}""".format(
             )
         )
         tt = f"Synced: {self.gc.currentDateTimeString}"
+        # get last lat/lon df
+        with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
+            sql = sql_utils.sql_lh_time_match_for_select_from_part(
+                "select log_hash, time, positioning_lat as lat, positioning_lon as lon from location",
+                self.gc.selected_row_log_hash,
+                self.gc.currentDateTimeString,
+                lookback_secs=5)
+            loc_df = pd.read_sql(sql, dbcon).dropna()
+            if len(loc_df):
+                loc_df = loc_df.sort_values("time", ascending=False)
+                tt += f" @ {'%.05f' % float(loc_df.lat.iloc[0])}, {'%.05f' % float(loc_df.lon.iloc[0])}"
         gp = self.get_global_top_params()
         if gp:
-            tt += " Prev "+gp
+            tt += "\n"+gp
+        if self.gc.default_top_params_font_size_override is not None:
+            self.ui.top_label.setStyleSheet(
+                """
+                * {
+                font-size: %dpt;
+                }                
+                """ % self.gc.default_top_params_font_size_override
+            )
         self.ui.top_label.setText(tt)
 
 

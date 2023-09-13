@@ -99,7 +99,8 @@ class TableWindow(QWidget):
         stretch_last_row=False,
         options=None,
         col_min_size=40,
-        col_default_size=70
+        col_default_size=70,
+        font_size=8,
     ):
         super().__init__(parent)
         if options is None:
@@ -111,6 +112,10 @@ class TableWindow(QWidget):
         self.custom_table_param_list = custom_table_param_list
         self.custom_table_main_not_null = custom_table_main_not_null
         self.custom_last_instant_table_param_list = custom_last_instant_table_param_list
+        self.font_size = font_size
+        if gc is not None and gc.default_font_size_override is not None:
+            self.font_size = gc.default_font_size_override
+        print("datatable start self.font_size", self.font_size)
 
         ################ support old params not put in options dict
         print("options0:", options)
@@ -265,10 +270,10 @@ class TableWindow(QWidget):
         self.tableView.setStyleSheet(
             """
             * {
-            font-size: 8pt;
+            font-size: %dpt;
             }
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
-            """
+            """ % self.font_size
         )
         self.refreshTableContents()
 
@@ -1209,10 +1214,10 @@ class DetailWidget(QDialog):
         self.textEdit.setReadOnly(True)
         self.text_style = """
             * {
-            font-size: 8pt;
+            font-size: %dpt;
             }
             QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
-            """
+            """ % self.font_size
         self.textEdit.setStyleSheet(self.text_style)
         self.findEdit = QLineEdit()
         self.findEdit.setPlaceholderText(SEARCH_PLACEHOLDER_TEXT)

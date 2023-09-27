@@ -37,8 +37,8 @@ class analyzer_vars:
         self.databasePath = None
         self.azm_name = None
         self.db_fp = None  # same as databasePath but in snake_case
-        self.default_font_size_override = None,
-        self.default_top_params_font_size_override = None,
+        self.default_font_size_override = None
+        self.default_top_params_font_size_override = None
         self.cell_files = []
         self.minTimeValue = 0
         self.maxTimeValue = 99

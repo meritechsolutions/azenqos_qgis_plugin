@@ -108,6 +108,7 @@
      <addaction name="actionLTE_Line_Chart"/>
      <addaction name="actionLTE_PCI_Footprint"/>
      <addaction name="actionLTE_Pilot_Pollution"/>
+     <addaction name="actionLTE_Pilot_Pollution_All_Frequency"/>
      <addaction name="actionExynos_LTE_Radio"/>
      <addaction name="actionExynosServiceMode_LTE_Data"/>
      <addaction name="actionExynosServiceMode_LTE_Reg"/>
@@ -1100,6 +1101,11 @@
   <action name="actionWCDMA_Pilot_Pollution">
    <property name="text">
     <string>WCDMA Pilot Pollution</string>
+   </property>
+  </action>
+  <action name="actionLTE_Pilot_Pollution_All_Frequency">
+   <property name="text">
+    <string>LTE Pilot Pollution All Frequency</string>
    </property>
   </action>
  </widget>

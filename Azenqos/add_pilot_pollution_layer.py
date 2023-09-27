@@ -170,6 +170,8 @@ def add_layer(databasePath, technology, selected_ue=None, filter_freq=True, diff
         technology = technology.lower()
         theme_param = "pilot_pollution"
         layer_name = technology+"_"+theme_param
+        if not filter_freq:
+            layer_name = layer_name+"_all_frequency"
         df = None
         where = ""
         

@@ -677,12 +677,15 @@ class TableWindow(QWidget):
                     if self.time_list_mode:
                         assert "time" in df.columns
                         df["time"] = pd.to_datetime(df["time"])
-                        if self.title == "Events" and len(self.gc.pre_wav_file_list) > 0:
-                            import voice_call_setup_df
-                            pre_wav_file_df = voice_call_setup_df.get_voice_call_setup_df(self.gc.pre_wav_file_list)
-                            df = df.append(pre_wav_file_df)
-                            df["time"] = pd.to_datetime(df["time"])
-                            df["log_hash"] = df["log_hash"].astype(np.int64)
+                        if self.title == "Events":
+                            print("events filt out unrealted msg")
+                            df = df[~((df['name'] == 'DebugLog') & df['info'].str.contains('parse_azqddec'))]
+                            if len(self.gc.pre_wav_file_list) > 0:
+                                import voice_call_setup_df
+                                pre_wav_file_df = voice_call_setup_df.get_voice_call_setup_df(self.gc.pre_wav_file_list)
+                                df = df.append(pre_wav_file_df)
+                                df["time"] = pd.to_datetime(df["time"])
+                                df["log_hash"] = df["log_hash"].astype(np.int64)
 
                         if "time" in df.columns:
                             df = df.sort_values(by="time")

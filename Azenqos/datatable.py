@@ -887,7 +887,9 @@ class TableWindow(QWidget):
                     self.detailWidget = DetailWidget(self.gc, parentWindow, cellContent)
             """
         except:
-            pass
+            type_, value_, traceback_ = sys.exc_info()
+            exstr = str(traceback.format_exception(type_, value_, traceback_))
+            print("WARNING: showdetail exception:", exstr)
 
     def update_selected_log_hash_time(self, item):
         print("update_selected_log_hash_time start self.ui_thread_selecting_row_dont_trigger_timechanged: {}".format(self.ui_thread_selecting_row_dont_trigger_timechanged))
@@ -1212,12 +1214,15 @@ class DetailWidget(QDialog):
         self.textEdit = QTextEdit()
         self.textEdit.setPlainText(self.detailText)
         self.textEdit.setReadOnly(True)
-        self.text_style = """
-            * {
-            font-size: %dpt;
-            }
-            QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
-            """ % self.font_size
+        try:
+            self.text_style = """
+                * {
+                font-size: %dpt;
+                }
+                QTableCornerButton::section{border-width: 0px; border-color: #BABABA; border-style:solid;}
+                """ % self.parent.font_size
+        except Exception as fe:
+            print("WARNING: detailwidget set font_size exception:", fe)
         self.textEdit.setStyleSheet(self.text_style)
         self.findEdit = QLineEdit()
         self.findEdit.setPlaceholderText(SEARCH_PLACEHOLDER_TEXT)

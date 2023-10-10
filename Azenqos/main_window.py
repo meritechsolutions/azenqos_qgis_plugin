@@ -259,6 +259,16 @@ class main_window(QMainWindow):
             self.last_window.tableModel.dump_data(fp, to_csv=True)
             print("dump_last_window END dump_data fp:", fp, "exists:", os.path.isfile(fp))
         print("dump_last_window END")
+    
+    def get_top_label_text(self, fp):
+        print("get_top_label_text START")
+        if self.mdi is not None:
+            print("get_top_label_text START dump_data")
+            top_label_text = self.ui.top_label.text()
+            with open(fp, "w") as f:
+                f.write(top_label_text)
+            print("get_top_label_text END dump_data fp:", fp, "exists:", os.path.isfile(fp))
+        print("get_top_label_text END")
 
     @pyqtSlot()
     def on_actionTile_triggered(self):

@@ -344,10 +344,10 @@ class main_window(QMainWindow):
         qt_utils.msgbox("Please email support@azenqos.com", "Technical support", self)
 
 
-    def add_image_view_swa(self, image_fp:str, width:int, height:int):
+    def add_image_view_swa(self, image_fp:str, width:int, height:int, w_offset=25, h_offset=50):
         swa = SubWindowArea(self.mdi, self.gc)
         im = QPixmap(image_fp)
-        im = im.scaled(width, height, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        im = im.scaled(width-w_offset, height-h_offset, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         label = QLabel()
         #lblImage->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored );
         self.add_subwindow_with_widget(swa, label, allow_no_log_opened=True)

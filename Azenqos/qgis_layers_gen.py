@@ -111,6 +111,7 @@ def create_qgis_layer_from_spatialite_db(dbfp, table, label_col=None, style_qml_
         symLyr1 = QgsSvgMarkerSymbolLayer(svg_icon_fp)
         symLyr1.setSize(5)
         layer.renderer().symbol().changeSymbolLayer(0, symLyr1)
+    print("add_to_qgis:", add_to_qgis)
     if add_to_qgis:
         print("adding map layer")
         QgsProject.instance().addMapLayer(layer)

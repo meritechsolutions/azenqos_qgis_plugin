@@ -108,6 +108,7 @@ import sqlite3
 TIME_COL_DEFAULT_WIDTH = 150
 NAME_COL_DEFAULT_WIDTH = 180
 CURRENT_WORKSPACE_FN = "last_workspace.ini"
+AZQ_REPLAY_ENV_ACTIONS_KEY = "AZQ_REPLAY_ENV_ACTIONS_KEY"
 
 class VLine(QFrame):
     # a simple VLine, like the one you get from designer
@@ -144,6 +145,8 @@ class main_window(QMainWindow):
         ######## instance vars
         self.closed = False
         self.gc = analyzer_vars.analyzer_vars()
+        if AZQ_REPLAY_ENV_ACTIONS_KEY in os.environ and os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
+            self.gc.automated_mode = True
         self.gc.qgis_iface = qgis_iface
         self.gc.main_window = self
         self.gc.has_wave_file = False
@@ -204,7 +207,8 @@ class main_window(QMainWindow):
             self.reg_map_tool_click_point(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
             self.add_created_layers_signal.connect(self._add_created_layers)
-            self.add_map_layer()
+            if not self.gc.automated_mode:
+                self.add_map_layer()
         try:
             QgsProject.instance().layersAdded.connect(self.on_layers_added)
         except:
@@ -2446,18 +2450,26 @@ Log_hash list: {}""".format(
             #print("task_done_slot save ss")
             print("task_done_slot init done")
             #print("os.environ:", os.environ)
-            AZQ_REPLAY_ENV_ACTIONS_KEY = "AZQ_REPLAY_ENV_ACTIONS_KEY"
             if AZQ_REPLAY_ENV_ACTIONS_KEY in os.environ and os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
                 try:
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions START")
-                    action_list = json.loads(
-                        os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]
-                    )
+                    import server_overview_widget
+                    env_val = os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]
+                    if os.path.isfile(env_val):
+                        with open(env_val, "r") as f:
+                            action_list = json.load(f)
+                    else:
+                        action_list = json.loads(
+                            env_val
+                        )
                     for action in action_list:
                         print("action START:", action)
                         assert isinstance(action, str)
                         main_window.curInstance = self
-                        action_ret = eval(action)
+                        if " = " in action:
+                            action_ret = exec(action.strip())
+                        else:
+                            action_ret = eval(action)
                         print("action DONE: action_ret", action_ret)
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions DONE")
                 except:

@@ -124,6 +124,7 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                 )
                                 layer_id_to_visible_flag_dict[layer.id()] = visible
                                 table_to_layer_dict[table_alias] = layer
+                                print("table_to_layer_dict:", table_to_layer_dict, "visible", visible)
                                 if visible:
                                     last_visible_layer = layer
                             except:

@@ -62,6 +62,7 @@ class analyzer_vars:
         self.pre_wav_file_list = []
         self.easy_overview_mode = False
         self.overview_opened = False
+        self.automated_mode = False  # dont show dialogs etc
         self.allLayers = []
         self.live_process_list = []
         # tableList = []

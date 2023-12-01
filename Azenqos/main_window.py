@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import json
+import textwrap
 import uuid
 import pathlib
 import shutil
@@ -2454,6 +2455,7 @@ Log_hash list: {}""".format(
                 try:
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions START")
                     import server_overview_widget
+                    from qgis import processing
                     env_val = os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]
                     if os.path.isfile(env_val):
                         with open(env_val, "r") as f:
@@ -2467,7 +2469,7 @@ Log_hash list: {}""".format(
                         assert isinstance(action, str)
                         main_window.curInstance = self
                         if " = " in action:
-                            action_ret = exec(action.strip())
+                            action_ret = exec(textwrap.dedent(action.strip()))
                         else:
                             action_ret = eval(action)
                         print("action DONE: action_ret", action_ret)
@@ -2478,7 +2480,7 @@ Log_hash list: {}""".format(
                         traceback.format_exception(type_, value_, traceback_)
                     )
                     print(
-                        "ABORT: timeChangeImpl - exception: {}".format(
+                        "ABORT: AZQ_REPLAY_ENV_ACTIONS_KEY - exception: {}".format(
                             exstr
                         )
                     )

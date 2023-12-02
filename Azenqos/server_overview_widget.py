@@ -475,7 +475,7 @@ class server_overview_widget(QWidget):
             return -1
         return -2
 
-    def load_overview_dbfp(self, dbfp):
+    def load_overview_dbfp(self, dbfp, params_to_gen_override=[], params_to_gen_override_where=[]):
         assert os.path.isfile(dbfp)
         self.gvars.databasePath = dbfp
         azq_utils.timer_print("overview_perf_combine_azm")
@@ -494,7 +494,7 @@ class server_overview_widget(QWidget):
             db_preprocess.prepare_spatialite_views(dbcon, main_rat_params_only=self.main_params_only,
                                                    pre_create_index=self.pre_create_index, cre_table=False,
                                                    start_date=self.start_date, end_date=self.end_date,
-                                                   time_bin_secs=time_bin)  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
+                                                   time_bin_secs=time_bin, params_to_gen_override=params_to_gen_override,params_to_gen_override_where=params_to_gen_override_where)  # no need to handle log_hash time sync so no need cre_table flag (layer get attr would be empty if it is a view in clickcanvas)
         prepare_views_end_time = time.perf_counter()
         self.prepare_views_time = "Prepare Views Time: %.02f seconds" % float(
             prepare_views_end_time - prepare_views_start_time)
@@ -509,7 +509,7 @@ class server_overview_widget(QWidget):
         if self.gvars.qgis_iface:
             self.table_to_layer_dict, self.layer_id_to_visible_flag_dict, self.last_visible_layer = db_layer_task.create_layers(
                 self.gvars, db_fp=self.overview_db_fp, display_name_prefix="overview_", gen_theme_bucket_counts=False,
-                main_rat_params_only=self.main_params_only
+                main_rat_params_only=self.main_params_only, params_to_gen_override=params_to_gen_override
             )
             self.gvars.overview_opened = True
         return create_layers_start_time

@@ -66,6 +66,16 @@ try:
         QgsGraduatedSymbolRenderer,
         QgsDataSourceUri
     )
+    from qgis.core import (
+        QgsProcessingContext,
+        QgsTaskManager,
+        QgsTask,
+        QgsProcessingAlgRunnerTask,
+        Qgis,
+        QgsProcessingFeedback,
+        QgsApplication,
+        QgsMessageLog,
+    )
     from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
     from PyQt5.QtGui import QColor
     from qgis.PyQt.QtCore import QVariant
@@ -2426,6 +2436,18 @@ Log_hash list: {}""".format(
         print("updateTime_str: timestampValue:", timestampValue)
         self.setTimeValue(timestampValue)
 
+    def run_alg_block_print_progress(self, alg_name, alg_params):
+        from qgis import processing
+        def progress_changed(progress):
+            print(f"proc progress: {progress}")
+        feedback = QgsProcessingFeedback()
+        feedback.progressChanged.connect(progress_changed)
+        ret_dict = processing.run(alg_name, alg_params, feedback=feedback)
+        print(f"proc result {ret_dict}")
+        return ret_dict
+
+    def _gen_xyz_tiles_done(self):
+        print("_gen_xyz_tiles_done")
 
     def setTimeValue(self, value):
         print("%s: setTimeValue %s" % (os.path.basename(__file__), value))
@@ -2455,7 +2477,6 @@ Log_hash list: {}""".format(
                 try:
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions START")
                     import server_overview_widget
-                    from qgis import processing
                     env_val = os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]
                     if os.path.isfile(env_val):
                         with open(env_val, "r") as f:
@@ -2469,9 +2490,9 @@ Log_hash list: {}""".format(
                         assert isinstance(action, str)
                         main_window.curInstance = self
                         if " = " in action:
-                            action_ret = exec(textwrap.dedent(action.strip()))
+                            action_ret = exec(textwrap.dedent(action))
                         else:
-                            action_ret = eval(action)
+                            action_ret = eval(textwrap.dedent(action))
                         print("action DONE: action_ret", action_ret)
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions DONE")
                 except:
@@ -3348,7 +3369,14 @@ Log_hash list: {}""".format(
                 except Exception as e:
                     print("WARNING: renaming layers exception: {}".format(e))
 
+    def showLayer(self, layer_name, show=True):
+        layer = QgsProject.instance().mapLayersByName(layer_name)[0]
+        QgsProject.instance().layerTreeRoot().findLayer(layer.id()).setItemVisibilityChecked(show)
 
+    def hideAllLayers(self):
+        project = QgsProject.instance()
+        for layer in project.mapLayers().values():
+            QgsProject.instance().layerTreeRoot().findLayer(layer.id()).setItemVisibilityChecked(False)
 
     '''
     -

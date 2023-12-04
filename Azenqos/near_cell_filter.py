@@ -1,13 +1,12 @@
 from PyQt5.QtCore import (
     pyqtSignal,
-    Qt,
-    QVariant
+    Qt
 )
 from PyQt5.QtWidgets import (
     QWidget, QComboBox, QCompleter
 )
 
-from PyQt5.QtGui import QIcon, QPixmap, QIntValidator
+from PyQt5.QtGui import QIntValidator
 
 from PyQt5.uic import loadUi
 try:
@@ -20,9 +19,6 @@ try:
         QgsCoordinateReferenceSystem,
         QgsFeature,
         QgsGeometry,
-        QgsField,
-        QgsVectorDataProvider,
-        QgsPointXY,
         QgsFeatureRequest
     )
 except:
@@ -31,10 +27,7 @@ import os
 import sys
 import traceback
 import contextlib
-import math
 from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
-import threading
 from worker import Worker
 
 from add_param_dialog import CustomQCompleter

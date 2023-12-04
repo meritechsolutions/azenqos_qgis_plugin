@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import glob
 import traceback
@@ -533,6 +534,17 @@ def gen_style_qml_for_theme(theme_df, view, view_len, param, dbcon, to_tmp_file=
         theme_df = azq_theme_manager.get_theme_df_for_column(param, dbcon=dbcon, table_name=table_name, data_df=data_df)
     if theme_df is None:
         return None
+    try:
+        last_layer_theme_json_fp = azq_utils.get_module_fp('last_layer_theme.json')
+        if os.path.isfile(last_layer_theme_json_fp):
+            os.remove(last_layer_theme_json_fp)
+        theme_df.to_json(last_layer_theme_json_fp, orient='records')
+    except:
+        type_, value_, traceback_ = sys.exc_info()
+        exstr = str(traceback.format_exception(type_, value_, traceback_))
+        print(
+            "WARNING: set last_layer_theme_json_fp exeption: {}".format(exstr)
+        )
     if param in call_type_dict.keys():
         param_type = call_type_dict[param]
     elif param in rat_type_dict.keys():

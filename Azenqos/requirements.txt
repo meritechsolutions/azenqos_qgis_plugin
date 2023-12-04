@@ -5,3 +5,4 @@ pyarrow==10.0.1
 urllib3==1.21.1
 spatialite==0.0.3
 scipy==1.7.3
+shapely==2.0.2

@@ -307,6 +307,7 @@
     <addaction name="actionCalculate_POI_Coverage"/>
     <addaction name="actionCalculate_KPI_from_exclusion_by_polygon"/>
     <addaction name="actionLayer_Distance_Binning"/>
+    <addaction name="actionNear_Cell_Filter"/>
    </widget>
    <widget class="QMenu" name="menuWindows">
     <property name="title">
@@ -1106,6 +1107,11 @@
   <action name="actionLTE_Pilot_Pollution_All_Frequency">
    <property name="text">
     <string>LTE Pilot Pollution All Frequency</string>
+   </property>
+  </action>
+  <action name="actionNear_Cell_Filter">
+   <property name="text">
+    <string>Near Cell Filter</string>
    </property>
   </action>
  </widget>

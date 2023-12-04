@@ -1350,6 +1350,16 @@ Log_hash list: {}""".format(
         swa = SubWindowArea(self.mdi, self.gc)
         self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
 
+    ############# Near Cell Filter menu slots
+
+    @pyqtSlot()
+    def on_actionNear_Cell_Filter_triggered(self):
+        print("action near cell filter")
+        import near_cell_filter
+        widget = near_cell_filter.near_cell_filter(self, self.gc)
+        swa = SubWindowArea(self.mdi, self.gc)
+        self.add_subwindow_with_widget(swa, widget, allow_no_log_opened=True, w=None, h=None)
+
 
     ############# Data menu slots
 

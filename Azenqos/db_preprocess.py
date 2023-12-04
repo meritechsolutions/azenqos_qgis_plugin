@@ -74,7 +74,7 @@ def prepare_spatialite_required_tables(dbcon):
     dbcon.execute("delete from layer_styles;")
 
 
-def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False, time_bin_secs=None, gc = None, real_world_indoor=True):
+def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False, start_date=None, end_date=None, main_rat_params_only=False, pre_create_index=False, time_bin_secs=None, gc = None, real_world_indoor=True, params_to_gen_override=[],params_to_gen_override_where=[]):
     assert dbcon is not None
     prepare_spatialite_required_tables(dbcon)
 
@@ -143,9 +143,16 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     else:
         params_to_gen = azq_theme_manager.get_matching_col_names_list_from_theme_rgs_elm()
 
-        
-    print("params_to_gen:", params_to_gen)
     params_to_gen = params_to_gen + resample_param_list
+
+    if params_to_gen_override_where:
+        assert params_to_gen_override
+    if params_to_gen_override:
+        if params_to_gen_override_where:
+            assert len(params_to_gen_override) == len(params_to_gen_override_where)
+        params_to_gen = params_to_gen_override
+    print("params_to_gen:", params_to_gen)
+
     dbcon.commit()
     # create layer_styles table if not exist
     tables_to_rm_stray_neg1_rows = ["signalling", "events"]
@@ -154,6 +161,9 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
     for param in params_to_gen:
         layer_style_id += 1
         try:
+            param_filt_where_and = ""
+            if params_to_gen_override_where:
+                param_filt_where_and = "and ({})".format(params_to_gen_override_where[layer_style_id-1].replace("where ", ""))
             print("create param table for param %s" % param)
             table = preprocess_azm.get_table_for_column(param)
             if gc is not None:
@@ -227,20 +237,21 @@ def prepare_spatialite_views(dbcon, cre_table=True, gen_qml_styles_into_db=False
                         ed = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
                         stb = int(sd.timestamp()/time_bin_secs)
                         etb = int(ed.timestamp()/time_bin_secs)
-                        date_filt_where_and = "and time_bin >= {} and time_bin < {}".format(stb, etb)
+                        date_filt_where_and = "and (time_bin >= {} and time_bin < {})".format(stb, etb)
                     else:
-                        date_filt_where_and = "and time >= '{}' and time <= '{} 24:00:00'".format(start_date, end_date)
+                        date_filt_where_and = "and (time >= '{}' and time <= '{} 24:00:00)'".format(start_date, end_date)
                 print("date_filt_where_and:", date_filt_where_and)
                 drop_view_sqlstr = "drop {cre_type} if exists {view}".format(cre_type=cre_type, view=view)
                 if "cell_meas" in table or table in ["ping"]:
-                    sqlstr = "create {} {col} as select * from {table} where {col} is not null {date_filt_where_and};".format(cre_type, col=view, table=table, date_filt_where_and=date_filt_where_and)   # need to create table because create view casues get nearest feature id to fail - getting only 0
+                    sqlstr = "create {} {col} as select * from {table} where {col} is not null {date_filt_where_and} {param_filt_where_and};".format(cre_type, col=view, table=table, date_filt_where_and=date_filt_where_and,param_filt_where_and=param_filt_where_and)   # need to create table because create view casues get nearest feature id to fail - getting only 0
                 else:
                     optional_cols_as = [(x if x in table_cols else "null as {}".format(x)) for x in ["modem_time", "posid", "seqid"]]
                     optional_cols_part = ",".join(optional_cols_as)
-                    sqlstr = "create {} {col} as select log_hash, time, {optional_cols_part}, geom, {col} from {table} where {col} is not null {date_filt_where_and};".format(
+                    sqlstr = "create {} {col} as select log_hash, time, {optional_cols_part}, geom, {col} from {table} where {col} is not null {date_filt_where_and} {param_filt_where_and};".format(
                         cre_type, col=view, table=table,
                         optional_cols_part=optional_cols_part,
-                        date_filt_where_and=date_filt_where_and
+                        date_filt_where_and=date_filt_where_and,
+                        param_filt_where_and=param_filt_where_and
                     )
             print("create view sqlstr: %s" % sqlstr)
             if table_or_view_exists(dbcon, view):

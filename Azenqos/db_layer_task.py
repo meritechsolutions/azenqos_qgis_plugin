@@ -26,7 +26,7 @@ except:
     pass
 
 
-def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_theme_bucket_counts=True, main_rat_params_only=False):
+def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_theme_bucket_counts=True, main_rat_params_only=False, params_to_gen_override=[]):
     print("create_layers main_rat_params_only:", main_rat_params_only)
     azq_utils.timer_start("create_layers")
     try:
@@ -51,6 +51,8 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                         param_list = list(system_sql_query.rat_to_main_param_dict.values())
                     else:
                         param_list = pd.read_sql("select f_table_name from geometry_columns", dbcon).f_table_name.values
+                    if params_to_gen_override:
+                        param_list = params_to_gen_override
                     if db_created_views_mode:
                         table_list = param_list
                     else:
@@ -116,14 +118,15 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                     custom_sql = "log_hash in ({})".format(','.join([str(selected_log) for selected_log in device["log_hash"]]))
                                     title_ue_suffix = "(" + device["name"] + ")"
                                     if title_ue_suffix not in dn:
-                                        dn = dn + title_ue_suffix 
-                                        table_alias = table + title_ue_suffix 
+                                        dn = dn + title_ue_suffix
+                                        table_alias = table + title_ue_suffix
                                 layer = qgis_layers_gen.create_qgis_layer_from_spatialite_db(
                                     db_fp, table, visible=visible,
                                     style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=dn, theme_param=param, custom_sql=custom_sql
                                 )
                                 layer_id_to_visible_flag_dict[layer.id()] = visible
                                 table_to_layer_dict[table_alias] = layer
+                                print("table_to_layer_dict:", table_to_layer_dict, "visible", visible)
                                 if visible:
                                     last_visible_layer = layer
                             except:
@@ -133,66 +136,68 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                     table, exstr
                                 )
                                 )
-                        if has_voice_report:
-                            for call_type in call_types:
-                                try:
-                                    selected_ue = None
-                                    if len(device_configs) > 1:
-                                        selected_ue = ue
-                                    add_map_layer_dialog.create_param_layer(gc, call_type, selected_ue)
-                                except:
-                                    pass
-                        try:
-                            layer_name = "rat"
-                            theme_param = "rat"
-                            where = ""
+                        if not params_to_gen_override:
+                            # derived layers, dont show in automated mode
+                            if has_voice_report:
+                                for call_type in call_types:
+                                    try:
+                                        selected_ue = None
+                                        if len(device_configs) > 1:
+                                            selected_ue = ue
+                                        add_map_layer_dialog.create_param_layer(gc, call_type, selected_ue)
+                                    except:
+                                        pass
+                            try:
+                                layer_name = "rat"
+                                theme_param = "rat"
+                                where = ""
 
-                            if len(device_configs) > 1:
-                                title_ue_suffix = "(" + device["name"] + ")"
-                                layer_name = layer_name + title_ue_suffix 
-                                where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in device["log_hash"]]))
-                            df = rat_plot_df.get(dbcon, where=where)
+                                if len(device_configs) > 1:
+                                    title_ue_suffix = "(" + device["name"] + ")"
+                                    layer_name = layer_name + title_ue_suffix
+                                    where = "where log_hash in ({})".format(','.join([str(selected_log) for selected_log in device["log_hash"]]))
+                                df = rat_plot_df.get(dbcon, where=where)
 
-                            if df is not None and len(df) > 0:
-                                location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
-                                location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
-                                df_location = pd.read_sql(location_sqlstr, dbcon, parse_dates=['time'])
-                                if gc.is_indoor:
-                                    df = db_preprocess.add_pos_lat_lon_to_indoor_df(df, df_location).rename(
-                                    columns={"positioning_lat": "lat", "positioning_lon": "lon"}).reset_index(drop=True)
-                                    if "geom" in df.columns:
-                                        del df["geom"]
-                                azq_utils.create_layer_in_qgis(gc.databasePath, df, layer_name, theme_param = theme_param, data_df=df)
-                        except:
-                            pass
+                                if df is not None and len(df) > 0:
+                                    location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
+                                    location_sqlstr = sql_utils.add_first_where_filt(location_sqlstr, where)
+                                    df_location = pd.read_sql(location_sqlstr, dbcon, parse_dates=['time'])
+                                    if gc.is_indoor:
+                                        df = db_preprocess.add_pos_lat_lon_to_indoor_df(df, df_location).rename(
+                                        columns={"positioning_lat": "lat", "positioning_lon": "lon"}).reset_index(drop=True)
+                                        if "geom" in df.columns:
+                                            del df["geom"]
+                                    azq_utils.create_layer_in_qgis(gc.databasePath, df, layer_name, theme_param = theme_param, data_df=df)
+                            except:
+                                pass
 
-                        try:
-                            selected_ue = None
-                            if len(device_configs) > 1:
-                                selected_ue = ue
-                            import add_pilot_pollution_layer
-                            add_pilot_pollution_layer.add_layer(gc.databasePath, technology="nr", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
-                        except:
-                            pass
-                        
-                        try:
-                            selected_ue = None
-                            if len(device_configs) > 1:
-                                selected_ue = ue
-                            import add_pilot_pollution_layer
-                            add_pilot_pollution_layer.add_layer(gc.databasePath, technology="lte", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
-                        except:
-                            pass
-                        
-                        try:
-                            selected_ue = None
-                            if len(device_configs) > 1:
-                                selected_ue = ue
-                            import add_pilot_pollution_layer
-                            add_pilot_pollution_layer.add_layer(gc.databasePath, technology="wcdma", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
-                        except:
-                            pass
-                        
+                            try:
+                                selected_ue = None
+                                if len(device_configs) > 1:
+                                    selected_ue = ue
+                                import add_pilot_pollution_layer
+                                add_pilot_pollution_layer.add_layer(gc.databasePath, technology="nr", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
+                            except:
+                                pass
+
+                            try:
+                                selected_ue = None
+                                if len(device_configs) > 1:
+                                    selected_ue = ue
+                                import add_pilot_pollution_layer
+                                add_pilot_pollution_layer.add_layer(gc.databasePath, technology="lte", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
+                            except:
+                                pass
+
+                            try:
+                                selected_ue = None
+                                if len(device_configs) > 1:
+                                    selected_ue = ue
+                                import add_pilot_pollution_layer
+                                add_pilot_pollution_layer.add_layer(gc.databasePath, technology="wcdma", selected_ue=selected_ue, is_indoor=gc.is_indoor, device_configs=device_configs, show_msg_box=False)
+                            except:
+                                pass
+
                         ue += 1
 
                     return table_to_layer_dict, layer_id_to_visible_flag_dict, last_visible_layer

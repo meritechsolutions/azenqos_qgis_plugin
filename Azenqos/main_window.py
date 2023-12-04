@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import json
+import textwrap
 import uuid
 import pathlib
 import shutil
@@ -65,6 +66,16 @@ try:
         QgsGraduatedSymbolRenderer,
         QgsDataSourceUri
     )
+    from qgis.core import (
+        QgsProcessingContext,
+        QgsTaskManager,
+        QgsTask,
+        QgsProcessingAlgRunnerTask,
+        Qgis,
+        QgsProcessingFeedback,
+        QgsApplication,
+        QgsMessageLog,
+    )
     from qgis.gui import QgsMapToolEmitPoint, QgsHighlight
     from PyQt5.QtGui import QColor
     from qgis.PyQt.QtCore import QVariant
@@ -108,6 +119,7 @@ import sqlite3
 TIME_COL_DEFAULT_WIDTH = 150
 NAME_COL_DEFAULT_WIDTH = 180
 CURRENT_WORKSPACE_FN = "last_workspace.ini"
+AZQ_REPLAY_ENV_ACTIONS_KEY = "AZQ_REPLAY_ENV_ACTIONS_KEY"
 
 class VLine(QFrame):
     # a simple VLine, like the one you get from designer
@@ -144,6 +156,8 @@ class main_window(QMainWindow):
         ######## instance vars
         self.closed = False
         self.gc = analyzer_vars.analyzer_vars()
+        if AZQ_REPLAY_ENV_ACTIONS_KEY in os.environ and os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
+            self.gc.automated_mode = True
         self.gc.qgis_iface = qgis_iface
         self.gc.main_window = self
         self.gc.has_wave_file = False
@@ -204,7 +218,8 @@ class main_window(QMainWindow):
             self.reg_map_tool_click_point(self.clickCanvas)
             self.canvas.selectionChanged.connect(self.selectChanged)
             self.add_created_layers_signal.connect(self._add_created_layers)
-            self.add_map_layer()
+            if not self.gc.automated_mode:
+                self.add_map_layer()
         try:
             QgsProject.instance().layersAdded.connect(self.on_layers_added)
         except:
@@ -2431,6 +2446,18 @@ Log_hash list: {}""".format(
         print("updateTime_str: timestampValue:", timestampValue)
         self.setTimeValue(timestampValue)
 
+    def run_alg_block_print_progress(self, alg_name, alg_params):
+        from qgis import processing
+        def progress_changed(progress):
+            print(f"proc progress: {progress}")
+        feedback = QgsProcessingFeedback()
+        feedback.progressChanged.connect(progress_changed)
+        ret_dict = processing.run(alg_name, alg_params, feedback=feedback)
+        print(f"proc result {ret_dict}")
+        return ret_dict
+
+    def _gen_xyz_tiles_done(self):
+        print("_gen_xyz_tiles_done")
 
     def setTimeValue(self, value):
         print("%s: setTimeValue %s" % (os.path.basename(__file__), value))
@@ -2456,18 +2483,26 @@ Log_hash list: {}""".format(
             #print("task_done_slot save ss")
             print("task_done_slot init done")
             #print("os.environ:", os.environ)
-            AZQ_REPLAY_ENV_ACTIONS_KEY = "AZQ_REPLAY_ENV_ACTIONS_KEY"
             if AZQ_REPLAY_ENV_ACTIONS_KEY in os.environ and os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]:
                 try:
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions START")
-                    action_list = json.loads(
-                        os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]
-                    )
+                    import server_overview_widget
+                    env_val = os.environ[AZQ_REPLAY_ENV_ACTIONS_KEY]
+                    if os.path.isfile(env_val):
+                        with open(env_val, "r") as f:
+                            action_list = json.load(f)
+                    else:
+                        action_list = json.loads(
+                            env_val
+                        )
                     for action in action_list:
                         print("action START:", action)
                         assert isinstance(action, str)
                         main_window.curInstance = self
-                        action_ret = eval(action)
+                        if " = " in action:
+                            action_ret = exec(textwrap.dedent(action))
+                        else:
+                            action_ret = eval(textwrap.dedent(action))
                         print("action DONE: action_ret", action_ret)
                     print("AZQ_REPLAY_ENV_ACTIONS_KEY actions DONE")
                 except:
@@ -2476,7 +2511,7 @@ Log_hash list: {}""".format(
                         traceback.format_exception(type_, value_, traceback_)
                     )
                     print(
-                        "ABORT: timeChangeImpl - exception: {}".format(
+                        "ABORT: AZQ_REPLAY_ENV_ACTIONS_KEY - exception: {}".format(
                             exstr
                         )
                     )
@@ -3344,7 +3379,14 @@ Log_hash list: {}""".format(
                 except Exception as e:
                     print("WARNING: renaming layers exception: {}".format(e))
 
+    def showLayer(self, layer_name, show=True):
+        layer = QgsProject.instance().mapLayersByName(layer_name)[0]
+        QgsProject.instance().layerTreeRoot().findLayer(layer.id()).setItemVisibilityChecked(show)
 
+    def hideAllLayers(self):
+        project = QgsProject.instance()
+        for layer in project.mapLayers().values():
+            QgsProject.instance().layerTreeRoot().findLayer(layer.id()).setItemVisibilityChecked(False)
 
     '''
     -

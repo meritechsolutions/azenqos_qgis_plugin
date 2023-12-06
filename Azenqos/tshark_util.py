@@ -79,6 +79,10 @@ def tshark_decode_hex(side, name, protocol, detail):
         raise Exception("text2pcap failed - abort")
 
     channelType = None
+    if "(" not in name:
+        match = re.search(r'''(?:SENT|RECV)\s*,\s*\"(.*)\"''', detail)
+        if match is not None:
+            name = match.group(1)
     print("name %s type %s" % (name, type(name)))
     chan_type_regexs = [
     r"\((.*)\)",

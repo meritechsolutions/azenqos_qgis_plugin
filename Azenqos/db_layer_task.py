@@ -1,5 +1,6 @@
 import contextlib
 import os.path
+import shutil
 import sqlite3
 import sys
 import traceback
@@ -124,6 +125,18 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                     db_fp, table, visible=visible,
                                     style_qml_fp=qml_tmp_fp, add_to_qgis=False, display_name=dn, theme_param=param, custom_sql=custom_sql
                                 )
+                                try:
+                                    last_layer_qml_fp = azq_utils.get_module_fp('last_layer_qml.qml')
+                                    if os.path.isfile(last_layer_qml_fp):
+                                        os.remove(last_layer_qml_fp)
+                                    shutil.copy(qml_tmp_fp, last_layer_qml_fp)
+                                except:
+                                    type_, value_, traceback_ = sys.exc_info()
+                                    exstr = str(traceback.format_exception(type_, value_, traceback_))
+                                    print(
+                                        "WARNING: set last_layer_qml_fp table {} failed exception: {}".format(
+                                            table, exstr)
+                                    )
                                 layer_id_to_visible_flag_dict[layer.id()] = visible
                                 table_to_layer_dict[table_alias] = layer
                                 print("table_to_layer_dict:", table_to_layer_dict, "visible", visible)

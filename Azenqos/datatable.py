@@ -1938,6 +1938,8 @@ def run_api_expression_and_set_results_to_table_window(
                     df[col] = df[col].apply(lambda x: x.decode("utf-8"))
                 except:
                     pass
+                if "duration" in col:
+                    df[col] = df[col].astype(float)
             if df is None:
                 df = pd.DataFrame({"result": [ret_dict["ret"]],})
             window.setup_ui_with_custom_df(df)

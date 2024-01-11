@@ -66,11 +66,10 @@ class polygon_kpi_exclusion(QWidget):
         completer.setModel(self.ui.overlayLayerComboBox.model())
         self.ui.overlayLayerComboBox.setCompleter(completer)
         for layer_name in self.layer_names:
-            for layer_name in self.layer_names:
-                if layer_name == "OSM":
-                    continue
-                self.ui.inputLayerComboBox.addItem(layer_name)
-                self.ui.overlayLayerComboBox.addItem(layer_name)
+            if layer_name == "OSM":
+                continue
+            self.ui.inputLayerComboBox.addItem(layer_name)
+            self.ui.overlayLayerComboBox.addItem(layer_name)
         self.calculateButton.clicked.connect(self.on_calculate_button_click)
         
     def select_input_layer(self):

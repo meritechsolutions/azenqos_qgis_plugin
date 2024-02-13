@@ -96,6 +96,9 @@ def tshark_decode_hex(side, name, protocol, detail):
         name_parts = name.split(" ")
         channelType = " ".join(name_parts[1:-1])
         #print("nr channeltype:", channelType)
+    elif name.startswith("NR_"):
+        name_parts = name.split("_")
+        channelType = " ".join(name_parts[1:-1])
 
     print("channelType", channelType)
 

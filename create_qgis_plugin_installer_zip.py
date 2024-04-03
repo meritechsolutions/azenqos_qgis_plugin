@@ -53,7 +53,7 @@ if debug:
     print(url)
 else:
     print("### push release to github")
-    cmd = "gh release create v{} {}".format(version, target_fp)
+    cmd = "gh -r v{} {}".format(version, target_fp)
     print("push to github cmd:")
     print(cmd)
     ret = os.system(cmd)

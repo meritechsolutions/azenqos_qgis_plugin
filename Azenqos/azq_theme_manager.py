@@ -213,7 +213,7 @@ def get_matching_col_names_list_from_theme_rgs_elm():
                 eid = rgs.find("elementID").text.lower()
             except:
                 eid = rgs.lower()
-
+            ori_eid = eid
             if eid in g_var_name_legacy_to_new_dict:
                 print(
                     "this eid {} is a legacy var name - get matching new var name".format(
@@ -232,6 +232,10 @@ def get_matching_col_names_list_from_theme_rgs_elm():
             print("col_name:", col_name)
             try:
                 matched_rows = elm_ref_df.query("var_name == '{}'".format(eid))
+                if len(matched_rows) == 0:
+                    matched_rows = elm_ref_df.query("var_name == '{}'".format(ori_eid))
+                    col_name = ori_eid + "_" + str(arg_id)
+                    print("use legacy col_name:", col_name)
                 print("matched_rows:", matched_rows)
                 print("matched_rows.iloc[0].n_arg_max", matched_rows.iloc[0].n_arg_max)
                 dprint(

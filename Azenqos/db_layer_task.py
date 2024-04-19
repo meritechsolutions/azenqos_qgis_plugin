@@ -183,6 +183,14 @@ def create_layers(gc, db_fp=None, ogr_mode=False, display_name_prefix="", gen_th
                                     azq_utils.create_layer_in_qgis(gc.databasePath, df, layer_name, theme_param = theme_param, data_df=df)
                             except:
                                 pass
+                            
+                            try:
+                                selected_ue = None
+                                if len(device_configs) > 1:
+                                    selected_ue = ue
+                                add_map_layer_dialog.create_param_layer(gc, "polqa_mos", selected_ue)
+                            except:
+                                pass
 
                             try:
                                 selected_ue = None

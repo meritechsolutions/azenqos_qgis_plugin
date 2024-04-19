@@ -76,7 +76,10 @@ def create_param_layer(gc, param_name, selected_ue=None):
     if gc.databasePath is not None:
         with contextlib.closing(sqlite3.connect(gc.databasePath)) as dbcon:
             table_name = preprocess_azm.get_table_for_column(param_name.split("/")[0])
-            sqlstr = "select log_hash, time,posid, seqid, netid, {} from {}".format(param_name , table_name)
+            table_cols = pd.read_sql(f"select * from {table_name} where 1=0", dbcon).columns
+            optional_cols_as = [(x if x in table_cols else "null as {}".format(x)) for x in ["modem_time", "posid", "seqid", "netid"]]
+            optional_cols_part = ",".join(optional_cols_as)
+            sqlstr = "select log_hash, time, {}, {} from {}".format(optional_cols_part, param_name , table_name)
             location_sqlstr = "select time, log_hash, positioning_lat, positioning_lon from location where positioning_lat is not null and positioning_lon is not null"
             layer_name = param_name
             pp_voice_table = None

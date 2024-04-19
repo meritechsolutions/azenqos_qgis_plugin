@@ -1,5 +1,5 @@
 from PyQt5.QtCore import (
-    Qt,
+    Qt, QVariant
 )
 from PyQt5.QtWidgets import (
     QWidget, QComboBox, QCompleter
@@ -87,7 +87,7 @@ class distance_bin(QWidget):
         feature_list = [pt_feat for pt_feat in feature_layer.getFeatures(QgsFeatureRequest().setFlags(QgsFeatureRequest.NoGeometry))]
         filter_feature_list = []
         for feature in feature_list:
-            attrs = [feature[layer_column] for layer_column in layer_columns]
+            attrs = [None if isinstance(feature[layer_column], QVariant) and feature[layer_column].isNull() else feature[layer_column] for layer_column in layer_columns]
             filter_feature_list.append(attrs)
             
         df = pd.DataFrame(filter_feature_list, columns=layer_columns)

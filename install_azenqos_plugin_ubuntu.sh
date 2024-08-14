@@ -10,14 +10,21 @@ exit_if_failed() {
 echo "=== AZENQOS log file analysis QGIS plugin installer ==="
 echo "Please make sure QGIS is closed first."
 echo "Any existing Azenqos plugins would get deleted and replaced"
-echo "== Finding local QGIS installation folder..."
+
+echo "checking if qgis is installed..."
+which qgis
+exit_if_failed
+
+echo "checking if crudini is installed and install it if not"
+sudo apt-get -y install crudini
+exit_if_failed
 
 echo "note: pyqt5 pip must not be installed as it should be installed by qgis already - do not install in pip again as it will conflict and qgis launch python would fail"
 echo "== Installing required python packages into local python3 env..."
-sudo python3 -m pip install -r Azenqos/requirements.txt
+python3 -m pip install -r Azenqos/requirements.txt
 exit_if_failed
 
-sudo python3 -m pip install -r Azenqos/requirements-dev.txt
+python3 -m pip install -r Azenqos/requirements-dev.txt
 exit_if_failed
 
 mkdir -p $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
@@ -30,9 +37,6 @@ ln -s `pwd`/Azenqos $HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugin
 exit_if_failed
 
 ls -l $HOME/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini
-exit_if_failed
-
-sudo apt-get -y install crudini
 exit_if_failed
 
 crudini --set $HOME/.local/share/QGIS/QGIS3/profiles/default/QGIS/QGIS3.ini PythonPlugins Azenqos true

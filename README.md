@@ -10,14 +10,16 @@ Please open below document for full details on installation, features and usage:
 
 <https://docs.google.com/document/d/13ERtna5Rwuh0qgYUB0n8qihoW6hCO30TCJAIw_tXri0/edit?usp=sharing>
 
-Windows Installation instructions(recommended)
+
+Windows Bundled installer instructions (recommended)
 -------------------------
-  - Download the Azenqos QGIS Plugin(Bundle) from <https://files.azenqos.com/plugin/> (latest version).
+  - Download the Azenqos QGIS Plugin (Bundle) from <https://files.azenqos.com/plugin/> (latest version).
   - Extract the downloaded zip file.
   - Locate and run the "setup.exe" file.
 
-Installation instructions
--------------------------
+
+Plugin-only installer instructions
+----------------------------------
 - Install QGIS Standalone Installer from: 
   - Open a web browser to: <https://qgis.org/en/site/forusers/download.html>
   - Click on 'Downloads for Windows'
@@ -45,10 +47,28 @@ Installation instructions
   - Part 1 Open local log + Cell line + Setting: https://youtu.be/xt5J_LS_cNQ
   - Part 2 Open multiple log + Change theme: https://youtu.be/uTPSs6Hbf7w
   - Part 3 Analyze sample + Create layer from events + Run server modules: https://youtu.be/Zh4H30rijog
+  
+
+Ubuntu GNU/Linux installation commands
+------------------------------------------
+
+- Install QGIS
+`sudo apt install qgis`
+
+- If you never opened QGIS yet, open it and complete the first-time setup, if any, then close it. This is to make sure it creates all its initial folders.
+`qgis`
+
+- Open a terminal in this folder, then run below cmd to install or update this plugin - it should show '=== INSTAL SUCCESS - you can start QGIS now' at then end
+`./install_azenqos_plugin_ubuntu.sh`
+
+- Open qgis again then the plugin icon should now be visible and its window should be open in a panel on the right.
 
 
 Using Standlone mode to replay/analyze logs without QGIS (Developer mode)
 ------------------------------------------------------------
+
+- get into main src folder:
+`cd Azenqos`
 
 - Install common requirements, run:
 `pip3 install -r requirements-dev.txt`
@@ -60,7 +80,6 @@ Using Standlone mode to replay/analyze logs without QGIS (Developer mode)
   `sudo apt install python3-pyqt5`
   
 - Launch analyzer in standalone mode, cd into this folder and run:
-`cd Azenqos`
 `python3 ui_test_main_window.py`
 
 

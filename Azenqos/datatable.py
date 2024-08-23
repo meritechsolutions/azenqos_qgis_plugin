@@ -676,14 +676,14 @@ class TableWindow(QWidget):
                     assert isinstance(df, pd.DataFrame)
                     if self.time_list_mode:
                         assert "time" in df.columns
-                        df["time"] = pd.to_datetime(df["time"])
+                        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S.%f", errors='coerce')
                         if self.title == "Events":
                             print("events filt out unrealted msg")
                             df = df[~((df['name'] == 'DebugLog') & df['info'].str.contains('parse_azqddec'))]
                             if len(self.gc.pre_wav_file_list) > 0:
                                 import voice_call_setup_df
                                 pre_wav_file_df = voice_call_setup_df.get_voice_call_setup_df(self.gc.pre_wav_file_list)
-                                df = df.append(pre_wav_file_df)
+                                df = pd.concat([df, pre_wav_file_df], ignore_index=True)
                                 df["time"] = pd.to_datetime(df["time"])
                                 df["log_hash"] = df["log_hash"].astype(np.int64)
 
@@ -1323,7 +1323,7 @@ class DetailWidget(QDialog):
 
         pg.setConfigOptions(background="#c0c0c0", foreground="k", antialias=True)
         
-        self.wave_sine = pg.GraphicsWindow()
+        self.wave_sine = pg.GraphicsLayoutWidget()
         self.wave_sine.scene().sigMouseClicked.connect(self.on_click)
         self.v_line = pg.InfiniteLine(
             angle=90, movable=False, pen=pg.mkPen("k")

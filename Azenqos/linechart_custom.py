@@ -87,7 +87,7 @@ class LineChart(QtWidgets.QDialog):
         self.ui = loadUi(azq_utils.get_module_fp("linechart3.ui"), self)
         self.lineDict = {}
         self.graphWidget = None
-        self.graphWidget = pg.GraphicsWindow()
+        self.graphWidget = pg.GraphicsLayoutWidget()
         self.graphWidget.axes = self.graphWidget.addPlot(
             axisItems={"bottom": TimeAxisItem(orientation="bottom")}
         )
@@ -118,6 +118,12 @@ class LineChart(QtWidgets.QDialog):
             lambda x: self.enable_slot() if x else self.disable_slot()
         )
         self.ui.checkBox_2.setChecked(False)
+        
+        
+        self.ui.useOpenGLCheckBox.stateChanged.connect(
+            lambda x: self.graphWidget.useOpenGL(x)
+        )
+        
         self.ui.addEvent.hide()
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -184,7 +190,7 @@ class LineChart(QtWidgets.QDialog):
             self.graphWidget.axes.addItem(self.vLine, ignoreBounds=True)
             self.graphWidget.axes.addItem(self.cursorVLine, ignoreBounds=True)
             self.graphWidget.axes.addItem(self.cursorHLine, ignoreBounds=True)
-            self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 30)
+            self.ui.horizontalScrollBar.setMaximum(int(self.maxX - self.minX - 30))
             self.drawCursor(self.minX)
             self.moveChart(self.minX)
         all_param_list = [item for sublist in all_param_list for item in sublist]
@@ -196,13 +202,13 @@ class LineChart(QtWidgets.QDialog):
         print("chartXRangeChanged")
         if not self.moveFromChart:
             self.moveFromChart = True
-            newScrollVal = x1 - self.minX
+            newScrollVal = int(x1 - self.minX)
             print("move scroll bar", newScrollVal)
             if (
                 newScrollVal >= 0
                 or newScrollVal <= self.ui.horizontalScrollBar.maximum()
             ):
-                self.ui.horizontalScrollBar.setValue(x1 - self.minX)
+                self.ui.horizontalScrollBar.setValue(newScrollVal)
             self.moveFromChart = False
 
     def mouseMoved(self, pos):

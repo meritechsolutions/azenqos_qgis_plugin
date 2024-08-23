@@ -56,7 +56,7 @@ def check_and_install_requirements():
     requirement_list = None
     not_exist_whl_list = []
     if os.name == "nt":
-        output = subprocess.check_output(["pip", "freeze"]).decode("utf-8")
+        output = subprocess.check_output(["python", "-m", "pip", "freeze"]).decode("utf-8")
         for whl in whl_list:
             whl_basename = os.path.basename(whl)
             if whl_basename not in output:
@@ -87,7 +87,7 @@ def check_and_install_requirements():
         if os.name == "nt":
             for whl in not_exist_whl_list:
                 try:
-                    subprocess.check_call(['pip', 'uninstall', '-y', whl])
+                    subprocess.check_call(['python', '-m', 'pip', 'uninstall', '-y', whl])
                 except:
                     pass
                 subprocess.call(['python', '-m', 'pip', 'install', '--no-dependencies', whl])

@@ -32,6 +32,7 @@ from PyQt5.QtWidgets import (
     QFrame,
     QToolBar,
     QHeaderView,
+    QAbstractSpinBox
 )
 from PyQt5.uic import loadUi
 
@@ -383,13 +384,13 @@ class main_window(QMainWindow):
     def on_actionUser_Guide_triggered(self):
         url = QtCore.QUrl('https://docs.google.com/document/d/13ERtna5Rwuh0qgYUB0n8qihoW6hCO30TCJAIw_tXri0/edit?usp=sharing')
         if not QtGui.QDesktopServices.openUrl(url):
-            QtGui.QMessageBox.warning(self, 'Open Url', 'Could not open url')
+            QMessageBox.warning(self, 'Open Url', 'Could not open url')
 
     @pyqtSlot()
     def on_actionInstall_Update_Guide_triggered(self):
         url = QtCore.QUrl('https://github.com/freewillfx-azenqos/azenqos_qgis_plugin/blob/master/README.md')
         if not QtGui.QDesktopServices.openUrl(url):
-            QtGui.QMessageBox.warning(self, 'Open Url', 'Could not open url')
+            QMessageBox.warning(self, 'Open Url', 'Could not open url')
 
     ############# server_modules menu slots
     @pyqtSlot()
@@ -627,7 +628,7 @@ Log_hash list: {}""".format(
     def on_actionEvents_triggered(self):
         with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
             try:
-                mos_df = pd.read_sql("select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos", dbcon)
+                mos_df = pd.read_sql("select log_hash, time, 'MOS Score' as name, polqa_mos as info, wav_filename as wave_file from polqa_mos where wav_filename is not null", dbcon)
                 if len(mos_df) > 0 and "wave_file" in mos_df.columns:
                     self.gc.has_wave_file = True
                 check_nb_df = pd.read_sql("select log_hash from events where info = 'is_mos_test_polqa_nb'", dbcon)
@@ -2190,7 +2191,7 @@ Log_hash list: {}""".format(
             self.timeEdit = QDateTimeEdit(self)
             self.timeEdit.setObjectName("timeEdit")
             self.timeEdit.setDisplayFormat("hh:mm:ss.zzz")
-            self.timeEdit.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+            self.timeEdit.setButtonSymbols(QAbstractSpinBox.NoButtons)
             self.timeEdit.setReadOnly(True)
 
             self.setupPlayStopButton()

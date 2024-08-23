@@ -267,7 +267,7 @@ class azenqos_qgis_plugin:
 
         if self.qgis_iface is not None:
             if qgis_panel_dock_mode:
-                from PyQt5.QtGui import QDockWidget
+                from PyQt5.QtWidgets import QDockWidget
                 from qgis.PyQt.QtCore import Qt
                 if self.dock_widget is None:
                     self.dock_widget = QDockWidget('Azenqos Log Replay/Analyzer - v%.03f' % version.VERSION,

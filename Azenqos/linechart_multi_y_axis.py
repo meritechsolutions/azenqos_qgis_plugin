@@ -87,14 +87,15 @@ class LineChart(QtWidgets.QDialog):
         self.ui = loadUi(azq_utils.get_module_fp("linechart3.ui"), self)
         self.axisDict = {}
         self.lineDict = {}
-        self.graphWidget = None
-        self.graphWidget = pg.GraphicsWindow()
+        self.graphWidget = pg.GraphicsLayoutWidget()
         self.graphWidget.axes = self.graphWidget.addPlot(
             axisItems={"bottom": TimeAxisItem(orientation="bottom")}
         )
+        
         self.vLine = pg.InfiniteLine(
             angle=90, movable=False, pen=pg.mkPen("k", width=4)
         )
+        self.graphWidget.axes.clear()
         self.graphWidget.axes.hideButtons()
         self.graphWidget.axes.showGrid(x=False, y=True)
         self.graphWidget.axes.setMouseEnabled(x=True, y=False)
@@ -108,7 +109,6 @@ class LineChart(QtWidgets.QDialog):
         self.tick_font = QFont()
         self.tick_font.setPixelSize(10)
         self.graphWidget.axes.getAxis("bottom").setStyle(tickFont=self.tick_font)
-        #self.graphWidget.getAxis("bottom").setStyle(tickTextOffset=20)
 
         self.ui.tableView.customContextMenuRequested.connect(self.onTableRightClick)
         self.ui.tableView.clicked.connect(self.onTableClick)
@@ -119,6 +119,11 @@ class LineChart(QtWidgets.QDialog):
         )
         self.ui.checkBox_2.setChecked(False)
         self.zoom_enabled = False
+        
+        self.ui.useOpenGLCheckBox.stateChanged.connect(
+            lambda x: self.graphWidget.useOpenGL(x)
+        )
+        
         self.ui.addEvent.clicked.connect(self.onEventParameterButtonClick)
         self.ui.addParam.clicked.connect(self.onAddParameterButtonClick)
         #self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -226,7 +231,7 @@ class LineChart(QtWidgets.QDialog):
                     maxXRange=20,
                     minYRange=1,
                 )
-            self.ui.horizontalScrollBar.setMaximum(self.maxX - self.minX - 20)
+            self.ui.horizontalScrollBar.setMaximum(int(self.maxX - self.minX - 20))
             self.drawCursor(self.minX)
             self.moveChart(self.minX)
         if len(self.eventList) > 0:
@@ -285,16 +290,16 @@ class LineChart(QtWidgets.QDialog):
 
     def chartXRangeChanged(self):
         x1 = self.getCurrentX()
-        print("chartXRangeChanged")
+        print("chartXRangeChanged", x1, self.minX)
         if not self.moveFromChart:
             self.moveFromChart = True
-            newScrollVal = x1 - self.minX
+            newScrollVal = int(x1 - self.minX)
             print("move scroll bar", newScrollVal)
             if (
                 newScrollVal >= 0
                 or newScrollVal <= self.ui.horizontalScrollBar.maximum()
             ):
-                self.ui.horizontalScrollBar.setValue(x1 - self.minX)
+                self.ui.horizontalScrollBar.setValue(newScrollVal)
             self.moveFromChart = False
 
     def getCurrentX(self):
@@ -469,8 +474,8 @@ class LineChart(QtWidgets.QDialog):
             viewBox.setLimits(
                 minXRange=x_diff, maxXRange=x_diff, minYRange=1,
             )
-
-
+            
+            
 def main():
     app = QtWidgets.QApplication(sys.argv)
     main = LineChart()

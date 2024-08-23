@@ -10,7 +10,9 @@ def get_voice_call_setup_df(pre_wav_file_list):
         wave_file_name = os.path.basename(pre_wav_file)
         time_str = get_time_from_pre_wave_name(wave_file_name)
         pre_wav_file_dict = {"log_hash":log_hash, "time":time_str, "name":name, "info":None, "detail":None, "wave_file":wave_file_name}
-        pre_wav_file_df = pre_wav_file_df.append(pre_wav_file_dict, ignore_index = True)
+        pre_wav_file_dict_df = pd.DataFrame([pre_wav_file_dict])
+        
+        pre_wav_file_df = pd.concat([pre_wav_file_df, pre_wav_file_dict_df], ignore_index=True)
         
     pre_wav_file_df["time"] = pd.to_datetime(pre_wav_file_df["time"], format='%Y%m%d_%H%M%S%f')
     return pre_wav_file_df

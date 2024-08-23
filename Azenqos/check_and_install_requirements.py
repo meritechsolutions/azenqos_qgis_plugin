@@ -46,7 +46,7 @@ def check_and_install_requirements():
     cp_pattern = "cp{}{}".format(sys.version_info.major, sys.version_info.minor)
     compat_wheel_pattern = "*-*-{}*.whl".format(cp_pattern)
     any_wheel_pattern = "*-any.whl"
-    psutil_wheel_pattern = "psutil-5.8.0-*.whl"
+    psutil_wheel_pattern = "psutil-6.0.0-*.whl"
     
     import glob
     whl_list = glob.glob(os.path.join(wheel_dp, compat_wheel_pattern))

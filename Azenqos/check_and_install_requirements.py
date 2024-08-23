@@ -46,10 +46,12 @@ def check_and_install_requirements():
     cp_pattern = "cp{}{}".format(sys.version_info.major, sys.version_info.minor)
     compat_wheel_pattern = "*-*-{}*.whl".format(cp_pattern)
     any_wheel_pattern = "*-any.whl"
+    psutil_wheel_pattern = "psutil-5.8.0-*.whl"
     
     import glob
     whl_list = glob.glob(os.path.join(wheel_dp, compat_wheel_pattern))
     whl_list.extend(glob.glob(os.path.join(wheel_dp, any_wheel_pattern)))
+    whl_list.extend(glob.glob(os.path.join(wheel_dp, psutil_wheel_pattern)))
     whl_list = sorted(whl_list, key=cmp_to_key(compare)) #install numpy before scipy
 
     requirement_fp = get_local_fp('requirements.txt')

@@ -9,7 +9,8 @@ import numpy as np
 import pandas as pd
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QIcon, QPixmap, QAbstractItemView
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.uic import loadUi
 from functools import partial
 

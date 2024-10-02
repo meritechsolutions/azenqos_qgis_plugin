@@ -14,6 +14,7 @@ import azq_utils
 import preprocess_azm
 import custom_last_instant_table_dataframe_model
 import qt_utils
+import pandas as pd 
 
 
 class custom_last_instant_table_dialog(QtWidgets.QDialog):
@@ -29,7 +30,8 @@ class custom_last_instant_table_dialog(QtWidgets.QDialog):
         df = df.dropna()
         df = df.loc[~df.var_name.str.startswith("event_")]
         self.param_df = df
-        self.param_df = self.param_df.append({"var_name": "log_hash", "n_arg_max":0}, ignore_index=True)
+        new_row = pd.DataFrame([{"var_name": "log_hash", "n_arg_max": 0}])
+        self.param_df = pd.concat([self.param_df, new_row], ignore_index=True)
         self.param_df = self.param_df.reset_index(drop=True)
         self.param_df["var_name"] = self.param_df["var_name"].astype(str)
         self.cell_type = "text"

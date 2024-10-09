@@ -1548,6 +1548,23 @@ class TableModel(QAbstractTableModel):
                         fetch_data_mode = self.gc.fetch_data_mode.lower()
                         numeric_columns = [column for column in df.columns if pd.api.types.is_numeric_dtype(df[column])]
                         df = df.groupby("time").agg({col: fetch_data_mode for col in numeric_columns if col != "time"}).reset_index()
+                    if self.gc.fetch_data_max_cols or self.gc.fetch_data_min_cols:
+                        fetch_data_max_cols = []
+                        fetch_data_min_cols = []
+                        if self.gc.fetch_data_max_cols:
+                            fetch_data_max_cols = self.gc.fetch_data_max_cols
+                        if self.gc.fetch_data_min_cols:
+                            fetch_data_max_cols = self.gc.fetch_data_min_cols
+                        columns_filtered =  list(set(df.columns) - set(fetch_data_max_cols+fetch_data_min_cols))
+                        agg_dict = {}
+                        for col in columns_filtered:
+                            agg_dict[col] = "last"
+                        for col in fetch_data_max_cols:
+                            agg_dict[col] = "max"
+                        for col in fetch_data_min_cols:
+                            agg_dict[col] = "min"
+                        df = df.groupby("time").agg(agg_dict).reset_index()
+
                     if remove_time:
                         del df["time"]
                     last_valid_each_col = df.apply(pd.Series.last_valid_index)

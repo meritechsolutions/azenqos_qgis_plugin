@@ -2451,6 +2451,11 @@ Log_hash list: {}""".format(
     def setFetchDataMode(self, mode="last"):
         self.gc.fetch_data_mode = mode
         
+    def setFetchDataMaxCols(self, cols=None):
+        self.gc.fetch_data_max_cols = cols
+    def setFetchDataMinCols(self, cols=None):
+        self.gc.fetch_data_min_cols = cols
+        
     def run_alg_block_print_progress(self, alg_name, alg_params):
         from qgis import processing
         def progress_changed(progress):

@@ -81,6 +81,8 @@ class analyzer_vars:
         # server mode vars (stored in login_dialog class like server, token, user, lhl etc)
         self.login_dialog = None
         self.fetch_data_mode = "last"
+        self.fetch_data_max_cols = None
+        self.fetch_data_min_cols = None
 
     def delete_preferences(self):
         fp = get_pref_fp()

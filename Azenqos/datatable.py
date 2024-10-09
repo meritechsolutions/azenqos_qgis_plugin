@@ -1543,8 +1543,11 @@ class TableModel(QAbstractTableModel):
             with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                 df = pd.read_sql(sql, dbcon)
                 if not df.empty and df.last_valid_index() is not None:
-                    if self.gc.fetch_data_mode and self.gc.fetch_data_mode != "last":
-                        df = df.groupby("time").agg({col: self.gc.fetch_data_mode for col in df.columns if col != "time"}).reset_index()
+                    fetch_data_mode = self.gc.fetch_data_mode
+                    if self.gc.fetch_data_mode and self.gc.fetch_data_mode.lower() != "last":
+                        fetch_data_mode = self.gc.fetch_data_mode.lower()
+                        numeric_columns = [column for column in df.columns if pd.api.types.is_numeric_dtype(df[column])]
+                        df = df.groupby("time").agg({col: fetch_data_mode for col in numeric_columns if col != "time"}).reset_index()
                     if remove_time:
                         del df["time"]
                     last_valid_each_col = df.apply(pd.Series.last_valid_index)

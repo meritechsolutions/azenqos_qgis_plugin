@@ -1551,14 +1551,15 @@ class TableModel(QAbstractTableModel):
                     if self.gc.fetch_data_max_cols or self.gc.fetch_data_min_cols:
                         fetch_data_max_cols = []
                         fetch_data_min_cols = []
-                        if self.gc.fetch_data_max_cols:
+                        if self.gc.fetch_data_max_cols and set(self.gc.fetch_data_max_cols).issubset(set(col_list)):
                             fetch_data_max_cols = self.gc.fetch_data_max_cols
-                        if self.gc.fetch_data_min_cols:
-                            fetch_data_max_cols = self.gc.fetch_data_min_cols
-                        columns_filtered =  list(set(df.columns) - set(fetch_data_max_cols+fetch_data_min_cols))
+                        if self.gc.fetch_data_min_cols and set(self.gc.fetch_data_min_cols).issubset(set(col_list)):
+                            fetch_data_min_cols = self.gc.fetch_data_min_cols
+                        columns_filtered =  list(set(col_list) - set(fetch_data_max_cols+fetch_data_min_cols))
                         agg_dict = {}
                         for col in columns_filtered:
-                            agg_dict[col] = "last"
+                            if col != "time":
+                                agg_dict[col] = "last"
                         for col in fetch_data_max_cols:
                             agg_dict[col] = "max"
                         for col in fetch_data_min_cols:

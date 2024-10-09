@@ -2448,6 +2448,9 @@ Log_hash list: {}""".format(
         print("updateTime_str: timestampValue:", timestampValue)
         self.setTimeValue(timestampValue)
 
+    def setFetchDataMode(self, mode="last"):
+        self.gc.fetch_data_mode = mode
+        
     def run_alg_block_print_progress(self, alg_name, alg_params):
         from qgis import processing
         def progress_changed(progress):

@@ -1533,11 +1533,20 @@ class TableModel(QAbstractTableModel):
 
         for table in table_col_dict:
             table_col_dict[table] = list(set(table_col_dict[table]))
-            sql = f"SELECT {', '.join(table_col_dict[table])} FROM {table}"
+            col_list = table_col_dict[table]
+            remove_time = False
+            if "time" not in col_list:
+                col_list.append("time")
+                remove_time = True
+            sql = f"SELECT {', '.join(col_list)} FROM {table}"
             sql = sql_utils.sql_lh_time_match_for_select_from_part(sql, log_hash, self.time)
             with contextlib.closing(sqlite3.connect(self.gc.databasePath)) as dbcon:
                 df = pd.read_sql(sql, dbcon)
                 if not df.empty and df.last_valid_index() is not None:
+                    if self.gc.fetch_data_mode and self.gc.fetch_data_mode != "last":
+                        df = df.groupby("time").agg({col: self.gc.fetch_data_mode for col in df.columns if col != "time"}).reset_index()
+                    if remove_time:
+                        del df["time"]
                     last_valid_each_col = df.apply(pd.Series.last_valid_index)
                     valid_data_dict[table] = {}
                     for index, value in last_valid_each_col.items():

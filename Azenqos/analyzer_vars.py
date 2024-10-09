@@ -80,6 +80,7 @@ class analyzer_vars:
         self.CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
         # server mode vars (stored in login_dialog class like server, token, user, lhl etc)
         self.login_dialog = None
+        self.fetch_data_mode = "last"
 
     def delete_preferences(self):
         fp = get_pref_fp()
